@@ -3,30 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMIPRO Dashboard | Ultimate Version</title>
-    <!-- Link ke Font Awesome -->
+    <title>SMIPRO StreetArt - Official Platform</title>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Link ke File CSS Kita -->
+    <!-- CSS Kita -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- === MAIN DASHBOARD === -->
-    <div id="main-view">
+    <!-- NAVBAR ATAS -->
+    <nav class="top-nav">
+        <div class="logo">SMIPRO</div>
+        <div class="menu">
+            <a href="#" onclick="showPage('home')"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="#" onclick="showPage('admin-login')" class="btn-mitra"><i class="fa-solid fa-store"></i> Mitra Warung (Login/Daftar)</a>
+        </div>
+    </nav>
+
+    <!-- === HALAMAN 1: DASHBOARD UTAMA === -->
+    <div id="page-home" class="page active">
         <header class="hero">
             <div class="hero-content">
                 <div class="brand-badge">LIVE 2025</div>
-                <h1>SMIPRO streetArt.ID.</h1>
-                <p>"Platform Modernisasi Seni Jalanan menuju Ekosistem Kota Inklisif dan Berbudaya."</p>
+                <h1>SMIPRO</h1>
+                <!-- NARASI BARU -->
+                <div class="prolog-box">
+                    <p>"Dari jalanan untuk masa depan. Kami percaya bahwa secangkir kopi dan alunan musik adalah jembatan persaudaraan. Platform ini hadir untuk memuliakan seniman lokal, mendigitalkan pedagang kecil, dan memberikan Anda pengalaman nongkrong yang nyaman, pasti, dan berbudaya. Pesan mejamu, dukung karyanya, hidupkan kotanya."</p>
+                </div>
             </div>
         </header>
 
         <div class="container">
             
-            <!-- 1. LIST 5 ANGKRINGAN -->
+            <!-- 1. LIST 5 ANGKRINGAN (Hanya 1 Aktif) -->
             <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
             <div id="venues-list">
-                <!-- JS akan mengisi ini -->
+                <!-- Diisi JS -->
             </div>
 
             <!-- GRID: PERFORMER & JADWAL -->
@@ -34,8 +46,9 @@
                 <!-- 2. TOP 5 PERFORMER (KIRI) -->
                 <div>
                     <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers</div>
+                    <p style="font-size:0.8rem; color:#888; margin-top:-10px;">Artis terbaik minggu ini:</p>
                     <div class="performer-scroll" id="top-performers-list">
-                        <!-- JS akan mengisi ini -->
+                        <!-- JS Render -->
                     </div>
                 </div>
                 <!-- 3. JADWAL (KANAN/BAWAH) -->
@@ -54,95 +67,165 @@
                             <div class="date-box"><b>SAB</b><span>03/01</span></div>
                             <div class="schedule-info"><h5>Keroncong Weekend</h5><p>Kopi Jalanan • 19:00</p></div>
                         </div>
+                        <center><small style="color:#666;">*Rotasi jadwal setiap Senin</small></center>
                     </div>
                 </div>
             </div>
 
             <!-- 4. PELATIHAN -->
             <div class="training-banner" onclick="openTrainingModal()">
-                <div class="tb-text"><h3>Bengkel Perform</h3><p>Klik untuk melihat tim pelatih.</p></div>
-                <i class="fa-solid fa-graduation-cap" style="font-size:1.5rem; color:var(--accent);"></i>
+                <div class="tb-text"><h3>Pelatihan Attitude</h3><p>Klik untuk melihat profil mentor & pelatih.</p></div>
+                <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color:var(--accent);"></i>
             </div>
 
             <!-- 5. DUKUNGAN & SOSMED -->
             <div class="support-section">
-                <h3 style="margin:0; color:white;">Dukung SMIPRO!</h3>
-                <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami.</p>
+                <h3 style="margin:0; color:white;">Dukung Gerakan SMIPRO!</h3>
+                <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
                 <div class="social-icons">
                     <a href="#" style="color:red;"><i class="fa-brands fa-youtube"></i></a>
                     <a href="#" style="color:#00f2ea;"><i class="fa-brands fa-tiktok"></i></a>
                     <a href="#" style="color:#C13584;"><i class="fa-brands fa-instagram"></i></a>
                     <a href="#" style="color:#1877F2;"><i class="fa-brands fa-facebook-f"></i></a>
                 </div>
-                <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Platform</button>
+                <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Pengembangan</button>
             </div>
 
             <!-- 6. BERITA -->
             <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
             <div class="news-card">
                 <img src="https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100" class="news-thumb">
-                <div><span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">EVENT</span><h4 style="margin:0;">Festival Musik 2025</h4><p style="margin:0; font-size:0.7rem; color:#888;">2 jam yang lalu</p></div>
+                <div><span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">EVENT</span><h4 style="margin:0;">Festival Musik 2025 Segera Hadir</h4><p style="margin:0; font-size:0.7rem; color:#888;">2 jam yang lalu</p></div>
+            </div>
+            <div class="news-card">
+                <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=100" class="news-thumb">
+                <div><span style="color:var(--accent); font-size:0.7rem; font-weight:bold;">EDUKASI</span><h4 style="margin:0;">50 Pengamen Lulus Sertifikasi Etika</h4><p style="margin:0; font-size:0.7rem; color:#888;">1 hari yang lalu</p></div>
             </div>
             
-            <br><br><center><small style="color:#444;">&copy; 2025 SMIPRO StreetArt.ID</small></center>
+            <br><br><center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
         </div>
     </div>
 
-    <!-- === MODAL SPLIT VIEW (DETAIL) === -->
-    <div id="venue-modal" class="modal-overlay">
-        <div class="modal-header-simple">
-            <button class="back-btn-simple" onclick="closeModal('venue-modal')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h3 style="margin:0; font-size:1rem;">Detail & Interaksi</h3>
+    <!-- === HALAMAN 2: DETAIL ANGKRINGAN (SPLIT + WARUNG) === -->
+    <div id="page-detail" class="page">
+        <div class="sticky-header">
+            <button class="back-btn-simple" onclick="showPage('home')"><i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard</button>
+            <h3 style="margin:0; font-size:1rem;">Angkringan Utama Stadion</h3>
         </div>
 
-        <div class="modal-split-grid">
-            <!-- KIRI: VENUE -->
-            <div class="left-panel">
-                <h3 style="margin-top:0; color:var(--accent);">📍 Info Lokasi</h3>
-                <img src="" id="v-img-detail" class="venue-img-large">
-                <h2 id="v-name-detail" style="margin:0;">Nama Angkringan</h2>
-                <p id="v-loc-detail" style="color:#aaa; font-size:0.9rem; margin-top:5px;">Lokasi</p>
-                <hr style="border:0; border-top:1px solid #444; margin:20px 0;">
-                
-                <h4>📝 Rating & Masukan Tempat</h4>
-                <div class="feedback-box">
-                    <textarea id="venue-feedback" placeholder="Kritik & Saran untuk tempat ini..."></textarea>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div class="rating-stars" id="venue-stars">
-                            <i class="fa-solid fa-star" onclick="rateVenue(1)"></i>
-                            <i class="fa-solid fa-star" onclick="rateVenue(2)"></i>
-                            <i class="fa-solid fa-star" onclick="rateVenue(3)"></i>
-                            <i class="fa-solid fa-star" onclick="rateVenue(4)"></i>
-                            <i class="fa-solid fa-star" onclick="rateVenue(5)"></i>
+        <div class="container">
+            
+            <!-- BAGIAN ATAS: SPLIT VIEW -->
+            <div class="modal-split-grid">
+                <!-- KIRI: VENUE INFO -->
+                <div class="left-panel">
+                    <h3 style="margin-top:0; color:var(--accent);">📍 Info Lokasi</h3>
+                    <img src="https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=600" class="venue-img-large">
+                    <h2 style="margin:0;">Stadion Bayuangga Zone</h2>
+                    <p style="color:#aaa; font-size:0.9rem; margin-top:5px;">Pusat Kuliner & Seni Jalanan</p>
+                    <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+                    
+                    <h4>📝 Rating & Masukan Tempat</h4>
+                    <div class="feedback-box">
+                        <textarea id="venue-feedback" placeholder="Kritik & Saran untuk fasilitas tempat..."></textarea>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="rating-stars" id="venue-stars">
+                                <i class="fa-solid fa-star" onclick="rateVenue(1)"></i>
+                                <i class="fa-solid fa-star" onclick="rateVenue(2)"></i>
+                                <i class="fa-solid fa-star" onclick="rateVenue(3)"></i>
+                                <i class="fa-solid fa-star" onclick="rateVenue(4)"></i>
+                                <i class="fa-solid fa-star" onclick="rateVenue(5)"></i>
+                            </div>
+                            <button onclick="submitVenueFeedback()" class="btn-small">Kirim</button>
                         </div>
-                        <button onclick="submitVenueFeedback()" style="background:#333; color:white; border:1px solid #555; padding:8px 15px; border-radius:20px;">Kirim</button>
+                    </div>
+                </div>
+
+                <!-- KANAN: PERFORMER INFO -->
+                <div class="right-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3 style="margin:0; color:var(--primary);">🎤 Live Now</h3>
+                        <span class="pulse-live">LIVE</span>
+                    </div>
+                    
+                    <!-- 3 Performer Bergantian -->
+                    <div class="mini-lineup">
+                        <div class="ml-item active">
+                            <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=50">
+                            <div><b>Rina Violin</b><br><small>19.00 - 20.00</small></div>
+                        </div>
+                        <div class="ml-item">
+                            <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=50">
+                            <div><b>Acoustic Boys</b><br><small>20.00 - 21.00</small></div>
+                        </div>
+                        <div class="ml-item">
+                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=50">
+                            <div><b>Keroncong</b><br><small>21.00 - Selesai</small></div>
+                        </div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px dashed #444; margin:15px 0;">
+                    
+                    <h4>🎵 Request Lagu</h4>
+                    <input type="text" id="req-song" class="input-request" placeholder="Judul Lagu...">
+                    <button class="btn-kirim" onclick="alert('Request Terkirim!')">Kirim Request</button>
+
+                    <div style="margin-top:15px; background:white; padding:10px; border-radius:8px; display:inline-block;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=SMIPRO" style="width:80px;">
+                        <p style="color:black; margin:0; font-size:0.7rem; font-weight:bold;">Sawer QRIS</p>
                     </div>
                 </div>
             </div>
 
-            <!-- KANAN: PERFORMER -->
-            <div class="right-panel">
-                <h3 style="margin-top:0; color:var(--primary);">🎤 Live Performer</h3>
-                <img src="" id="p-img-detail" class="p-img-large">
-                <h2 id="p-name-detail" style="margin:0; font-size:1.4rem;">Nama Artis</h2>
-                <p id="p-genre-detail" style="color:var(--accent);">Genre</p>
-                
-                <hr style="border:0; border-top:1px dashed #444; margin:20px 0;">
-                
-                <h4>🎵 Request Lagu</h4>
-                <input type="text" id="req-name" class="input-request" placeholder="Nama Kamu...">
-                <input type="text" id="req-song" class="input-request" placeholder="Judul Lagu...">
-                <button class="btn-kirim" onclick="alert('Request Terkirim!')">Kirim Request</button>
-
-                <div class="qr-wrapper">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SMIPRO" style="width:120px;">
-                    <p style="color:black; font-weight:bold; margin:0;">Scan Sawer</p>
+            <!-- BAGIAN BAWAH: GRID WARUNG & BOOKING -->
+            <div style="margin-top:40px;">
+                <div class="section-title"><i class="fa-solid fa-utensils"></i> Pilih Warung & Booking Meja</div>
+                <div id="warung-grid" class="warung-grid">
+                    <!-- JS Render Here -->
                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- === HALAMAN ADMIN (MITRA WARUNG) === -->
+    <div id="page-admin-login" class="page">
+        <div class="container" style="max-width:400px; margin-top:50px; text-align:center;">
+            <h2>Login Mitra Warung</h2>
+            <p>Masuk untuk mengatur ketersediaan meja.</p>
+            <select id="admin-select" class="input-request" style="background:#222;">
+                <!-- JS Render -->
+            </select>
+            <button class="btn-dukung" onclick="adminLogin()" style="width:100%;">Masuk Dashboard</button>
+            <br><br>
+            <a href="#" onclick="showPage('home')" style="color:#888;">Kembali ke Home</a>
+        </div>
+    </div>
+
+    <div id="page-admin-dashboard" class="page">
+        <div class="sticky-header" style="background:#1a0000;">
+            <button class="back-btn-simple" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+            <h3 id="admin-title-text" style="margin:0;">Dashboard Warung</h3>
+        </div>
+        <div class="container">
+            <div class="stats-box">
+                <div class="stat">
+                    <h1 id="stat-empty" style="color:var(--primary);">0</h1>
+                    <p>Meja Kosong</p>
+                </div>
+                <div class="stat">
+                    <h1 id="stat-booked" style="color:#aaa;">0</h1>
+                    <p>Terisi</p>
+                </div>
+            </div>
+            <h4>Daftar Tamu Booking:</h4>
+            <div id="booking-list-admin">
+                <!-- JS Render -->
             </div>
         </div>
     </div>
 
-    <!-- === MODAL PELATIHAN === -->
+    <!-- MODAL PELATIHAN -->
     <div id="training-modal" class="modal-overlay" style="background:#111;">
         <button class="back-btn-simple" style="margin:20px;" onclick="closeModal('training-modal')"><i class="fa-solid fa-arrow-left"></i> Tutup</button>
         <div style="text-align:center; padding-top:20px;">
@@ -157,14 +240,21 @@
         </div>
     </div>
 
-    <!-- NAV BOTTOM -->
-    <nav class="bottom-nav">
-        <div class="active" style="flex:1; text-align:center;"><div class="nav-icon"><i class="fa-solid fa-house"></i></div><div class="nav-text">Home</div></div>
-        <div style="flex:1; text-align:center;"><div class="nav-icon"><i class="fa-solid fa-video"></i></div><div class="nav-text">Live</div></div>
-        <div style="flex:1; text-align:center;"><div class="nav-icon"><i class="fa-solid fa-user"></i></div><div class="nav-text">Akun</div></div>
-    </nav>
+    <!-- MODAL BOOKING FORM -->
+    <div id="booking-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Booking Meja</h3>
+            <p id="modal-warung-name" style="color:var(--accent);">Nama Warung</p>
+            <input type="text" id="book-name" class="input-request" placeholder="Nama Pemesan">
+            <input type="number" id="book-qty" class="input-request" placeholder="Jumlah Meja (1-5)" value="1">
+            <div style="display:flex; gap:10px;">
+                <button class="btn-small" style="background:#444;" onclick="closeModal('booking-modal')">Batal</button>
+                <button class="btn-small" style="background:var(--primary);" onclick="confirmBooking()">Booking</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- Link ke File JS Kita -->
+    <!-- JS -->
     <script src="script.js"></script>
 </body>
 </html>
