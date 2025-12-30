@@ -26,8 +26,7 @@
 
         /* LOGO STYLE */
         .register-logo {
-            width: 100px;
-            margin-bottom: 10px;
+            width: 100px; margin-bottom: 10px;
             filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
         }
 
@@ -66,15 +65,19 @@
                 <p>Silakan pilih peran Anda:</p>
             </div>
             <div class="role-grid">
+                <!-- Mitra -->
                 <div class="role-btn" onclick="pindahKe('login')">
                     <i class="fa-solid fa-store"></i><span>Mitra Warung</span>
                 </div>
-                <div class="role-btn" onclick="alert('Menu Performer Segera Hadir')">
+                <!-- Performer -->
+                <div class="role-btn" onclick="pindahKe('login-performer')">
                     <i class="fa-solid fa-guitar"></i><span>Performer</span>
                 </div>
+                <!-- Mentor -->
                 <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')">
                     <i class="fa-solid fa-graduation-cap"></i><span>Mentor</span>
                 </div>
+                <!-- Admin -->
                 <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')">
                     <i class="fa-solid fa-user-shield"></i><span>Admin</span>
                 </div>
@@ -100,14 +103,14 @@
                 <input type="password" class="form-input" placeholder="******">
             </div>
             
-            <button class="btn-primary" onclick="aksiLogin()">MASUK DASHBOARD</button>
+            <button class="btn-primary" onclick="aksiLogin()" style="background:var(--primary); width:100%; padding:10px; border:none; color:white; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK DASHBOARD</button>
 
             <div class="switch-link">
                 Belum punya akun? <span onclick="pindahKe('register')">Daftar Sekarang</span>
             </div>
         </div>
 
-         <!-- LOGIN PERFORMER (TANPA PASSWORD) -->
+        <!-- === 3. TAMPILAN LOGIN PERFORMER (Tanpa Password) === -->
         <div id="view-login-performer" class="section-view" style="display:none;">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
@@ -126,10 +129,10 @@
                 <input type="text" id="perf-id" class="form-input" placeholder="Contoh: SMIPRO-001">
             </div>
 
-            <button class="btn-primary" onclick="loginPerformer()" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
+            <button class="btn-primary" onclick="aksiLoginPerformer()" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
         </div>
 
-        <!-- === 3. TAMPILAN REGISTER MITRA (LENGKAP + LOGO) === -->
+        <!-- === 4. TAMPILAN REGISTER MITRA === -->
         <div id="view-register" class="section-view" style="display:none;">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('login')"><i class="fa-solid fa-arrow-left"></i></button>
@@ -179,7 +182,7 @@
                 <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
             </div>
 
-            <button class="btn-primary" onclick="aksiDaftar()" style="background:var(--green);">DAFTAR SEKARANG</button>
+            <button class="btn-primary" onclick="aksiDaftar()" style="background:var(--green); width:100%; padding:10px; border:none; color:white; border-radius:5px; cursor:pointer;">DAFTAR SEKARANG</button>
 
             <div class="switch-link">
                 Sudah punya akun? <span onclick="pindahKe('login')">Login Disini</span>
@@ -194,6 +197,7 @@
             // Sembunyikan semua
             document.getElementById('view-menu').style.display = 'none';
             document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-login-performer').style.display = 'none';
             document.getElementById('view-register').style.display = 'none';
 
             // Tampilkan tujuan
@@ -201,29 +205,29 @@
                 document.getElementById('view-menu').style.display = 'block';
             } else if (tujuan === 'login') {
                 document.getElementById('view-login').style.display = 'block';
+            } else if (tujuan === 'login-performer') {
+                document.getElementById('view-login-performer').style.display = 'block';
             } else if (tujuan === 'register') {
                 document.getElementById('view-register').style.display = 'block';
             }
         }
 
-        // --- 2. LOGIKA LOGIN ---
+        // --- 2. LOGIKA LOGIN MITRA ---
         function aksiLogin() {
             // Langsung masuk ke dashboard mitra
             window.location.href = 'mitra-dashboard.html';
         }
- function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabId).style.display = 'block';
-            event.currentTarget.classList.add('active');
+
+        // --- 3. LOGIKA LOGIN PERFORMER ---
+        function aksiLoginPerformer() {
+            const id = document.getElementById('perf-id').value;
+            if(!id) return alert("Mohon isi ID atau Email Anda!");
+            
+            // Langsung masuk ke dashboard performer
+            window.location.href = 'performer-dashboard.html';
         }
 
-        function openModalDoc(title) {
-            document.getElementById('doc-title').innerText = "Preview: " + title;
-            document.getElementById('modal-doc').style.display = 'flex';
-        }
-   
-        // --- 3. LOGIKA REGISTER (Validasi) ---
+        // --- 4. LOGIKA REGISTER (Validasi) ---
         function aksiDaftar() {
             const lokasi = document.getElementById('reg-location').value;
             const owner = document.getElementById('reg-owner').value;
