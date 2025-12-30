@@ -1,4 +1,4 @@
-/* GLOBAL STYLE - style.css */
+/* GLOBAL STYLE */
 :root {
     --primary: #E50914; 
     --accent: #FFD700; 
@@ -17,15 +17,53 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 .logo { font-weight: 800; color: var(--primary); font-size: 1.2rem; text-decoration: none; }
 .menu a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.9rem; }
 
+/* HERO & NARASI */
+.hero { padding: 40px 20px; background: url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1000') center/cover; position: relative; }
+.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(18,18,18,0.5), var(--bg-dark)); }
+.hero-content { position: relative; z-index: 2; max-width: 800px; margin: 0 auto; }
+.brand-badge { background: var(--primary); padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; display: inline-block; }
+.prolog-box { border-left: 3px solid var(--accent); padding-left: 15px; margin-top: 15px; font-style: italic; color: #ddd; line-height: 1.5; font-size: 0.95rem; }
+
 /* LAYOUT */
 .container { max-width: 800px; margin: 0 auto; padding: 20px; }
 .section-title { color: var(--accent); margin: 30px 0 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
 
-/* BUTTONS */
-.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
-.btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+/* VENUE CARDS */
+.venue-card { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; text-decoration: none; color: white; transition: all 0.3s ease; }
+.venue-card:hover { border-color: var(--primary); transform: translateY(-3px); background: #252525; }
+.venue-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+.venue-card.disabled:hover { transform: none; border-color: #333; }
+.icon-box { font-size: 1.5rem; color: #555; width: 40px; text-align: center; }
+.venue-card:not(.disabled) .icon-box { color: var(--primary); }
+
+/* PERFORMER (HOVER ADDED) */
+.performer-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0 20px 0; }
+.artist-card { min-width: 130px; background: #222; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid #333; transition: all 0.3s ease; }
+.artist-card:hover { transform: scale(1.05); border-color: var(--accent); background: #2a2a2a; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+.artist-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; transition: 0.3s; }
+.artist-card:hover .artist-img { border-color: white; }
+
+/* TRAINING BANNER (HOVER ADDED) */
+.training-banner { margin-top: 30px; background: linear-gradient(to right, #2c3e50, #000000); padding: 20px; border-radius: 15px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.3s ease; }
+.training-banner:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+/* SUPPORT SECTION */
+.support-section { background: #151515; border-radius: 15px; padding: 30px; text-align: center; margin-top: 40px; border: 1px dashed #333; }
+.btn-dukung { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 10px 25px; border-radius: 25px; margin-top: 20px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+.btn-dukung:hover { background: var(--primary); color: white; }
+
+.social-icons { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+.social-icons a { width: 45px; height: 45px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; transition: 0.3s; text-decoration: none; }
+.social-icons a:hover { transform: scale(1.1); background: white; }
+
+/* NEWS */
+.news-card { display: flex; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; align-items: center; border: 1px solid #333; transition: 0.3s; }
+.news-card:hover { border-color: #555; background: #222; }
+.news-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
 
 /* UTILS */
 .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 5px; }
 .badge.active { background: #00ff00; color: black; font-weight: bold; }
 .badge.soon { background: #444; color: #aaa; }
+.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
+.btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
