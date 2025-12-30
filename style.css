@@ -185,3 +185,24 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
         font-size: 1rem;
     }
 }
+/* --- PERBAIKAN UKURAN LOGO --- */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logo-img {
+    width: 50px;       /* Kunci: Memaksa lebar jadi 50 pixel */
+    height: 50px;      /* Kunci: Memaksa tinggi jadi 50 pixel */
+    border-radius: 50%; /* Membuat lingkaran (hapus baris ini jika logo ingin kotak) */
+    object-fit: cover;
+    border: 2px solid var(--primary);
+}
+
+.logo-text {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 1.2rem;
+}
