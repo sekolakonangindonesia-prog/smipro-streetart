@@ -19,10 +19,10 @@
         }
         .mitra-profile-pic {
             width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary);
-            position: absolute; bottom: -40px; left: 20px; object-fit: cover; background: #000;
+            position: absolute; bottom: -40px; left: 20px; object-fit: cover; background: #000; cursor: pointer;
         }
         .mitra-controls {
-            padding: 50px 20px 20px 20px;
+            padding: 50px 20px 10px 20px;
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid #333;
         }
@@ -37,80 +37,142 @@
         .indicator { width: 10px; height: 10px; border-radius: 50%; background: red; }
         .shop-switch.open .indicator { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
 
-        /* STATISTIK MEJA */
-        .stat-card-mitra {
-            background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #333; position: relative;
+        /* NAVIGASI TAB DASHBOARD */
+        .mitra-tabs {
+            display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 20px;
         }
-        .edit-icon {
-            position: absolute; top: 10px; right: 10px; color: #888; cursor: pointer; font-size: 0.9rem;
+        .tab-btn {
+            flex: 1; padding: 15px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent;
         }
-        .edit-icon:hover { color: var(--accent); }
+        .tab-btn.active { color: white; border-bottom-color: var(--primary); }
 
-        /* KARTU BOOKING (Grid) */
-        .booking-cards-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;
-        }
-        
-        /* STATE 1: MENUNGGU SCAN (KUNING) */
-        .card-booking.waiting {
-            background: #332b00; border-left: 5px solid #ffeb3b; padding: 15px; border-radius: 8px;
-        }
+        /* KONTEN TAB */
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+
+        /* CARD STATISTIK */
+        .stat-card-mitra { background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #333; position: relative; }
+        .edit-icon { position: absolute; top: 10px; right: 10px; color: #888; cursor: pointer; font-size: 0.9rem; }
+
+        /* BOOKING CARDS */
+        .booking-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px; }
+        .card-booking.waiting { background: #332b00; border-left: 5px solid #ffeb3b; padding: 15px; border-radius: 8px; }
+        .card-booking.active { background: #2a0000; border-left: 5px solid red; padding: 15px; border-radius: 8px; }
         .waiting-text { color: #ffeb3b; font-size: 0.8rem; margin-top: 10px; font-style: italic; }
-
-        /* STATE 2: AKTIF / MAKAN (MERAH) */
-        .card-booking.active {
-            background: #2a0000; border-left: 5px solid red; padding: 15px; border-radius: 8px;
-        }
         .active-text { color: red; font-weight: bold; font-size: 0.8rem; margin-top: 10px; }
-
         .table-badge { font-size: 1.2rem; font-weight: bold; color: white; display: block; margin-bottom: 5px; }
+
+        /* MENU LIST STYLE */
+        .menu-item { display: flex; gap: 15px; background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; align-items: center; border: 1px solid #333; }
+        .menu-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
+        .btn-delete { background: #333; color: #ff4444; border: 1px solid #555; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+        /* PROFIL FORM */
+        .profile-form label { display: block; color: #aaa; margin-top: 15px; font-size: 0.9rem; }
+        .input-mitra { width: 100%; background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. BANNER FOTO LEBAR -->
+    <!-- 1. HEADER & BANNER -->
     <div class="mitra-header-bg">
         <div class="mitra-header-overlay"></div>
-        <img src="https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200" class="mitra-profile-pic">
+        <!-- Klik foto untuk ganti (Simulasi) -->
+        <img src="https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200" class="mitra-profile-pic" onclick="alert('Fitur Ganti Foto Profil Warung')">
         <button onclick="location.href='index.html'" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.6); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Logout</button>
     </div>
 
-    <!-- 2. KONTROL UTAMA (Nama & Switch) -->
     <div class="mitra-controls">
         <div>
-            <h2 style="margin:0;">Warung Bu Sri</h2>
+            <h2 style="margin:0;" id="shop-name-display">Warung Bu Sri</h2>
             <small style="color:#aaa;">Stadion Bayuangga Zone</small>
         </div>
-        <!-- TOMBOL BUKA TUTUP -->
+        <!-- SWITCH BUKA TUTUP -->
         <div class="shop-switch open" id="store-status-btn" onclick="toggleStoreStatus()">
             <div class="indicator"></div>
             <span id="store-status-text" style="font-weight:bold; font-size:0.9rem;">BUKA</span>
         </div>
     </div>
 
+    <!-- 2. TAB NAVIGASI (MENU UTAMA) -->
+    <div class="mitra-tabs">
+        <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> Beranda</button>
+        <button class="tab-btn" onclick="switchTab('menu')"><i class="fa-solid fa-utensils"></i> Menu</button>
+        <button class="tab-btn" onclick="switchTab('profile')"><i class="fa-solid fa-gear"></i> Profil</button>
+    </div>
+
     <div class="container">
         
-        <!-- 3. MANAJEMEN MEJA (Edit Kecil) -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:30px;">
-            <div class="stat-card-mitra">
-                <!-- Tombol Edit -->
-                <i class="fa-solid fa-pen edit-icon" onclick="editTableCount()"></i>
-                <h1 id="total-table-count" style="margin:0; color:var(--primary);">15</h1>
-                <small>Total Meja Terdaftar</small>
+        <!-- === TAB 1: BERANDA (BOOKING & MEJA) === -->
+        <div id="tab-home" class="tab-content active">
+            <!-- Statistik Meja -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:30px;">
+                <div class="stat-card-mitra">
+                    <i class="fa-solid fa-pen edit-icon" onclick="editTableCount()"></i>
+                    <h1 id="total-table-count" style="margin:0; color:var(--primary);">15</h1>
+                    <small>Total Meja</small>
+                </div>
+                <div class="stat-card-mitra">
+                    <h1 id="occupied-count" style="margin:0; color:white;">0</h1>
+                    <small>Meja Terisi</small>
+                </div>
             </div>
-            <div class="stat-card-mitra">
-                <h1 id="occupied-count" style="margin:0; color:white;">2</h1>
-                <small>Meja Terisi Saat Ini</small>
+
+            <!-- Kartu Booking -->
+            <div class="section-title"><i class="fa-solid fa-list-check"></i> Pesanan Masuk</div>
+            <div id="booking-container" class="booking-cards-grid">
+                <!-- JS Render -->
             </div>
         </div>
 
-        <!-- 4. DAFTAR BOOKING AKTIF (KARTU) -->
-        <div class="section-title"><i class="fa-solid fa-list-check"></i> Daftar Pesanan Meja</div>
-        
-        <div id="booking-container" class="booking-cards-grid">
-            <!-- Disini JS akan merender kartu KUNING atau MERAH -->
+        <!-- === TAB 2: KELOLA MENU === -->
+        <div id="tab-menu" class="tab-content">
+            <button class="btn-primary" onclick="openModalMenu()" style="margin-bottom:20px;">
+                <i class="fa-solid fa-plus"></i> Tambah Menu Baru
+            </button>
+
+            <div id="menu-list-container">
+                <!-- JS Render Menu -->
+            </div>
         </div>
 
+        <!-- === TAB 3: PROFIL WARUNG === -->
+        <div id="tab-profile" class="tab-content">
+            <div class="profile-form" style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
+                <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Edit Informasi Warung</h3>
+                
+                <label>Nama Warung</label>
+                <input type="text" id="edit-name" class="input-mitra" value="Warung Bu Sri">
+
+                <label>Nomor HP / WhatsApp</label>
+                <input type="text" id="edit-phone" class="input-mitra" value="08123456789">
+
+                <label>Password Login</label>
+                <input type="password" id="edit-pass" class="input-mitra" value="123456">
+
+                <button class="btn-primary" onclick="saveProfile()" style="margin-top:20px;">SIMPAN PERUBAHAN</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL TAMBAH MENU -->
+    <div id="modal-menu" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>Tambah Menu</h3>
+            <input type="text" id="new-menu-name" class="input-mitra" placeholder="Nama Makanan">
+            <input type="number" id="new-menu-price" class="input-mitra" placeholder="Harga (Rp)">
+            <textarea id="new-menu-desc" class="input-mitra" placeholder="Deskripsi singkat" style="height:60px;"></textarea>
+            
+            <div style="margin-top:10px; padding:10px; border:1px dashed #555; text-align:center; border-radius:5px; cursor:pointer;" onclick="alert('Buka Galeri HP')">
+                <i class="fa-solid fa-camera"></i> Upload Foto
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-small" style="background:#444;" onclick="closeModalMenu()">Batal</button>
+                <button class="btn-small" style="background:var(--primary);" onclick="addMenu()">Simpan</button>
+            </div>
+        </div>
     </div>
 
     <script src="mitra-script.js"></script>
