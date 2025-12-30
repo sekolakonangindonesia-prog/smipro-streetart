@@ -6,7 +6,6 @@
     --bg-card: #1E1E1E;
     --text-white: #ffffff;
     --text-muted: #b3b3b3;
-    --green: #2ecc71;
 }
 
 * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -14,7 +13,6 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 
 /* NAV */
 .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
-.logo { font-weight: 800; color: var(--primary); font-size: 1.2rem; text-decoration: none; }
 .menu a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.9rem; }
 
 /* HERO & NARASI */
@@ -24,30 +22,77 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 .brand-badge { background: var(--primary); padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; display: inline-block; }
 .prolog-box { border-left: 3px solid var(--accent); padding-left: 15px; margin-top: 15px; font-style: italic; color: #ddd; line-height: 1.5; font-size: 0.95rem; }
 
-/* LAYOUT */
 .container { max-width: 800px; margin: 0 auto; padding: 20px; }
 .section-title { color: var(--accent); margin: 30px 0 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
 
-/* VENUE CARDS */
+/* === JADWAL BARU (Single Box) === */
+.schedule-card-single {
+    background: #1a1a1a;
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.2);
+}
+.schedule-date {
+    background: #000;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    min-width: 80px;
+    border: 1px solid #333;
+}
+.schedule-date .day { display: block; color: var(--accent); font-weight: bold; font-size: 0.9rem; }
+.schedule-date .date { display: block; color: white; font-weight: 800; font-size: 1.1rem; margin-top: 5px; line-height: 1.2; }
+
+.schedule-lineup h4 { margin: 0 0 10px 0; color: white; font-size: 1rem; }
+.schedule-lineup ul { margin: 0; padding-left: 20px; color: #ccc; font-size: 0.9rem; }
+.schedule-lineup li { margin-bottom: 5px; }
+
+/* LIST ANGKRINGAN */
 .venue-card { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; text-decoration: none; color: white; transition: all 0.3s ease; }
 .venue-card:hover { border-color: var(--primary); transform: translateY(-3px); background: #252525; }
 .venue-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
-.venue-card.disabled:hover { transform: none; border-color: #333; }
 .icon-box { font-size: 1.5rem; color: #555; width: 40px; text-align: center; }
 .venue-card:not(.disabled) .icon-box { color: var(--primary); }
 
-/* PERFORMER (HOVER ADDED) */
-.performer-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0 20px 0; }
-.artist-card { min-width: 130px; background: #222; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid #333; transition: all 0.3s ease; }
-.artist-card:hover { transform: scale(1.05); border-color: var(--accent); background: #2a2a2a; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-.artist-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; transition: 0.3s; }
-.artist-card:hover .artist-img { border-color: white; }
+/* === PERFORMER GRID (TURUN KE BAWAH) === */
+.performer-grid {
+    display: grid;
+    /* Ini kuncinya: 3 kolom di HP, otomatis menyesuaikan */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 15px;
+    margin-top: 15px;
+}
+/* Jika layar sangat kecil, jadi 2 kolom */
+@media (max-width: 400px) {
+    .performer-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
-/* TRAINING BANNER (HOVER ADDED) */
+.artist-card { 
+    background: #222; 
+    padding: 15px; 
+    border-radius: 12px; 
+    text-align: center; 
+    cursor: pointer; 
+    border: 1px solid #333; 
+    transition: all 0.3s ease;
+    /* Supaya rapi tingginya sama */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.artist-card:hover { transform: scale(1.05); border-color: var(--accent); background: #2a2a2a; }
+.artist-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; }
+
+/* PELATIHAN & SOSMED */
 .training-banner { margin-top: 30px; background: linear-gradient(to right, #2c3e50, #000000); padding: 20px; border-radius: 15px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.3s ease; }
-.training-banner:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+.training-banner:hover { transform: translateY(-5px); border-color: var(--accent); }
 
-/* SUPPORT SECTION */
 .support-section { background: #151515; border-radius: 15px; padding: 30px; text-align: center; margin-top: 40px; border: 1px dashed #333; }
 .btn-dukung { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 10px 25px; border-radius: 25px; margin-top: 20px; cursor: pointer; transition: 0.3s; font-weight: bold; }
 .btn-dukung:hover { background: var(--primary); color: white; }
@@ -56,14 +101,10 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 .social-icons a { width: 45px; height: 45px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; transition: 0.3s; text-decoration: none; }
 .social-icons a:hover { transform: scale(1.1); background: white; }
 
-/* NEWS */
-.news-card { display: flex; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; align-items: center; border: 1px solid #333; transition: 0.3s; }
-.news-card:hover { border-color: #555; background: #222; }
+.news-card { display: flex; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; align-items: center; border: 1px solid #333; }
 .news-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
 
 /* UTILS */
 .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 5px; }
 .badge.active { background: #00ff00; color: black; font-weight: bold; }
 .badge.soon { background: #444; color: #aaa; }
-.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
-.btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
