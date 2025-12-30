@@ -4,13 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMIPRO - Home</title>
+    <!-- Font Awesome untuk Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS Utama -->
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Sedikit CSS Tambahan Khusus Logo -->
+    <style>
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary);
+        }
+        .logo-text {
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+    </style>
 </head>
 <body>
+
     <!-- NAVBAR -->
     <nav class="top-nav">
-        <a href="index.html" class="logo">SMIPRO</a>
+        <!-- BAGIAN LOGO -->
+        <a href="index.html" class="logo-container">
+            <!-- Ganti link gambar di bawah ini dengan link logo aslimu nanti -->
+            <img src="https://via.placeholder.com/50x50/E50914/FFFFFF?text=S" alt="Logo SMIPRO" class="logo-img">
+            <span class="logo-text">SMIPRO</span>
+        </a>
+
         <div class="menu">
             <a href="venue-stadion.html"><i class="fa-solid fa-store"></i> Mitra</a>
         </div>
@@ -20,7 +51,8 @@
     <header class="hero">
         <div class="hero-content">
             <span class="brand-badge">LIVE 2025</span>
-            <h1 style="margin:10px 0;">SMIPRO</h1>
+            <h1 style="margin:10px 0;">SMIPRO STREET ART</h1>
+            
             <!-- NARASI / PROLOG -->
             <div class="prolog-box">
                 "Dari jalanan untuk masa depan. Kami percaya bahwa secangkir kopi dan alunan musik adalah jembatan persaudaraan. Platform ini hadir untuk memuliakan seniman lokal, mendigitalkan pedagang kecil, dan memberikan Anda pengalaman nongkrong yang nyaman, pasti, dan berbudaya."
@@ -30,10 +62,10 @@
 
     <div class="container">
         
-        <!-- 1. LIST ANGKRINGAN -->
+        <!-- 1. LIST 5 ANGKRINGAN -->
         <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
         
-        <!-- Stadion (AKTIF) -->
+        <!-- Stadion (AKTIF) - Mengarah ke venue-stadion.html -->
         <a href="venue-stadion.html" class="venue-card">
             <div class="icon-box"><i class="fa-solid fa-door-open"></i></div>
             <div style="flex:1;">
@@ -43,25 +75,25 @@
             <i class="fa-solid fa-chevron-right"></i>
         </a>
 
-        <!-- Lainnya (Non-Aktif) -->
-        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+        <!-- Lainnya (Non-Aktif / Alert) -->
+        <div class="venue-card disabled" onclick="alert('Mohon maaf, lokasi Alun-Alun segera hadir!')">
             <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
             <div><h3 style="margin:0;">Alun-Alun Kota <span class="badge soon">SOON</span></h3></div>
         </div>
-        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+        <div class="venue-card disabled" onclick="alert('Mohon maaf, lokasi Benteng segera hadir!')">
             <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
             <div><h3 style="margin:0;">Benteng Mayangan <span class="badge soon">SOON</span></h3></div>
         </div>
-        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+        <div class="venue-card disabled" onclick="alert('Mohon maaf, lokasi Museum segera hadir!')">
             <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
             <div><h3 style="margin:0;">Museum Probolinggo <span class="badge soon">SOON</span></h3></div>
         </div>
-        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+        <div class="venue-card disabled" onclick="alert('Mohon maaf, lokasi BJBR segera hadir!')">
             <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
             <div><h3 style="margin:0;">BJBR Mangrove <span class="badge soon">SOON</span></h3></div>
         </div>
 
-        <!-- 2. TOP 5 PERFORMER (HOVER EFFECT) -->
+        <!-- 2. TOP 5 PERFORMER (Scroll Samping) -->
         <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Klik Profil)</div>
         <div class="performer-scroll">
             <div class="artist-card" onclick="location.href='profile.html?id=1'">
@@ -86,7 +118,7 @@
             </div>
         </div>
 
-        <!-- 3. PELATIHAN (HOVER EFFECT) -->
+        <!-- 3. PELATIHAN ATTITUDE (Link ke training.html) -->
         <div class="training-banner" onclick="location.href='training.html'">
             <div>
                 <h3 style="margin:0;">Pelatihan Attitude</h3>
@@ -95,7 +127,7 @@
             <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color:var(--accent);"></i>
         </div>
 
-        <!-- 4. DUKUNG KAMI & SOSMED (SUDAH KEMBALI) -->
+        <!-- 4. DUKUNG KAMI & SOSMED -->
         <div class="support-section">
             <h3 style="margin:0; color:white;">Dukung Gerakan SMIPRO!</h3>
             <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
@@ -107,22 +139,33 @@
                 <a href="#" style="color:#1877F2;"><i class="fa-brands fa-facebook-f"></i></a>
             </div>
             
-            <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Pengembangan</button>
+            <button class="btn-dukung" onclick="alert('Terima kasih atas dukungan Anda!')">Donasi Pengembangan</button>
         </div>
 
-        <!-- 5. BERITA -->
+        <!-- 5. BERITA TERBARU -->
         <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
+        
         <div class="news-card">
             <img src="https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100" class="news-thumb">
             <div>
                 <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">EVENT</span>
-                <h4 style="margin:5px 0;">Festival Musik 2025 Segera Hadir</h4>
+                <h4 style="margin:5px 0;">Festival Musik Jalanan 2025 Segera Hadir</h4>
                 <p style="margin:0; font-size:0.7rem; color:#888;">2 jam yang lalu</p>
+            </div>
+        </div>
+
+        <div class="news-card">
+            <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=100" class="news-thumb">
+            <div>
+                <span style="color:var(--accent); font-size:0.7rem; font-weight:bold;">EDUKASI</span>
+                <h4 style="margin:5px 0;">50 Pengamen Lulus Sertifikasi Etika di SMIPRO</h4>
+                <p style="margin:0; font-size:0.7rem; color:#888;">1 hari yang lalu</p>
             </div>
         </div>
 
         <br><br>
         <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
     </div>
+
 </body>
 </html>
