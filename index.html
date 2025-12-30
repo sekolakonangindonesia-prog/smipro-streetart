@@ -172,8 +172,8 @@
                 if (isLoggedIn === 'true') {
                     // JIKA SUDAH LOGIN: Ubah tombol jadi "Dashboard Saya"
                     navArea.innerHTML = `
-                        <a href="mitra-dashboard.html" class="btn-mitra" style="background:var(--primary); color:white; border:none;">
-                            <i class="fa-solid fa-store"></i> ${userName} (Dashboard)
+                         <a href="mitra-dashboard.html" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:#E50914; font-weight:800; font-size:1rem;">
+                    <i class="fa-solid fa-store"></i> ${userName}
                         </a>
                     `;
                 } else {
