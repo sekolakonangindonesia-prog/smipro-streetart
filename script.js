@@ -299,3 +299,8 @@ function submitVenueFeedback() {
 window.onload = function() {
     renderDashboard();
 };
+
+function openScheduleModal() {
+    document.getElementById('schedule-modal').style.display = 'flex';
+}
+// Fungsi closeModal sudah ada di script sebelumnya, tidak perlu double.
