@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Artis - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <button onclick="location.href='index.html'" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+        <span>Profil Performer</span>
+    </nav>
+
+    <div class="container" style="text-align:center; padding-top:40px;">
+        <img id="p-img" src="" style="width:150px; height:150px; border-radius:50%; object-fit:cover; border:4px solid var(--primary); box-shadow: 0 0 20px rgba(229,9,20,0.5);">
+        
+        <h1 id="p-name" style="margin-bottom:5px;">Nama Artis</h1>
+        <p id="p-genre" style="color:var(--accent); margin-top:0;">Genre Musik</p>
+
+        <!-- STATUS PELATIHAN -->
+        <div style="background:#1a3320; color:#4ade80; display:inline-block; padding:8px 20px; border-radius:20px; border:1px solid #4ade80; margin:20px 0;">
+            <i class="fa-solid fa-circle-check"></i> LULUS PELATIHAN ATTITUDE
+        </div>
+
+        <div style="text-align:left; background:#222; padding:20px; border-radius:15px; margin-top:20px;">
+            <h3>Tentang Musisi</h3>
+            <p style="color:#aaa; line-height:1.6;">
+                Merupakan talenta lokal Probolinggo yang telah berkarya di jalanan selama lebih dari 3 tahun. 
+                Dikenal dengan keramahan dan interaksi yang sopan terhadap pengunjung.
+            </p>
+            <hr style="border-color:#444;">
+            <div style="display:flex; justify-content:space-around; font-size:1.5rem; margin-top:20px;">
+                <i class="fa-brands fa-instagram" style="color:#C13584;"></i>
+                <i class="fa-brands fa-youtube" style="color:red;"></i>
+                <i class="fa-brands fa-tiktok" style="color:#00f2ea;"></i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DATA ARTIS (Sama seperti di dashboard)
+        const artists = {
+            1: { name: "Rina Violin", genre: "Instrumental", img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=300" },
+            2: { name: "Acoustic Boys", genre: "Pop Jawa", img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=300" },
+            3: { name: "Rock Ballad", genre: "Classic Rock", img: "https://images.unsplash.com/photo-1526218626217-dc65b9d6e630?q=80&w=300" },
+            4: { name: "Siti Keroncong", genre: "Traditional Modern", img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=300" },
+            5: { name: "Solo Hudi", genre: "Fingerstyle", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300" }
+        };
+
+        // AMBIL ID DARI URL (Contoh: profile.html?id=1)
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        const data = artists[id];
+
+        if(data) {
+            document.getElementById('p-img').src = data.img;
+            document.getElementById('p-name').innerText = data.name;
+            document.getElementById('p-genre').innerText = data.genre;
+        } else {
+            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Data Artis Tidak Ditemukan</h2>";
+        }
+    </script>
+</body>
+</html>
