@@ -31,7 +31,7 @@
     <div class="container">
 
           <!-- === JADWAL UTAMA (HANYA MINGGU INI) === -->
-        <div class="main-schedule-card" onclick="openScheduleModal()">
+        <div class="main-schedule-card" onclick="location.href='schedule.html'">
             <div class="msc-date">
                 <span style="font-size:0.8rem; letter-spacing:2px;">SABTU</span>
                 <span style="font-size:2.5rem; font-weight:800; line-height:1;">03</span>
@@ -146,58 +146,4 @@
         <br><br>
         <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
     </div>
-    <!-- === MODAL DETAIL JADWAL & UPCOMING === -->
-    <div id="schedule-modal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 500px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0;">📅 Agenda Event SMIPRO</h3>
-                <button onclick="closeModal('schedule-modal')" style="background:none; border:none; color:white; font-size:1.2rem;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <!-- DETAIL MINGGU INI -->
-            <div style="background:#222; padding:15px; border-radius:10px; border:1px solid var(--primary); margin-bottom:20px;">
-                <h4 style="margin:0 0 10px 0; color:var(--accent);">Sabtu, 03 Januari (Minggu Ini)</h4>
-                <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: Stadion Bayuangga Zone</p>
-                
-                <!-- List Artis dengan Foto -->
-                <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
-                    <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=50" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                    <div><b>Rina Violin</b> <small style="color:#888;">(19.00 - 20.00)</small></div>
-                </div>
-                <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
-                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=50" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                    <div><b>Acoustic Boys</b> <small style="color:#888;">(20.00 - 21.00)</small></div>
-                </div>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <img src="https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=50" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                    <div><b>Keroncong Pro</b> <small style="color:#888;">(21.00 - Selesai)</small></div>
-                </div>
-            </div>
-
-            <!-- JADWAL 2 MINGGU KEDEPAN -->
-            <h4 style="margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">Jadwal Berikutnya (Upcoming)</h4>
-            
-            <div style="display:flex; gap:15px; margin-bottom:15px;">
-                <div style="background:#333; padding:10px; border-radius:8px; text-align:center; min-width:60px;">
-                    <b style="color:var(--primary); display:block;">10</b> JAN
-                </div>
-                <div>
-                    <b>Sabtu Depan</b>
-                    <p style="font-size:0.8rem; color:#aaa; margin:0;">Jazz Night: Jazz Trio & Solo Hudi</p>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:15px;">
-                <div style="background:#333; padding:10px; border-radius:8px; text-align:center; min-width:60px;">
-                    <b style="color:var(--primary); display:block;">17</b> JAN
-                </div>
-                <div>
-                    <b>2 Minggu Lagi</b>
-                    <p style="font-size:0.8rem; color:#aaa; margin:0;">Rock Legend: Rock Ballad Pro</p>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</body>
-</html>
+  
