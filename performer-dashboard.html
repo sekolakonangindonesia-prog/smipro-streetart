@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Performer - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* HEADER PROFIL */
+        .perf-header { height: 200px; background: linear-gradient(to bottom, #333, #121212); position: relative; display: flex; align-items: end; padding: 20px; }
+        .perf-pic { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 20px rgba(0,0,0,0.5); margin-right: 20px; border: 4px solid var(--accent); background:#000; }
+        .perf-info h1 { margin: 0; font-size: 1.8rem; color: white; }
+        .perf-info p { color: #ccc; margin: 5px 0; font-size:0.9rem; }
+        .verified-badge { background: #1a3320; color: #4ade80; padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #4ade80; margin-bottom:5px; }
+
+        /* GRID GALERI */
+        .track-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
+        .track-card { background: #181818; padding: 15px; border-radius: 8px; transition: 0.3s; cursor: pointer; border: 1px solid transparent; position: relative; }
+        .track-card:hover { background: #282828; border-color: #444; }
+        .track-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; margin-bottom: 10px; background: #333; }
+        .track-title { font-weight: bold; color: white; font-size: 0.9rem; margin-bottom: 5px; display: block; }
+        .track-type { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
+        .play-icon { position: absolute; bottom: 80px; right: 20px; background: var(--green); color: black; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+        .track-card:hover .play-icon { opacity: 1; bottom: 90px; }
+
+        /* LIST DOKUMEN */
+        .doc-item { display: flex; align-items: center; background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #444; }
+        .doc-icon { font-size: 2rem; color: var(--primary); margin-right: 15px; }
+        .btn-action-doc { background: #333; border: 1px solid #555; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; margin-left: 5px; font-size:0.8rem; }
+        .btn-action-doc:hover { background: var(--accent); color: black; border-color:var(--accent); }
+
+        /* ULASAN & MOTIVASI */
+        .rating-summary { background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); padding: 20px; border-radius: 15px; border: 1px solid var(--accent); text-align: center; margin-bottom: 20px; }
+        .rating-big { font-size: 3rem; font-weight: 800; color: var(--accent); line-height: 1; }
+        .review-card { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #444; }
+        .review-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
+        .review-text { font-style: italic; color: white; font-size: 0.95rem; }
+        
+        /* TABS */
+        .mitra-tabs { display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 15px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: white; border-bottom-color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <!-- 1. HEADER PROFIL -->
+    <div class="perf-header">
+        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=300" class="perf-pic">
+        <div class="perf-info">
+            <div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Certified Performer</div>
+            <h1>The Acoustic Boys</h1>
+            <p>ID: SMIPRO-024 • Pop Jawa & Koplo</p>
+        </div>
+        <button onclick="location.href='index.html'" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:none; padding:8px 15px; border-radius:20px; cursor:pointer;">Logout</button>
+    </div>
+
+    <!-- 2. TAB MENU -->
+    <div class="mitra-tabs">
+        <button class="tab-btn active" onclick="switchTab('galeri')">🎵 Galeri</button>
+        <button class="tab-btn" onclick="switchTab('dokumen')">📄 Dokumen</button>
+        <button class="tab-btn" onclick="switchTab('ulasan')">⭐ Ulasan</button>
+        <button class="tab-btn" onclick="switchTab('profil')">⚙️ Profil</button>
+    </div>
+
+    <div class="container">
+        
+        <!-- TAB 1: GALERI (AUDIO & VIDEO) -->
+        <div id="tab-galeri" class="tab-content active">
+            <h3 style="color:var(--accent); margin-top:0;">Rekaman Performance</h3>
+            <p style="color:#888; font-size:0.9rem; margin-top:-10px;">Review penampilanmu sendiri untuk evaluasi.</p>
+            
+            <div class="track-grid">
+                <div class="track-card" onclick="alert('Memutar Video...')">
+                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" class="track-img">
+                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                    <span class="track-title">Live di Stadion Bayuangga</span>
+                    <span class="track-type"><i class="fa-solid fa-video"></i> Video Full</span>
+                </div>
+                <div class="track-card" onclick="alert('Memutar Audio...')">
+                    <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200" class="track-img">
+                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                    <span class="track-title">Nemen (Cover Akustik)</span>
+                    <span class="track-type"><i class="fa-solid fa-music"></i> Audio MP3</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: DOKUMEN (VIEW & DOWNLOAD) -->
+        <div id="tab-dokumen" class="tab-content" style="display:none;">
+            <h3>Dokumen Legalitas</h3>
+            
+            <!-- Dokumen 1 -->
+            <div class="doc-item">
+                <i class="fa-solid fa-certificate doc-icon"></i>
+                <div style="flex:1;">
+                    <b>Sertifikat Lulus Bengkel</b><br>
+                    <small style="color:#aaa;">20 Des 2025</small>
+                </div>
+                <!-- Tombol View & Download -->
+                <button class="btn-action-doc" onclick="openModalDoc('Sertifikat')"><i class="fa-regular fa-eye"></i> Lihat</button>
+                <button class="btn-action-doc"><i class="fa-solid fa-download"></i> Unduh</button>
+            </div>
+
+            <!-- Dokumen 2 -->
+            <div class="doc-item" style="border-color:var(--primary);">
+                <i class="fa-solid fa-file-contract doc-icon"></i>
+                <div style="flex:1;">
+                    <b>MOU Kontrak Management</b><br>
+                    <small style="color:var(--primary);">AKTIF s/d Des 2026</small>
+                </div>
+                <button class="btn-action-doc" onclick="openModalDoc('MOU')"><i class="fa-regular fa-eye"></i> Lihat</button>
+                <button class="btn-action-doc"><i class="fa-solid fa-download"></i> Unduh</button>
+            </div>
+
+            <div style="background:#332b00; padding:15px; border-radius:10px; margin-top:20px; color:#ffeb3b; font-size:0.9rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <b>PERHATIAN:</b><br>
+                Sesuai MOU Pasal 3, dilarang tampil komersial di luar management tanpa izin.
+            </div>
+        </div>
+
+        <!-- TAB 3: ULASAN & MOTIVASI (Sesuai Request: Paling Bawah/Tab Sendiri) -->
+        <div id="tab-ulasan" class="tab-content" style="display:none;">
+            
+            <!-- Rapor Nilai -->
+            <div class="rating-summary">
+                <div class="rating-big">4.8</div>
+                <div style="color:gold; margin:5px 0;">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                </div>
+                <small style="color:#aaa;">Berdasarkan 128 Ulasan Penonton</small>
+                <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
+                <p style="color:white; font-style:italic; margin:0;">"Pertahankan kualitas vokal dan interaksi dengan penonton!" - Mentor</p>
+            </div>
+
+            <h3 style="margin-bottom:15px;">Komentar Terbaru (Motivasi)</h3>
+            
+            <div class="review-card">
+                <div class="review-header">
+                    <span><i class="fa-solid fa-user"></i> Budi Santoso</span>
+                    <span style="color:gold;">★ 5.0</span>
+                </div>
+                <div class="review-text">"Gokil suaranya! Lagu Nemen-nya bikin ambyar. Sukses terus mas!"</div>
+            </div>
+
+            <div class="review-card">
+                <div class="review-header">
+                    <span><i class="fa-solid fa-user"></i> Siti Aminah</span>
+                    <span style="color:gold;">★ 4.0</span>
+                </div>
+                <div class="review-text">"Interaksi sama penonton asik banget, cuma sound agak kecil dikit tadi."</div>
+            </div>
+
+            <div class="review-card">
+                <div class="review-header">
+                    <span><i class="fa-solid fa-user"></i> Anonim</span>
+                    <span style="color:gold;">★ 5.0</span>
+                </div>
+                <div class="review-text">"Band lokal rasa konser! Top markotop."</div>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: PROFIL SAYA -->
+        <div id="tab-profil" class="tab-content" style="display:none;">
+            <div style="background:#222; padding:20px; border-radius:10px;">
+                <h3>Edit Profil</h3>
+                <label style="color:#aaa; font-size:0.8rem;">Nama Panggung</label>
+                <input type="text" value="The Acoustic Boys" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;">
+                <label style="color:#aaa; font-size:0.8rem;">Bio Singkat</label>
+                <textarea style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;">Grup akustik asal Probolinggo.</textarea>
+                <button style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;" onclick="alert('Profil Disimpan!')">Simpan Perubahan</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL VIEW DOKUMEN -->
+    <div id="modal-doc" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; width:100%; max-width:500px; height:80vh; padding:20px; border-radius:10px; position:relative; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <h3 style="margin:0; color:black;" id="doc-title">Preview Dokumen</h3>
+                <button onclick="document.getElementById('modal-doc').style.display='none'" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div style="flex:1; background:#eee; display:flex; align-items:center; justify-content:center; border:1px solid #ccc;">
+                <p style="color:#555;">[Simulasi Tampilan PDF / Gambar Sertifikat]</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
+
+        function openModalDoc(title) {
+            document.getElementById('doc-title').innerText = "Preview: " + title;
+            document.getElementById('modal-doc').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
