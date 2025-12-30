@@ -120,3 +120,68 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 .badge.soon { background: #444; color: #aaa; }
 .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
 .btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+
+/* === MAIN SCHEDULE CARD (BANNER ATAS) === */
+.main-schedule-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+    border-radius: 12px;
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    margin-bottom: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.main-schedule-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(229, 9, 20, 0.2);
+}
+
+/* Bagian Kiri (Tanggal Merah) */
+.msc-date {
+    background: var(--primary);
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 90px;
+}
+
+/* Bagian Kanan (Info) */
+.msc-info {
+    padding: 15px 20px;
+    flex: 1;
+}
+
+.msc-badge {
+    background: #333;
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    border: 1px solid #555;
+}
+
+/* RESPONSIVE HP (Supaya tanggal disamping, teks disebelahnya, rapi) */
+@media (max-width: 480px) {
+    .main-schedule-card {
+        flex-direction: row; /* Tetap menyamping biar hemat tempat vertikal */
+    }
+    .msc-date {
+        padding: 10px 15px;
+        min-width: 80px;
+    }
+    .msc-info {
+        padding: 10px 15px;
+    }
+    .msc-info h3 {
+        font-size: 1rem;
+    }
+}
