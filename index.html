@@ -6,23 +6,9 @@
     <title>SMIPRO - Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* CSS KHUSUS DASHBOARD */
-        .hero { padding: 40px 20px; background: url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1000') center/cover; position: relative; }
-        .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(18,18,18,0.5), var(--bg-dark)); }
-        .hero-content { position: relative; z-index: 2; }
-        .prolog-box { border-left: 3px solid var(--accent); padding-left: 15px; margin-top: 15px; font-style: italic; color: #ddd; }
-
-        .venue-card { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; text-decoration: none; color: white; transition: 0.3s; }
-        .venue-card:hover { border-color: var(--primary); }
-        .venue-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
-
-        .performer-scroll { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px; }
-        .artist-card { min-width: 120px; background: #222; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; border: 1px solid #333; }
-        .artist-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; }
-    </style>
 </head>
 <body>
+    <!-- NAVBAR -->
     <nav class="top-nav">
         <a href="index.html" class="logo">SMIPRO</a>
         <div class="menu">
@@ -30,43 +16,53 @@
         </div>
     </nav>
 
+    <!-- HEADER + NARASI -->
     <header class="hero">
         <div class="hero-content">
-            <span style="background:var(--primary); padding:4px 10px; border-radius:15px; font-size:0.7rem; font-weight:bold;">LIVE 2025</span>
+            <span class="brand-badge">LIVE 2025</span>
             <h1 style="margin:10px 0;">SMIPRO</h1>
+            <!-- NARASI / PROLOG -->
             <div class="prolog-box">
-                "Dari jalanan untuk masa depan. Platform ini hadir untuk memuliakan seniman lokal dan mendigitalkan pedagang kecil."
+                "Dari jalanan untuk masa depan. Kami percaya bahwa secangkir kopi dan alunan musik adalah jembatan persaudaraan. Platform ini hadir untuk memuliakan seniman lokal, mendigitalkan pedagang kecil, dan memberikan Anda pengalaman nongkrong yang nyaman, pasti, dan berbudaya."
             </div>
         </div>
     </header>
 
     <div class="container">
-        <!-- 5 ANGKRINGAN -->
-        <div class="section-title">5 Angkringan Live</div>
         
-        <!-- 1. Stadion (AKTIF) -->
+        <!-- 1. LIST ANGKRINGAN -->
+        <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
+        
+        <!-- Stadion (AKTIF) -->
         <a href="venue-stadion.html" class="venue-card">
-            <i class="fa-solid fa-door-open" style="font-size:1.5rem; color:var(--primary);"></i>
-            <div>
+            <div class="icon-box"><i class="fa-solid fa-door-open"></i></div>
+            <div style="flex:1;">
                 <h3 style="margin:0;">Stadion Bayuangga Zone <span class="badge active">BUKA</span></h3>
-                <small style="color:#888;">Pusat Aktivitas Utama</small>
+                <small style="color:#888;">Pusat Kuliner & Seni Utama</small>
             </div>
             <i class="fa-solid fa-chevron-right"></i>
         </a>
 
-        <!-- 2-5. Lainnya (Non-Aktif) -->
-        <div class="venue-card disabled" onclick="alert('Segera Hadir!')">
-            <i class="fa-solid fa-lock" style="font-size:1.5rem;"></i>
+        <!-- Lainnya (Non-Aktif) -->
+        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+            <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
             <div><h3 style="margin:0;">Alun-Alun Kota <span class="badge soon">SOON</span></h3></div>
         </div>
-        <div class="venue-card disabled" onclick="alert('Segera Hadir!')">
-            <i class="fa-solid fa-lock" style="font-size:1.5rem;"></i>
+        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+            <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
             <div><h3 style="margin:0;">Benteng Mayangan <span class="badge soon">SOON</span></h3></div>
         </div>
-        <!-- Tambahkan sisa angkringan disini jika perlu -->
+        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+            <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
+            <div><h3 style="margin:0;">Museum Probolinggo <span class="badge soon">SOON</span></h3></div>
+        </div>
+        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+            <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
+            <div><h3 style="margin:0;">BJBR Mangrove <span class="badge soon">SOON</span></h3></div>
+        </div>
 
-        <!-- TOP 5 PERFORMER -->
-        <div class="section-title">Top 5 Performers (Klik Profil)</div>
+        <!-- 2. TOP 5 PERFORMER (HOVER EFFECT) -->
+        <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Klik Profil)</div>
         <div class="performer-scroll">
             <div class="artist-card" onclick="location.href='profile.html?id=1'">
                 <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=150" class="artist-img">
@@ -90,15 +86,43 @@
             </div>
         </div>
 
-        <!-- PELATIHAN -->
-        <div onclick="location.href='training.html'" style="margin-top:30px; background: linear-gradient(to right, #222, #000); padding:20px; border-radius:15px; border:1px solid #444; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+        <!-- 3. PELATIHAN (HOVER EFFECT) -->
+        <div class="training-banner" onclick="location.href='training.html'">
             <div>
                 <h3 style="margin:0;">Pelatihan Attitude</h3>
-                <small style="color:#aaa;">Lihat mentor & materi</small>
+                <small style="color:#ccc;">Klik untuk melihat Tim Pelatih</small>
             </div>
             <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color:var(--accent);"></i>
         </div>
 
+        <!-- 4. DUKUNG KAMI & SOSMED (SUDAH KEMBALI) -->
+        <div class="support-section">
+            <h3 style="margin:0; color:white;">Dukung Gerakan SMIPRO!</h3>
+            <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
+            
+            <div class="social-icons">
+                <a href="#" style="color:red;"><i class="fa-brands fa-youtube"></i></a>
+                <a href="#" style="color:#00f2ea;"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="#" style="color:#C13584;"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" style="color:#1877F2;"><i class="fa-brands fa-facebook-f"></i></a>
+            </div>
+            
+            <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Pengembangan</button>
+        </div>
+
+        <!-- 5. BERITA -->
+        <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
+        <div class="news-card">
+            <img src="https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100" class="news-thumb">
+            <div>
+                <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">EVENT</span>
+                <h4 style="margin:5px 0;">Festival Musik 2025 Segera Hadir</h4>
+                <p style="margin:0; font-size:0.7rem; color:#888;">2 jam yang lalu</p>
+            </div>
+        </div>
+
+        <br><br>
+        <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
     </div>
 </body>
 </html>
