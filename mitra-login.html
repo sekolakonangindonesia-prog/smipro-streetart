@@ -20,9 +20,16 @@
         }
         
         /* HEADER TAB */
-        .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .auth-header h2 { color: white; margin: 0; }
         .auth-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
+
+        /* LOGO STYLE */
+        .register-logo {
+            width: 100px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); /* Efek glow emas dikit */
+        }
 
         /* FORM STYLES */
         .form-group { text-align: left; margin-bottom: 15px; }
@@ -62,13 +69,16 @@
             <button class="btn-primary" onclick="loginAction()">MASUK DASHBOARD</button>
 
             <div class="switch-link">
-                Belum punya akun? <span onclick="showRegister()">Daftar Sekarang</span>
+                Belum punya akun? <span onclick="showSection('register')">Daftar Sekarang</span>
             </div>
         </div>
 
-        <!-- === BAGIAN REGISTER (Form Lengkap) === -->
+        <!-- === BAGIAN REGISTER (Form Lengkap + LOGO) === -->
         <div id="section-register" class="form-container" style="display:none;">
             <div class="auth-header">
+                <!-- LOGO DITAMBAHKAN DISINI -->
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo SMIPRO" class="register-logo">
+                
                 <h2>Daftar Mitra Baru</h2>
                 <p>Isi data untuk verifikasi admin</p>
             </div>
@@ -114,7 +124,7 @@
             <button class="btn-primary" onclick="registerAction()" style="background:var(--green);">DAFTAR SEKARANG</button>
 
             <div class="switch-link">
-                Sudah punya akun? <span onclick="showLogin()">Login Disini</span>
+                Sudah punya akun? <span onclick="showSection('login')">Login Disini</span>
             </div>
         </div>
 
@@ -123,19 +133,23 @@
     </div>
 
     <script>
-        // Logika Pindah Antara Login & Register
-        function showRegister() {
+        // Logika Pindah Antara Login & Register (SATU FUNGSI UTAMA)
+        function showSection(sectionName) {
+            // Sembunyikan keduanya dulu
             document.getElementById('section-login').style.display = 'none';
-            document.getElementById('section-register').style.display = 'block';
-        }
-
-        function showLogin() {
             document.getElementById('section-register').style.display = 'none';
-            document.getElementById('section-login').style.display = 'block';
+            
+            // Tampilkan yang diminta
+            if (sectionName === 'login') {
+                document.getElementById('section-login').style.display = 'block';
+            } else if (sectionName === 'register') {
+                document.getElementById('section-register').style.display = 'block';
+            }
         }
 
         // Logika Login (Simulasi)
         function loginAction() {
+            // Di sini nanti ada validasi username/password
             window.location.href = 'mitra-dashboard.html';
         }
 
@@ -161,8 +175,8 @@
             // 3. Simulasi Sukses
             alert(`Terima kasih ${owner}! Data ${warung} berhasil dikirim.\n\nLink verifikasi telah dikirim ke email: ${email}.\nSilakan cek inbox/spam untuk mengaktifkan akun.`);
             
-            // Kembalikan ke halaman login
-            showLogin();
+            // Kembalikan ke halaman login agar user bisa login setelah verifikasi (ceritanya)
+            showSection('login');
         }
     </script>
 </body>
