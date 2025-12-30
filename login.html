@@ -210,6 +210,11 @@
         }
 
         function aksiLogin() {
+           // SIMPAN STATUS LOGIN KE MEMORI BROWSER
+            localStorage.setItem('userLoggedIn', 'true');
+            localStorage.setItem('userName', 'Warung Bu Sri'); // Simulasi nama
+
+            // Langsung masuk ke dashboard mitra
             window.location.href = 'mitra-dashboard.html';
         }
 
