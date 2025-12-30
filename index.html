@@ -1,110 +1,151 @@
-/* GLOBAL STYLE */
-:root {
-    --primary: #E50914; 
-    --accent: #FFD700; 
-    --bg-dark: #121212;
-    --bg-card: #1E1E1E;
-    --text-white: #ffffff;
-    --text-muted: #b3b3b3;
-}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMIPRO - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- CSS Logo (Inline) -->
+    <style>
+        .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .logo-text { font-weight: 800; color: var(--primary); font-size: 1.2rem; }
+    </style>
+</head>
+<body>
 
-* { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: var(--text-white); padding-bottom: 60px; }
+    <!-- NAVBAR -->
+    <nav class="top-nav">
+        <a href="index.html" class="logo-container">
+            <!-- Ganti src ini dengan link logomu -->
+            <img src="https://via.placeholder.com/50x50/E50914/FFFFFF?text=S" alt="Logo" class="logo-img">
+            <span class="logo-text">SMIPRO</span>
+        </a>
+        <div class="menu">
+            <a href="venue-stadion.html"><i class="fa-solid fa-store"></i> Mitra</a>
+        </div>
+    </nav>
 
-/* NAV */
-.top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
-.menu a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.9rem; }
+    <!-- HEADER + NARASI -->
+    <header class="hero">
+        <div class="hero-content">
+            <span class="brand-badge">LIVE 2025</span>
+            <h1 style="margin:10px 0;">SMIPRO STREET ART</h1>
+            <div class="prolog-box">
+                "Dari jalanan untuk masa depan. Kami percaya bahwa secangkir kopi dan alunan musik adalah jembatan persaudaraan. Platform ini hadir untuk memuliakan seniman lokal, mendigitalkan pedagang kecil, dan memberikan Anda pengalaman nongkrong yang nyaman, pasti, dan berbudaya."
+            </div>
+        </div>
+    </header>
 
-/* HERO & NARASI */
-.hero { padding: 40px 20px; background: url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1000') center/cover; position: relative; }
-.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(18,18,18,0.5), var(--bg-dark)); }
-.hero-content { position: relative; z-index: 2; max-width: 800px; margin: 0 auto; }
-.brand-badge { background: var(--primary); padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; display: inline-block; }
-.prolog-box { border-left: 3px solid var(--accent); padding-left: 15px; margin-top: 15px; font-style: italic; color: #ddd; line-height: 1.5; font-size: 0.95rem; }
+    <div class="container">
+        
+        <!-- 1. JADWAL EVENT (Sesuai Request: 1 Kotak, Hari, Tanggal, 3 Artis) -->
+        <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Jadwal Event Minggu Ini</div>
+        
+        <div class="schedule-card-single">
+            <!-- Bagian Kiri: Tanggal -->
+            <div class="schedule-date">
+                <span class="day">SABTU</span>
+                <span class="date">03 JAN 2026</span>
+            </div>
+            <!-- Bagian Kanan: Line Up -->
+            <div class="schedule-lineup">
+                <h4><i class="fa-solid fa-music"></i> Line-up Performer:</h4>
+                <ul>
+                    <li>19.00 - <b>Rina Violinist</b> (Instrumental)</li>
+                    <li>20.00 - <b>The Acoustic Boys</b> (Pop Jawa)</li>
+                    <li>21.00 - <b>Keroncong Milenial</b> (Tradisional)</li>
+                </ul>
+                <div style="margin-top:5px; font-size:0.7rem; color:#aaa;">*Lokasi: Stadion Bayuangga Zone</div>
+            </div>
+        </div>
 
-.container { max-width: 800px; margin: 0 auto; padding: 20px; }
-.section-title { color: var(--accent); margin: 30px 0 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        <!-- 2. LIST ANGKRINGAN -->
+        <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> Lokasi Zona Kreatif</div>
+        
+        <!-- Stadion (AKTIF) -->
+        <a href="venue-stadion.html" class="venue-card">
+            <div class="icon-box"><i class="fa-solid fa-door-open"></i></div>
+            <div style="flex:1;">
+                <h3 style="margin:0;">Stadion Bayuangga Zone <span class="badge active">BUKA</span></h3>
+                <small style="color:#888;">Pusat Kuliner & Seni Utama</small>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+        </a>
 
-/* === JADWAL BARU (Single Box) === */
-.schedule-card-single {
-    background: #1a1a1a;
-    border: 1px solid var(--primary);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.2);
-}
-.schedule-date {
-    background: #000;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    min-width: 80px;
-    border: 1px solid #333;
-}
-.schedule-date .day { display: block; color: var(--accent); font-weight: bold; font-size: 0.9rem; }
-.schedule-date .date { display: block; color: white; font-weight: 800; font-size: 1.1rem; margin-top: 5px; line-height: 1.2; }
+        <!-- Lainnya (Non-Aktif) -->
+        <div class="venue-card disabled" onclick="alert('Lokasi ini Segera Hadir!')">
+            <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
+            <div><h3 style="margin:0;">Alun-Alun Kota <span class="badge soon">SOON</span></h3></div>
+        </div>
+        <!-- (Bisa copy paste div di atas untuk lokasi lain) -->
 
-.schedule-lineup h4 { margin: 0 0 10px 0; color: white; font-size: 1rem; }
-.schedule-lineup ul { margin: 0; padding-left: 20px; color: #ccc; font-size: 0.9rem; }
-.schedule-lineup li { margin-bottom: 5px; }
+        <!-- 3. TOP 5 PERFORMER (MODE GRID/TURUN KE BAWAH) -->
+        <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Profil)</div>
+        
+        <!-- Perhatikan class ini berubah jadi 'performer-grid' -->
+        <div class="performer-grid">
+            <div class="artist-card" onclick="location.href='profile.html?id=1'">
+                <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=150" class="artist-img">
+                <div>Rina Violin</div>
+            </div>
+            <div class="artist-card" onclick="location.href='profile.html?id=2'">
+                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=150" class="artist-img">
+                <div>Acoustic Boys</div>
+            </div>
+            <div class="artist-card" onclick="location.href='profile.html?id=3'">
+                <img src="https://images.unsplash.com/photo-1526218626217-dc65b9d6e630?q=80&w=150" class="artist-img">
+                <div>Rock Ballad</div>
+            </div>
+            <div class="artist-card" onclick="location.href='profile.html?id=4'">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150" class="artist-img">
+                <div>Siti Keroncong</div>
+            </div>
+            <div class="artist-card" onclick="location.href='profile.html?id=5'">
+                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150" class="artist-img">
+                <div>Solo Hudi</div>
+            </div>
+        </div>
 
-/* LIST ANGKRINGAN */
-.venue-card { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; text-decoration: none; color: white; transition: all 0.3s ease; }
-.venue-card:hover { border-color: var(--primary); transform: translateY(-3px); background: #252525; }
-.venue-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
-.icon-box { font-size: 1.5rem; color: #555; width: 40px; text-align: center; }
-.venue-card:not(.disabled) .icon-box { color: var(--primary); }
+        <!-- 4. PELATIHAN ATTITUDE -->
+        <div class="training-banner" onclick="location.href='training.html'">
+            <div>
+                <h3 style="margin:0;">Pelatihan Attitude</h3>
+                <small style="color:#ccc;">Klik untuk melihat Tim Pelatih</small>
+            </div>
+            <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color:var(--accent);"></i>
+        </div>
 
-/* === PERFORMER GRID (TURUN KE BAWAH) === */
-.performer-grid {
-    display: grid;
-    /* Ini kuncinya: 3 kolom di HP, otomatis menyesuaikan */
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 15px;
-    margin-top: 15px;
-}
-/* Jika layar sangat kecil, jadi 2 kolom */
-@media (max-width: 400px) {
-    .performer-grid { grid-template-columns: repeat(2, 1fr); }
-}
+        <!-- 5. DUKUNG KAMI & SOSMED -->
+        <div class="support-section">
+            <h3 style="margin:0; color:white;">Dukung Gerakan SMIPRO!</h3>
+            <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami.</p>
+            
+            <div class="social-icons">
+                <a href="#" style="color:red;"><i class="fa-brands fa-youtube"></i></a>
+                <a href="#" style="color:#00f2ea;"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="#" style="color:#C13584;"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" style="color:#1877F2;"><i class="fa-brands fa-facebook-f"></i></a>
+            </div>
+            
+            <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Pengembangan</button>
+        </div>
 
-.artist-card { 
-    background: #222; 
-    padding: 15px; 
-    border-radius: 12px; 
-    text-align: center; 
-    cursor: pointer; 
-    border: 1px solid #333; 
-    transition: all 0.3s ease;
-    /* Supaya rapi tingginya sama */
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-.artist-card:hover { transform: scale(1.05); border-color: var(--accent); background: #2a2a2a; }
-.artist-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; }
+        <!-- 6. BERITA -->
+        <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
+        <div class="news-card">
+            <img src="https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100" class="news-thumb">
+            <div>
+                <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">EVENT</span>
+                <h4 style="margin:5px 0;">Festival Musik 2025 Segera Hadir</h4>
+                <p style="margin:0; font-size:0.7rem; color:#888;">2 jam yang lalu</p>
+            </div>
+        </div>
 
-/* PELATIHAN & SOSMED */
-.training-banner { margin-top: 30px; background: linear-gradient(to right, #2c3e50, #000000); padding: 20px; border-radius: 15px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.3s ease; }
-.training-banner:hover { transform: translateY(-5px); border-color: var(--accent); }
-
-.support-section { background: #151515; border-radius: 15px; padding: 30px; text-align: center; margin-top: 40px; border: 1px dashed #333; }
-.btn-dukung { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 10px 25px; border-radius: 25px; margin-top: 20px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-.btn-dukung:hover { background: var(--primary); color: white; }
-
-.social-icons { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-.social-icons a { width: 45px; height: 45px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; transition: 0.3s; text-decoration: none; }
-.social-icons a:hover { transform: scale(1.1); background: white; }
-
-.news-card { display: flex; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; align-items: center; border: 1px solid #333; }
-.news-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
-
-/* UTILS */
-.badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 5px; }
-.badge.active { background: #00ff00; color: black; font-weight: bold; }
-.badge.soon { background: #444; color: #aaa; }
+        <br><br>
+        <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
+    </div>
+</body>
+</html>
