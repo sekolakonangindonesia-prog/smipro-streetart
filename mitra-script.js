@@ -170,3 +170,29 @@ function saveProfile() {
    ======================== */
 renderBookings();
 renderMenus();
+
+
+function registerAction() {
+            const lokasi = document.getElementById('reg-location').value;
+            const owner = document.getElementById('reg-owner').value;
+            const warung = document.getElementById('reg-warung').value;
+            const meja = parseInt(document.getElementById('reg-table').value);
+            const wa = document.getElementById('reg-wa').value;
+            const email = document.getElementById('reg-email').value;
+
+            // Validasi Lengkap
+            if(!lokasi || !owner || !warung || !meja || !wa || !email) {
+                return alert("Mohon lengkapi semua data pendaftaran!");
+            }
+
+            // Validasi Meja
+            if(meja > 15) {
+                return alert("Pendaftaran mandiri maksimal 15 meja. Untuk lebih dari itu, silakan hubungi Admin.");
+            }
+
+            // Simulasi Sukses
+            alert(`Terima kasih ${owner}! Data ${warung} berhasil dikirim.\n\nLink verifikasi telah dikirim ke email: ${email}.\nSilakan cek inbox/spam untuk mengaktifkan akun.`);
+            
+            // Kembali ke login
+            switchTab('login');
+        }
