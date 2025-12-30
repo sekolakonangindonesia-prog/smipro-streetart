@@ -3,9 +3,8 @@
    ======================== */
 let storeData = {
     isOpen: true,
-    totalTables: 15,
+    totalTables: 15, // Jumlah meja
     name: "Warung Bu Sri",
-    phone: "08123456789",
     bookings: [
         { id: 1, table: "S-01", customer: "Budi Santoso", time: "19.00", status: "waiting" },
         { id: 2, table: "S-05", customer: "Siti Aminah", time: "18.30", status: "active" }
@@ -20,15 +19,13 @@ let storeData = {
    1. LOGIKA TAB NAVIGASI
    ======================== */
 function switchTab(tabId) {
-    // Sembunyikan semua tab content
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    // Matikan semua tombol aktif
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    
-    // Aktifkan yang dipilih
     document.getElementById('tab-' + tabId).classList.add('active');
-    // Cari tombol yang diklik (menggunakan event)
     event.currentTarget.classList.add('active');
+
+    // Jika masuk tab QR, generate ulang
+    if(tabId === 'qr') renderQRCodes();
 }
 
 /* ========================
@@ -52,7 +49,8 @@ function editTableCount() {
         if (newCount > 0 && newCount <= 15) {
             storeData.totalTables = newCount;
             document.getElementById('total-table-count').innerText = newCount;
-            alert("Jumlah meja diupdate!");
+            alert("Jumlah meja diupdate! QR Code baru siap dicetak.");
+            renderQRCodes(); // Update QR juga
         } else if (newCount > 15) {
             alert("⚠️ Jumlah > 15 butuh verifikasi Admin.");
         }
@@ -99,7 +97,30 @@ function finishBooking(index) {
 }
 
 /* ========================
-   3. LOGIKA KELOLA MENU
+   3. LOGIKA GENERATE QR CODE (BARU)
+   ======================== */
+function renderQRCodes() {
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= storeData.totalTables; i++) {
+        // Simulasi Data dalam QR: URL Check-in
+        const qrData = `https://smipro-app.com/checkin?w=${storeData.name}&t=${i}`;
+        // Menggunakan API Gratis: api.qrserver.com
+        const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
+
+        container.innerHTML += `
+        <div class="qr-card">
+            <h4>MEJA ${i}</h4>
+            <img src="${qrSrc}" alt="QR Meja ${i}">
+            <br>
+            <small style="color:#555;">Warung Bu Sri</small>
+        </div>`;
+    }
+}
+
+/* ========================
+   4. LOGIKA KELOLA MENU & PROFIL
    ======================== */
 function renderMenus() {
     const container = document.getElementById('menu-list-container');
@@ -132,30 +153,11 @@ function addMenu() {
     const name = document.getElementById('new-menu-name').value;
     const price = document.getElementById('new-menu-price').value;
     const desc = document.getElementById('new-menu-desc').value;
-
     if(!name || !price) return alert("Isi nama dan harga!");
-
-    storeData.menus.push({
-        id: Date.now(),
-        name: name,
-        price: price,
-        desc: desc,
-        img: "https://via.placeholder.com/60" // Placeholder
-    });
-
-    alert("Menu ditambahkan!");
-    closeModalMenu();
-    renderMenus();
-    
-    // Reset Form
-    document.getElementById('new-menu-name').value = '';
-    document.getElementById('new-menu-price').value = '';
-    document.getElementById('new-menu-desc').value = '';
+    storeData.menus.push({ id: Date.now(), name: name, price: price, desc: desc, img: "https://via.placeholder.com/60" });
+    alert("Menu ditambahkan!"); closeModalMenu(); renderMenus();
 }
 
-/* ========================
-   4. LOGIKA PROFIL
-   ======================== */
 function saveProfile() {
     const newName = document.getElementById('edit-name').value;
     storeData.name = newName;
