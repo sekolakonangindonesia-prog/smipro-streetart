@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stadion Bayuangga - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS KHUSUS HALAMAN INI */
+        .split-view { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media(min-width: 768px) { .split-view { grid-template-columns: 1fr 1fr; } }
+
+        .panel { background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        .venue-img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
+        
+        /* Warung Grid */
+        .warung-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
+        .warung-card { background: #222; border-radius: 10px; overflow: hidden; border: 1px solid #333; text-align: center; padding-bottom: 10px; }
+        .warung-img-small { width: 100%; height: 80px; object-fit: cover; background: #444; }
+        .btn-book { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 20px; margin-top: 5px; cursor: pointer; }
+        .btn-book:disabled { background: #555; cursor: not-allowed; }
+
+        /* Admin Box */
+        .admin-box { margin-top: 40px; background: #1a0000; padding: 20px; border-radius: 10px; border: 1px dashed var(--primary); }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <button onclick="location.href='index.html'" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</button>
+        <span style="font-weight:bold;">Stadion Bayuangga</span>
+    </nav>
+
+    <div class="container">
+        <!-- SPLIT VIEW -->
+        <div class="split-view">
+            <!-- KIRI: INFO VENUE -->
+            <div class="panel">
+                <img src="https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=600" class="venue-img">
+                <h2 style="margin:0;">Stadion Bayuangga Zone</h2>
+                <p style="color:#aaa;">Pusat Kuliner & Seni</p>
+                <div style="background:#222; padding:10px; border-radius:8px; margin-top:10px;">
+                    ⭐ 4.8 Rating Pengunjung
+                </div>
+            </div>
+
+            <!-- KANAN: LIVE PERFORMER -->
+            <div class="panel" style="border-color:var(--primary);">
+                <div style="display:flex; justify-content:space-between;">
+                    <h3 style="margin:0; color:var(--primary);">🎤 Live Now</h3>
+                    <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">LIVE</span>
+                </div>
+                <!-- 3 Performer -->
+                <div style="margin-top:15px;">
+                    <div style="display:flex; gap:10px; margin-bottom:10px; background:#333; padding:8px; border-radius:5px;">
+                        <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=50" style="border-radius:50%; width:40px; height:40px;">
+                        <div><b>Rina Violin</b><br><small>19.00 - 20.00</small></div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:10px; background:#333; padding:8px; border-radius:5px;">
+                        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=50" style="border-radius:50%; width:40px; height:40px;">
+                        <div><b>Acoustic Boys</b><br><small>20.00 - 21.00</small></div>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="alert('QRIS Sawer Ditampilkan')">Sawer QRIS</button>
+            </div>
+        </div>
+
+        <!-- DAFTAR WARUNG (BOOKING) -->
+        <div class="section-title">Pilih Warung & Booking Meja</div>
+        <div id="warung-grid" class="warung-grid">
+            <!-- JS RENDER DISINI -->
+        </div>
+
+        <!-- AREA ADMIN WARUNG (SIMULASI) -->
+        <div class="admin-box">
+            <h3>🔐 Area Mitra Warung</h3>
+            <p>Login untuk reset meja (Tamu Pulang).</p>
+            <select id="admin-select" style="padding:10px; background:#222; color:white; border:1px solid #555; width:100%; margin-bottom:10px;">
+                <!-- Opsi Warung -->
+            </select>
+            <button class="btn-primary" style="background:#333;" onclick="resetMeja()">Reset 1 Meja (Simulasi)</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT KHUSUS HALAMAN INI -->
+    <script>
+        // DATA WARUNG DEFAULT
+        const defaultWarung = [
+            { id: 1, name: "Warung Bu Sri", img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200", total: 15, booked: 5 },
+            { id: 2, name: "Kopi Pakde", img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=200", total: 10, booked: 2 },
+            { id: 3, name: "Angkringan Mas Boy", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=200", total: 20, booked: 18 },
+            { id: 4, name: "Sate Taichan", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=200", total: 12, booked: 12 }, // Penuh
+            { id: 5, name: "Bakso Cak Man", img: "https://images.unsplash.com/photo-1529042410759-befb1204b468?q=80&w=200", total: 15, booked: 0 }
+        ];
+
+        // LOAD DATA DARI LOCALSTORAGE (Agar data tersimpan)
+        let warungData = JSON.parse(localStorage.getItem('smipro_warung')) || defaultWarung;
+
+        function renderWarungs() {
+            const grid = document.getElementById('warung-grid');
+            const select = document.getElementById('admin-select');
+            grid.innerHTML = '';
+            select.innerHTML = '';
+
+            warungData.forEach(w => {
+                const sisa = w.total - w.booked;
+                const isFull = sisa <= 0;
+                let btn = isFull ? `<button class="btn-book" disabled>Penuh</button>` : `<button class="btn-book" onclick="booking(${w.id})">Booking</button>`;
+                let color = isFull ? 'red' : '#00ff00';
+
+                // Render Grid User
+                grid.innerHTML += `
+                <div class="warung-card">
+                    <img src="${w.img}" class="warung-img-small">
+                    <div style="padding:10px;">
+                        <b>${w.name}</b><br>
+                        <small style="color:${color}">${isFull ? 0 : sisa} / ${w.total} Meja</small><br>
+                        ${btn}
+                    </div>
+                </div>`;
+
+                // Render Select Admin
+                select.innerHTML += `<option value="${w.id}">${w.name} (Terisi: ${w.booked})</option>`;
+            });
+
+            // Simpan ke storage setiap render
+            localStorage.setItem('smipro_warung', JSON.stringify(warungData));
+        }
+
+        function booking(id) {
+            let nama = prompt("Masukkan Nama Pemesan:");
+            if(!nama) return;
+            
+            let w = warungData.find(x => x.id === id);
+            if(w.booked < w.total) {
+                w.booked++;
+                alert(`Booking Berhasil untuk ${nama}!`);
+                renderWarungs();
+            } else {
+                alert("Yah, baru saja penuh!");
+            }
+        }
+
+        function resetMeja() {
+            let id = parseInt(document.getElementById('admin-select').value);
+            let w = warungData.find(x => x.id === id);
+            if(w && w.booked > 0) {
+                w.booked--;
+                alert("Satu meja berhasil dikosongkan.");
+                renderWarungs();
+            } else {
+                alert("Warung ini sudah kosong.");
+            }
+        }
+
+        // Init
+        renderWarungs();
+    </script>
+</body>
+</html>
