@@ -29,6 +29,40 @@
     </header>
 
     <div class="container">
+
+        <!-- === MODAL DETAIL JADWAL (POPUP) === -->
+    <div id="schedule-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 500px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:var(--accent);">📅 Agenda Event</h3>
+                <button onclick="closeModal('schedule-modal')" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Tab Minggu Ini (Aktif) -->
+            <div style="background:#222; padding:15px; border-radius:10px; border-left:4px solid var(--primary); margin-bottom:15px;">
+                <h4 style="margin:0 0 10px 0;">Minggu Ini (03 Jan)</h4>
+                <p style="color:#aaa; font-size:0.9rem;">Lokasi: Stadion Bayuangga Zone</p>
+                <ul style="padding-left:20px; line-height:1.8; color:#ddd;">
+                    <li>19.00 - <b>Rina Violin</b> (Instrumental)</li>
+                    <li>20.00 - <b>The Acoustic Boys</b> (Pop Jawa)</li>
+                    <li>21.00 - <b>Keroncong Milenial</b> (Tradisional)</li>
+                </ul>
+            </div>
+
+            <!-- Tab Minggu Depan -->
+            <div style="background:#222; padding:15px; border-radius:10px; border-left:4px solid #555; opacity:0.8;">
+                <h4 style="margin:0 0 10px 0;">Minggu Depan (10 Jan)</h4>
+                <p style="color:#aaa; font-size:0.9rem;">Status: <i>Coming Soon</i></p>
+                <ul style="padding-left:20px; line-height:1.8; color:#888;">
+                    <li>19.00 - <b>Jazz Trio</b></li>
+                    <li>20.00 - <b>Rock Ballad Pro</b></li>
+                    <li>21.00 - <b>Campursari Gembira</b></li>
+                </ul>
+            </div>
+            
+            <button onclick="closeModal('schedule-modal')" class="btn-primary" style="margin-top:20px;">Tutup</button>
+        </div>
+    </div>
         
         <!-- 1. LIST ANGKRINGAN -->
         <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
