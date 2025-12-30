@@ -15,9 +15,15 @@
         <span class="logo-text">SMIPRO</span>
         </a>
         <div class="menu">
-           <a href="login.html" class="btn-mitra">
-                <i class="fa-solid fa-user-gear"></i> Login / Daftar Mitra
-            </a>
+           <!-- 
+               INI YANG AKAN BERUBAH OTOMATIS 
+               Kita kasih ID="nav-btn-area"
+            -->
+            <div id="nav-btn-area">
+                <a href="login.html" class="btn-mitra">
+                    <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
+                </a>
+            </div>
         </div>
     </nav>
 
@@ -151,4 +157,36 @@
         <br><br>
         <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
     </div>
-  
+  <!-- Script Cek Login (Taruh dibawah div container penutup) -->
+    <script>
+        window.onload = function() {
+            // Cek apakah ada data login di memori browser
+            const isLoggedIn = localStorage.getItem('userLoggedIn');
+            const userName = localStorage.getItem('userName');
+            
+            // Cari elemen navbar tempat tombol berada
+            const navArea = document.getElementById('nav-btn-area');
+
+            // Pastikan elemen navbar ada sebelum diubah (untuk menghindari error)
+            if (navArea) {
+                if (isLoggedIn === 'true') {
+                    // JIKA SUDAH LOGIN: Ubah tombol jadi "Dashboard Saya"
+                    navArea.innerHTML = `
+                        <a href="mitra-dashboard.html" class="btn-mitra" style="background:var(--primary); color:white; border:none;">
+                            <i class="fa-solid fa-store"></i> ${userName} (Dashboard)
+                        </a>
+                    `;
+                } else {
+                    // JIKA BELUM: Biarkan tombol Login biasa
+                    navArea.innerHTML = `
+                        <a href="login.html" class="btn-mitra">
+                            <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
+                        </a>
+                    `;
+                }
+            }
+        };
+    </script>
+
+</body>
+</html>
