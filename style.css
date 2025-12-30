@@ -37,11 +37,64 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 .venue-card:not(.disabled) .icon-box { color: var(--primary); }
 
 /* PERFORMER (HOVER ADDED) */
-.performer-scroll { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0 20px 0; }
-.artist-card { min-width: 130px; background: #222; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid #333; transition: all 0.3s ease; }
-.artist-card:hover { transform: scale(1.05); border-color: var(--accent); background: #2a2a2a; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-.artist-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-bottom: 10px; transition: 0.3s; }
-.artist-card:hover .artist-img { border-color: white; }
+.performer-wrap {
+    display: grid;
+    /* Ini rahasianya: 
+       - auto-fit: Mengisi ruang yang ada
+       - minmax(100px, 1fr): Lebar minimal kartu 100px. 
+         Jika layar HP kecil, dia otomatis turun ke bawah jadi 2 atau 3 kolom.
+    */
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Kartu Artis */
+.artist-card { 
+    background: #222; 
+    padding: 15px 10px; /* Padding sedikit dikecilkan agar muat banyak di HP */
+    border-radius: 12px; 
+    text-align: center; 
+    cursor: pointer; 
+    border: 1px solid #333; 
+    transition: all 0.3s ease;
+    
+    /* Pastikan isinya rapi vertikal */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Efek Hover */
+.artist-card:hover { 
+    transform: translateY(-5px); 
+    border-color: var(--accent); 
+    background: #2a2a2a; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Foto Bulat */
+.artist-img { 
+    width: 70px; 
+    height: 70px; 
+    border-radius: 50%; /* Tetap Bulat */
+    object-fit: cover; 
+    border: 2px solid var(--primary); 
+    margin-bottom: 8px; 
+    transition: 0.3s;
+}
+
+.artist-card:hover .artist-img { 
+    border-color: white; 
+}
+
+/* Teks Nama Artis */
+.artist-card div {
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
 
 /* TRAINING BANNER (HOVER ADDED) */
 .training-banner { margin-top: 30px; background: linear-gradient(to right, #2c3e50, #000000); padding: 20px; border-radius: 15px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.3s ease; }
