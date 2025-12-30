@@ -11,37 +11,45 @@
             background: #000 url('https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000') center/cover;
             background-blend-mode: darken; background-color: rgba(0,0,0,0.85);
             display: flex; align-items: center; justify-content: center; min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
         }
         .auth-card {
             background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid var(--primary);
             width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 40px rgba(229, 9, 20, 0.4);
-            max-height: 90vh; overflow-y: auto; /* Agar bisa scroll jika form panjang */
+            max-height: 90vh; overflow-y: auto; position: relative;
         }
-        .tab-switch { display: flex; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 10px; background: none; border: none; color: #888; cursor: pointer; font-weight: bold; }
-        .tab-btn.active { color: white; border-bottom: 2px solid var(--primary); }
+        
+        /* HEADER TAB */
+        .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .auth-header h2 { color: white; margin: 0; }
+        .auth-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
+
+        /* FORM STYLES */
         .form-group { text-align: left; margin-bottom: 15px; }
         .form-group label { font-size: 0.8rem; color: #ccc; display: block; margin-bottom: 5px; }
         .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
+        .form-input:focus { border-color: var(--primary); }
+
+        /* SWITCH LINK */
+        .switch-link { margin-top: 15px; font-size: 0.8rem; color: #aaa; }
+        .switch-link span { color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline; }
         
-        /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
+        /* TRANSITION */
+        .form-container { animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="auth-card">
-        <h2 style="color:white; margin-top:0;">Mitra SMIPRO</h2>
         
-        <div class="tab-switch">
-            <button class="tab-btn active" onclick="switchTab('login')">LOGIN</button>
-            <button class="tab-btn" onclick="switchTab('register')">DAFTAR BARU</button>
-        </div>
+        <!-- === BAGIAN LOGIN === -->
+        <div id="section-login" class="form-container">
+            <div class="auth-header">
+                <h2>Login Mitra</h2>
+                <p>Masuk untuk kelola warung Anda</p>
+            </div>
 
-        <!-- FORM LOGIN -->
-        <div id="form-login">
             <div class="form-group">
                 <label>Username / Email</label>
                 <input type="text" class="form-input" placeholder="Contoh: warungbusri">
@@ -50,11 +58,21 @@
                 <label>Password</label>
                 <input type="password" class="form-input" placeholder="******">
             </div>
+            
             <button class="btn-primary" onclick="loginAction()">MASUK DASHBOARD</button>
+
+            <div class="switch-link">
+                Belum punya akun? <span onclick="showRegister()">Daftar Sekarang</span>
+            </div>
         </div>
 
-        <!-- FORM REGISTER (UPDATED) -->
-        <div id="form-register" style="display:none;">
+        <!-- === BAGIAN REGISTER (Form Lengkap) === -->
+        <div id="section-register" class="form-container" style="display:none;">
+            <div class="auth-header">
+                <h2>Daftar Mitra Baru</h2>
+                <p>Isi data untuk verifikasi admin</p>
+            </div>
+
             <div class="form-group">
                 <label>Pilih Lokasi Zona</label>
                 <select class="form-input" id="reg-location">
@@ -66,27 +84,38 @@
                     <option value="5">BJBR Mangrove</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label>Nama Pemilik</label>
-                <input type="text" class="form-input" placeholder="Nama Lengkap">
+                <input type="text" id="reg-owner" class="form-input" placeholder="Nama Lengkap Sesuai KTP">
             </div>
+
             <div class="form-group">
                 <label>Nama Warung</label>
-                <input type="text" class="form-input" placeholder="Contoh: Angkringan Joss">
+                <input type="text" id="reg-warung" class="form-input" placeholder="Contoh: Angkringan Joss">
             </div>
+
             <div class="form-group">
-                <label>Jumlah Meja (Maks 15)</label>
+                <label>Jumlah Meja (Maksimal 15)</label>
                 <input type="number" id="reg-table" class="form-input" placeholder="Contoh: 10" max="15">
+                <small style="color:#666; font-size:0.7rem;">*Jika > 15 butuh survei tim admin.</small>
             </div>
+
             <div class="form-group">
                 <label>Nomor HP / WhatsApp</label>
-                <input type="number" class="form-input" placeholder="08xxxxx">
+                <input type="number" id="reg-wa" class="form-input" placeholder="08xxxxx (Aktif WA)">
             </div>
+
             <div class="form-group">
                 <label>Email (Untuk Verifikasi)</label>
                 <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
             </div>
-            <button class="btn-primary" onclick="registerAction()">DAFTAR SEKARANG</button>
+
+            <button class="btn-primary" onclick="registerAction()" style="background:var(--green);">DAFTAR SEKARANG</button>
+
+            <div class="switch-link">
+                Sudah punya akun? <span onclick="showLogin()">Login Disini</span>
+            </div>
         </div>
 
         <br>
@@ -94,26 +123,46 @@
     </div>
 
     <script>
-        function switchTab(tab) {
-            document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
-            document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+        // Logika Pindah Antara Login & Register
+        function showRegister() {
+            document.getElementById('section-login').style.display = 'none';
+            document.getElementById('section-register').style.display = 'block';
         }
 
+        function showLogin() {
+            document.getElementById('section-register').style.display = 'none';
+            document.getElementById('section-login').style.display = 'block';
+        }
+
+        // Logika Login (Simulasi)
         function loginAction() {
             window.location.href = 'mitra-dashboard.html';
         }
 
+        // Logika Register (Validasi)
         function registerAction() {
+            const lokasi = document.getElementById('reg-location').value;
+            const owner = document.getElementById('reg-owner').value;
+            const warung = document.getElementById('reg-warung').value;
+            const meja = parseInt(document.getElementById('reg-table').value);
+            const wa = document.getElementById('reg-wa').value;
             const email = document.getElementById('reg-email').value;
-            const tables = document.getElementById('reg-table').value;
-            
-            if(!email) return alert("Isi email dengan benar!");
-            if(tables > 15) return alert("Maksimal pendaftaran awal 15 meja!");
 
-            alert(`Data tersimpan! Link verifikasi telah dikirim ke ${email}. Silakan cek email Anda.`);
-            switchTab('login');
+            // 1. Cek Kelengkapan
+            if(!lokasi || !owner || !warung || !meja || !wa || !email) {
+                return alert("Mohon lengkapi semua data pendaftaran!");
+            }
+
+            // 2. Cek Batas Meja
+            if(meja > 15) {
+                return alert("Pendaftaran mandiri maksimal 15 meja. Untuk lebih dari itu, silakan hubungi Admin.");
+            }
+
+            // 3. Simulasi Sukses
+            alert(`Terima kasih ${owner}! Data ${warung} berhasil dikirim.\n\nLink verifikasi telah dikirim ke email: ${email}.\nSilakan cek inbox/spam untuk mengaktifkan akun.`);
+            
+            // Kembalikan ke halaman login
+            showLogin();
         }
     </script>
 </body>
