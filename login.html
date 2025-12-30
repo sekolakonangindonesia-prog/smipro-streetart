@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Sistem SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #000; display: flex; align-items: center; justify-content: center; min-height: 100vh; background-image: url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=1000'); background-size: cover; background-blend-mode: darken; background-color: rgba(0,0,0,0.7); }
+        .login-card { background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid var(--primary); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(229, 9, 20, 0.3); }
+        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .role-btn { background: #333; padding: 15px; border-radius: 10px; cursor: pointer; border: 1px solid #444; transition: 0.3s; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+        .role-btn:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
+        .role-btn i { font-size: 1.5rem; }
+        
+        .login-form { display: none; margin-top: 20px; text-align: left; animation: fadeIn 0.3s; }
+        .back-link { color: #888; cursor: pointer; font-size: 0.9rem; margin-bottom: 15px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2 style="color:white; margin:0;">Akses Sistem SMIPRO</h2>
+        <p style="color:#aaa; font-size:0.9rem;">Silakan pilih peran Anda:</p>
+
+        <!-- PILIHAN ROLE -->
+        <div id="role-selection" class="role-grid">
+            <div class="role-btn" onclick="showLogin('mitra')">
+                <i class="fa-solid fa-store"></i>
+                <span>Mitra Warung</span>
+            </div>
+            <div class="role-btn" onclick="alert('Menu Performer Segera Hadir')">
+                <i class="fa-solid fa-guitar"></i>
+                <span>Performer</span>
+            </div>
+            <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Mentor</span>
+            </div>
+            <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Admin</span>
+            </div>
+        </div>
+
+        <!-- FORM LOGIN MITRA (Muncul setelah klik Mitra) -->
+        <div id="form-mitra" class="login-form">
+            <span class="back-link" onclick="resetLogin()"><i class="fa-solid fa-arrow-left"></i> Kembali</span>
+            <h3 style="margin-top:0; color:var(--accent);">Login Mitra Warung</h3>
+            
+            <label style="font-size:0.8rem; color:#ccc;">Email / Username</label>
+            <input type="text" class="input-request" placeholder="Contoh: warungbusri">
+            
+            <label style="font-size:0.8rem; color:#ccc;">Password</label>
+            <input type="password" class="input-request" placeholder="******">
+            
+            <button class="btn-primary" onclick="location.href='mitra-dashboard.html'">MASUK DASHBOARD</button>
+            
+            <div style="margin-top:15px; text-align:center; font-size:0.8rem;">
+                Belum jadi mitra? <a href="#" style="color:var(--primary);" onclick="alert('Form Pendaftaran akan muncul disini (Simulasi)')">Daftar Sekarang</a>
+            </div>
+        </div>
+        
+        <br>
+        <a href="index.html" style="color:#666; text-decoration:none; font-size:0.8rem;">Kembali ke Website Pengunjung</a>
+    </div>
+
+    <script>
+        function showLogin(role) {
+            document.getElementById('role-selection').style.display = 'none';
+            if(role === 'mitra') document.getElementById('form-mitra').style.display = 'block';
+        }
+        function resetLogin() {
+            document.getElementById('role-selection').style.display = 'grid';
+            document.querySelectorAll('.login-form').forEach(f => f.style.display = 'none');
+        }
+    </script>
+</body>
+</html>
