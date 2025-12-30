@@ -1,95 +1,117 @@
-// --- DATA MENU AWAL (SIMULASI) ---
-let menus = [
-    { id: 1, name: "Nasi Kucing", price: 3000, desc: "Nasi bungkus porsi kecil + sambal teri.", img: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=100" },
-    { id: 2, name: "Sate Usus", price: 2000, desc: "Sate usus ayam bumbu bacem bakar.", img: "https://images.unsplash.com/photo-1529563021427-d8f8e08d4224?q=80&w=100" }
-];
+// --- DATA SIMULASI ---
+let storeData = {
+    isOpen: true,
+    totalTables: 15,
+    bookings: [
+        // Status: 'waiting' (Kuning, Belum Scan) | 'active' (Merah, Sudah Scan)
+        { id: 1, table: "S-01", customer: "Budi Santoso", time: "19.00", status: "waiting" },
+        { id: 2, table: "S-05", customer: "Siti Aminah", time: "18.30", status: "active" } // Sudah datang
+    ]
+};
 
-// --- FUNGSI TAB ---
-function switchTab(tabName) {
-    // Hide all
-    document.querySelectorAll('.dashboard-section').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.mn-item').forEach(el => el.classList.remove('active'));
-    
-    // Show active
-    document.getElementById('tab-' + tabName).classList.add('active');
-    
-    // Update nav style (simple logic)
-    const navs = document.querySelectorAll('.mn-item');
-    if(tabName == 'home') navs[0].classList.add('active');
-    if(tabName == 'menu') navs[1].classList.add('active');
-    if(tabName == 'profile') navs[2].classList.add('active');
-}
+// --- 1. TOGGLE BUKA / TUTUP ---
+function toggleStoreStatus() {
+    storeData.isOpen = !storeData.isOpen;
+    const btn = document.getElementById('store-status-btn');
+    const txt = document.getElementById('store-status-text');
 
-// --- FUNGSI RENDER MENU ---
-function renderMenus() {
-    const container = document.getElementById('menu-container');
-    container.innerHTML = '';
-    
-    menus.forEach(m => {
-        container.innerHTML += `
-        <div class="menu-list-item">
-            <img src="${m.img}" class="menu-img">
-            <div style="flex:1;">
-                <h4 style="margin:0;">${m.name}</h4>
-                <p style="margin:0; font-size:0.8rem; color:#aaa;">${m.desc}</p>
-                <b style="color:var(--accent);">Rp ${m.price.toLocaleString()}</b>
-            </div>
-            <button class="btn-small" style="background:#444;" onclick="deleteMenu(${m.id})"><i class="fa-solid fa-trash"></i></button>
-        </div>`;
-    });
-}
-
-// --- FUNGSI TAMBAH MENU (LANGSUNG TAMPIL) ---
-function saveMenu() {
-    const name = document.getElementById('menu-name').value;
-    const price = document.getElementById('menu-price').value;
-    const desc = document.getElementById('menu-desc').value;
-
-    if(!name || !price) return alert("Nama dan Harga wajib diisi!");
-
-    // Tambah ke Array (Simulasi Database)
-    menus.push({
-        id: Date.now(),
-        name: name,
-        price: parseInt(price),
-        desc: desc,
-        img: "https://via.placeholder.com/100?text=Menu" // Placeholder gambar
-    });
-
-    alert("Menu Berhasil Ditambahkan!");
-    closeModal('modal-add-menu');
-    
-    // Kosongkan form
-    document.getElementById('menu-name').value = '';
-    document.getElementById('menu-price').value = '';
-    document.getElementById('menu-desc').value = '';
-
-    renderMenus(); // Refresh tampilan
-}
-
-function deleteMenu(id) {
-    if(confirm("Hapus menu ini?")) {
-        menus = menus.filter(m => m.id !== id);
-        renderMenus();
+    if (storeData.isOpen) {
+        btn.classList.remove('closed');
+        btn.classList.add('open');
+        txt.innerText = "BUKA";
+    } else {
+        btn.classList.remove('open');
+        btn.classList.add('closed');
+        txt.innerText = "TUTUP";
     }
 }
 
-// --- FUNGSI REQUEST MEJA (VERIFIKASI ADMIN) ---
-function submitTableRequest() {
-    const qty = document.getElementById('req-table-qty').value;
-    if(!qty || qty <= 0) return alert("Masukkan jumlah yang benar!");
-
-    // Tampilkan Notifikasi Pending
-    document.getElementById('pending-msg').style.display = 'flex';
-    document.querySelector('#pending-msg span').innerHTML = `Pengajuan tambah <b>${qty} Meja</b> sedang diverifikasi Admin.`;
+// --- 2. EDIT JUMLAH MEJA ---
+function editTableCount() {
+    // Tanya jumlah baru
+    let newCount = prompt("Masukkan jumlah total meja baru:", storeData.totalTables);
     
-    alert("Permintaan terkirim ke Admin. Mohon tunggu verifikasi.");
-    closeModal('modal-add-table');
+    if (newCount !== null) {
+        newCount = parseInt(newCount);
+        
+        // Cek Logika Threshold
+        if (newCount > 0 && newCount <= 15) {
+            // Jika <= 15: Langsung Update (Hijau)
+            storeData.totalTables = newCount;
+            document.getElementById('total-table-count').innerText = newCount;
+            alert("Jumlah meja berhasil diperbarui!");
+        } else if (newCount > 15) {
+            // Jika > 15: Minta Verifikasi (Kuning/Pending)
+            alert("⚠️ Permintaan meja di atas 15 butuh verifikasi Admin. Tim kami akan menghubungi Anda untuk survey lokasi.");
+        } else {
+            alert("Angka tidak valid!");
+        }
+    }
 }
 
-// --- UTILS MODAL ---
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+// --- 3. RENDER KARTU BOOKING ---
+function renderBookings() {
+    const container = document.getElementById('booking-container');
+    container.innerHTML = '';
+    
+    let occupied = 0;
 
-// Init
-renderMenus();
+    storeData.bookings.forEach((b, index) => {
+        // Hitung meja yang statusnya aktif (merah) atau waiting (kuning) sebagai terisi
+        occupied++; 
+
+        let cardHtml = '';
+
+        if (b.status === 'waiting') {
+            // KONDISI A: MENUNGGU SCAN (KUNING) - Tanpa Tombol
+            cardHtml = `
+            <div class="card-booking waiting">
+                <span class="table-badge">MEJA ${b.table}</span>
+                <div style="font-size:1.1rem; font-weight:bold;">${b.customer}</div>
+                <div style="font-size:0.9rem; color:#ccc;">Jadwal: ${b.time} WIB</div>
+                
+                <div class="waiting-text">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Menunggu Scan QR Tamu...<br>
+                    (Hangus otomatis jam 20.30)
+                </div>
+            </div>`;
+        } else if (b.status === 'active') {
+            // KONDISI B: SUDAH DATANG (MERAH) - Ada Tombol Selesai
+            cardHtml = `
+            <div class="card-booking active">
+                <span class="table-badge">MEJA ${b.table}</span>
+                <div style="font-size:1.1rem; font-weight:bold;">${b.customer}</div>
+                <div class="active-text">
+                    <i class="fa-solid fa-circle-check"></i> Tamu Sedang Makan
+                </div>
+                
+                <button class="btn-primary" style="margin-top:15px; background:white; color:red;" onclick="finishBooking(${index})">
+                    Selesai / Kosongkan Meja
+                </button>
+            </div>`;
+        }
+
+        container.innerHTML += cardHtml;
+    });
+
+    // Update Statistik Angka di atas
+    document.getElementById('occupied-count').innerText = occupied;
+
+    // Jika kosong
+    if (occupied === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#555; grid-column:1/-1;">Belum ada booking aktif saat ini.</p>';
+    }
+}
+
+// --- 4. SELESAI / KOSONGKAN MEJA ---
+function finishBooking(index) {
+    if (confirm("Apakah tamu sudah pulang dan meja sudah bersih?")) {
+        // Hapus dari data (Simulasi Database)
+        storeData.bookings.splice(index, 1);
+        renderBookings(); // Render ulang agar kartu hilang
+        alert("Meja berhasil dikosongkan dan siap dipesan kembali.");
+    }
+}
+
+// Jalankan fungsi saat halaman dibuka
+renderBookings();
