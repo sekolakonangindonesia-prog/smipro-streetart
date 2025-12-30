@@ -3,77 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Sistem SMIPRO</title>
+    <title>Akses Sistem SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: #000; display: flex; align-items: center; justify-content: center; min-height: 100vh; background-image: url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=1000'); background-size: cover; background-blend-mode: darken; background-color: rgba(0,0,0,0.7); }
-        .login-card { background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid var(--primary); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(229, 9, 20, 0.3); }
+        body { 
+            background: #000 url('https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1000') center/cover;
+            background-blend-mode: darken; background-color: rgba(0,0,0,0.85);
+            display: flex; align-items: center; justify-content: center; min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .auth-card {
+            background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid var(--primary);
+            width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 40px rgba(229, 9, 20, 0.4);
+            max-height: 90vh; overflow-y: auto; position: relative;
+        }
+        
+        /* HEADER TAB */
+        .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .auth-header h2 { color: white; margin: 0; }
+        .auth-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
+
+        /* LOGO STYLE */
+        .register-logo {
+            width: 100px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+        }
+
+        /* MENU GRID ROLE */
         .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .role-btn { background: #333; padding: 15px; border-radius: 10px; cursor: pointer; border: 1px solid #444; transition: 0.3s; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         .role-btn:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
         .role-btn i { font-size: 1.5rem; }
+
+        /* FORM STYLES */
+        .form-group { text-align: left; margin-bottom: 15px; }
+        .form-group label { font-size: 0.8rem; color: #ccc; display: block; margin-bottom: 5px; }
+        .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
+        .form-input:focus { border-color: var(--primary); }
+
+        /* SWITCH LINK */
+        .switch-link { margin-top: 15px; font-size: 0.8rem; color: #aaa; }
+        .switch-link span { color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline; }
         
-        .login-form { display: none; margin-top: 20px; text-align: left; animation: fadeIn 0.3s; }
-        .back-link { color: #888; cursor: pointer; font-size: 0.9rem; margin-bottom: 15px; display: block; }
+        /* TOMBOL KEMBALI KECIL */
+        .back-icon { float: left; color: #888; cursor: pointer; background: none; border: none; font-size: 1rem; }
+
+        /* TRANSITION */
+        .section-view { animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <h2 style="color:white; margin:0;">Akses Sistem SMIPRO</h2>
-        <p style="color:#aaa; font-size:0.9rem;">Silakan pilih peran Anda:</p>
-
-        <!-- PILIHAN ROLE -->
-        <div id="role-selection" class="role-grid">
-            <div class="role-btn" onclick="showLogin('mitra')">
-                <i class="fa-solid fa-store"></i>
-                <span>Mitra Warung</span>
-            </div>
-            <div class="role-btn" onclick="alert('Menu Performer Segera Hadir')">
-                <i class="fa-solid fa-guitar"></i>
-                <span>Performer</span>
-            </div>
-            <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <span>Mentor</span>
-            </div>
-            <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')">
-                <i class="fa-solid fa-user-shield"></i>
-                <span>Admin</span>
-            </div>
-        </div>
-
-        <!-- FORM LOGIN MITRA (Muncul setelah klik Mitra) -->
-        <div id="form-mitra" class="login-form">
-            <span class="back-link" onclick="resetLogin()"><i class="fa-solid fa-arrow-left"></i> Kembali</span>
-            <h3 style="margin-top:0; color:var(--accent);">Login Mitra Warung</h3>
-            
-            <label style="font-size:0.8rem; color:#ccc;">Email / Username</label>
-            <input type="text" class="input-request" placeholder="Contoh: warungbusri">
-            
-            <label style="font-size:0.8rem; color:#ccc;">Password</label>
-            <input type="password" class="input-request" placeholder="******">
-            
-            <button class="btn-primary" onclick="location.href='mitra-dashboard.html'">MASUK DASHBOARD</button>
-            
-            <div style="margin-top:15px; text-align:center; font-size:0.8rem;">
-                Belum jadi mitra? <a href="#" style="color:var(--primary);" onclick="alert('Form Pendaftaran akan muncul disini (Simulasi)')">Daftar Sekarang</a>
-            </div>
-        </div>
+    <div class="auth-card">
         
-        <br>
-        <a href="index.html" style="color:#666; text-decoration:none; font-size:0.8rem;">Kembali ke Website Pengunjung</a>
+        <!-- === 1. TAMPILAN MENU PILIHAN ROLE === -->
+        <div id="view-menu" class="section-view">
+            <div class="auth-header">
+                <h2>Akses Sistem SMIPRO</h2>
+                <p>Silakan pilih peran Anda:</p>
+            </div>
+            <div class="role-grid">
+                <div class="role-btn" onclick="pindahKe('login')">
+                    <i class="fa-solid fa-store"></i><span>Mitra Warung</span>
+                </div>
+                <div class="role-btn" onclick="alert('Menu Performer Segera Hadir')">
+                    <i class="fa-solid fa-guitar"></i><span>Performer</span>
+                </div>
+                <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')">
+                    <i class="fa-solid fa-graduation-cap"></i><span>Mentor</span>
+                </div>
+                <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')">
+                    <i class="fa-solid fa-user-shield"></i><span>Admin</span>
+                </div>
+            </div>
+            <br>
+            <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
+        </div>
+
+        <!-- === 2. TAMPILAN LOGIN MITRA === -->
+        <div id="view-login" class="section-view" style="display:none;">
+            <div class="auth-header">
+                <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2>Login Mitra</h2>
+                <p>Masuk Dashboard Warung</p>
+            </div>
+
+            <div class="form-group">
+                <label>Username / Email</label>
+                <input type="text" class="form-input" placeholder="Contoh: warungbusri">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-input" placeholder="******">
+            </div>
+            
+            <button class="btn-primary" onclick="aksiLogin()">MASUK DASHBOARD</button>
+
+            <div class="switch-link">
+                Belum punya akun? <span onclick="pindahKe('register')">Daftar Sekarang</span>
+            </div>
+        </div>
+
+        <!-- === 3. TAMPILAN REGISTER MITRA (LENGKAP + LOGO) === -->
+        <div id="view-register" class="section-view" style="display:none;">
+            <div class="auth-header">
+                <button class="back-icon" onclick="pindahKe('login')"><i class="fa-solid fa-arrow-left"></i></button>
+                
+                <!-- LOGO ADA DISINI -->
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo SMIPRO" class="register-logo">
+                
+                <h2>Daftar Mitra Baru</h2>
+                <p>Isi data untuk verifikasi admin</p>
+            </div>
+
+            <div class="form-group">
+                <label>Pilih Lokasi Zona</label>
+                <select class="form-input" id="reg-location">
+                    <option value="">-- Pilih Lokasi --</option>
+                    <option value="1">Stadion Bayuangga Zone</option>
+                    <option value="2">Alun-Alun Kota</option>
+                    <option value="3">Benteng Mayangan</option>
+                    <option value="4">Museum Probolinggo</option>
+                    <option value="5">BJBR Mangrove</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Nama Pemilik</label>
+                <input type="text" id="reg-owner" class="form-input" placeholder="Nama Lengkap Sesuai KTP">
+            </div>
+
+            <div class="form-group">
+                <label>Nama Warung</label>
+                <input type="text" id="reg-warung" class="form-input" placeholder="Contoh: Angkringan Joss">
+            </div>
+
+            <div class="form-group">
+                <label>Jumlah Meja (Maksimal 15)</label>
+                <input type="number" id="reg-table" class="form-input" placeholder="Contoh: 10" max="15">
+                <small style="color:#666; font-size:0.7rem;">*Jika > 15 butuh survei tim admin.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Nomor HP / WhatsApp</label>
+                <input type="number" id="reg-wa" class="form-input" placeholder="08xxxxx (Aktif WA)">
+            </div>
+
+            <div class="form-group">
+                <label>Email (Untuk Verifikasi)</label>
+                <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
+            </div>
+
+            <button class="btn-primary" onclick="aksiDaftar()" style="background:var(--green);">DAFTAR SEKARANG</button>
+
+            <div class="switch-link">
+                Sudah punya akun? <span onclick="pindahKe('login')">Login Disini</span>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        function showLogin(role) {
-            document.getElementById('role-selection').style.display = 'none';
-            if(role === 'mitra') document.getElementById('form-mitra').style.display = 'block';
+        // --- 1. FUNGSI PINDAH HALAMAN (Navigasi) ---
+        function pindahKe(tujuan) {
+            // Sembunyikan semua
+            document.getElementById('view-menu').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-register').style.display = 'none';
+
+            // Tampilkan tujuan
+            if (tujuan === 'menu') {
+                document.getElementById('view-menu').style.display = 'block';
+            } else if (tujuan === 'login') {
+                document.getElementById('view-login').style.display = 'block';
+            } else if (tujuan === 'register') {
+                document.getElementById('view-register').style.display = 'block';
+            }
         }
-        function resetLogin() {
-            document.getElementById('role-selection').style.display = 'grid';
-            document.querySelectorAll('.login-form').forEach(f => f.style.display = 'none');
+
+        // --- 2. LOGIKA LOGIN ---
+        function aksiLogin() {
+            // Langsung masuk ke dashboard mitra
+            window.location.href = 'mitra-dashboard.html';
+        }
+
+        // --- 3. LOGIKA REGISTER (Validasi) ---
+        function aksiDaftar() {
+            const lokasi = document.getElementById('reg-location').value;
+            const owner = document.getElementById('reg-owner').value;
+            const warung = document.getElementById('reg-warung').value;
+            const meja = parseInt(document.getElementById('reg-table').value);
+            const wa = document.getElementById('reg-wa').value;
+            const email = document.getElementById('reg-email').value;
+
+            // Validasi Kelengkapan
+            if(!lokasi || !owner || !warung || !meja || !wa || !email) {
+                return alert("Mohon lengkapi semua data pendaftaran!");
+            }
+
+            // Validasi Jumlah Meja
+            if(meja > 15) {
+                return alert("Pendaftaran mandiri maksimal 15 meja. Hubungi Admin untuk lebih.");
+            }
+
+            // Simulasi Sukses
+            alert(`Terima kasih ${owner}! Data ${warung} berhasil dikirim.\n\nLink verifikasi telah dikirim ke email: ${email}.\nSilakan cek inbox/spam.`);
+            
+            // Kembali ke halaman Login
+            pindahKe('login');
         }
     </script>
 </body>
