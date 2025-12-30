@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Event - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS KHUSUS HALAMAN JADWAL */
+        .schedule-card-main {
+            background: linear-gradient(135deg, #222 0%, #111 100%);
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.2);
+        }
+        .schedule-card-main h2 { margin-top: 0; color: var(--accent); }
+        .performer-list-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--green);
+        }
+        .upcoming-item {
+            display: flex; gap: 15px; align-items: center;
+            padding: 15px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+        }
+        .date-badge {
+            background: #333; color: white; padding: 10px;
+            border-radius: 8px; text-align: center; min-width: 60px;
+            border: 1px solid #555;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="top-nav">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard
+        </button>
+        <span style="font-weight:bold;">Agenda Event</span>
+    </nav>
+
+    <div class="container">
+        
+        <!-- SECTION 1: MINGGU INI (HIGHLIGHT) -->
+        <div class="section-title"><i class="fa-solid fa-fire"></i> Minggu Ini</div>
+        
+        <div class="schedule-card-main">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+                <div>
+                    <h2>Sabtu, 03 Januari 2026</h2>
+                    <p style="color:#ccc; margin-top:-10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: Stadion Bayuangga Zone</p>
+                </div>
+                <span class="badge active" style="font-size:0.9rem; padding:5px 10px;">ON SCHEDULE</span>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #444; margin:20px 0;">
+
+            <!-- Daftar Artis Minggu Ini -->
+            <div class="performer-list-item">
+                <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <h4 style="margin:0;">Rina Violinist</h4>
+                    <span style="color:var(--accent); font-size:0.9rem;">19.00 - 20.00 WIB</span>
+                    <p style="margin:0; font-size:0.8rem; color:#aaa;">Instrumental & Akustik</p>
+                </div>
+            </div>
+
+            <div class="performer-list-item">
+                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <h4 style="margin:0;">The Acoustic Boys</h4>
+                    <span style="color:var(--accent); font-size:0.9rem;">20.00 - 21.00 WIB</span>
+                    <p style="margin:0; font-size:0.8rem; color:#aaa;">Pop Jawa & Koplo</p>
+                </div>
+            </div>
+
+            <div class="performer-list-item">
+                <img src="https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=100" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <h4 style="margin:0;">Keroncong Pro</h4>
+                    <span style="color:var(--accent); font-size:0.9rem;">21.00 - Selesai</span>
+                    <p style="margin:0; font-size:0.8rem; color:#aaa;">Tembang Kenangan</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: JADWAL MENDATANG -->
+        <div class="section-title"><i class="fa-regular fa-calendar"></i> Jadwal Berikutnya (Upcoming)</div>
+
+        <div class="upcoming-item">
+            <div class="date-badge">
+                <b style="color:var(--primary); font-size:1.2rem; display:block;">10</b> JAN
+            </div>
+            <div>
+                <h4 style="margin:0;">Jazz Night Special</h4>
+                <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">Menampilkan: Jazz Trio & Solo Hudi</p>
+                <span class="badge soon">COMING SOON</span>
+            </div>
+        </div>
+
+        <div class="upcoming-item">
+            <div class="date-badge">
+                <b style="color:var(--primary); font-size:1.2rem; display:block;">17</b> JAN
+            </div>
+            <div>
+                <h4 style="margin:0;">Rock Legend Tribute</h4>
+                <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">Menampilkan: Rock Ballad Pro</p>
+                <span class="badge soon">COMING SOON</span>
+            </div>
+        </div>
+
+        <div class="upcoming-item">
+            <div class="date-badge">
+                <b style="color:var(--primary); font-size:1.2rem; display:block;">24</b> JAN
+            </div>
+            <div>
+                <h4 style="margin:0;">Festival Campursari</h4>
+                <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">Menampilkan: Campursari Gembira</p>
+                <span class="badge soon">COMING SOON</span>
+            </div>
+        </div>
+
+        <br><br>
+        <center><small style="color:#666;">Jadwal dapat berubah sewaktu-waktu.</small></center>
+    </div>
+
+</body>
+</html>
