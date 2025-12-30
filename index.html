@@ -158,26 +158,28 @@
         <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
     </div>
   <!-- Script Cek Login (Taruh dibawah div container penutup) -->
+
     <script>
         window.onload = function() {
-            // Cek apakah ada data login di memori browser
             const isLoggedIn = localStorage.getItem('userLoggedIn');
             const userName = localStorage.getItem('userName');
-            
-            // Cari elemen navbar tempat tombol berada
+            const userLink = localStorage.getItem('userLink'); // Ambil link dashboard
             const navArea = document.getElementById('nav-btn-area');
 
-            // Pastikan elemen navbar ada sebelum diubah (untuk menghindari error)
             if (navArea) {
                 if (isLoggedIn === 'true') {
-                    // JIKA SUDAH LOGIN: Ubah tombol jadi "Dashboard Saya"
+                    // TENTUKAN IKON (Warung atau Gitar/Performer)
+                    let icon = 'fa-store'; 
+                    if(userLink.includes('performer')) icon = 'fa-guitar';
+
+                    // JIKA SUDAH LOGIN (Style Merah Transparan)
                     navArea.innerHTML = `
-                         <a href="mitra-dashboard.html" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:#E50914; font-weight:800; font-size:1rem;">
-                    <i class="fa-solid fa-store"></i> ${userName}
+                        <a href="${userLink}" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:#E50914; font-weight:800; font-size:1rem;">
+                            <i class="fa-solid ${icon}"></i> ${userName}
                         </a>
                     `;
                 } else {
-                    // JIKA BELUM: Biarkan tombol Login biasa
+                    // JIKA BELUM LOGIN
                     navArea.innerHTML = `
                         <a href="login.html" class="btn-mitra">
                             <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
