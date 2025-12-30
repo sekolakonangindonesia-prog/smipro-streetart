@@ -107,6 +107,28 @@
             </div>
         </div>
 
+         <!-- LOGIN PERFORMER (TANPA PASSWORD) -->
+        <div id="view-login-performer" class="section-view" style="display:none;">
+            <div class="auth-header">
+                <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2>Login Performer</h2>
+                <p>Khusus Anggota Terverifikasi</p>
+            </div>
+            
+            <!-- Notifikasi Info -->
+            <div style="background:#332b00; padding:10px; border-radius:5px; border:1px solid #ffeb3b; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; text-align:left;">
+                <i class="fa-solid fa-info-circle"></i> Masukkan ID Anggota atau Email yang terdaftar di Management.
+            </div>
+
+            <!-- Input Cuma Satu -->
+            <div class="form-group">
+                <label>Email / No. ID Performer</label>
+                <input type="text" id="perf-id" class="form-input" placeholder="Contoh: SMIPRO-001">
+            </div>
+
+            <button class="btn-primary" onclick="loginPerformer()" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
+        </div>
+
         <!-- === 3. TAMPILAN REGISTER MITRA (LENGKAP + LOGO) === -->
         <div id="view-register" class="section-view" style="display:none;">
             <div class="auth-header">
@@ -189,7 +211,18 @@
             // Langsung masuk ke dashboard mitra
             window.location.href = 'mitra-dashboard.html';
         }
+ function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
 
+        function openModalDoc(title) {
+            document.getElementById('doc-title').innerText = "Preview: " + title;
+            document.getElementById('modal-doc').style.display = 'flex';
+        }
+   
         // --- 3. LOGIKA REGISTER (Validasi) ---
         function aksiDaftar() {
             const lokasi = document.getElementById('reg-location').value;
