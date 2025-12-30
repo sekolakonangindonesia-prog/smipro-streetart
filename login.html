@@ -18,39 +18,23 @@
             width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 40px rgba(229, 9, 20, 0.4);
             max-height: 90vh; overflow-y: auto; position: relative;
         }
-        
-        /* HEADER TAB */
         .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .auth-header h2 { color: white; margin: 0; }
         .auth-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
-
-        /* LOGO STYLE */
-        .register-logo {
-            width: 100px;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
-        }
-
-        /* MENU GRID ROLE */
+        .register-logo { width: 100px; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
+        
         .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .role-btn { background: #333; padding: 15px; border-radius: 10px; cursor: pointer; border: 1px solid #444; transition: 0.3s; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         .role-btn:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
         .role-btn i { font-size: 1.5rem; }
-
-        /* FORM STYLES */
+        
         .form-group { text-align: left; margin-bottom: 15px; }
         .form-group label { font-size: 0.8rem; color: #ccc; display: block; margin-bottom: 5px; }
         .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
-        .form-input:focus { border-color: var(--primary); }
-
-        /* SWITCH LINK */
+        
         .switch-link { margin-top: 15px; font-size: 0.8rem; color: #aaa; }
         .switch-link span { color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline; }
-        
-        /* TOMBOL KEMBALI KECIL */
         .back-icon { float: left; color: #888; cursor: pointer; background: none; border: none; font-size: 1rem; }
-
-        /* TRANSITION */
         .section-view { animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -59,161 +43,83 @@
 
     <div class="auth-card">
         
-        <!-- === 1. TAMPILAN MENU PILIHAN ROLE === -->
+        <!-- MENU PILIHAN -->
         <div id="view-menu" class="section-view">
             <div class="auth-header">
                 <h2>Akses Sistem SMIPRO</h2>
                 <p>Silakan pilih peran Anda:</p>
             </div>
             <div class="role-grid">
-                <div class="role-btn" onclick="pindahKe('login')">
-                    <i class="fa-solid fa-store"></i><span>Mitra Warung</span>
-                </div>
-                <div class="role-btn" onclick="alert('Menu Performer Segera Hadir')">
-                    <i class="fa-solid fa-guitar"></i><span>Performer</span>
-                </div>
-                <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')">
-                    <i class="fa-solid fa-graduation-cap"></i><span>Mentor</span>
-                </div>
-                <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')">
-                    <i class="fa-solid fa-user-shield"></i><span>Admin</span>
-                </div>
+                <div class="role-btn" onclick="pindahKe('login')"><i class="fa-solid fa-store"></i><span>Mitra Warung</span></div>
+                <div class="role-btn" onclick="pindahKe('login-performer')"><i class="fa-solid fa-guitar"></i><span>Performer</span></div>
+                <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')"><i class="fa-solid fa-graduation-cap"></i><span>Mentor</span></div>
+                <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')"><i class="fa-solid fa-user-shield"></i><span>Admin</span></div>
             </div>
-            <br>
-            <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
+            <br><a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
         </div>
 
-        <!-- === 2. TAMPILAN LOGIN MITRA === -->
+        <!-- LOGIN MITRA -->
         <div id="view-login" class="section-view" style="display:none;">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2>Login Mitra</h2>
-                <p>Masuk Dashboard Warung</p>
+                <h2>Login Mitra</h2><p>Masuk Dashboard Warung</p>
             </div>
-
-            <div class="form-group">
-                <label>Username / Email</label>
-                <input type="text" class="form-input" placeholder="Contoh: warungbusri">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" class="form-input" placeholder="******">
-            </div>
-            
-            <button class="btn-primary" onclick="aksiLogin()">MASUK DASHBOARD</button>
-
-            <div class="switch-link">
-                Belum punya akun? <span onclick="pindahKe('register')">Daftar Sekarang</span>
-            </div>
+            <div class="form-group"><label>Username</label><input type="text" class="form-input"></div>
+            <div class="form-group"><label>Password</label><input type="password" class="form-input"></div>
+            <button class="btn-primary" onclick="location.href='mitra-dashboard.html'" style="background:var(--primary); width:100%; padding:10px; border:none; color:white; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK DASHBOARD</button>
+            <div class="switch-link">Belum punya akun? <span onclick="pindahKe('register')">Daftar Sekarang</span></div>
         </div>
 
-        <!-- === 3. TAMPILAN REGISTER MITRA (LENGKAP + LOGO) === -->
+        <!-- LOGIN PERFORMER (TANPA PASSWORD) -->
+        <div id="view-login-performer" class="section-view" style="display:none;">
+            <div class="auth-header">
+                <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2>Login Performer</h2>
+                <p>Khusus Anggota Terverifikasi</p>
+            </div>
+            
+            <!-- Notifikasi Info -->
+            <div style="background:#332b00; padding:10px; border-radius:5px; border:1px solid #ffeb3b; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; text-align:left;">
+                <i class="fa-solid fa-info-circle"></i> Masukkan ID Anggota atau Email yang terdaftar di Management.
+            </div>
+
+            <!-- Input Cuma Satu -->
+            <div class="form-group">
+                <label>Email / No. ID Performer</label>
+                <input type="text" id="perf-id" class="form-input" placeholder="Contoh: SMIPRO-001">
+            </div>
+
+            <button class="btn-primary" onclick="loginPerformer()" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
+        </div>
+
+        <!-- REGISTER MITRA -->
         <div id="view-register" class="section-view" style="display:none;">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('login')"><i class="fa-solid fa-arrow-left"></i></button>
-                
-                <!-- LOGO ADA DISINI -->
-                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo SMIPRO" class="register-logo">
-                
-                <h2>Daftar Mitra Baru</h2>
-                <p>Isi data untuk verifikasi admin</p>
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo" class="register-logo">
+                <h2>Daftar Mitra Baru</h2><p>Isi data untuk verifikasi admin</p>
             </div>
-
-            <div class="form-group">
-                <label>Pilih Lokasi Zona</label>
-                <select class="form-input" id="reg-location">
-                    <option value="">-- Pilih Lokasi --</option>
-                    <option value="1">Stadion Bayuangga Zone</option>
-                    <option value="2">Alun-Alun Kota</option>
-                    <option value="3">Benteng Mayangan</option>
-                    <option value="4">Museum Probolinggo</option>
-                    <option value="5">BJBR Mangrove</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Nama Pemilik</label>
-                <input type="text" id="reg-owner" class="form-input" placeholder="Nama Lengkap Sesuai KTP">
-            </div>
-
-            <div class="form-group">
-                <label>Nama Warung</label>
-                <input type="text" id="reg-warung" class="form-input" placeholder="Contoh: Angkringan Joss">
-            </div>
-
-            <div class="form-group">
-                <label>Jumlah Meja (Maksimal 15)</label>
-                <input type="number" id="reg-table" class="form-input" placeholder="Contoh: 10" max="15">
-                <small style="color:#666; font-size:0.7rem;">*Jika > 15 butuh survei tim admin.</small>
-            </div>
-
-            <div class="form-group">
-                <label>Nomor HP / WhatsApp</label>
-                <input type="number" id="reg-wa" class="form-input" placeholder="08xxxxx (Aktif WA)">
-            </div>
-
-            <div class="form-group">
-                <label>Email (Untuk Verifikasi)</label>
-                <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
-            </div>
-
-            <button class="btn-primary" onclick="aksiDaftar()" style="background:var(--green);">DAFTAR SEKARANG</button>
-
-            <div class="switch-link">
-                Sudah punya akun? <span onclick="pindahKe('login')">Login Disini</span>
-            </div>
+            <!-- Form Register Singkat -->
+            <div class="form-group"><label>Nama Warung</label><input type="text" class="form-input"></div>
+            <button class="btn-primary" onclick="alert('Data Terkirim!'); pindahKe('login');" style="background:var(--green); width:100%; padding:10px; border:none; color:white; border-radius:5px; cursor:pointer;">DAFTAR SEKARANG</button>
         </div>
 
     </div>
 
     <script>
-        // --- 1. FUNGSI PINDAH HALAMAN (Navigasi) ---
         function pindahKe(tujuan) {
-            // Sembunyikan semua
-            document.getElementById('view-menu').style.display = 'none';
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-register').style.display = 'none';
-
-            // Tampilkan tujuan
-            if (tujuan === 'menu') {
-                document.getElementById('view-menu').style.display = 'block';
-            } else if (tujuan === 'login') {
-                document.getElementById('view-login').style.display = 'block';
-            } else if (tujuan === 'register') {
-                document.getElementById('view-register').style.display = 'block';
-            }
+            document.querySelectorAll('.section-view').forEach(e => e.style.display = 'none');
+            if (tujuan === 'menu') document.getElementById('view-menu').style.display = 'block';
+            if (tujuan === 'login') document.getElementById('view-login').style.display = 'block';
+            if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
+            if (tujuan === 'register') document.getElementById('view-register').style.display = 'block';
         }
 
-        // --- 2. LOGIKA LOGIN ---
-        function aksiLogin() {
-            // Langsung masuk ke dashboard mitra
-            window.location.href = 'mitra-dashboard.html';
-        }
-
-        // --- 3. LOGIKA REGISTER (Validasi) ---
-        function aksiDaftar() {
-            const lokasi = document.getElementById('reg-location').value;
-            const owner = document.getElementById('reg-owner').value;
-            const warung = document.getElementById('reg-warung').value;
-            const meja = parseInt(document.getElementById('reg-table').value);
-            const wa = document.getElementById('reg-wa').value;
-            const email = document.getElementById('reg-email').value;
-
-            // Validasi Kelengkapan
-            if(!lokasi || !owner || !warung || !meja || !wa || !email) {
-                return alert("Mohon lengkapi semua data pendaftaran!");
-            }
-
-            // Validasi Jumlah Meja
-            if(meja > 15) {
-                return alert("Pendaftaran mandiri maksimal 15 meja. Hubungi Admin untuk lebih.");
-            }
-
-            // Simulasi Sukses
-            alert(`Terima kasih ${owner}! Data ${warung} berhasil dikirim.\n\nLink verifikasi telah dikirim ke email: ${email}.\nSilakan cek inbox/spam.`);
-            
-            // Kembali ke halaman Login
-            pindahKe('login');
+        function loginPerformer() {
+            const id = document.getElementById('perf-id').value;
+            if(!id) return alert("Mohon isi ID atau Email Anda!");
+            // Simulasi sukses
+            window.location.href = 'performer-dashboard.html';
         }
     </script>
 </body>
