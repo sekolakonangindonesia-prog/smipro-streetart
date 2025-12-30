@@ -196,3 +196,18 @@ function registerAction() {
             // Kembali ke login
             switchTab('login');
         }
+
+/* ========================
+   5. LOGIKA LOGOUT
+   ======================== */
+function prosesLogout() {
+    if(confirm("Yakin ingin keluar akun?")) {
+        // Hapus status login dari memori browser
+        localStorage.removeItem('userLoggedIn');
+        localStorage.removeItem('userName');
+        
+        // Kembali ke Home
+        window.location.href = 'index.html';
+    }
+}
+
