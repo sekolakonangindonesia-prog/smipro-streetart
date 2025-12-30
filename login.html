@@ -210,12 +210,27 @@
         }
 
         function aksiLogin() {
-           // SIMPAN STATUS LOGIN KE MEMORI BROWSER
+           // --- 2. LOGIKA LOGIN MITRA ---
+        function aksiLogin() {
+            // Simpan Data Mitra
             localStorage.setItem('userLoggedIn', 'true');
-            localStorage.setItem('userName', 'Warung Bu Sri'); // Simulasi nama
+            localStorage.setItem('userName', 'Warung Bu Sri'); 
+            localStorage.setItem('userLink', 'mitra-dashboard.html'); // Link Dashboard Mitra
 
-            // Langsung masuk ke dashboard mitra
             window.location.href = 'mitra-dashboard.html';
+        }
+
+        // --- 3. LOGIKA LOGIN PERFORMER ---
+        function aksiLoginPerformer() {
+            const id = document.getElementById('perf-id').value;
+            if(!id) return alert("Mohon isi ID atau Email Anda!");
+            
+            // Simpan Data Performer
+            localStorage.setItem('userLoggedIn', 'true');
+            localStorage.setItem('userName', 'The Acoustic Boys'); // Simulasi Nama Artis
+            localStorage.setItem('userLink', 'performer-dashboard.html'); // Link Dashboard Performer
+
+            window.location.href = 'performer-dashboard.html';
         }
 
         function aksiLoginPerformer() {
