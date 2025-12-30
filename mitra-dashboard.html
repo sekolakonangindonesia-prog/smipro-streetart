@@ -50,10 +50,15 @@
 
     <div class="mitra-header-bg">
         <div class="mitra-header-overlay"></div>
-        <img src="https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200" class="mitra-profile-pic">
+         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
+             style="position:absolute; top:15px; left:15px; width:50px; z-index:10; filter:drop-shadow(0 0 5px rgba(0,0,0,0.5));" 
+             alt="Logo SMIPRO">
+        
+        <!-- FOTO PROFIL WARUNG -->
+        <img src="https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200" class="mitra-profile-pic" onclick="alert('Fitur Ganti Foto Profil Warung')">
         <button onclick="location.href='index.html'" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.6); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Logout</button>
     </div>
-
+    
     <div class="mitra-controls">
         <div>
             <h2 style="margin:0;" id="shop-name-display">Warung Bu Sri</h2>
@@ -64,7 +69,17 @@
             <span id="store-status-text" style="font-weight:bold; font-size:0.9rem;">BUKA</span>
         </div>
     </div>
-
+<!-- TOMBOL NAVIGASI POJOK KANAN ATAS -->
+        <div style="position:absolute; top:20px; right:20px; display:flex; gap:10px;">
+            <!-- Tombol Ke Home (Tanpa Logout) -->
+            <button onclick="location.href='index.html'" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;">
+                <i class="fa-solid fa-house"></i> Home
+            </button>
+            <button onclick="prosesLogout()" style="background:rgba(229, 9, 20, 0.8); color:white; border:none; padding:5px 12px; border-radius:5px; cursor:pointer;">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </div>
     <!-- TAB NAVIGASI -->
     <div class="mitra-tabs">
         <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> Beranda</button>
