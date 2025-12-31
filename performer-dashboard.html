@@ -8,13 +8,58 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* HEADER PROFIL */
-        .perf-header { height: 200px; background: linear-gradient(to bottom, #333, #121212); position: relative; display: flex; align-items: end; padding: 20px; }
-        .perf-pic { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 20px rgba(0,0,0,0.5); margin-right: 20px; border: 4px solid var(--accent); background:#000; }
+        .perf-header { 
+            height: 200px; 
+            background: linear-gradient(to bottom, #333, #121212), url('https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=1000');
+            background-size: cover;
+            background-blend-mode: multiply;
+            position: relative; 
+            display: flex; 
+            align-items: end; 
+            padding: 20px; 
+        }
+        
+        .perf-pic-container {
+            position: relative;
+            width: 110px; height: 110px;
+            margin-right: 20px;
+            cursor: pointer;
+        }
+        .perf-pic { 
+            width: 100%; height: 100%; 
+            border-radius: 50%; object-fit: cover; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+            border: 4px solid var(--accent); 
+            background:#000; 
+        }
+        .edit-badge {
+            position: absolute; bottom: 5px; right: 5px;
+            background: var(--primary); color: white;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white; font-size: 0.8rem;
+            transition: 0.3s;
+        }
+        .perf-pic-container:hover .edit-badge { transform: scale(1.1); background: var(--accent); color: black; }
+
+        .perf-info { z-index: 2; }
         .perf-info h1 { margin: 0; font-size: 1.8rem; color: white; }
         .perf-info p { color: #ccc; margin: 5px 0; font-size:0.9rem; }
         .verified-badge { background: #1a3320; color: #4ade80; padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #4ade80; margin-bottom:5px; }
 
-        /* GRID GALERI */
+        .header-logo-corner { position: absolute; top: 20px; left: 20px; width: 60px; z-index: 10; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); }
+        .header-nav-corner { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 10; }
+        .btn-nav-header { background: rgba(0,0,0,0.6); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+        .btn-nav-header:hover { background: rgba(255,255,255,0.2); }
+        .btn-logout { background: rgba(229, 9, 20, 0.8); border: none; }
+        .btn-logout:hover { background: #E50914; }
+
+        .mitra-tabs { display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 15px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: white; border-bottom-color: var(--accent); }
+        
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
         .track-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
         .track-card { background: #181818; padding: 15px; border-radius: 8px; transition: 0.3s; cursor: pointer; border: 1px solid transparent; position: relative; }
         .track-card:hover { background: #282828; border-color: #444; }
@@ -24,36 +69,39 @@
         .play-icon { position: absolute; bottom: 80px; right: 20px; background: var(--green); color: black; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
         .track-card:hover .play-icon { opacity: 1; bottom: 90px; }
 
-        /* LIST DOKUMEN */
         .doc-item { display: flex; align-items: center; background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #444; }
         .doc-icon { font-size: 2rem; color: var(--primary); margin-right: 15px; }
         .btn-action-doc { background: #333; border: 1px solid #555; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; margin-left: 5px; font-size:0.8rem; }
         .btn-action-doc:hover { background: var(--accent); color: black; border-color:var(--accent); }
 
-        /* ULASAN & MOTIVASI */
         .rating-summary { background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); padding: 20px; border-radius: 15px; border: 1px solid var(--accent); text-align: center; margin-bottom: 20px; }
         .rating-big { font-size: 3rem; font-weight: 800; color: var(--accent); line-height: 1; }
         .review-card { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #444; }
         .review-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
         .review-text { font-style: italic; color: white; font-size: 0.95rem; }
-        
-        /* TABS */
-        .mitra-tabs { display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 15px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: white; border-bottom-color: var(--accent); }
     </style>
 </head>
 <body>
 
     <!-- 1. HEADER PROFIL -->
     <div class="perf-header">
-        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=300" class="perf-pic">
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="header-logo-corner" alt="Logo">
+
+        <div class="header-nav-corner">
+            <button onclick="location.href='index.html'" class="btn-nav-header"><i class="fa-solid fa-house"></i> Home</button>
+            <button onclick="prosesLogout()" class="btn-nav-header btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </div>
+
+        <div class="perf-pic-container" onclick="triggerUpload()">
+            <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=300" class="perf-pic" id="header-profile-img">
+            <div class="edit-badge"><i class="fa-solid fa-camera"></i></div>
+        </div>
+
         <div class="perf-info">
             <div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Certified Performer</div>
             <h1>The Acoustic Boys</h1>
             <p>ID: SMIPRO-024 • Pop Jawa & Koplo</p>
         </div>
-        <button onclick="location.href='index.html'" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:none; padding:8px 15px; border-radius:20px; cursor:pointer;">Logout</button>
     </div>
 
     <!-- 2. TAB MENU -->
@@ -65,12 +113,12 @@
     </div>
 
     <div class="container">
-        
-        <!-- TAB 1: GALERI (AUDIO & VIDEO) -->
+        <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
+
+        <!-- TAB 1: GALERI -->
         <div id="tab-galeri" class="tab-content active">
             <h3 style="color:var(--accent); margin-top:0;">Rekaman Performance</h3>
             <p style="color:#888; font-size:0.9rem; margin-top:-10px;">Review penampilanmu sendiri untuk evaluasi.</p>
-            
             <div class="track-grid">
                 <div class="track-card" onclick="alert('Memutar Video...')">
                     <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" class="track-img">
@@ -87,31 +135,28 @@
             </div>
         </div>
 
-        <!-- TAB 2: DOKUMEN (VIEW & DOWNLOAD) -->
-        <div id="tab-dokumen" class="tab-content" style="display:none;">
+        <!-- TAB 2: DOKUMEN -->
+        <div id="tab-dokumen" class="tab-content">
             <h3>Dokumen Legalitas</h3>
             
             <!-- Dokumen 1 -->
             <div class="doc-item">
                 <i class="fa-solid fa-certificate doc-icon"></i>
-                <div style="flex:1;">
-                    <b>Sertifikat Lulus Bengkel</b><br>
-                    <small style="color:#aaa;">20 Des 2025</small>
-                </div>
-                <!-- Tombol View & Download -->
+                <div style="flex:1;"><b>Sertifikat Lulus Bengkel</b><br><small style="color:#aaa;">20 Des 2025</small></div>
                 <button class="btn-action-doc" onclick="openModalDoc('Sertifikat')"><i class="fa-regular fa-eye"></i> Lihat</button>
-                <button class="btn-action-doc"><i class="fa-solid fa-download"></i> Unduh</button>
+                
+                <!-- TOMBOL DOWNLOAD BERFUNGSI -->
+                <button class="btn-action-doc" onclick="downloadFile('Sertifikat_Lulus_Bengkel.pdf')"><i class="fa-solid fa-download"></i> Unduh</button>
             </div>
 
             <!-- Dokumen 2 -->
             <div class="doc-item" style="border-color:var(--primary);">
                 <i class="fa-solid fa-file-contract doc-icon"></i>
-                <div style="flex:1;">
-                    <b>MOU Kontrak Management</b><br>
-                    <small style="color:var(--primary);">AKTIF s/d Des 2026</small>
-                </div>
+                <div style="flex:1;"><b>MOU Kontrak Management</b><br><small style="color:var(--primary);">AKTIF s/d Des 2026</small></div>
                 <button class="btn-action-doc" onclick="openModalDoc('MOU')"><i class="fa-regular fa-eye"></i> Lihat</button>
-                <button class="btn-action-doc"><i class="fa-solid fa-download"></i> Unduh</button>
+                
+                <!-- TOMBOL DOWNLOAD BERFUNGSI -->
+                <button class="btn-action-doc" onclick="downloadFile('MOU_Kontrak_Kerja_Sama.pdf')"><i class="fa-solid fa-download"></i> Unduh</button>
             </div>
 
             <div style="background:#332b00; padding:15px; border-radius:10px; margin-top:20px; color:#ffeb3b; font-size:0.9rem;">
@@ -120,52 +165,29 @@
             </div>
         </div>
 
-        <!-- TAB 3: ULASAN & MOTIVASI (Sesuai Request: Paling Bawah/Tab Sendiri) -->
-        <div id="tab-ulasan" class="tab-content" style="display:none;">
-            
-            <!-- Rapor Nilai -->
+        <!-- TAB 3: ULASAN -->
+        <div id="tab-ulasan" class="tab-content">
             <div class="rating-summary">
                 <div class="rating-big">4.8</div>
-                <div style="color:gold; margin:5px 0;">
-                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
-                </div>
+                <div style="color:gold; margin:5px 0;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
                 <small style="color:#aaa;">Berdasarkan 128 Ulasan Penonton</small>
-                <hr style="border:0; border-top:1px solid #444; margin:15px 0;">
-                <p style="color:white; font-style:italic; margin:0;">"Pertahankan kualitas vokal dan interaksi dengan penonton!" - Mentor</p>
             </div>
-
-            <h3 style="margin-bottom:15px;">Komentar Terbaru (Motivasi)</h3>
-            
+            <h3 style="margin-bottom:15px;">Komentar Terbaru</h3>
             <div class="review-card">
-                <div class="review-header">
-                    <span><i class="fa-solid fa-user"></i> Budi Santoso</span>
-                    <span style="color:gold;">★ 5.0</span>
-                </div>
+                <div class="review-header"><span><i class="fa-solid fa-user"></i> Budi Santoso</span><span style="color:gold;">★ 5.0</span></div>
                 <div class="review-text">"Gokil suaranya! Lagu Nemen-nya bikin ambyar. Sukses terus mas!"</div>
             </div>
-
-            <div class="review-card">
-                <div class="review-header">
-                    <span><i class="fa-solid fa-user"></i> Siti Aminah</span>
-                    <span style="color:gold;">★ 4.0</span>
-                </div>
-                <div class="review-text">"Interaksi sama penonton asik banget, cuma sound agak kecil dikit tadi."</div>
-            </div>
-
-            <div class="review-card">
-                <div class="review-header">
-                    <span><i class="fa-solid fa-user"></i> Anonim</span>
-                    <span style="color:gold;">★ 5.0</span>
-                </div>
-                <div class="review-text">"Band lokal rasa konser! Top markotop."</div>
-            </div>
-
         </div>
 
-        <!-- TAB 4: PROFIL SAYA -->
-        <div id="tab-profil" class="tab-content" style="display:none;">
+        <!-- TAB 4: PROFIL -->
+        <div id="tab-profil" class="tab-content">
             <div style="background:#222; padding:20px; border-radius:10px;">
                 <h3>Edit Profil</h3>
+                <div style="text-align:center; margin-bottom:20px; padding:15px; border:1px dashed #444; border-radius:10px;">
+                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" id="preview-profile-img" style="width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
+                    <br>
+                    <button class="btn-nav-header" onclick="triggerUpload()" style="margin:0 auto;"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</button>
+                </div>
                 <label style="color:#aaa; font-size:0.8rem;">Nama Panggung</label>
                 <input type="text" value="The Acoustic Boys" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;">
                 <label style="color:#aaa; font-size:0.8rem;">Bio Singkat</label>
@@ -176,15 +198,15 @@
 
     </div>
 
-    <!-- MODAL VIEW DOKUMEN -->
+    <!-- MODAL VIEW -->
     <div id="modal-doc" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#fff; width:100%; max-width:500px; height:80vh; padding:20px; border-radius:10px; position:relative; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                 <h3 style="margin:0; color:black;" id="doc-title">Preview Dokumen</h3>
-                <button onclick="document.getElementById('modal-doc').style.display='none'" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+                <button onclick="document.getElementById('modal-doc').style.display='none'" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:black;">&times;</button>
             </div>
             <div style="flex:1; background:#eee; display:flex; align-items:center; justify-content:center; border:1px solid #ccc;">
-                <p style="color:#555;">[Simulasi Tampilan PDF / Gambar Sertifikat]</p>
+                <p style="color:#555;">[Simulasi View PDF]</p>
             </div>
         </div>
     </div>
@@ -200,6 +222,43 @@
         function openModalDoc(title) {
             document.getElementById('doc-title').innerText = "Preview: " + title;
             document.getElementById('modal-doc').style.display = 'flex';
+        }
+
+        // --- FUNGSI DOWNLOAD SIMULASI ---
+        function downloadFile(filename) {
+            // Ini akan memaksa browser mendownload file teks dummy
+            const text = "Ini adalah simulasi isi dokumen legal untuk " + filename + ".\n\nHak Cipta SMIPRO 2025.";
+            const blob = new Blob([text], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename; // Nama file saat didownload
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            alert("File " + filename + " berhasil diunduh ke HP Anda!");
+        }
+
+        function triggerUpload() { document.getElementById('file-input').click(); }
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('header-profile-img').src = e.target.result;
+                    document.getElementById('preview-profile-img').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function prosesLogout() {
+            if(confirm("Yakin ingin keluar?")) {
+                localStorage.removeItem('userLoggedIn');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userLink');
+                window.location.href = 'index.html';
+            }
         }
     </script>
 </body>
