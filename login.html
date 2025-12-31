@@ -64,7 +64,7 @@
                 <div class="role-btn" onclick="pindahKe('login-performer')">
                     <i class="fa-solid fa-guitar"></i><span>Performer</span>
                 </div>
-                <div class="role-btn" onclick="alert('Menu Mentor Segera Hadir')">
+                <div class="role-btn" onclick="aksiLoginMentor()">
                     <i class="fa-solid fa-graduation-cap"></i><span>Mentor</span>
                 </div>
                 <div class="role-btn" onclick="alert('Menu Admin Segera Hadir')">
@@ -193,6 +193,18 @@
 
             alert("Pendaftaran Berhasil! Link verifikasi dikirim ke " + email);
             pindahKe('login-mitra');
+        }
+
+        // ... (Fungsi Login Lain di atasnya) ...
+
+        // TAMBAHKAN INI DI DALAM <SCRIPT>
+        function aksiLoginMentor() {
+            // Kita buat login instan untuk Mentor (Simulasi)
+            localStorage.setItem('userLoggedIn', 'true');
+            localStorage.setItem('userName', 'Mentor Haryono');
+            localStorage.setItem('userLink', 'mentor-dashboard.html'); // Link ke file baru
+            
+            window.location.href = 'mentor-dashboard.html';
         }
     </script>
 </body>
