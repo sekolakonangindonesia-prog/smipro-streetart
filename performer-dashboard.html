@@ -214,6 +214,18 @@
     </div>
 
     <script>
+         // --- SCRIPT PINTAR (CEK SIAPA YANG LIHAT) ---
+        window.onload = function() {
+            const role = localStorage.getItem('userRole'); // Cek Role
+            const navBtn = document.getElementById('nav-home-btn'); // Kasih ID dulu di tombol Home
+
+            if(role === 'mentor') {
+                // JIKA MENTOR YANG LIHAT: Ubah tombol Home jadi Back
+                navBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Kembali ke Mentor';
+                navBtn.onclick = function() { window.location.href = 'mentor-dashboard.html'; };
+            }
+        };
+        
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
