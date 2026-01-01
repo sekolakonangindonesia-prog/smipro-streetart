@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tentang SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS KHUSUS HALAMAN ABOUT */
+        .about-header {
+            background: linear-gradient(to right, #b71c1c, #d32f2f);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+        }
+        .about-logo {
+            width: 80px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        }
+        
+        .content-box {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #333;
+            line-height: 1.6;
+            color: #ddd;
+        }
+        
+        .section-heading {
+            color: var(--accent);
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 10px;
+        }
+
+        /* Highlight Text */
+        .highlight { color: white; font-weight: bold; }
+
+        /* Grid Fitur (Lingkaran Icon) */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            text-align: center;
+            background: #252525;
+            padding: 15px 5px;
+            border-radius: 10px;
+        }
+        .feature-icon {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .feature-text {
+            font-size: 0.7rem;
+            color: white;
+        }
+
+        /* Manfaat Section (Kotak Kuning Style) */
+        .benefit-box {
+            border-left: 5px solid var(--accent);
+            background: linear-gradient(to right, #332b00, #1e1e1e);
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+        }
+        .benefit-list li { margin-bottom: 10px; list-style: none; display: flex; gap: 10px; }
+        .benefit-list i { color: var(--accent); margin-top: 5px; }
+
+        ul.poin-poin { padding-left: 20px; }
+        ul.poin-poin li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR SEDERHANA -->
+    <nav class="top-nav">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <span style="font-weight:bold;">Tentang Kami</span>
+    </nav>
+
+    <!-- HEADER -->
+    <div class="about-header">
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="about-logo">
+        <h1 style="margin:0; color:white; font-size:1.8rem;">SMIPRO</h1>
+        <p style="margin:5px 0 0 0; color:#ffcccc; font-size:0.9rem;">Sustainability Management Improvement Probolinggo</p>
+    </div>
+
+    <div class="container">
+
+        <!-- 1. DEFINISI & TUJUAN -->
+        <div class="content-box">
+            <h2 class="section-heading"><i class="fa-solid fa-earth-asia"></i> Apa itu SMIPRO?</h2>
+            <ul class="poin-poin">
+                <li><b class="highlight">Definisi:</b> Pendekatan sistematis berbasis platform digital dalam upaya perbaikan tatakelola zona legal ekonomi kreatif Kota Probolinggo.</li>
+                <li><b class="highlight">Tujuan:</b> Meningkatkan proses, strategi, dan kontrol organisasi serta pemangku kepentingan dalam menjalankan bisnis yang berbudaya, ramah lingkungan, inklusif, dan berorientasi pada pertumbuhan ekonomi berkelanjutan.</li>
+                <li><b class="highlight">Fokus Utama:</b> Mengurangi risiko operasional, mengoptimalkan sumber daya lokal, dan menciptakan nilai tambah jangka panjang bagi masyarakat.</li>
+            </ul>
+        </div>
+
+        <!-- 2. STREETART.ID -->
+        <div class="content-box">
+            <h2 class="section-heading"><i class="fa-solid fa-guitar"></i> @streetArt.ID</h2>
+            <p>Platform digital untuk modernisasi zona legal ekonomi kreatif dan manajemen seni jalanan menuju ekosistem kota inklusif dan berbudaya.</p>
+            <br>
+            <ul class="poin-poin">
+                <li>Adanya <b>Legal Profiling</b> dan peta sebaran "Usaha Angkringan" yang dapat diakses komunitas seniman.</li>
+                <li>Data profiling digital pelaku seni untuk memudahkan penilaian publik dan donasi online.</li>
+            </ul>
+            
+            <div style="background:#333; padding:15px; border-radius:10px; margin-top:15px; border:1px dashed #555;">
+                <b style="color:var(--accent);">Strategi Utama:</b><br>
+                Sistem layanan <i>Sekolah Lapang Budaya (Bengkel PerformArt)</i> berisi pelatihan & pemberdayaan terukur untuk meningkatkan kapasitas seniman.
+            </div>
+        </div>
+
+        <!-- 3. FITUR LAYANAN (ICON GRID) -->
+        <div class="content-box">
+            <h2 class="section-heading"><i class="fa-solid fa-layer-group"></i> Fitur Layanan</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <i class="fa-solid fa-user feature-icon"></i>
+                    <div class="feature-text">Profile Pengamen</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-users-gear feature-icon"></i>
+                    <div class="feature-text">Pelatihan Attitude</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-thumbs-up feature-icon"></i>
+                    <div class="feature-text">Penilaian Publik</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-map-location-dot feature-icon"></i>
+                    <div class="feature-text">Zona Seni Legal</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-qrcode feature-icon"></i>
+                    <div class="feature-text">Aplikasi & QR Donasi</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-calendar-days feature-icon"></i>
+                    <div class="feature-text">Jadwal Tampil</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. MANFAAT -->
+        <div class="benefit-box">
+            <h2 style="margin-top:0; color:var(--accent); font-weight:800;">MANFAAT</h2>
+            <ul class="benefit-list" style="padding-left:0; margin-bottom:0;">
+                <li>
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Memberikan rasa aman dan nyaman kepada setiap pengunjung dalam berwisata kuliner.</span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-universal-access"></i>
+                    <span>Menjamin sistem layanan yang lebih inklusif dan memberikan kemudahan akses ruang publik bagi semua kalangan.</span>
+                </li>
+            </ul>
+        </div>
+
+        <br><br>
+        <center><small style="color:#666;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
+    </div>
+
+</body>
+</html>
