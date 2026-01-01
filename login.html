@@ -198,12 +198,11 @@
         // ... (Fungsi Login Lain di atasnya) ...
 
         // TAMBAHKAN INI DI DALAM <SCRIPT>
-        function aksiLoginMentor() {
-            // Kita buat login instan untuk Mentor (Simulasi)
+         function aksiLoginMentor() {
             localStorage.setItem('userLoggedIn', 'true');
+            localStorage.setItem('userRole', 'mentor'); // Penanda Role PENTING
             localStorage.setItem('userName', 'Mentor Haryono');
-            localStorage.setItem('userLink', 'mentor-dashboard.html'); // Link ke file baru
-            
+            localStorage.setItem('userLink', 'mentor-dashboard.html');
             window.location.href = 'mentor-dashboard.html';
         }
     </script>
