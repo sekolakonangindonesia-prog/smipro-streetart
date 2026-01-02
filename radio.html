@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio SMIPRO - Kirim Salam</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="top-nav">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <span style="font-weight:bold; color:#00d2ff;">Radio Streaming</span>
+    </nav>
+
+    <div class="container">
+        
+        <!-- SPLIT VIEW (KIRI: HOST | KANAN: CHAT) -->
+        <div class="modal-split-grid">
+            
+            <!-- PANEL KIRI: INFO SIARAN -->
+            <div class="left-panel" style="border-color:#00d2ff; text-align:center;">
+                <div style="background:red; color:white; padding:5px 10px; border-radius:5px; display:inline-block; font-weight:bold; animation:pulse 1s infinite; margin-bottom:15px;">
+                    ● ON AIR SEKARANG
+                </div>
+                
+                <img src="https://images.unsplash.com/photo-1478737270239-2f02b77ac618?q=80&w=400" style="width:100%; border-radius:10px; border:2px solid #00d2ff; margin-bottom:15px;">
+                
+                <h2 style="margin:0;">Bincang Seniman</h2>
+                <p style="color:#aaa;">Host: Mas Dito & Rina Violin</p>
+                
+                <p style="font-size:0.9rem; line-height:1.5;">
+                    Topik hari ini membahas etika mengamen dan cara menghadapi pelanggan.
+                    Ayo gabung live streaming sekarang!
+                </p>
+
+                <button onclick="window.open('https://tiktok.com', '_blank')" class="btn-primary" style="background:#000; border:1px solid #00d2ff; color:#00d2ff; font-size:1.1rem; padding:15px;">
+                    <i class="fa-brands fa-tiktok"></i> Buka TikTok Live
+                </button>
+            </div>
+
+            <!-- PANEL KANAN: FORM SALAM & REQUEST -->
+            <div class="right-panel" style="border-color:#00d2ff; text-align:left;">
+                <h3 style="color:#00d2ff; margin-top:0;"><i class="fa-solid fa-paper-plane"></i> Titip Salam & Lagu</h3>
+                <p style="font-size:0.8rem; color:#aaa;">Pesanmu akan dibacakan Host saat siaran berlangsung.</p>
+
+                <div class="request-form">
+                    <input type="text" id="req-from" placeholder="Nama Kamu (Pengirim)">
+                    <input type="text" id="req-to" placeholder="Salam Untuk Siapa?">
+                    <input type="text" id="req-song" placeholder="Request Lagu (Opsional)">
+                    <textarea id="req-msg" placeholder="Tulis ucapan salammu disini..." style="height:80px;"></textarea>
+                    
+                    <button onclick="kirimSalam()" class="btn-primary" style="background:#00d2ff; color:black;">KIRIM SALAM</button>
+                </div>
+
+                <hr style="border:0; border-top:1px dashed #444; margin:20px 0;">
+
+                <h4 style="margin-bottom:10px;">Request Terkirim (Live):</h4>
+                <div id="live-chat-list" class="chat-list">
+                    <!-- Contoh Chat Dummy -->
+                    <div class="chat-item">
+                        <b>Budi (Untuk: Siti):</b><br> "Semangat kerjanya ya, jangan lupa makan. Req lagu: Nemen."
+                    </div>
+                    <div class="chat-item">
+                        <b>Andi (Untuk: Warga Probolinggo):</b><br> "Salam kompak selalu buat komunitas SMIPRO!"
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function kirimSalam() {
+            const from = document.getElementById('req-from').value;
+            const to = document.getElementById('req-to').value;
+            const msg = document.getElementById('req-msg').value;
+            const song = document.getElementById('req-song').value;
+
+            if(!from || !msg) return alert("Isi Nama dan Ucapan dulu ya!");
+
+            const songText = song ? `Req lagu: ${song}` : '';
+            
+            // Tambahkan ke list (Simulasi)
+            const list = document.getElementById('live-chat-list');
+            const newItem = `
+                <div class="chat-item" style="animation:fadeIn 0.5s;">
+                    <b>${from} (Untuk: ${to}):</b><br> "${msg}" ${songText}
+                </div>`;
+            
+            list.insertAdjacentHTML('afterbegin', newItem);
+            
+            alert("Salam terkirim! Tunggu dibacakan penyiar ya.");
+            
+            // Reset Form
+            document.getElementById('req-msg').value = '';
+            document.getElementById('req-song').value = '';
+        }
+    </script>
+
+</body>
+</html>
