@@ -192,29 +192,41 @@
         
         
     <!-- MODAL REQUEST -->
+    <!-- MODAL 1: REQUEST & SAWER (REVISI) -->
     <div id="request-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="fa-solid fa-xmark close-icon" onclick="closeModal('request-modal')"></i>
             <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo">
             
-            <h3 style="margin:0; color:#E50914;">Request Lagu</h3>
+            <h3 style="margin-top:0; color:#E50914;">Request Lagu</h3>
             
-            <select id="req-target" class="input-request">
+            <select id="req-target" class="input-dark">
                 <option>Rina Violin</option>
                 <option>Acoustic Boys</option>
             </select>
-            <input type="text" id="req-song" class="input-request" placeholder="Judul Lagu">
-            <input type="text" id="req-msg" class="input-request" placeholder="Ucapan / Salam">
-            <input type="number" id="req-amount" class="input-request" placeholder="Nominal Sawer (Rp)">
+            <input type="text" id="req-song" class="input-dark" placeholder="Judul Lagu">
+            <input type="text" id="req-msg" class="input-dark" placeholder="Ucapan / Salam">
+            <input type="number" id="req-amount" class="input-dark" placeholder="Nominal Sawer (Rp)">
             
-            <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin-bottom:10px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" style="width:100px;">
-                <p style="color:black; font-size:0.7rem; margin:5px 0;">Scan QRIS</p>
+            <!-- AREA QRIS & DOWNLOAD -->
+            <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin:10px 0;">
+                <!-- GAMBAR QRIS ASLI -->
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" style="width:100%; max-width:150px;">
+                
+                <!-- TOMBOL DOWNLOAD -->
+                <a href="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" download="QRIS_SMIPRO.png" class="btn-book-ss3" style="background:#333; display:inline-block; width:auto; padding:5px 15px; margin-top:5px; text-decoration:none; font-size:0.8rem; color:white;">
+                    <i class="fa-solid fa-download"></i> Simpan Gambar QRIS
+                </a>
             </div>
 
+            <p style="font-size:0.7rem; color:#aaa; text-align:center; margin-top:0;">Simpan QR -> Bayar di E-Wallet -> Konfirmasi</p>
+            
+            <input type="text" id="req-sender" class="input-dark" placeholder="Nama Pemilik Rekening (Wajib)" style="border:1px solid #E50914;">
+
             <div style="display:flex; gap:10px;">
-                <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal('request-modal')">Batal</button>
-                <button class="btn-small" style="background:var(--primary); color:white; flex:1;" onclick="sendRequest()">Kirim</button>
+                <button class="btn-full-ss3" style="background:#444; color:white; cursor:pointer;" onclick="closeModal('request-modal')">Batal</button>
+                <!-- TOMBOL DIGANTI TEKSNYA -->
+                <button class="btn-book-ss3" onclick="sendRequest()">SAYA SUDAH TRANSFER</button>
             </div>
         </div>
     </div>
