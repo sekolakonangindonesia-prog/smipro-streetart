@@ -167,35 +167,64 @@
         <div class="section-title">PILIH WARUNG & BOOKING MEJA</div>
         <div id="warung-grid-ss3" class="warung-grid"></div>
 
-        <!-- REVIEW -->
-        
-        <div class="review-box">
-            <img src="https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=200" class="venue-photo-review">
-            <div class="review-content">
-                    <h3 style="margin:0;">Ulasan Tempat</h3>
-                    <div style="color:gold; font-size:1.2rem; margin:5px 0;">
-                        ★★★★☆ <span style="font-size:1rem; color:white; font-weight:bold;">4.8 / 5.0</span>
-                    </div>
-                    <p style="color:#aaa; font-size:0.9rem; margin-top:0;">Bagaimana fasilitas di Stadion Bayuangga?</p>
+               
+       <!-- 3. BAGIAN BAWAH: REVIEW LOKASI (REVISI FINAL) -->
+        <div class="review-section-wrapper">
+            <div class="review-box" style="display:flex; flex-direction:column; gap:20px;">
+                
+                <!-- ATAS: FOTO & INPUT -->
+                <div style="display:flex; gap:20px; align-items:start;">
                     
-                    <textarea id="venue-comment" class="input-dark" placeholder="Tulis masukan Anda..."></textarea>
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div class="stars-input" id="venue-stars">
-                            <i class="fa-solid fa-star" onclick="rateStar('venue', 1)"></i>
-                            <i class="fa-solid fa-star" onclick="rateStar('venue', 2)"></i>
-                            <i class="fa-solid fa-star" onclick="rateStar('venue', 3)"></i>
-                            <i class="fa-solid fa-star" onclick="rateStar('venue', 4)"></i>
-                            <i class="fa-solid fa-star" onclick="rateStar('venue', 5)"></i>
+                    <!-- KIRI: FOTO & AKUMULASI -->
+                    <div style="width:120px; text-align:center;">
+                        <img src="https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=200" class="venue-photo-review" style="width:100%; height:120px; object-fit:cover; border-radius:10px; border:2px solid #555;">
+                        <!-- Akumulasi Rating -->
+                        <div style="margin-top:10px;">
+                            <div style="color:gold; font-size:1.2rem;">★★★★☆</div>
+                            <span style="font-weight:bold; color:white;">4.8 / 5.0</span>
                         </div>
-                        <button class="btn-book-ss3" style="width:120px;" onclick="submitVenueRating()">Kirim</button>
                     </div>
 
-                    <div id="venue-reviews-list" style="margin-top:15px; max-height:200px; overflow-y:auto;"></div>
+                    <!-- KANAN: FORM INPUT -->
+                    <div style="flex:1;">
+                        <h3 style="margin-top:0;">Ulasan Tempat</h3>
+                        <p style="color:#aaa; font-size:0.9rem; margin-top:-5px;">Bagaimana fasilitas di Stadion Bayuangga?</p>
+                        
+                        <textarea id="venue-comment" class="input-dark" style="height:80px;" placeholder="Tulis masukan Anda..."></textarea>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <!-- Input Bintang -->
+                            <div class="stars-input" id="venue-stars">
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 1)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 2)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 3)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 4)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 5)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                            </div>
+                            <button class="btn-book-ss3" style="width:120px;" onclick="submitVenueRating()">Kirim</button>
+                        </div>
+                    </div>
+
                 </div>
+
+                <!-- BAWAH: LIST ULASAN ORANG -->
+                <div style="border-top:1px dashed #444; padding-top:15px;">
+                    <h4 style="margin:0 0 10px 0; color:#888;">Ulasan Terbaru:</h4>
+                    <div id="venue-reviews-list" style="max-height:300px; overflow-y:auto;">
+                        <!-- Contoh Ulasan Dummy -->
+                        <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid gold;">
+                            <b style="color:white;">Budi Santoso</b> <small style="color:gold;">★★★★★</small>
+                            <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"Tempatnya luas, parkir aman, dan banyak pilihan makanan enak. Live music-nya juga keren!"</p>
+                        </div>
+                        <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid #ccc;">
+                            <b style="color:white;">Siti Aminah</b> <small style="color:gold;">★★★★☆</small>
+                            <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"Suasana asik buat nongkrong, cuma kadang agak susah cari meja kosong kalau malam minggu."</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-       
-    </div>
+        </div>
 
     <!-- MODAL RATING PERFORMER (POPUP) -->
     <div id="rate-perf-modal" class="modal-overlay" style="display:none;">
@@ -411,6 +440,25 @@
     }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // KIRIM REVIEW LOKASI (APPEND DI BAWAH)
+        window.submitVenueRating = function() {
+            const txt = document.getElementById('venue-comment').value;
+            if(!txt) return alert("Tulis ulasan dulu!");
+            
+            // Tambahkan ke list ulasan (Paling Atas)
+            const list = document.getElementById('venue-reviews-list');
+            const newReview = `
+                <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid var(--primary); animation:fadeIn 0.5s;">
+                    <b style="color:white;">Anda (Baru Saja)</b> <small style="color:gold;">★★★★★</small>
+                    <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"${txt}"</p>
+                </div>`;
+            
+            list.insertAdjacentHTML('afterbegin', newReview);
+            
+            document.getElementById('venue-comment').value = ''; // Reset
+            alert("Ulasan Terkirim!");
+        }
     </script>
 </body>
 </html>
