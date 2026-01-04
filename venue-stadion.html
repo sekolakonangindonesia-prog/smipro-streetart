@@ -22,18 +22,9 @@
 
         /* LIVE PANEL KANAN */
         .live-panel { background: #151515; border: 1px solid #333; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; height: 350px; }
-        .live-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .live-badge { background: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; animation: pulse 1s infinite; float: right; }
-        .perf-item { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 10px; margin-bottom: 5px; border-radius: 5px; }
-        .perf-info-box { display: flex; gap: 10px; align-items: center; }
+        .perf-item { display: flex; gap: 10px; background: #222; padding: 10px; margin-bottom: 5px; border-radius: 5px; align-items: center; }
         .perf-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-
-        .rate-badge { 
-            background: rgba(255, 215, 0, 0.1); border: 1px solid gold; color: gold; 
-            padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; 
-        }
-        .rate-badge:hover { background: gold; color: black; }
-        .btn-req { width: 100%; background: #E50914; color: white; padding: 12px; border: none; border-radius: 5px; margin-top: auto; font-weight: bold; cursor: pointer; }
         
         /* Tombol Request Lagu (FIXED) */
         .btn-req { 
@@ -69,13 +60,8 @@
         .btn-full-ss3 { background: #555; color: #aaa; border: none; padding: 8px 0; width: 100%; border-radius: 20px; font-weight: bold; cursor: not-allowed; }
 
         /* REVIEW BAWAH */
-        .review-box { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-top: 40px; border: 1px solid #333; display: flex; gap: 20px; flex-wrap: wrap; }
-        .venue-photo-review { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; border: 2px solid #555; }
-        .review-content { flex: 1; }
-        
-         /* List Ulasan Baru */
-        .user-reviews { margin-top: 15px; max-height: 200px; overflow-y: auto; }
-        .review-item { background: #2a2a2a; padding: 10px; border-radius: 5px; margin-bottom: 5px; font-size: 0.9rem; border-left: 3px solid gold; }
+        .review-box { background: #1e1e1e; padding: 20px; border-radius: 10px; margin-top: 40px; border: 1px solid #333; }
+        .input-dark { width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; }
 
         /* MODAL POPUP */
         .modal-overlay {
@@ -91,8 +77,6 @@
         .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; }
         .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
-         .stars-input i { color: #444; font-size: 1.5rem; cursor: pointer; margin: 0 2px; }
-        .stars-input i.gold { color: gold; }
     </style>
 </head>
 <body>
@@ -126,20 +110,10 @@
                     <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" class="perf-img">
                     <div><b>Rina Violin</b><br><small style="color:#aaa;">19.00 - 20.00</small></div>
                 </div>
-                 <!-- RATING DENGAN ANGKA -->
-                    <div class="rate-badge" onclick="openRatePerformer('Rina Violin')">
-                        <i class="fa-solid fa-star"></i> 4.9
-                    </div>
-                
                 <div class="perf-item">
                     <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" class="perf-img">
                     <div><b>Acoustic Boys</b><br><small style="color:#aaa;">20.00 - 21.00</small></div>
                 </div>
-                 <!-- RATING DENGAN ANGKA -->
-                    <div class="rate-badge" onclick="openRatePerformer('Rina Violin')">
-                        <i class="fa-solid fa-star"></i> 4.8
-                    </div>
-                
                 <!-- TOMBOL REQUEST FIX -->
                 <button class="btn-req" onclick="openRequestModal()">
                     <i class="fa-solid fa-music"></i> Request Lagu & Sawer
@@ -155,34 +129,9 @@
 
         <!-- REVIEW -->
         <div class="review-box">
-            <!-- Foto Lokasi -->
-            <img src="https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=200" class="venue-photo-review">
-            
-            <div class="review-content">
-                <h3 style="margin:0;">Ulasan Tempat</h3>
-                <!-- Akumulasi Rating -->
-                <div style="color:gold; font-size:1.2rem; margin:5px 0;">
-                    ★★★★☆ <span style="font-size:1rem; color:white; font-weight:bold;">4.8 / 5.0</span>
-                </div>
-                <p style="color:#aaa; font-size:0.9rem; margin-top:0;">Bagaimana fasilitas di Stadion Bayuangga?</p>
-                
-                <textarea id="venue-comment" class="input-dark" placeholder="Tulis pengalaman Anda..."></textarea>
-                
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <!-- Input Bintang -->
-                    <div class="stars-input" id="venue-stars">
-                        <i class="fa-solid fa-star" onclick="rateStar('venue', 1)"></i>
-                        <i class="fa-solid fa-star" onclick="rateStar('venue', 2)"></i>
-                        <i class="fa-solid fa-star" onclick="rateStar('venue', 3)"></i>
-                        <i class="fa-solid fa-star" onclick="rateStar('venue', 4)"></i>
-                        <i class="fa-solid fa-star" onclick="rateStar('venue', 5)"></i>
-                    </div>
-                    <button class="btn-book-ss3" style="width:120px;" onclick="submitVenueRating()">Kirim</button>
-                </div>
-
-                <!-- Hasil Ulasan Muncul Disini -->
-                <div id="venue-reviews-list" class="user-reviews"></div>
-            </div>
+            <h3>Ulasan Tempat</h3>
+            <textarea class="input-dark" placeholder="Tulis masukan Anda..."></textarea>
+            <button class="btn-book-ss3" style="width:150px;" onclick="alert('Terima kasih!')">Kirim Ulasan</button>
         </div>
 
     </div>
@@ -203,18 +152,17 @@
             <input type="text" id="req-msg" class="input-request" placeholder="Ucapan / Salam">
             <input type="number" id="req-amount" class="input-request" placeholder="Nominal Sawer (Rp)">
             
-             <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin-bottom:10px;">
-                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" style="width:100%;">
-               <a href="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" download="QRIS_SMIPRO" class="btn-book-ss3" style="background:#333; display:inline-block; padding:8px 15px; margin-top:5px; font-size:0.8rem; text-decoration:none;">
-                    <i class="fa-solid fa-download"></i> Simpan Gambar QRIS
-                </a>
+            <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin-bottom:10px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" style="width:100px;">
+                <p style="color:black; font-size:0.7rem; margin:5px 0;">Scan QRIS</p>
             </div>
-            <input type="text" id="req-sender" class="input-dark" placeholder="Nama Pemilik Rekening (Wajib)" style="border:1px solid #E50914;">
 
-            <button class="btn-book-ss3" onclick="sendRequest()">SAYA SUDAH TRANSFER</button>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal('request-modal')">Batal</button>
+                <button class="btn-small" style="background:var(--primary); color:white; flex:1;" onclick="sendRequest()">Kirim</button>
+            </div>
         </div>
     </div>
-
 
     <!-- MODAL BOOKING (DENGAN LOGO) -->
     <div id="booking-modal" class="modal-overlay">
@@ -246,10 +194,6 @@
 
     <!-- SCRIPT (Disatukan agar pasti jalan) -->
     <script>
-         <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
         const warungs = [
             { id: 1, name: "Warung Bu Sri", total: 15, available: 10, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
             { id: 2, name: "Kopi Pakde Jono", total: 10, available: 8, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
@@ -314,14 +258,6 @@
 
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
             closeModal('booking-modal');
-            
-            // RESET FORM
-            document.getElementById('book-name').value = '';
-            document.getElementById('book-wa').value = '';
-            document.getElementById('book-pax').value = '';
-            document.getElementById('book-qty').value = '0 Meja';
-
-            window.closeModal('booking-modal');
             
             if(confirm(`Booking Berhasil!\nKode: ${kode}\n\nKirim tiket ke WhatsApp?`)) {
                 window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
