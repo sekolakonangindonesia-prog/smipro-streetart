@@ -315,6 +315,14 @@
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
             closeModal('booking-modal');
             
+            // RESET FORM
+            document.getElementById('book-name').value = '';
+            document.getElementById('book-wa').value = '';
+            document.getElementById('book-pax').value = '';
+            document.getElementById('book-qty').value = '0 Meja';
+
+            window.closeModal('booking-modal');
+            
             if(confirm(`Booking Berhasil!\nKode: ${kode}\n\nKirim tiket ke WhatsApp?`)) {
                 window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
             }
