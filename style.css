@@ -13,7 +13,7 @@
 body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: var(--text-white); padding-bottom: 60px; }
 
 /* NAV */
-.top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
+.top-nav { display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
 .logo { font-weight: 800; color: var(--primary); font-size: 1.2rem; text-decoration: none; }
 .menu a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.9rem; }
 
