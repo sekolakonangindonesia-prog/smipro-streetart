@@ -3,53 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil Artis - SMIPRO</title>
+    <title>Profil Performer - SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="top-nav">
-        <button onclick="location.href='index.html'" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-        <span>Profil Performer</span>
+
+    <!-- NAVBAR TRANSPARAN (AGAR MENYATU DENGAN BANNER) -->
+    <nav class="top-nav" style="position:fixed; background:rgba(0,0,0,0.8); width:100%; top:0; z-index:999;">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <span style="font-weight:bold;">Profil Musisi</span>
     </nav>
 
-    <div class="container" style="text-align:center; padding-top:40px;">
-        <img id="p-img" src="" style="width:150px; height:150px; border-radius:50%; object-fit:cover; border:4px solid var(--primary); box-shadow: 0 0 20px rgba(229,9,20,0.5);">
+    <!-- 1. HEADER BANNER + LOGO + FOTO BULAT -->
+    <div class="profile-banner">
+        <!-- Logo Kiri Atas -->
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="profile-logo-corner" alt="Logo">
         
-        <h1 id="p-name" style="margin-bottom:5px;">Nama Artis</h1>
-        <p id="p-genre" style="color:var(--accent); margin-top:0;">Genre Musik</p>
+        <!-- Foto Profil Melayang -->
+        <div class="profile-avatar-container">
+            <img src="" id="p-img" class="profile-avatar">
+        </div>
+    </div>
 
-        <!-- STATUS PELATIHAN -->
-        <div style="background:#1a3320; color:#4ade80; display:inline-block; padding:8px 20px; border-radius:20px; border:1px solid #4ade80; margin:20px 0;">
-            <i class="fa-solid fa-circle-check"></i> LULUS PELATIHAN ATTITUDE
+    <div class="container">
+        
+        <!-- IDENTITAS -->
+        <div class="profile-identity">
+            <h1 id="p-name">Nama Artis</h1>
+            <p id="p-genre">Genre Musik</p>
+            <div class="rating-stars">
+                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                <span style="color:white; font-size:1rem; margin-left:5px;">4.9</span>
+            </div>
+            <div class="badge-lulus">
+                <i class="fa-solid fa-circle-check"></i> LULUS PELATIHAN ATTITUDE
+            </div>
         </div>
 
-        <div style="text-align:left; background:#222; padding:20px; border-radius:15px; margin-top:20px;">
-            <h3>Tentang Musisi</h3>
-            <p style="color:#aaa; line-height:1.6;">
-                Merupakan talenta lokal Probolinggo yang telah berkarya di jalanan selama lebih dari 3 tahun. 
-                Dikenal dengan keramahan dan interaksi yang sopan terhadap pengunjung.
+        <!-- 2. BIO & SOSMED -->
+        <div class="bio-box">
+            <h4 style="margin-top:0; color:white;">Tentang Musisi</h4>
+            <p id="p-bio" style="color:#aaa; font-size:0.9rem; line-height:1.6;">
+                Deskripsi singkat musisi akan muncul di sini.
             </p>
-            <hr style="border-color:#444;">
-            <div style="display:flex; justify-content:space-around; font-size:1.5rem; margin-top:20px;">
+            <div class="bio-socials">
                 <i class="fa-brands fa-instagram" style="color:#C13584;"></i>
                 <i class="fa-brands fa-youtube" style="color:red;"></i>
                 <i class="fa-brands fa-tiktok" style="color:#00f2ea;"></i>
             </div>
         </div>
+
+        <!-- 3. JADWAL TAMPIL (3 KATEGORI) -->
+        <div class="section-title"><i class="fa-regular fa-calendar-check"></i> Jadwal Tampil</div>
+        <div class="schedule-list">
+            
+            <!-- A. OFFICIAL STAGE (MERAH) -->
+            <div class="sched-card official">
+                <div class="sched-icon"><i class="fa-solid fa-microphone-lines"></i></div>
+                <div>
+                    <b style="color:white;">SMIPRO Live Stage</b><br>
+                    <small style="color:#ccc;">Lokasi: Stadion Bayuangga</small><br>
+                    <span style="color:var(--primary); font-size:0.9rem; font-weight:bold;">Sabtu, 19.00 WIB</span>
+                </div>
+            </div>
+
+            <!-- B. RADIO / TIKTOK (BIRU) -->
+            <div class="sched-card radio">
+                <div class="sched-icon"><i class="fa-brands fa-tiktok"></i></div>
+                <div>
+                    <b style="color:white;">Radio Streaming</b><br>
+                    <small style="color:#ccc;">Live di TikTok @SMIPRO</small><br>
+                    <span style="color:#00d2ff; font-size:0.9rem; font-weight:bold;">Minggu, 20.00 WIB</span>
+                </div>
+            </div>
+
+            <!-- C. CAFE PARTNER (ORANGE) - DINAMIS -->
+            <div class="sched-card cafe">
+                <div class="sched-icon"><i class="fa-solid fa-mug-hot"></i></div>
+                <div>
+                    <b style="color:white;" id="p-cafe-name">Griya Batik Cafe</b><br>
+                    <small style="color:#ccc;">Partner Gigs</small><br>
+                    <span style="color:#ff9800; font-size:0.9rem; font-weight:bold;" id="p-cafe-time">Jumat, 19.30 WIB</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 4. GALERI KARYA (GRID) -->
+        <div class="section-title"><i class="fa-solid fa-photo-film"></i> Galeri Karya</div>
+        <div class="track-grid"> <!-- Pakai CSS Grid yg sudah ada -->
+            <div class="track-card" onclick="alert('Memutar Video...')">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" class="track-img">
+                <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                <span class="track-title">Live Performance</span>
+                <span class="track-type">Video</span>
+            </div>
+            <div class="track-card" onclick="alert('Memutar Audio...')">
+                <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200" class="track-img">
+                <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                <span class="track-title">Cover Lagu Hits</span>
+                <span class="track-type">Audio MP3</span>
+            </div>
+            <div class="track-card" onclick="alert('Memutar Audio...')">
+                <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200" class="track-img">
+                <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                <span class="track-title">Single Original</span>
+                <span class="track-type">Audio MP3</span>
+            </div>
+        </div>
+
+        <br><br><br>
+
     </div>
 
+    <!-- 5. FLOATING WA CHAT (POJOK KANAN BAWAH) -->
+    <a href="#" id="wa-link" class="floating-wa" target="_blank">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <!-- SCRIPT LOAD DATA -->
     <script>
-        // DATA ARTIS (Sama seperti di dashboard)
+        // DATA ARTIS (LENGKAP DENGAN JADWAL CAFE)
         const artists = {
-            1: { name: "Rina Violin", genre: "Instrumental", img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=300" },
-            2: { name: "Acoustic Boys", genre: "Pop Jawa", img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=300" },
-            3: { name: "Rock Ballad", genre: "Classic Rock", img: "https://images.unsplash.com/photo-1526218626217-dc65b9d6e630?q=80&w=300" },
-            4: { name: "Siti Keroncong", genre: "Traditional Modern", img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=300" },
-            5: { name: "Solo Hudi", genre: "Fingerstyle", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300" }
+            1: { 
+                name: "Rina Violin", 
+                genre: "Instrumental", 
+                img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=300",
+                bio: "Violinis berbakat yang memadukan musik klasik dengan nuansa modern.",
+                cafeName: "Griya Batik Cafe",
+                cafeTime: "Jumat, 19.00 WIB"
+            },
+            2: { 
+                name: "The Acoustic Boys", 
+                genre: "Pop Jawa", 
+                img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=300",
+                bio: "Grup akustik yang membawakan lagu-lagu hits Jawa dengan aransemen santai.",
+                cafeName: "Kopi Jalanan",
+                cafeTime: "Kamis, 20.00 WIB"
+            },
+            3: { 
+                name: "Rock Ballad", 
+                genre: "Classic Rock", 
+                img: "https://images.unsplash.com/photo-1526218626217-dc65b9d6e630?q=80&w=300",
+                bio: "Membawa semangat rock 90an ke panggung jalanan.",
+                cafeName: "Cafe Tenda Gaul",
+                cafeTime: "Sabtu, 21.00 WIB"
+            },
+            4: { 
+                name: "Siti Keroncong", 
+                genre: "Traditional Modern", 
+                img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=300",
+                bio: "Pelestari musik keroncong dengan sentuhan kekinian.",
+                cafeName: "Warung Pojok",
+                cafeTime: "Rabu, 18.30 WIB"
+            },
+            5: { 
+                name: "Solo Hudi", 
+                genre: "Fingerstyle", 
+                img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300",
+                bio: "Gitaris fingerstyle dengan teknik yang memukau.",
+                cafeName: "Griya Batik Cafe",
+                cafeTime: "Minggu, 19.00 WIB"
+            }
         };
 
-        // AMBIL ID DARI URL (Contoh: profile.html?id=1)
+        // LOAD DATA DARI URL (?id=1)
         const params = new URLSearchParams(window.location.search);
         const id = params.get('id');
         const data = artists[id];
@@ -58,8 +179,17 @@
             document.getElementById('p-img').src = data.img;
             document.getElementById('p-name').innerText = data.name;
             document.getElementById('p-genre').innerText = data.genre;
+            document.getElementById('p-bio').innerText = data.bio;
+            
+            // Update Jadwal Cafe Dinamis
+            document.getElementById('p-cafe-name').innerText = data.cafeName;
+            document.getElementById('p-cafe-time').innerText = data.cafeTime;
+
+            // Link WA Otomatis
+            const textWA = `Halo Admin SMIPRO, saya ingin tanya/booking performer *${data.name}*.`;
+            document.getElementById('wa-link').href = `https://wa.me/6281234567890?text=${encodeURIComponent(textWA)}`;
         } else {
-            document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>Data Artis Tidak Ditemukan</h2>";
+            document.body.innerHTML = "<h2 style='text-align:center; color:white; margin-top:50px;'>Data Artis Tidak Ditemukan</h2>";
         }
     </script>
 </body>
