@@ -380,3 +380,33 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
     animation: bounce 2s infinite;
 }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* =========================================
+   PERBAIKAN BANNER DASHBOARD MITRA
+   ========================================= */
+
+.mitra-header-bg {
+    width: 100%;
+    /* Tinggi di Laptop diperbesar biar gambar jelas */
+    height: 250px; 
+    
+    /* GANTI LINK DI BAWAH INI DENGAN LINK GAMBAR ANDA SENDIRI */
+    background-image: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/StreetArd_bener.jpg');
+    
+    /* PENTING: Agar gambar full memenuhi kotak tanpa gepeng */
+    background-size: cover; 
+    
+    /* PENTING: Agar fokus gambar di tengah-tengah */
+    background-position: center center; 
+    
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+/* Penyesuaian Khusus HP (Agar tidak terlalu tinggi di layar kecil) */
+@media (max-width: 600px) {
+    .mitra-header-bg {
+        height: 180px; /* Tinggi di HP sedikit dikurangi */
+        background-position: center center;
+    }
+}
