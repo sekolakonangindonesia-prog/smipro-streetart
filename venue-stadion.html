@@ -5,271 +5,277 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stadion Bayuangga - SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* CSS KHUSUS HALAMAN INI */
-        :root {
-            --primary: #E50914; /* Merah Branding */
-            --accent: #FFD700; /* Emas */
-            --bg-dark: #121212;
-            --bg-card: #1E1E1E;
-            --text-main: #ffffff;
-            --text-muted: #b3b3b3;
-            --green: #2ecc71;
-            --red: #e74c3c;
-            --primary-hover: #b71c1c; /* Merah lebih gelap */
-        }
-
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: var(--text-main); padding-bottom: 60px; }
-
-        /* NAVBAR */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
-        .btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        
-        /* LAYOUT */
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .section-title { color: var(--accent); margin: 30px 0 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-        /* SPLIT VIEW UTAMA */
+        /* LAYOUT SPLIT ATAS */
         .split-view { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media(min-width: 768px) { .split-view { grid-template-columns: 1.5fr 1fr; } }
 
-        /* PANEL KIRI (VIDEO) */
+        /* VIDEO PLAYER */
         .live-frame {
             position: relative; width: 100%; height: 350px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.5), var(--bg-dark)), url('https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=600');
-            background-size: cover; background-position: center; border-radius: 15px; border: 1px solid #333;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background: url('https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=600') center/cover;
+            border-radius: 15px; border: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
         }
         .play-btn-big { font-size: 4rem; color: rgba(255,255,255,0.9); }
 
-        /* PANEL KANAN (LIVE & REQUEST) */
-        .live-panel {
-            background: #151515; border: 1px solid var(--primary); border-radius: 15px; padding: 20px;
-            display: flex; flex-direction: column; height: 350px;
-        }
-        .live-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .live-badge { background: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* LIVE PANEL KANAN */
+        .live-panel { background: #151515; border: 1px solid #333; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; height: 350px; }
+        .live-badge { background: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; animation: pulse 1s infinite; float: right; }
+        .perf-item { display: flex; gap: 10px; background: #222; padding: 10px; margin-bottom: 5px; border-radius: 5px; align-items: center; }
+        .perf-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .btn-req { width: 100%; background: #E50914; color: white; padding: 12px; border: none; border-radius: 5px; margin-top: auto; font-weight: bold; cursor: pointer; }
 
-        .perf-item { display: flex; align-items: center; gap: 10px; background: #222; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid transparent; }
-        .perf-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        /* === STYLE WARUNG (MIRIP SS3) === */
+        .section-title { color: #FFD700; margin: 40px 0 15px; font-size: 1.2rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
         
-        .btn-request-big { /* Tombol Request Lagu */
-            margin-top: auto; /* Dorong ke bawah */
-            background: var(--primary); color: white; border: none;
-            padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1rem;
-            cursor: pointer; width: 100%;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: background 0.3s;
+        .warung-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 15px; 
         }
-        .btn-request-big:hover { background: var(--primary); }
 
-        /* WARUNG GRID */
-        .warung-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
-        .warung-card { background: #1a1a1a; border-radius: 10px; border: 1px solid #333; overflow: hidden; text-align: center; padding-bottom: 10px; transition: 0.3s; }
-        .warung-card:hover { transform: translateY(-5px); border-color: #555; }
-        .warung-img { width: 100%; height: 90px; object-fit: cover; background: #333; }
-        .warung-body { padding: 12px; }
-        .warung-name { font-size: 1rem; font-weight: 800; color: white; margin-bottom: 5px; display: block; }
-        .warung-stats { font-size: 0.8rem; margin-bottom: 10px; display: block; }
-        .btn-book { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; width: 80%; }
-        .btn-full { background: #555; color: #aaa; border: none; padding: 5px; width: 80%; border-radius: 20px; cursor: not-allowed; }
-
-        /* REVIEW LOKASI */
-        .review-box { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-top: 40px; border: 1px solid #333; }
-        .input-dark { width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; }
-        
-        /* MODAL BOOKING (FIXED POSISI & KODE) */
-        .modal-overlay {
-            position: fixed; 
-            inset: 0; /* Menutupi seluruh layar */
-            background: rgba(0,0,0,0.9); /* Background gelap transparan */
-            z-index: 9999; /* Pastikan paling atas */
-            display: none; /* Sembunyikan dulu */
-            justify-content: center; 
-            align-items: center; 
-            padding: 20px;
-            animation: fadeIn 0.3s; /* Efek muncul */
-        }
-        .modal-box {
-            background: #1e1e1e; 
-            width: 100%; max-width: 350px; /* Lebar modal */
-            padding: 25px; 
+        .warung-card { 
+            background: #1a1a1a; 
             border-radius: 10px; 
-            border: 1px solid #444; 
-            position: relative; /* Agar bisa atur posisi close button */
+            border: 1px solid #333; 
+            overflow: hidden; 
+            text-align: center;
+            transition: 0.3s;
         }
-        .modal-logo { /* LOGO DI TENGAH MODAL */
-            width: 80px; 
+        .warung-card:hover { transform: translateY(-5px); border-color: #555; }
+
+        .warung-img { 
+            width: 100%; 
+            height: 100px; 
+            object-fit: cover; 
+            background: #333; 
+        }
+
+        .warung-body { padding: 12px; }
+        
+        .warung-name { 
+            font-size: 1rem; 
+            font-weight: 800; 
+            color: white; 
+            margin-bottom: 5px; 
             display: block; 
-            margin: 0 auto 10px auto; 
-            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
         }
-        .btn-small { 
+
+        .warung-stats { font-size: 0.8rem; margin-bottom: 10px; display: block; }
+        
+        /* Tombol Booking Merah (SS3) */
+        .btn-book-ss3 { 
+            background: #E50914; 
+            color: white; 
             border: none; 
-            padding: 8px 15px; 
-            border-radius: 5px; 
+            padding: 8px 0; 
+            width: 100%; 
+            border-radius: 20px; 
+            font-weight: bold; 
             cursor: pointer; 
-            font-size: 0.9rem;
         }
-        .btn-book-ss3 { /* Sesuaikan tombol booking di modal */
-            background: var(--primary); color: white; border: none; 
-            padding: 8px 0; width: 100%; border-radius: 8px; 
+        
+        /* Tombol Penuh Abu-abu (SS3) */
+        .btn-full-ss3 {
+            background: #555;
+            color: #aaa;
+            border: none;
+            padding: 8px 0;
+            width: 100%;
+            border-radius: 20px;
             font-weight: bold;
+            cursor: not-allowed;
         }
+
+        /* REVIEW BAWAH */
+        .review-box { background: #1e1e1e; padding: 20px; border-radius: 10px; margin-top: 40px; border: 1px solid #333; }
+        .input-dark { width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <nav class="top-nav">
         <button onclick="location.href='index.html'" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</button>
-        <span style="font-weight:bold;">Stadion Bayuangga</span>
+        <span style="font-weight:bold;">Stadion Bayuangga Zone</span>
     </nav>
 
     <div class="container">
         
         <!-- BAGIAN ATAS: LIVE & REQUEST -->
         <div class="split-view">
-            <!-- KIRI: LIVE VIDEO THUMBNAIL -->
-            <div class="live-frame" onclick="window.open('https://tiktok.com', '_blank')">
-                <div class="live-overlay"></div>
+            <div class="live-frame">
                 <i class="fa-solid fa-circle-play play-btn-big"></i>
-                <div style="position:absolute; bottom:15px; left:15px; z-index:2;">
+                <div style="position:absolute; bottom:15px; left:15px;">
                     <h3 style="margin:0; text-shadow:0 0 10px black;">Panggung Utama Live</h3>
-                    <small style="color:#ddd;">Klik untuk masuk ke TikTok Live</small>
                 </div>
             </div>
 
-            <!-- KANAN: LIVE PERFORMER & INTERAKSI -->
             <div class="live-panel">
-                <div class="live-header">
-                    <h3 style="margin:0; color:var(--primary);"><i class="fa-solid fa-microphone"></i> Live Now</h3>
+                <div style="margin-bottom:15px;">
+                    <h3 style="margin:0; display:inline-block;">Live Now</h3>
                     <span class="live-badge">ON AIR</span>
                 </div>
-                
-                <!-- List Performer -->
                 <div class="perf-item">
-                    <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" class="perf-avatar">
-                    <div style="flex:1;"><b>Rina Violin</b><br><small style="color:#aaa;">19.00 - 20.00</small></div>
-                    <!-- Tombol Rating (Icon Bintang) -->
-                    <i class="fa-solid fa-star" style="color:gold; font-size:1.2rem; cursor:pointer;" onclick="openRatePerformer('Rina Violin')"></i>
+                    <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" class="perf-img">
+                    <div><b>Rina Violin</b><br><small style="color:#aaa;">19.00 - 20.00</small></div>
                 </div>
                 <div class="perf-item">
-                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" class="perf-avatar">
-                    <div style="flex:1;"><b>Acoustic Boys</b><br><small style="color:#aaa;">20.00 - 21.00</small></div>
-                     <!-- Tombol Rating (Icon Bintang) -->
-                    <i class="fa-solid fa-star" style="color:#444;"></i>
+                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" class="perf-img">
+                    <div><b>Acoustic Boys</b><br><small style="color:#aaa;">20.00 - 21.00</small></div>
                 </div>
-                
-                <!-- TOMBOL REQUEST LAGU BESAR -->
-                <button class="btn-request-big" onclick="openRequestModal()">
-                    <i class="fa-solid fa-music"></i> Request Lagu
-                </button>
+                <!-- TOMBOL REQUEST (SUDAH FIX MEMANGGIL FUNGSI) -->
+                <button class="btn-req" onclick="openRequestModal()"><i class="fa-solid fa-music"></i> Request Lagu & Sawer</button>
             </div>
         </div>
 
         <hr style="border:0; border-top:1px dashed #444; margin:30px 0;">
 
-        <!-- BAGIAN BAWAH: DAFTAR WARUNG (BOOKING) -->
+        <!-- === DAFTAR WARUNG (SESUAI SS3) === -->
         <div class="section-title">PILIH WARUNG & BOOKING MEJA</div>
-        <div id="warung-grid" class="warung-grid">
-            <!-- JS AKAN MERENDER DISINI -->
+        
+        <div id="warung-grid-ss3" class="warung-grid">
+            <!-- JS akan merender kotak-kotak SS3 disini -->
         </div>
 
-        <!-- REVIEW LOKASI -->
+        <!-- === REVIEW & RATING LOKASI === -->
         <div class="review-box">
             <h3>Ulasan Tempat</h3>
-            <p style="color:#aaa; font-size:0.9rem;">Bagaimana suasana & fasilitas di Stadion Bayuangga?</p>
+            <p style="color:#aaa; font-size:0.9rem;">Bagaimana fasilitas di Stadion Bayuangga?</p>
             <div style="color:gold; font-size:1.5rem; margin-bottom:10px;">
-                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
-                <span style="font-size:1rem; color:white;">4.8/5.0</span>
+                ★★★★☆ <span style="font-size:1rem; color:white;">4.8/5.0</span>
             </div>
-            <textarea id="venue-comment" class="input-dark" placeholder="Tulis masukan Anda..."></textarea>
-            <button class="btn-primary" onclick="submitVenueRating()" style="margin-top:10px; background:#333; border:1px solid #555; color:#888;">Kirim Ulasan</button>
+            <textarea class="input-dark" placeholder="Tulis masukan Anda..."></textarea>
+            <button class="btn-book-ss3" style="width:150px;" onclick="alert('Terima kasih atas ulasan Anda!')">Kirim Ulasan</button>
         </div>
 
     </div>
 
-    <!-- MODAL REQUEST LAGU & SAWER (POPUP) -->
-    <div id="request-modal" class="modal-overlay">
+    <!-- === MODAL REQUEST (POPUP) === -->
+    <div id="request-modal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
-            <i class="fa-solid fa-xmark close-icon" onclick="closeModal('request-modal')"></i>
-            <h3 style="margin-top:0; color:#E50914;">Request Lagu & Salam</h3>
-            <p style="color:#aaa;">Pesanan akan dibacakan Host saat siaran.</p>
-            
-            <select id="req-target" class="input-request">
+            <h3 style="margin-top:0; color:#E50914;">Request Lagu</h3>
+            <label style="color:#aaa; font-size:0.8rem;">Pilih Artis</label>
+            <select id="req-target" class="input-dark">
                 <option>Rina Violin</option>
                 <option>Acoustic Boys</option>
             </select>
-
-            <input type="text" id="req-song" class="input-request" placeholder="Judul Lagu (Opsional)">
-            <input type="text" id="req-msg" class="input-request" placeholder="Ucapan / Salam">
-            <input type="number" id="req-amount" class="input-request" placeholder="Nominal Sawer (Opsional)">
             
-            <label style="font-size:0.7rem; color:#aaa;">Nama Pengirim Sawer / Salam</label>
-            <input type="text" id="req-sender" class="input-request" placeholder="Nama Anda">
-
-            <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin:10px 0;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SMIPRO-SAWER" alt="QRIS" style="width:120px;">
-                <p style="color:black; font-size:0.8rem; margin:5px 0;">Scan QRIS untuk Sawer</p>
+            <input type="text" id="req-song" class="input-dark" placeholder="Judul Lagu">
+            <input type="text" id="req-msg" class="input-dark" placeholder="Ucapan / Salam">
+            <input type="number" id="req-amount" class="input-dark" placeholder="Nominal Sawer (Opsional)">
+            
+            <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin-bottom:10px;">
+                <!-- QRIS STATIS -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" style="width:120px;">
+                <p style="color:black; font-size:0.8rem; margin:5px 0;">Scan untuk Sawer</p>
             </div>
-            
+
             <div style="display:flex; gap:10px;">
-                <button class="btn-small" onclick="closeModal('request-modal')" style="background:#444; flex:1;">Batal</button>
-                <button class="btn-small" onclick="sendRequest()" style="background:var(--primary); flex:1;">Kirim Request</button>
+                <button class="btn-full-ss3" style="background:#444; color:white; cursor:pointer;" onclick="closeModal('request-modal')">Batal</button>
+                <button class="btn-book-ss3" onclick="sendRequest()">Kirim</button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT LOGIKA -->
+    <!-- === MODAL BOOKING (POPUP) === -->
+    <div id="booking-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:60px; display:block; margin:0 auto 10px auto;">
+            <h3 style="margin:0; text-align:center;">Booking Meja</h3>
+            <p id="modal-warung-name" style="text-align:center; color:#FFD700; margin-bottom:15px;">Nama Warung</p>
+            
+            <label style="color:#aaa; font-size:0.8rem;">Jam Booking (Otomatis)</label>
+            <input type="text" id="book-time" class="input-dark" readonly style="color:#888;">
+
+            <label style="color:#aaa; font-size:0.8rem;">Nama Pemesan</label>
+            <input type="text" id="book-name" class="input-dark" placeholder="Nama Lengkap">
+
+            <label style="color:#aaa; font-size:0.8rem;">Nomor WhatsApp</label>
+            <input type="number" id="book-wa" class="input-dark" placeholder="08xxxxxxxx">
+
+            <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang</label>
+            <input type="number" id="book-pax" class="input-dark" placeholder="0" oninput="hitungMeja()">
+
+            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja</label>
+            <input type="text" id="book-qty" class="input-dark" readonly style="color:#E50914; font-weight:bold;" value="0 Meja">
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-full-ss3" style="background:#444; color:white; cursor:pointer;" onclick="closeModal('booking-modal')">Batal</button>
+                <button class="btn-book-ss3" onclick="confirmBooking()">Konfirmasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT (Disatukan agar tidak error) -->
     <script>
+        // Data Warung Dummy (Mirip SS3)
         const warungs = [
-            { id: 1, name: "Warung Bu Sri", total: 15, booked: 5, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
-            { id: 2, name: "Kopi Pakde Jono", total: 10, booked: 2, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
-            { id: 3, name: "Angkringan Mas Boy", total: 20, booked: 18, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" },
-            { id: 4, name: "Sate Taichan Pro", total: 12, booked: 12, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300" }, // Penuh
-            { id: 5, name: "Ropang Gaul", total: 15, booked: 0, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300" }
+            { id: 1, name: "Warung Bu Sri", total: 15, available: 10, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
+            { id: 2, name: "Kopi Pakde", total: 10, available: 8, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
+            { id: 3, name: "Angkringan Mas Boy", total: 20, available: 2, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" },
+            { id: 4, name: "Sate Taichan", total: 12, available: 0, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300" }, // Penuh
+            { id: 5, name: "Bakso Cak Man", total: 15, available: 15, img: "https://images.unsplash.com/photo-1529042410759-befb1204b468?q=80&w=300" }
         ];
 
         // RENDER WARUNG
-        function renderWarungs() {
-            const grid = document.getElementById('warung-grid');
-            grid.innerHTML = '';
-            
+        const container = document.getElementById('warung-grid-ss3');
+        if(container) {
             warungs.forEach(w => {
-                const sisa = w.total - w.booked;
-                const isFull = sisa <= 0;
-                let btn = isFull ? 
-                    `<button class="btn-book" disabled>Penuh</button>` : 
-                    `<button class="btn-book" onclick="openBooking(${w.id})">Booking</button>`;
-                let statusColor = isFull ? 'red' : '#00ff00';
+                const isFull = w.available === 0;
+                const statusColor = isFull ? 'red' : '#00ff00';
+                const statusText = isFull ? '0 / ' + w.total + ' Meja' : w.available + ' / ' + w.total + ' Meja';
 
-                grid.innerHTML += `
+                let buttonHtml = '';
+                if (isFull) {
+                    buttonHtml = `<button class="btn-full-ss3">Penuh</button>`;
+                } else {
+                    // PANGGIL FUNGSI openBooking() YANG BENAR
+                    buttonHtml = `<button class="btn-book-ss3" onclick="openBooking(${w.id}, '${w.name}')">Booking</button>`;
+                }
+
+                container.innerHTML += `
                 <div class="warung-card">
-                    <img src="${w.img}" class="warung-img-small">
-                    <div style="padding:10px;">
+                    <img src="${w.img}" class="warung-img">
+                    <div class="warung-body">
                         <span class="warung-name">${w.name}</span>
-                        <span class="table-status" style="color:${statusColor}">${isFull ? 0 : sisa} / ${w.total} Meja</span>
-                        ${btn}
+                        <span class="warung-stats" style="color:${statusColor}">
+                            ${statusText}
+                        </span>
+                        ${buttonHtml}
                     </div>
                 </div>`;
             });
         }
 
-        // BUKA MODAL BOOKING
-        function openBooking(id) {
-            const warung = warungs.find(w => w.id === id);
-            document.getElementById('modal-warung-name').innerText = warung.name;
+        // --- FUNGSI MODAL (WAJIB JALAN) ---
+        
+        // 1. REQUEST LAGU
+        function openRequestModal() {
+            document.getElementById('request-modal').style.display = 'flex';
+        }
+
+        function sendRequest() {
+            alert("Request Terkirim! Admin akan memverifikasi.");
+            closeModal('request-modal');
+        }
+
+        // 2. BOOKING MEJA
+        function openBooking(id, name) {
+            document.getElementById('modal-warung-name').innerText = name;
             
+            // Set Jam Otomatis
             const now = new Date();
             const jam = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
             document.getElementById('book-time').value = jam + " WIB";
 
-            document.getElementById('booking-modal').style.display = 'flex'; // Tampilkan modal
+            document.getElementById('booking-modal').style.display = 'flex';
         }
 
-        // HITUNG MEJA OTOMATIS
         function hitungMeja() {
             let orang = parseInt(document.getElementById('book-pax').value) || 0;
             if (orang > 0) {
@@ -280,31 +286,26 @@
             }
         }
 
-        // KONFIRMASI BOOKING & KIRIM WA
         function confirmBooking() {
             const name = document.getElementById('book-name').value;
             const wa = document.getElementById('book-wa').value;
-            const qtyText = document.getElementById('book-qty').value;
-            const time = document.getElementById('book-time').value;
+            const qty = parseInt(document.getElementById('book-qty').value);
 
-            if(!name || !wa) return alert("Lengkapi Nama dan No. WA!");
+            if(!name || !wa || !qty) return alert("Lengkapi data!");
 
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
             
-            // Tutup modal dulu
             closeModal('booking-modal');
             
-            if(confirm(`Booking Berhasil!\nKode: ${kode}\n\nKirim tiket ke WhatsApp?`)) {
-                const pesan = `Halo ${name}!%0ABooking Anda di ${selectedWarung.name} berhasil.%0AJam: ${time}%0AKode Tiket: ${kode}`;
-                window.open(`https://wa.me/${wa}?text=${pesan}`, '_blank');
+            if(confirm(`Booking Berhasil!\nKode: ${kode}\nLanjut kirim tiket ke WhatsApp?`)) {
+                window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
             }
         }
 
-        // TUTUP MODAL
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        // --- RENDER AWAL ---
-        renderWarungs();
+        // UTILS
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
     </script>
 </body>
 </html>
