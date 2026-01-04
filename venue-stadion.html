@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
+         /* CSS INTERNAL AGAR TAMPILAN TIDAK RUSAK */
+        :root { --primary: #E50914; --accent: #FFD700; --bg: #121212; --card: #1E1E1E; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding-bottom: 50px; }
+        
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
+        .btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .logo-nav img { width: 35px; border-radius: 50%; border: 2px solid var(--primary); }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        
         /* LAYOUT SPLIT ATAS */
         .split-view { display: grid; grid-template-columns: 1fr; gap: 20px; }
         @media(min-width: 768px) { .split-view { grid-template-columns: 1.5fr 1fr; } }
@@ -119,6 +129,7 @@
                             </small>
                         </div>
                     </div>
+                    
                     <!-- TOMBOL BERI NILAI (BINTANG) -->
                     <div onclick="openRatePerformer('Rina Violin')" style="cursor:pointer; border:1px solid #555; padding:5px 8px; border-radius:50%; transition:0.3s;" title="Beri Nilai">
                         <i class="fa-regular fa-star" style="color:#E50914;"></i>
