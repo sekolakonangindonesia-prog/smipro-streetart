@@ -6,25 +6,92 @@
     <title>Profil Performer - SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- CSS KHUSUS HALAMAN INI (DITANAM DISINI SUPAYA PASTI JALAN) -->
+    <style>
+        /* 1. CONTAINER BANNER */
+        .profile-banner {
+            height: 250px;
+            /* Gambar Background Panggung Gelap */
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), #121212), url('https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=1000');
+            background-size: cover;
+            background-position: center;
+            position: relative; /* Wajib relative agar anak-anaknya bisa diatur posisinya */
+            margin-bottom: 80px; /* Jarak bawah agar foto profil tidak ketutupan teks */
+        }
+
+        /* 2. LOGO KECIL DI POJOK KIRI ATAS */
+        .profile-logo-corner {
+            position: absolute;
+            top: 20px; 
+            left: 20px;
+            width: 60px !important;  /* Paksa Kecil */
+            height: 60px !important; /* Paksa Kecil */
+            object-fit: contain;
+            z-index: 20;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+        }
+
+        /* 3. WADAH FOTO PROFIL (POSISI TENGAH) */
+        .profile-avatar-container {
+            position: absolute;
+            bottom: -60px; /* Turun setengah keluar banner */
+            left: 50%;     /* Titik kiri ada di tengah layar */
+            transform: translateX(-50%); /* Geser mundur 50% lebar sendiri agar PAS TENGAH */
+            width: 140px; 
+            height: 140px;
+            z-index: 20;
+            border-radius: 50%; /* Lingkaran */
+            background: #121212; /* Warna belakang biar rapi */
+            padding: 5px; /* Jarak border */
+        }
+
+        /* 4. GAMBAR FOTO PROFILNYA */
+        .profile-avatar {
+            width: 100%; 
+            height: 100%;
+            border-radius: 50%; /* Wajib Lingkaran */
+            object-fit: cover;  /* Agar muka tidak gepeng */
+            border: 3px solid #FFD700; /* Lingkaran Emas */
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Style Tambahan untuk konten bawah */
+        .profile-identity { text-align: center; margin-bottom: 20px; }
+        .rating-stars { color: gold; font-size: 1.2rem; margin: 5px 0; }
+        .badge-lulus { 
+            background: #1a3320; color: #4ade80; 
+            padding: 5px 15px; border-radius: 20px; 
+            font-size: 0.8rem; display: inline-flex; 
+            align-items: center; gap: 5px; 
+            border: 1px solid #4ade80; margin-top: 5px;
+        }
+        .bio-box { background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; text-align: center; margin-bottom: 30px; }
+        .bio-socials { display: flex; justify-content: center; gap: 20px; margin-top: 15px; border-top: 1px dashed #444; padding-top: 15px; }
+        .bio-socials i { font-size: 1.5rem; color: white; cursor: pointer; }
+        
+        /* Floating WA */
+        .floating-wa { position: fixed; bottom: 25px; right: 25px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 100; text-decoration: none; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
 </head>
 <body>
 
-    <!-- NAVBAR TRANSPARAN -->
-    <nav class="top-nav" style="position:fixed; background:linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); width:100%; top:0; z-index:999; border:none;">
+    <!-- NAVBAR -->
+    <nav class="top-nav" style="position:fixed; background:rgba(0,0,0,0.8); width:100%; top:0; z-index:999; border:none;">
         <button onclick="location.href='index.html'" class="btn-back">
             <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
-        <span style="font-weight:bold; text-shadow: 0 0 5px black;">Profil Musisi</span>
+        <span style="font-weight:bold;">Profil Musisi</span>
     </nav>
 
     <!-- 1. HEADER BANNER -->
     <div class="profile-banner">
-        <!-- LOGO KECIL (Kiri Atas) -->
+        <!-- LOGO KECIL (Sudah diatur style di atas) -->
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="profile-logo-corner" alt="Logo">
         
-        <!-- FOTO PROFIL (Tengah & Melayang) -->
+        <!-- FOTO PROFIL TENGAH & BULAT -->
         <div class="profile-avatar-container">
-            <!-- ID ini penting untuk JS mengisi gambar -->
             <img src="" id="p-img" class="profile-avatar">
         </div>
     </div>
@@ -33,8 +100,8 @@
         
         <!-- IDENTITAS -->
         <div class="profile-identity">
-            <h1 id="p-name">Nama Artis</h1>
-            <p id="p-genre">Genre Musik</p>
+            <h1 id="p-name" style="margin:0; color:white;">Nama Artis</h1>
+            <p id="p-genre" style="color:#FFD700; margin:5px 0;">Genre Musik</p>
             <div class="rating-stars">
                 <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
                 <span style="color:white; font-size:1rem; margin-left:5px;">4.9</span>
@@ -48,7 +115,7 @@
         <div class="bio-box">
             <h4 style="margin-top:0; color:white;">Tentang Musisi</h4>
             <p id="p-bio" style="color:#aaa; font-size:0.9rem; line-height:1.6;">
-                Deskripsi...
+                Deskripsi singkat musisi akan muncul di sini.
             </p>
             <div class="bio-socials">
                 <i class="fa-brands fa-instagram" style="color:#C13584;"></i>
@@ -59,19 +126,21 @@
 
         <!-- 3. JADWAL TAMPIL -->
         <div class="section-title"><i class="fa-regular fa-calendar-check"></i> Jadwal Tampil</div>
+        
         <div class="schedule-list">
-            
-            <div class="sched-card official">
-                <div class="sched-icon"><i class="fa-solid fa-microphone-lines"></i></div>
+            <!-- Official -->
+            <div style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #E50914; margin-bottom:10px;">
+                <div style="font-size:1.5rem; width:40px; text-align:center; color:#E50914;"><i class="fa-solid fa-microphone-lines"></i></div>
                 <div>
                     <b style="color:white;">SMIPRO Live Stage</b><br>
                     <small style="color:#ccc;">Lokasi: Stadion Bayuangga</small><br>
-                    <span style="color:var(--primary); font-size:0.9rem; font-weight:bold;">Sabtu, 19.00 WIB</span>
+                    <span style="color:#E50914; font-size:0.9rem; font-weight:bold;">Sabtu, 19.00 WIB</span>
                 </div>
             </div>
 
-            <div class="sched-card radio">
-                <div class="sched-icon"><i class="fa-brands fa-tiktok"></i></div>
+            <!-- Radio -->
+            <div style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #00d2ff; margin-bottom:10px;">
+                <div style="font-size:1.5rem; width:40px; text-align:center; color:#00d2ff;"><i class="fa-brands fa-tiktok"></i></div>
                 <div>
                     <b style="color:white;">Radio Streaming</b><br>
                     <small style="color:#ccc;">Live di TikTok @SMIPRO</small><br>
@@ -79,34 +148,31 @@
                 </div>
             </div>
 
-            <div class="sched-card cafe">
-                <div class="sched-icon"><i class="fa-solid fa-mug-hot"></i></div>
+            <!-- Cafe -->
+            <div style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #ff9800; margin-bottom:10px;">
+                <div style="font-size:1.5rem; width:40px; text-align:center; color:#ff9800;"><i class="fa-solid fa-mug-hot"></i></div>
                 <div>
                     <b style="color:white;" id="p-cafe-name">Griya Batik Cafe</b><br>
                     <small style="color:#ccc;">Partner Gigs</small><br>
                     <span style="color:#ff9800; font-size:0.9rem; font-weight:bold;" id="p-cafe-time">Jumat, 19.30 WIB</span>
                 </div>
             </div>
-
         </div>
 
         <!-- 4. GALERI KARYA -->
         <div class="section-title"><i class="fa-solid fa-photo-film"></i> Galeri Karya</div>
-        <div class="track-grid"> <!-- Mengambil style grid dari style.css utama -->
-            <div class="track-card" onclick="alert('Memutar Video...')">
-                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" class="track-img" style="width:100%; border-radius:8px;">
-                <span class="track-title" style="display:block; color:white; font-weight:bold;">Live Performance</span>
-                <span style="font-size:0.8rem; color:#aaa;">Video Full</span>
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:15px;">
+            <div style="background:#181818; padding:10px; border-radius:8px; cursor:pointer;" onclick="alert('Play Video')">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" style="width:100%; border-radius:5px;">
+                <span style="color:white; display:block; margin-top:5px; font-weight:bold;">Live Performance</span>
             </div>
-            <div class="track-card" onclick="alert('Memutar Audio...')">
-                <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200" class="track-img" style="width:100%; border-radius:8px;">
-                <span class="track-title" style="display:block; color:white; font-weight:bold;">Cover Lagu Hits</span>
-                <span style="font-size:0.8rem; color:#aaa;">Audio MP3</span>
+            <div style="background:#181818; padding:10px; border-radius:8px; cursor:pointer;" onclick="alert('Play Audio')">
+                <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200" style="width:100%; border-radius:5px;">
+                <span style="color:white; display:block; margin-top:5px; font-weight:bold;">Cover Lagu Hits</span>
             </div>
         </div>
 
         <br><br><br>
-
     </div>
 
     <!-- 5. FLOATING WA -->
@@ -114,7 +180,7 @@
         <i class="fa-brands fa-whatsapp"></i>
     </a>
 
-    <!-- SCRIPT DATA ARTIS -->
+    <!-- SCRIPT DATA -->
     <script>
         const artists = {
             1: { 
@@ -168,7 +234,6 @@
             document.getElementById('p-name').innerText = data.name;
             document.getElementById('p-genre').innerText = data.genre;
             document.getElementById('p-bio').innerText = data.bio;
-            
             document.getElementById('p-cafe-name').innerText = data.cafeName;
             document.getElementById('p-cafe-time').innerText = data.cafeTime;
 
