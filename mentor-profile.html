@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Mentor - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- CSS KHUSUS (Ditanam agar layout Header Tengah tidak rusak) -->
+    <style>
+        /* 1. CONTAINER BANNER */
+        .profile-banner {
+            height: 250px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), #121212), url('https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=1000'); /* Gambar Studio */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            margin-bottom: 80px; 
+        }
+
+        /* 2. LOGO KECIL (Kiri Atas) */
+        .profile-logo-corner {
+            position: absolute; top: 20px; left: 20px;
+            width: 60px !important; height: 60px !important;
+            object-fit: contain; z-index: 20;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+        }
+
+        /* 3. FOTO PROFIL TENGAH */
+        .profile-avatar-container {
+            position: absolute; bottom: -60px; left: 50%; transform: translateX(-50%);
+            width: 140px; height: 140px; z-index: 20;
+            border-radius: 50%; background: #121212; padding: 5px;
+        }
+
+        .profile-avatar {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+            border: 3px solid #00d2ff; /* Warna Biru Mentor */
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* 4. Layout Bawah */
+        .profile-identity { text-align: center; margin-bottom: 30px; }
+        .mentor-role-badge { 
+            background: #004d66; color: #00d2ff; padding: 5px 15px; 
+            border-radius: 20px; font-size: 0.8rem; font-weight: bold; 
+            display: inline-block; margin-top: 10px; border: 1px solid #00d2ff;
+        }
+
+        .bio-box {
+            background: #1e1e1e; padding: 20px; border-radius: 12px;
+            border: 1px solid #333; text-align: center; margin-bottom: 30px;
+        }
+        .bio-socials { display: flex; justify-content: center; gap: 20px; margin-top: 15px; border-top: 1px dashed #444; padding-top: 15px; }
+        .bio-socials i { font-size: 1.5rem; color: white; cursor: pointer; transition: 0.3s; }
+        .bio-socials i:hover { color: #00d2ff; transform: scale(1.2); }
+
+        /* Floating WA */
+        .floating-wa { position: fixed; bottom: 25px; right: 25px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 100; text-decoration: none; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        /* Grid Galeri (Sama dgn Performer) */
+        .track-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .track-card { background: #181818; padding: 10px; border-radius: 8px; cursor: pointer; position: relative; }
+        .track-img { width: 100%; border-radius: 5px; aspect-ratio: 16/9; object-fit: cover; }
+        .play-btn { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 2rem; text-shadow: 0 0 10px black; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav" style="position:fixed; background:rgba(0,0,0,0.8); width:100%; top:0; z-index:999; border:none;">
+        <button onclick="location.href='training.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <span style="font-weight:bold;">Profil Mentor</span>
+    </nav>
+
+    <!-- BANNER & FOTO -->
+    <div class="profile-banner">
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="profile-logo-corner" alt="Logo">
+        <div class="profile-avatar-container">
+            <img src="" id="m-img" class="profile-avatar">
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- IDENTITAS (Tanpa Rating/Jadwal) -->
+        <div class="profile-identity">
+            <h1 id="m-name" style="margin:0; color:white;">Nama Mentor</h1>
+            <div id="m-role" class="mentor-role-badge">Spesialisasi</div>
+        </div>
+
+        <!-- BIO & SOSMED -->
+        <div class="bio-box">
+            <h4 style="margin-top:0; color:white;">Tentang Mentor</h4>
+            <p id="m-bio" style="color:#aaa; font-size:0.9rem; line-height:1.6;">
+                Deskripsi pengalaman mentor...
+            </p>
+            <div class="bio-socials">
+                <i class="fa-brands fa-instagram"></i>
+                <i class="fa-brands fa-youtube"></i>
+                <i class="fa-brands fa-linkedin"></i>
+            </div>
+        </div>
+
+        <!-- GALERI KARYA (Portofolio) -->
+        <div class="section-title"><i class="fa-solid fa-layer-group"></i> Portofolio Karya</div>
+        <div class="track-grid">
+            <div class="track-card" onclick="alert('Memutar Video Tutorial...')">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=200" class="track-img">
+                    <i class="fa-solid fa-circle-play play-btn"></i>
+                </div>
+                <span style="color:white; display:block; margin-top:5px; font-weight:bold; font-size:0.9rem;">Tutorial Teknik Vokal</span>
+                <span style="color:#aaa; font-size:0.7rem;">Video • 15 Menit</span>
+            </div>
+            
+            <div class="track-card" onclick="alert('Memutar Video...')">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=200" class="track-img">
+                    <i class="fa-solid fa-circle-play play-btn"></i>
+                </div>
+                <span style="color:white; display:block; margin-top:5px; font-weight:bold; font-size:0.9rem;">Dokumentasi Event</span>
+                <span style="color:#aaa; font-size:0.7rem;">Video • 2024</span>
+            </div>
+
+            <div class="track-card" onclick="alert('Memutar Audio...')">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200" class="track-img">
+                    <i class="fa-solid fa-music play-btn"></i>
+                </div>
+                <span style="color:white; display:block; margin-top:5px; font-weight:bold; font-size:0.9rem;">Original Song</span>
+                <span style="color:#aaa; font-size:0.7rem;">Audio MP3</span>
+            </div>
+        </div>
+
+        <br><br>
+    </div>
+
+    <!-- Floating WA -->
+    <a href="#" class="floating-wa" onclick="alert('Hubungi Admin untuk konsultasi dengan Mentor ini')">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <!-- SCRIPT DATA MENTOR -->
+    <script>
+        const mentors = {
+            1: { 
+                name: "Bpk. Haryono", 
+                role: "Komunikasi Publik", 
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=300",
+                bio: "Praktisi komunikasi dengan pengalaman 20 tahun. Mengajarkan cara berinteraksi dengan audiens dan membangun persona panggung yang positif."
+            },
+            2: { 
+                name: "Ibu Sarah", 
+                role: "Psikolog Sosial", 
+                img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300",
+                bio: "Fokus pada pembangunan mentalitas seniman agar tangguh menghadapi tekanan sosial dan tetap profesional."
+            },
+            3: { 
+                name: "Mas Dito", 
+                role: "Musik & Vokal", 
+                img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=300",
+                bio: "Musisi senior Probolinggo. Menguasai aransemen musik dan teknik vokal untuk berbagai genre."
+            },
+            4: { 
+                name: "Mbak Yuni", 
+                role: "Public Speaking", 
+                img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=300",
+                bio: "Mengajarkan tata bahasa dan cara berbicara yang sopan namun menghibur saat berada di depan publik."
+            },
+            5: { 
+                name: "Bung Aldi", 
+                role: "Stage Act & Performance", 
+                img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300",
+                bio: "Sutradara teater lokal. Ahli dalam penguasaan panggung, gestur tubuh, dan ekspresi wajah."
+            }
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        const data = mentors[id];
+
+        if(data) {
+            document.getElementById('m-img').src = data.img;
+            document.getElementById('m-name').innerText = data.name;
+            document.getElementById('m-role').innerText = data.role;
+            document.getElementById('m-bio').innerText = data.bio;
+        } else {
+            document.body.innerHTML = "<h2 style='text-align:center; color:white; margin-top:50px;'>Data Mentor Tidak Ditemukan</h2>";
+        }
+    </script>
+</body>
+</html>
