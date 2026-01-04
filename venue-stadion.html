@@ -391,7 +391,7 @@
             const qty = parseInt(document.getElementById('book-qty').value);
 
             // 1. Validasi
-            if(!name || !wa || !qty || qty === 0) return alert("Lengkapi data Nama, WA, dan Jumlah Orang!");
+            if(!name || !wa || !qty) return alert("Lengkapi data Nama, WA, dan Jumlah Orang!");
 
             // 2. Format Nomor WA (Ubah 08xx jadi 628xx)
             if (wa.startsWith('0')) {
@@ -413,7 +413,7 @@
             // Menggunakan format link wa.me yang benar dengan kode negara
             if(confirm(`Booking Berhasil!\nKode Tiket: ${kode}\n\nLanjut kirim tiket ke WhatsApp?`)) {
                 const pesan = `Halo ${name}, Kode Booking Anda: *${kode}* di ${selectedWarung.name}. Harap tunjukkan saat tiba di lokasi.`;
-                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
+                window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
             }
         }
 
