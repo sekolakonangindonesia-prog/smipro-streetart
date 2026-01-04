@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="top-nav">
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <span style="font-weight:bold; color:red;">SMIPRO Podcast</span>
+    </nav>
+
+    <div class="container">
+        
+        <div class="section-title"><i class="fa-brands fa-youtube" style="color:red;"></i> Episode Terbaru</div>
+
+        <!-- Menggunakan CSS Grid yang sudah ada di style.css -->
+        <div class="podcast-grid">
+            
+            <!-- Video 1 -->
+            <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=400" class="podcast-thumb">
+                    <i class="fa-solid fa-circle-play play-btn-center"></i>
+                </div>
+                <div class="podcast-info">
+                    <h4>Eps 1: Susahnya Jadi Pengamen di Era Digital</h4>
+                    <span><i class="fa-regular fa-clock"></i> 45 Menit • Host: Dito</span>
+                </div>
+            </div>
+
+            <!-- Video 2 -->
+            <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=400" class="podcast-thumb">
+                    <i class="fa-solid fa-circle-play play-btn-center"></i>
+                </div>
+                <div class="podcast-info">
+                    <h4>Eps 2: Kisah Sukses Warung Bu Sri</h4>
+                    <span><i class="fa-regular fa-clock"></i> 30 Menit • Host: Yuni</span>
+                </div>
+            </div>
+
+            <!-- Video 3 -->
+            <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1478737270239-2f02b77ac618?q=80&w=400" class="podcast-thumb">
+                    <i class="fa-solid fa-circle-play play-btn-center"></i>
+                </div>
+                <div class="podcast-info">
+                    <h4>Eps 3: Tips Lulus Sertifikasi Attitude</h4>
+                    <span><i class="fa-regular fa-clock"></i> 20 Menit • Host: Admin</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
