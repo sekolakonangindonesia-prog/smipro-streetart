@@ -88,25 +88,26 @@
         .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
 
-        /* === PERBAIKAN TAMPILAN HP (RESPONSIF) === */
+        /* === PERBAIKAN TAMPILAN HP (REVISI UKURAN) === */
         @media (max-width: 600px) {
-            /* 1. Kecilkan Bintang Input */
+            /* 1. Bintang Lebih Kecil & Rapi */
             .stars-input i {
-                font-size: 1rem !important; /* Ukuran lebih pas di HP */
-                margin: 0 1px;
+                font-size: 0.9rem !important; /* Ukuran pas (tidak terlalu besar) */
+                margin: 0 2px; /* Jarak antar bintang dirapatkan */
             }
 
-            /* 2. Sesuaikan Tombol Kirim */
+            /* 2. Tombol Kirim Menyesuaikan */
             .btn-book-ss3 {
-                font-size: 0.8rem; /* Teks tombol lebih kecil */
-                width: auto !important; /* Lebar menyesuaikan teks, tidak maksa lebar */
-                padding: 8px 20px;
-                min-width: 80px;
+                font-size: 0.75rem; /* Teks tombol sedikit lebih kecil */
+                padding: 8px 12px;  /* Padding disesuaikan */
+                width: auto !important; /* Lebar otomatis mengikuti teks */
+                min-width: 70px;
             }
 
-            /* 3. Atur Jarak Baris Input */
+            /* 3. Jarak antara Bintang dan Tombol */
             .review-content > div[style*="display:flex"] {
-                gap: 5px; /* Rapatkan jarak antara bintang dan tombol */
+                gap: 5px; 
+                justify-content: space-between; /* Pastikan rata kiri-kanan */
             }
         }
         
