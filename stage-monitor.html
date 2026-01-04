@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage Monitor - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: black; color: white; font-family: sans-serif; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+        
+        .request-grid { display: grid; gap: 15px; }
+        
+        .req-card { 
+            background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        /* WARNA STATUS */
+        .req-card.pending { border-left: 5px solid #ffeb3b; } /* Kuning */
+        .req-card.approved { border-left: 5px solid #00ff00; background: #0a290a; } /* Hijau */
+
+        .amount-badge { background: #333; padding: 5px 10px; border-radius: 5px; font-weight: bold; color: gold; }
+        .sender-info { color: #00d2ff; font-weight: bold; font-size: 0.9rem; }
+        
+        .btn-acc { background: #00ff00; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-done { background: #333; color: #888; border: 1px solid #555; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .btn-del { background: #ff0000; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+
+        h1 { margin: 0; color: red; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>STAGE MONITOR</h1>
+        <div style="text-align: right;">
+            <span style="font-size: 2rem;" id="clock">00:00</span>
+            <div style="color: #888;">Admin Panel</div>
+        </div>
+    </div>
+
+    <!-- LIST REQUEST -->
+    <div id="request-list" class="request-grid">
+        <p style="text-align:center; color:#555;">Menunggu request masuk...</p>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // JAM DIGITAL
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
+
+        // LISTEN DATA REALTIME
+        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('request-list');
+            list.innerHTML = '';
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const id = docSnap.id;
+                
+                // Tampilan Tombol Berbeda Tergantung Status
+                let actionBtns = '';
+                if(data.status === 'pending') {
+                    // Tombol ACC (Jika uang sudah masuk)
+                    actionBtns = `<button class="btn-acc" onclick="approveReq('${id}')">TERIMA DANA</button>`;
+                } else {
+                    // Tombol Selesai (Jika sudah dinyanyikan)
+                    actionBtns = `<button class="btn-done" onclick="deleteReq('${id}')">SUDAH DINYANYIKAN</button>`;
+                }
+
+                // Tambahkan Tombol Hapus (Sampah)
+                actionBtns += `<button class="btn-del" onclick="deleteReq('${id}')"><i class="fa-solid fa-trash"></i></button>`;
+
+                const html = `
+                <div class="req-card ${data.status}">
+                    <div style="flex:1;">
+                        <span class="sender-info">Dari: ${data.sender}</span>
+                        <h2 style="margin:5px 0;">${data.song}</h2>
+                        <p style="margin:0; color:#ccc;">"${data.message}"</p>
+                        <small style="color:#888;">Untuk: ${data.performer}</small>
+                    </div>
+                    <div style="text-align:right; min-width: 150px;">
+                        <div class="amount-badge">Rp ${parseInt(data.amount).toLocaleString()}</div>
+                        <br>
+                        ${actionBtns}
+                    </div>
+                </div>`;
+                
+                list.innerHTML += html;
+            });
+        });
+
+        // FUNGSI WINDOW (Agar bisa dipanggil onclick)
+        window.approveReq = async (id) => {
+            if(confirm("Yakin dana sudah masuk mutasi?")) {
+                await updateDoc(doc(db, "requests", id), { status: 'approved' });
+            }
+        }
+
+        window.deleteReq = async (id) => {
+            if(confirm("Hapus request ini?")) {
+                await deleteDoc(doc(db, "requests", id));
+            }
+        }
+    </script>
+</body>
+</html>
