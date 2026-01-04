@@ -109,3 +109,41 @@ function prosesLogout() {
 // Init
 renderStudents();
 renderPerformers();
+
+// ... (Kode mentor-script.js sebelumnya) ...
+
+// --- FUNGSI UNTUK MENYIMPAN PROFIL MENTOR ---
+function saveProfile() {
+    // Ambil data dari input
+    const newName = document.getElementById('edit-name').value;
+    const newRole = document.getElementById('edit-role').value; // Asumsi Anda tambahkan ID untuk role
+    const newBio = document.getElementById('edit-bio').value;
+    const newPhone = document.getElementById('edit-phone').value;
+    const newEmail = document.getElementById('edit-email').value;
+    const newPass = document.getElementById('edit-pass').value;
+
+    // Ambil data mentah dari LOCAL STORAGE (atau inisialisasi jika belum ada)
+    let mentorData = JSON.parse(localStorage.getItem('mentorProfile') || '{}');
+
+    // Update data yang diubah
+    mentorData.name = newName;
+    mentorData.role = newRole;
+    mentorData.bio = newBio;
+    mentorData.phone = newPhone;
+    mentorData.email = newEmail;
+    // Password biasanya tidak disimpan plaintext, ini hanya simulasi
+    if (newPass) mentorData.password = newPass; 
+
+    // Simpan kembali ke LOCAL STORAGE
+    localStorage.setItem('mentorProfile', JSON.stringify(mentorData));
+
+    // Update tampilan langsung
+    document.getElementById('shop-name-display').innerText = newName; // Jika ada nama di header dashboard
+    document.getElementById('mentor-badge').innerText = newRole.toUpperCase(); // Update role di header
+    // (Update profil di header belum saya tambahkan, tapi ini dasarnya)
+
+    alert("Profil berhasil disimpan!");
+}
+
+// --- PILIH FUNGSI YANG SUDAH ADA DI BAWAH ---
+// (Jangan lupa panggil renderStudents() dan renderPerformers() jika perlu update list)
