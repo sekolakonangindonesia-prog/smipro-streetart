@@ -387,16 +387,33 @@
 
         function confirmBooking() {
             const name = document.getElementById('book-name').value;
-            const wa = document.getElementById('book-wa').value;
+            let wa = document.getElementById('book-wa').value; // Ambil no WA
             const qty = parseInt(document.getElementById('book-qty').value);
 
-            if(!name || !wa || !qty) return alert("Lengkapi data!");
+            // 1. Validasi
+            if(!name || !wa || !qty || qty === 0) return alert("Lengkapi data Nama, WA, dan Jumlah Orang!");
+
+            // 2. Format Nomor WA (Ubah 08xx jadi 628xx)
+            if (wa.startsWith('0')) {
+                wa = '62' + wa.substring(1);
+            }
 
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+            
+            // 3. RESET FORM (Mengosongkan isian)
+            document.getElementById('book-name').value = '';
+            document.getElementById('book-wa').value = '';
+            document.getElementById('book-pax').value = '';
+            document.getElementById('book-qty').value = '0 Meja';
+
+            // 4. Tutup Modal
             closeModal('booking-modal');
             
-            if(confirm(`Booking Berhasil!\nKode: ${kode}\n\nKirim tiket ke WhatsApp?`)) {
-                window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
+            // 5. Konfirmasi & Buka WA
+            // Menggunakan format link wa.me yang benar dengan kode negara
+            if(confirm(`Booking Berhasil!\nKode Tiket: ${kode}\n\nLanjut kirim tiket ke WhatsApp?`)) {
+                const pesan = `Halo ${name}, Kode Booking Anda: *${kode}* di ${selectedWarung.name}. Harap tunjukkan saat tiba di lokasi.`;
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
         }
 
