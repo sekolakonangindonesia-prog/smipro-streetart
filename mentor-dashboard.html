@@ -118,18 +118,39 @@
             </ul>
         </div>
 
-        <!-- TAB 4: PROFIL -->
+        <!-- TAB 4: PROFIL MENTOR (DIEDIT SESUAI KEBUTUHAN) -->
         <div id="tab-profil" class="tab-content">
             <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
                 <h3>Edit Profil Mentor</h3>
+                
+                <!-- TOMBOL GANTI FOTO -->
+                <div style="text-align:center; margin-bottom:20px;">
+                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200" id="preview-profile-img" style="width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
+                    <br>
+                    <button class="btn-action-mentor" onclick="triggerUpload()"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</button>
+                </div>
+
                 <label style="color:#aaa; font-size:0.8rem;">Nama Lengkap</label>
-                <input type="text" value="Dito Ariotedjo" class="input-mentor">
-                <label style="color:#aaa; font-size:0.8rem;">Profesi</label>
-                <input type="text" value="Musisi Senior & Vokal Coach" class="input-mentor">
-                <button class="btn-primary" onclick="alert('Profil Tersimpan!')">Simpan Perubahan</button>
+                <input type="text" id="edit-name" value="Bpk. Haryono" class="input-mentor">
+                
+                <label style="color:#aaa; font-size:0.8rem;">Spesialisasi</label>
+                <input type="text" id="edit-role" value="Komunikasi Publik" class="input-mentor">
+
+                <label style="color:#aaa; font-size:0.8rem;">Nomor HP / WhatsApp</label>
+                <input type="text" id="edit-phone" class="input-mentor" value="08123456789">
+
+                <label style="color:#aaa; font-size:0.8rem;">Email Login</label>
+                <input type="email" id="edit-email" class="input-mentor" value="haryono.mentor@smipro.id">
+
+                <label style="color:#aaa; font-size:0.8rem;">Password Baru (Kosongkan jika tidak ganti)</label>
+                <input type="password" id="edit-pass" class="input-mentor" placeholder="Kosongkan jika tidak diubah">
+
+                <label style="color:#aaa; font-size:0.8rem;">Pengalaman & Bio</label>
+                <textarea id="edit-bio" class="input-mentor" style="height:100px;">Mentor berpengalaman di bidang komunikasi & public speaking, fokus pada pembentukan karakter.</textarea>
+
+                <button class="btn-primary" onclick="saveProfile()" style="margin-top:20px;">Simpan Perubahan</button>
             </div>
         </div>
-
     </div>
 
     <!-- MODAL NILAI -->
@@ -164,6 +185,9 @@
         </div>
     </div>
 
+     <div id="modal-grade" class="modal-overlay">...</div>
+    <div id="modal-upload" class="modal-overlay">...</div>
+    
     <script src="mentor-script.js"></script>
 </body>
 </html>
