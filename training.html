@@ -3,43 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pelatihan - SMIPRO</title>
+    <title>Pelatihan Attitude - SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS KHUSUS HALAMAN INI */
+        .page-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(to bottom, #1a1a1a, #000);
+            border-bottom: 1px solid #333;
+        }
+        
+        /* GRID MENTOR */
+        .mentor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsif */
+            gap: 20px;
+            margin-top: 30px;
+            padding: 0 10px;
+        }
+
+        /* KARTU MENTOR (DENGAN HOVER) */
+        .mentor-card {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Efek halus */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* EFEK HOVER (KEREN) */
+        .mentor-card:hover {
+            transform: translateY(-10px); /* Naik ke atas */
+            border-color: var(--accent);  /* Border jadi emas */
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.2); /* Bayangan emas */
+            background: #252525;
+        }
+
+        .mentor-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        /* Foto ikut membesar dikit saat hover */
+        .mentor-card:hover .mentor-img {
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        .mentor-role {
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+            display: block;
+        }
+    </style>
 </head>
 <body>
+
+    <!-- NAVBAR -->
     <nav class="top-nav">
-        <button onclick="location.href='index.html'" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-        <span style="font-weight:bold;">Pelatihan Attitude</span>
+        <button onclick="location.href='index.html'" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <span style="font-weight:bold;">Bengkel Performer</span>
     </nav>
 
-    <div class="container" style="text-align:center;">
-        <i class="fa-solid fa-graduation-cap" style="font-size:3rem; color:var(--accent); margin:20px 0;"></i>
-        <h2>Tim Pelatih & Mentor</h2>
-        <p style="color:#aaa;">Mereka yang membentuk karakter seniman jalanan Probolinggo menjadi lebih profesional dan beretika.</p>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:30px;">
-            <div style="background:#222; padding:20px; border-radius:10px;">
-                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
-                <h4>Bpk. Haryono</h4>
-                <small>Pakar Komunikasi</small>
-            </div>
-            <div style="background:#222; padding:20px; border-radius:10px;">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=150" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
-                <h4>Ibu Sarah</h4>
-                <small>Psikolog Sosial</small>
-            </div>
-            <div style="background:#222; padding:20px; border-radius:10px;">
-                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
-                <h4>Mas Dito</h4>
-                <small>Musisi Senior</small>
-            </div>
-            <div style="background:#222; padding:20px; border-radius:10px;">
-                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=150" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);">
-                <h4>Mbak Yuni</h4>
-                <small>Public Speaking</small>
-            </div>
-        </div>
+    <!-- HEADER -->
+    <div class="page-header">
+        <i class="fa-solid fa-graduation-cap" style="font-size:3rem; color:var(--accent); margin-bottom:15px;"></i>
+        <h2 style="margin:0; color:white;">Tim Pelatih & Mentor</h2>
+        <p style="color:#aaa; font-size:0.9rem; max-width:600px; margin:10px auto;">
+            Para ahli yang siap membentuk karakter, teknik, dan mentalitas seniman jalanan Probolinggo menjadi profesional.
+        </p>
     </div>
+
+    <div class="container">
+        
+        <!-- LIST 5 MENTOR -->
+        <div class="mentor-grid">
+            
+            <!-- Mentor 1 -->
+            <div class="mentor-card" onclick="location.href='mentor-profile.html?id=1'">
+                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200" class="mentor-img">
+                <h4 style="margin:0;">Bpk. Haryono</h4>
+                <span class="mentor-role">Komunikasi</span>
+            </div>
+
+            <!-- Mentor 2 -->
+            <div class="mentor-card" onclick="location.href='mentor-profile.html?id=2'">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200" class="mentor-img">
+                <h4 style="margin:0;">Ibu Sarah</h4>
+                <span class="mentor-role">Psikolog</span>
+            </div>
+
+            <!-- Mentor 3 -->
+            <div class="mentor-card" onclick="location.href='mentor-profile.html?id=3'">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200" class="mentor-img">
+                <h4 style="margin:0;">Mas Dito</h4>
+                <span class="mentor-role">Musik & Vokal</span>
+            </div>
+
+            <!-- Mentor 4 -->
+            <div class="mentor-card" onclick="location.href='mentor-profile.html?id=4'">
+                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200" class="mentor-img">
+                <h4 style="margin:0;">Mbak Yuni</h4>
+                <span class="mentor-role">Public Speaking</span>
+            </div>
+
+            <!-- Mentor 5 (BARU) -->
+            <div class="mentor-card" onclick="location.href='mentor-profile.html?id=5'">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200" class="mentor-img">
+                <h4 style="margin:0;">Bung Aldi</h4>
+                <span class="mentor-role">Stage Act</span>
+            </div>
+
+        </div>
+
+        <br><br>
+        <center><small style="color:#666;">Klik foto mentor untuk melihat portofolio.</small></center>
+    </div>
+
 </body>
 </html>
