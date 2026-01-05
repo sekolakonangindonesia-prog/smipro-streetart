@@ -11,17 +11,13 @@
     <!-- NAVBAR -->
     <nav class="top-nav">
         <a href="index.html" class="logo-container">
-        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo" class="logo-img"style=height: 35px;">
-        <span class="logo-text">SMIPRO</span>
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo" class="logo-img" style="height: 35px;">
+            <span class="logo-text">SMIPRO</span>
         </a>
-        <div class="menu"style="display:flex; align-items:center;">
+        <div class="menu" style="display:flex; align-items:center;">
              <a href="about.html" style="color:#E50914; text-decoration:none; margin-right:15px; font-size:1.2rem;" title="Tentang SMIPRO">
                 <i class="fa-solid fa-circle-info"></i>
             </a>
-           <!-- 
-               INI YANG AKAN BERUBAH OTOMATIS 
-               Kita kasih ID="nav-btn-area"
-            -->
             <div id="nav-btn-area">
                 <a href="login.html" class="btn-mitra">
                     <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
@@ -35,51 +31,31 @@
         <div class="hero-content">
             <span class="brand-badge">LIVE 2025</span>
             <h1 style="margin:10px 0;">SMIPRO</h1>
-            <!-- NARASI / PROLOG -->
             <div class="prolog-box">
-                "Memodernisasi sektor seni pertunjukan "jalanan" adalah upaya perbaikan tatakelola zona legal ekonomi kreatif untuk sebuah misi pertumbuhan ekonomi inklusif dan  berkelanjutan"
+                "Memodernisasi sektor seni pertunjukan "jalanan" adalah upaya perbaikan tatakelola zona legal ekonomi kreatif untuk sebuah misi pertumbuhan ekonomi inklusif dan berkelanjutan"
             </div>
         </div>
     </header>
 
     <div class="container">
 
-          <!-- === JADWAL UTAMA (HANYA MINGGU INI) === -->
-        
-        <div class="main-schedule-card" onclick="location.href='schedule.html'">
-            <div class="msc-date">
-                <span style="font-size:0.8rem; letter-spacing:2px;">SABTU</span>
-                <span style="font-size:2.5rem; font-weight:800; line-height:1;">03</span>
-                <span style="font-size:0.9rem; font-weight:bold;">JAN 2026</span>
-            </div>
-            <div class="msc-info">
-                <div class="msc-badge">MINGGU INI</div>
-                <h3 style="margin:5px 0 5px 0; color:white;">Special Live Performance</h3>
-                <p style="color:#ccc; font-size:0.9rem; margin:0;">
-                    <i class="fa-solid fa-microphone-lines" style="color:var(--primary);"></i> 
-                    Rina Violin, Acoustic Boys, Keroncong Pro
-                </p>
-                <small style="color:var(--accent); margin-top:5px; display:block;">
-                    <i class="fa-solid fa-hand-pointer"></i> Klik untuk detail & jadwal bulan depan
-                </small>
+        <!-- === JADWAL UTAMA (DINAMIS DARI FIREBASE) === -->
+        <div id="home-schedule-container">
+            <!-- Loading State -->
+            <div class="main-schedule-card">
+                <div class="msc-info" style="text-align:center;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Memuat Jadwal...
+                </div>
             </div>
         </div>
-        <div class="main-schedule-card cyan-theme" onclick="location.href='radio.html'">
-            <div class="msc-date cyan-bg">
-                <span style="font-size:0.8rem; letter-spacing:2px;">MINGGU</span>
-                <span style="font-size:2.5rem; font-weight:800; line-height:1;">04</span>
-                <span style="font-size:0.9rem; font-weight:bold;">JAN 2026</span>
-            </div>
-            <div class="msc-info">
-                <div class="msc-badge cyan-theme cyan-text" style="background:transparent; border:1px solid #00d2ff;">TikTok Live RADIO</div>
-                <h3 style="margin:5px 0 5px 0; color:white;">Radio (TikTok Live)</h3>
-                <p style="color:#ccc; font-size:0.9rem; margin:0;">
-                    <i class="fa-brands fa-tiktok cyan-text"></i> 
-                    Topik: "Menjaga Etika di Jalanan"
-                </p>
-                <small style="color:#888; margin-top:5px; display:block;">
-                    <i class="fa-solid fa-paper-plane cyan-text"></i> Klik untuk Titip Salam & Request Lagu
-                </small>
+
+        <!-- === RADIO CARD (DINAMIS DARI FIREBASE) === -->
+        <div id="home-radio-container">
+            <!-- Loading State -->
+            <div class="main-schedule-card cyan-theme">
+                <div class="msc-info" style="text-align:center;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Memuat Radio...
+                </div>
             </div>
         </div>
                  
@@ -114,10 +90,9 @@
             <div><h3 style="margin:0;">BJBR Mangrove <span class="badge soon">SOON</span></h3></div>
         </div>
 
-        <!-- 2. TOP 5 PERFORMER (MODE WRAP/TURUN KE BAWAH) -->
+        <!-- 2. TOP 5 PERFORMER -->
         <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Profil)</div>
         
-        <!-- Gunakan class baru 'performer-wrap' -->
         <div class="performer-wrap">
             <div class="artist-card" onclick="location.href='profile.html?id=1'">
                 <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=150" class="artist-img">
@@ -141,7 +116,7 @@
             </div>
         </div>
 
-        <!-- 3. PELATIHAN (HOVER EFFECT) -->
+        <!-- 3. PELATIHAN -->
         <div class="training-banner" onclick="location.href='training.html'">
             <div>
                 <h3 style="margin:0;">Pelatihan Attitude</h3>
@@ -150,8 +125,9 @@
             <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color:var(--accent);"></i>
         </div>
                 
+        <!-- 4. PODCAST HIGHLIGHT -->
         <div class="section-title" style="margin-top: 50px;">
-        <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
+        <div class="podcast-card" onclick="location.href='podcast.html'">
                 <div style="position:relative;">
                     <img src="https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=400" class="podcast-thumb">
                     <i class="fa-solid fa-circle-play play-btn-center"></i>
@@ -163,7 +139,7 @@
             </div>
         </div>
 
-        <!-- 4. DUKUNG KAMI & SOSMED (SUDAH KEMBALI) -->
+        <!-- 5. DUKUNG KAMI -->
         <div class="support-section">
             <h3 style="margin:0; color:white;">Dukung Gerakan SMIPRO!</h3>
             <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
@@ -178,22 +154,166 @@
             <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Pengembangan</button>
         </div>
 
-        <!-- 5. BERITA -->
+        <!-- 6. BERITA (DINAMIS) -->
         <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
-        <div class="news-card">
-            <img src="https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100" class="news-thumb">
-            <div>
-                <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">EVENT</span>
-                <h4 style="margin:5px 0;">Festival Musik 2025 Segera Hadir</h4>
-                <p style="margin:0; font-size:0.7rem; color:#888;">2 jam yang lalu</p>
+        <div id="home-news-container">
+            <!-- Loading -->
+            <div class="news-card">
+                <div>Memuat Berita...</div>
             </div>
         </div>
 
         <br><br>
         <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia</small></center>
     </div>
-  <!-- Script Cek Login (Taruh dibawah div container penutup) -->
 
+    <!-- SCRIPT DATA DINAMIS -->
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, query, orderBy, limit, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // === 1. LOAD JADWAL UTAMA ===
+        async function loadMainSchedule() {
+            const container = document.getElementById('home-schedule-container');
+            // Ambil 1 event 'main' terbaru (berdasarkan tanggal)
+            const q = query(collection(db, "events"), orderBy("date", "asc")); 
+            const querySnapshot = await getDocs(q);
+
+            let foundMain = false;
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.type === 'main' && !foundMain) { // Ambil yang pertama ketemu
+                    foundMain = true;
+                    
+                    // Ambil nama performer dari Array
+                    let artistNames = "Berbagai Artis Pilihan";
+                    if(data.performers && data.performers.length > 0) {
+                        artistNames = data.performers.map(p => p.name).join(", ");
+                    }
+
+                    // TANGGAL SPLIT (Sabtu 03 Jan)
+                    // Kita asumsikan format displayDate admin adalah: "Hari, Tanggal Bulan Tahun"
+                    // Untuk Index, kita parsing manual atau tampilkan apa adanya. 
+                    // Agar rapi, kita pakai data mentah displayDate saja.
+                    
+                    const dateParts = data.displayDate.split(' '); // [Sabtu,, 03, Januari, 2026]
+                    const hari = dateParts[0].replace(',','').toUpperCase();
+                    const tgl = dateParts[1];
+                    const blnThn = dateParts[2].substr(0,3).toUpperCase() + " " + dateParts[3];
+
+                    container.innerHTML = `
+                    <div class="main-schedule-card" onclick="location.href='schedule.html'">
+                        <div class="msc-date">
+                            <span style="font-size:0.8rem; letter-spacing:2px;">${hari}</span>
+                            <span style="font-size:2.5rem; font-weight:800; line-height:1;">${tgl}</span>
+                            <span style="font-size:0.9rem; font-weight:bold;">${blnThn}</span>
+                        </div>
+                        <div class="msc-info">
+                            <div class="msc-badge">MINGGU INI</div>
+                            <h3 style="margin:5px 0 5px 0; color:white;">Live Performance</h3>
+                            <p style="color:#ccc; font-size:0.9rem; margin:0;">
+                                <i class="fa-solid fa-microphone-lines" style="color:var(--primary);"></i> 
+                                ${artistNames}
+                            </p>
+                            <small style="color:var(--accent); margin-top:5px; display:block;">
+                                <i class="fa-solid fa-hand-pointer"></i> Klik untuk detail & jadwal bulan depan
+                            </small>
+                        </div>
+                    </div>`;
+                }
+            });
+
+            if(!foundMain) {
+                container.innerHTML = `<div class="main-schedule-card"><div class="msc-info">Belum ada jadwal minggu ini.</div></div>`;
+            }
+        }
+
+        // === 2. LOAD RADIO UTAMA ===
+        async function loadMainRadio() {
+            const container = document.getElementById('home-radio-container');
+            // Ambil Radio sesi Malam (order 3) atau yang sedang LIVE
+            const q = query(collection(db, "broadcasts"), orderBy("order", "desc")); // Biasanya malam ordernya tinggi
+            const querySnapshot = await getDocs(q);
+            
+            let dataToShow = null;
+            querySnapshot.forEach(doc => {
+                const d = doc.data();
+                if(d.isLive) dataToShow = d; // Prioritas yang Live
+            });
+            // Kalau gak ada yang live, ambil yang terakhir (Malam)
+            if(!dataToShow && !querySnapshot.empty) {
+                dataToShow = querySnapshot.docs[0].data();
+            }
+
+            if(dataToShow) {
+                const liveBadge = dataToShow.isLive ? 'border:1px solid #00d2ff; background:#00d2ff; color:black;' : 'border:1px solid #00d2ff; background:transparent; color:#00d2ff;';
+                const liveText = dataToShow.isLive ? 'LIVE SEKARANG' : 'SEGERA TAYANG';
+                
+                container.innerHTML = `
+                <div class="main-schedule-card cyan-theme" onclick="location.href='radio.html'">
+                    <div class="msc-date cyan-bg">
+                        <span style="font-size:0.8rem; letter-spacing:2px;">${dataToShow.sessionName || 'RADIO'}</span>
+                        <span style="font-size:2.5rem; font-weight:800; line-height:1;">${dataToShow.time.split(':')[0]}</span>
+                        <span style="font-size:0.9rem; font-weight:bold;">WIB</span>
+                    </div>
+                    <div class="msc-info">
+                        <div class="msc-badge cyan-theme" style="${liveBadge}">${liveText}</div>
+                        <h3 style="margin:5px 0 5px 0; color:white;">${dataToShow.title}</h3>
+                        <p style="color:#ccc; font-size:0.9rem; margin:0;">
+                            <i class="fa-brands fa-tiktok cyan-text"></i> 
+                            Topik: "${dataToShow.topic}"
+                        </p>
+                        <small style="color:#888; margin-top:5px; display:block;">
+                            <i class="fa-solid fa-paper-plane cyan-text"></i> Klik untuk Titip Salam & Request Lagu
+                        </small>
+                    </div>
+                </div>`;
+            }
+        }
+
+        // === 3. LOAD BERITA (SEEDING JIKA KOSONG) ===
+        async function loadNews() {
+            const container = document.getElementById('home-news-container');
+            const q = query(collection(db, "news"), orderBy("date", "desc"), limit(1));
+            const querySnapshot = await getDocs(q);
+
+            if(querySnapshot.empty) {
+                await seedNews(); // Isi data berita pertama kali
+                return loadNews();
+            }
+
+            container.innerHTML = '';
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                container.innerHTML = `
+                <div class="news-card">
+                    <img src="${data.thumb}" class="news-thumb">
+                    <div>
+                        <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">${data.tag}</span>
+                        <h4 style="margin:5px 0;">${data.title}</h4>
+                        <p style="margin:0; font-size:0.7rem; color:#888;">${data.date}</p>
+                    </div>
+                </div>`;
+            });
+        }
+
+        async function seedNews() {
+            await addDoc(collection(db, "news"), {
+                title: "Festival Musik 2025 Segera Hadir",
+                date: "2 Jam yang lalu",
+                tag: "EVENT",
+                thumb: "https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100"
+            });
+        }
+
+        // START ALL
+        loadMainSchedule();
+        loadMainRadio();
+        loadNews();
+    </script>
+
+   <!-- SCRIPT CEK LOGIN (SAMA SEPERTI SEBELUMNYA) -->
    <script>
         window.onload = function() {
             const isLoggedIn = localStorage.getItem('userLoggedIn');
@@ -203,22 +323,12 @@
 
             if (navArea) {
                 if (isLoggedIn === 'true') {
-                    // TENTUKAN IKON
                     let icon = 'fa-store'; 
                     if(userLink && userLink.includes('performer')) icon = 'fa-guitar';
                     if(userLink && userLink.includes('mentor')) icon = 'fa-graduation-cap';
-
-                    // JIKA SUDAH LOGIN (Style Merah)
                     navArea.innerHTML = `
                         <a href="${userLink}" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:#E50914; font-weight:800; font-size:1rem;">
                             <i class="fa-solid ${icon}"></i> ${userName}
-                        </a>
-                    `;
-                } else {
-                    // JIKA BELUM LOGIN
-                    navArea.innerHTML = `
-                        <a href="login.html" class="btn-mitra">
-                            <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
                         </a>
                     `;
                 }
