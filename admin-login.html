@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMIPRO - Admin Control Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #000;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Latar Belakang Animasi Teknis */
+        .bg-tech {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(229, 9, 20, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 210, 255, 0.1) 0%, transparent 20%);
+            z-index: 1;
+        }
+        .grid-lines {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: 1;
+        }
+
+        /* Kartu Login */
+        .login-box {
+            position: relative;
+            z-index: 10;
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #333;
+            padding: 40px;
+            border-radius: 15px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border-top: 3px solid #E50914; /* Aksen Merah Admin */
+        }
+
+        .logo {
+            width: 80px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(229, 9, 20, 0.5));
+        }
+
+        h2 { color: white; margin: 0 0 5px 0; letter-spacing: 1px; }
+        p { color: #888; font-size: 0.8rem; margin-bottom: 30px; }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { color: #aaa; font-size: 0.8rem; display: block; margin-bottom: 8px; }
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 5px;
+            font-family: monospace; /* Font ala coding */
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+        .input-field:focus {
+            border-color: #E50914;
+            outline: none;
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #E50914;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        .btn-login:hover { background: #b71c1c; box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
+
+        .footer-link {
+            margin-top: 20px;
+            display: block;
+            color: #555;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        .footer-link:hover { color: #888; }
+
+        /* Security Badge */
+        .badge-secure {
+            background: #1a3320; color: #4ade80;
+            padding: 5px 10px; border-radius: 20px;
+            font-size: 0.7rem; display: inline-flex; align-items: center; gap: 5px;
+            margin-bottom: 20px; border: 1px solid #4ade80;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-tech"></div>
+    <div class="grid-lines"></div>
+
+    <div class="login-box">
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="logo">
+        
+        <div class="badge-secure"><i class="fa-solid fa-shield-halved"></i> SECURE ADMIN ACCESS</div>
+        
+        <h2>CONTROL TOWER</h2>
+        <p>SMIPRO Management System V.1.0</p>
+
+        <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <label>ADMIN ID</label>
+                <input type="text" id="admin-id" class="input-field" placeholder="root_admin">
+            </div>
+            <div class="input-group">
+                <label>ACCESS KEY</label>
+                <input type="password" id="admin-pass" class="input-field" placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="btn-login">
+                <i class="fa-solid fa-key"></i> Access Dashboard
+            </button>
+        </form>
+
+        <a href="index.html" class="footer-link">← Kembali ke Halaman Publik</a>
+    </div>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('admin-id').value;
+            const pass = document.getElementById('admin-pass').value;
+
+            // SIMULASI LOGIN ADMIN (Hardcoded)
+            // Nanti bisa diganti verifikasi Firebase Auth jika mau lebih aman
+            if(id === 'admin' && pass === 'admin123') {
+                
+                // Simpan status Admin
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('userRole', 'admin'); // ROLE PENTING!
+                localStorage.setItem('userName', 'Super Admin');
+                
+                // Animasi dikit biar keren
+                const btn = document.querySelector('.btn-login');
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> VERIFYING...';
+                btn.style.background = '#333';
+                
+                setTimeout(() => {
+                    window.location.href = 'admin-dashboard.html';
+                }, 1000);
+
+            } else {
+                alert("AKSES DITOLAK: ID atau Password Salah!");
+                document.getElementById('admin-pass').value = '';
+            }
+        }
+    </script>
+
+</body>
+</html>
