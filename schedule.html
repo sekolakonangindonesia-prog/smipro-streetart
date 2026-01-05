@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* CSS KHUSUS HALAMAN JADWAL */
+        /* CSS SAMA PERSIS SEPERTI SEBELUMNYA */
         .schedule-card-main {
             background: linear-gradient(135deg, #222 0%, #111 100%);
             border: 1px solid var(--primary);
@@ -15,8 +15,10 @@
             padding: 25px;
             margin-bottom: 30px;
             box-shadow: 0 0 20px rgba(229, 9, 20, 0.2);
+            animation: fadeIn 0.5s;
         }
         .schedule-card-main h2 { margin-top: 0; color: var(--accent); }
+        
         .performer-list-item {
             display: flex; align-items: center; gap: 15px;
             padding: 15px;
@@ -25,17 +27,20 @@
             margin-bottom: 10px;
             border-left: 4px solid var(--green);
         }
+        
         .upcoming-item {
             display: flex; gap: 15px; align-items: center;
             padding: 15px;
             background: #1a1a1a;
             border-bottom: 1px solid #333;
+            animation: fadeIn 0.5s;
         }
         .date-badge {
             background: #333; color: white; padding: 10px;
             border-radius: 8px; text-align: center; min-width: 60px;
             border: 1px solid #555;
         }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -50,88 +55,139 @@
 
     <div class="container">
         
-        <!-- SECTION 1: MINGGU INI (HIGHLIGHT) -->
+        <!-- SECTION 1: MINGGU INI -->
         <div class="section-title"><i class="fa-solid fa-fire"></i> Minggu Ini</div>
         
-        <div class="schedule-card-main">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <div>
-                    <h2>Sabtu, 03 Januari 2026</h2>
-                    <p style="color:#ccc; margin-top:-10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: Stadion Bayuangga Zone</p>
-                </div>
-                <span class="badge active" style="font-size:0.9rem; padding:5px 10px;">ON SCHEDULE</span>
-            </div>
-
-            <hr style="border:0; border-top:1px solid #444; margin:20px 0;">
-
-            <!-- Daftar Artis Minggu Ini -->
-            <div class="performer-list-item">
-                <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                <div>
-                    <h4 style="margin:0;">Rina Violinist</h4>
-                    <span style="color:var(--accent); font-size:0.9rem;">19.00 - 20.00 WIB</span>
-                    <p style="margin:0; font-size:0.8rem; color:#aaa;">Instrumental & Akustik</p>
-                </div>
-            </div>
-
-            <div class="performer-list-item">
-                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                <div>
-                    <h4 style="margin:0;">The Acoustic Boys</h4>
-                    <span style="color:var(--accent); font-size:0.9rem;">20.00 - 21.00 WIB</span>
-                    <p style="margin:0; font-size:0.8rem; color:#aaa;">Pop Jawa & Koplo</p>
-                </div>
-            </div>
-
-            <div class="performer-list-item">
-                <img src="https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=100" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-                <div>
-                    <h4 style="margin:0;">Keroncong Pro</h4>
-                    <span style="color:var(--accent); font-size:0.9rem;">21.00 - Selesai</span>
-                    <p style="margin:0; font-size:0.8rem; color:#aaa;">Tembang Kenangan</p>
-                </div>
+        <!-- WADAH KOSONG (Nanti diisi Script) -->
+        <div id="main-event-container">
+            <!-- TAMPILAN SEMENTARA SEBELUM DATA MUNCUL -->
+            <div style="text-align:center; padding:50px; border:1px dashed #444; border-radius:10px; color:#888;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:10px;"></i><br>
+                Sedang memuat jadwal terbaru...
             </div>
         </div>
 
         <!-- SECTION 2: JADWAL MENDATANG -->
         <div class="section-title"><i class="fa-regular fa-calendar"></i> Jadwal Berikutnya (Upcoming)</div>
 
-        <div class="upcoming-item">
-            <div class="date-badge">
-                <b style="color:var(--primary); font-size:1.2rem; display:block;">10</b> JAN
-            </div>
-            <div>
-                <h4 style="margin:0;">Jazz Night Special</h4>
-                <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">Menampilkan: Jazz Trio & Solo Hudi</p>
-                <span class="badge soon">COMING SOON</span>
-            </div>
-        </div>
-
-        <div class="upcoming-item">
-            <div class="date-badge">
-                <b style="color:var(--primary); font-size:1.2rem; display:block;">17</b> JAN
-            </div>
-            <div>
-                <h4 style="margin:0;">Rock Legend Tribute</h4>
-                <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">Menampilkan: Rock Ballad Pro</p>
-                <span class="badge soon">COMING SOON</span>
-            </div>
-        </div>
-
-        <div class="upcoming-item">
-            <div class="date-badge">
-                <b style="color:var(--primary); font-size:1.2rem; display:block;">24</b> JAN
-            </div>
-            <div>
-                <h4 style="margin:0;">Festival Campursari</h4>
-                <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">Menampilkan: Campursari Gembira</p>
-                <span class="badge soon">COMING SOON</span>
-            </div>
+        <!-- WADAH KOSONG (Nanti diisi Script) -->
+        <div id="upcoming-event-list">
+             <p style="text-align:center; color:#555;">Memuat data...</p>
         </div>
 
         <br><br>
         <center><small style="color:#666;">Jadwal dapat berubah sewaktu-waktu.</small></center>
     </div>
 
+    <!-- SCRIPT (LOGIKA PENGAMBIL DATA) -->
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // FUNGSI UTAMA: MENGAMBIL DATA DAN MENYUSUN HTML
+        async function loadSchedule() {
+            const mainContainer = document.getElementById('main-event-container');
+            const upcomingContainer = document.getElementById('upcoming-event-list');
+            
+            // Ambil data 'events' dari database
+            const q = query(collection(db, "events"), orderBy("date", "asc"));
+            const querySnapshot = await getDocs(q);
+
+            // JIKA DATABASE KOSONG (Belum ada yang diinput Admin)
+            if (querySnapshot.empty) {
+                // Kita isi data dummy DULU supaya tampilan tidak kosong melompong saat kamu cek sekarang.
+                // Nanti fitur seedDatabase() ini kita hapus kalau Admin Dashboard sudah jadi.
+                await seedDatabase(); 
+                return loadSchedule(); // Refresh biar muncul
+            }
+
+            // KOSONGKAN WADAH (Hapus loading spinner)
+            mainContainer.innerHTML = '';
+            upcomingContainer.innerHTML = '';
+
+            // LOOPING DATA DARI DATABASE
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+
+                // === 1. JIKA TIPE DATA ADALAH EVENT UTAMA (MINGGU INI) ===
+                if (data.type === 'main') {
+                    
+                    // Siapkan HTML untuk 3 Performer
+                    let performersHtml = '';
+                    if (data.performers && data.performers.length > 0) {
+                        data.performers.forEach(p => {
+                            // Ini menggunakan struktur HTML class="performer-list-item" yang SAMA PERSIS dengan desain asli
+                            performersHtml += `
+                            <div class="performer-list-item">
+                                <img src="${p.img}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                                <div>
+                                    <h4 style="margin:0;">${p.name}</h4>
+                                    <span style="color:var(--accent); font-size:0.9rem;">${p.time}</span>
+                                    <p style="margin:0; font-size:0.8rem; color:#aaa;">${p.genre}</p>
+                                </div>
+                            </div>`;
+                        });
+                    }
+
+                    // Gabungkan menjadi Kartu Utama (Desain Tetap Sama)
+                    mainContainer.innerHTML += `
+                    <div class="schedule-card-main">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <div>
+                                <h2>${data.displayDate}</h2>
+                                <p style="color:#ccc; margin-top:-10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: ${data.location}</p>
+                            </div>
+                            <span class="badge active" style="font-size:0.9rem; padding:5px 10px;">${data.statusText}</span>
+                        </div>
+                        <hr style="border:0; border-top:1px solid #444; margin:20px 0;">
+                        
+                        <!-- List Artis Dimasukkan Disini -->
+                        ${performersHtml}
+                    </div>`;
+                } 
+                
+                // === 2. JIKA TIPE DATA ADALAH UPCOMING (JADWAL MENDATANG) ===
+                else if (data.type === 'upcoming') {
+                    upcomingContainer.innerHTML += `
+                    <div class="upcoming-item">
+                        <div class="date-badge">
+                            <b style="color:var(--primary); font-size:1.2rem; display:block;">${data.dateNum}</b> ${data.dateMonth}
+                        </div>
+                        <div>
+                            <h4 style="margin:0;">${data.title}</h4>
+                            <p style="margin:5px 0; font-size:0.8rem; color:#aaa;">${data.desc}</p>
+                            <span class="badge soon">COMING SOON</span>
+                        </div>
+                    </div>`;
+                }
+            });
+        }
+
+        // FUNGSI BANTUAN: ISI DATA DUMMY OTOMATIS (Hanya jika database kosong)
+        // Ini supaya kamu bisa lihat hasilnya sekarang. Nanti Admin yang akan input data ini.
+        async function seedDatabase() {
+            const eventsRef = collection(db, "events");
+            
+            // CONTOH DATA YANG AKAN DIINPUT ADMIN NANTI:
+            await addDoc(eventsRef, {
+                type: "main",
+                date: "2026-01-03", 
+                displayDate: "Sabtu, 03 Januari 2026",
+                location: "Stadion Bayuangga Zone",
+                statusText: "ON SCHEDULE",
+                // Ini Array 3 Artis yang kamu maksud
+                performers: [
+                    { name: "Rina Violinist", time: "19.00 - 20.00 WIB", genre: "Instrumental & Akustik", img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" },
+                    { name: "The Acoustic Boys", time: "20.00 - 21.00 WIB", genre: "Pop Jawa & Koplo", img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" },
+                    { name: "Keroncong Pro", time: "21.00 - Selesai", genre: "Tembang Kenangan", img: "https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=100" }
+                ]
+            });
+            // Data Upcoming dummy...
+            await addDoc(eventsRef, { type: "upcoming", date: "2026-01-10", dateNum: "10", dateMonth: "JAN", title: "Jazz Night Special", desc: "Menampilkan: Jazz Trio & Solo Hudi" });
+            await addDoc(eventsRef, { type: "upcoming", date: "2026-01-17", dateNum: "17", dateMonth: "JAN", title: "Rock Legend Tribute", desc: "Menampilkan: Rock Ballad Pro" });
+        }
+
+        loadSchedule();
+    </script>
 </body>
 </html>
