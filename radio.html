@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* STYLE KHUSUS JADWAL RADIO */
+        /* STYLE KHUSUS JADWAL RADIO (TIDAK BERUBAH) */
         .session-card {
             background: #1a1a1a;
             border: 1px solid #333;
@@ -19,12 +19,19 @@
             gap: 20px;
             position: relative;
             overflow: hidden;
+            animation: slideIn 0.5s;
         }
         
         /* Garis Warna Warni per Sesi */
-        .session-card.morning { border-left: 5px solid #ffeb3b; } /* Kuning */
-        .session-card.afternoon { border-left: 5px solid #ff9800; } /* Oranye */
-        .session-card.night { border-left: 5px solid #00d2ff; } /* Biru */
+        .session-card.morning { border-left: 5px solid #ffeb3b; } 
+        .session-card.afternoon { border-left: 5px solid #ff9800; } 
+        .session-card.night { border-left: 5px solid #00d2ff; } 
+        
+        /* Style Khusus Live Mode */
+        .session-card.live-mode {
+            border-color: #00d2ff;
+            background: linear-gradient(to right, #1a1a1a, #001a22);
+        }
 
         .session-time {
             text-align: center;
@@ -35,6 +42,11 @@
         }
         .session-time b { display: block; font-size: 1.2rem; color: white; }
         .session-time span { font-size: 0.8rem; color: #aaa; text-transform: uppercase; }
+
+        /* Jika Live, Time-nya biru */
+        .live-mode .session-time { background: #00d2ff; color: black !important; }
+        .live-mode .session-time span { color: black; font-weight: bold; }
+        .live-mode .session-time b { color: black; }
 
         .session-info h3 { margin: 0 0 5px 0; color: white; }
         .session-info p { margin: 0; color: #ccc; font-size: 0.9rem; }
@@ -56,12 +68,12 @@
         }
         .btn-live-now:hover { background: #00d2ff; color: black; }
 
-        /* Mode HP Responsive */
         @media (max-width: 600px) {
             .session-card { flex-direction: column; align-items: flex-start; gap: 10px; }
             .session-time { display: flex; gap: 10px; align-items: center; width: 100%; justify-content: center; }
             .btn-live-now { width: 100%; justify-content: center; }
         }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -76,65 +88,19 @@
     <div class="container">
         
         <div class="section-title" style="border-color:#00d2ff; color:#00d2ff;">
-            <i class="fa-solid fa-tower-broadcast"></i> Siaran Hari Ini (Minggu, 04 Jan)
+            <i class="fa-solid fa-tower-broadcast"></i> Siaran Hari Ini
         </div>
 
-        <!-- SESI 1: PAGI -->
-        <div class="session-card morning">
-            <div class="session-time">
-                <span>PAGI</span>
-                <b>09:00</b>
-            </div>
-            <div class="session-info">
-                <h3>Sapa Pagi Probolinggo</h3>
-                <p>Host: <span class="host-name">Mbak Yuni</span></p>
-                <p style="font-size:0.8rem; color:#888; margin-top:5px;">Topik: Info lalu lintas & kuliner pagi.</p>
-            </div>
-            <div style="margin-left:auto;">
-                <button class="btn-small" style="background:#333; color:#888; cursor:not-allowed;">Selesai</button>
-            </div>
+        <!-- WADAH JADWAL DINAMIS -->
+        <div id="radio-container">
+            <p style="text-align:center; color:#666; padding:20px;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Memuat jadwal siaran...
+            </p>
         </div>
 
-        <!-- SESI 2: SIANG -->
-        <div class="session-card afternoon">
-            <div class="session-time">
-                <span>SIANG</span>
-                <b>14:00</b>
-            </div>
-            <div class="session-info">
-                <h3>Akustik Santai</h3>
-                <p>Host: <span class="host-name">Solo Hudi</span></p>
-                <p style="font-size:0.8rem; color:#888; margin-top:5px;">Live music gitar tunggal menemani istirahat.</p>
-            </div>
-            <div style="margin-left:auto;">
-                <button class="btn-small" style="background:#333; color:#888; cursor:not-allowed;">Selesai</button>
-            </div>
-        </div>
-
-        <!-- SESI 3: MALAM (LIVE SEKARANG) -->
-        <div class="session-card night" style="border-color:#00d2ff; background:linear-gradient(to right, #1a1a1a, #001a22);">
-            <div class="session-time" style="background:#00d2ff; color:black;">
-                <span style="color:black; font-weight:bold;">MALAM</span>
-                <b>19:00</b>
-            </div>
-            <div class="session-info">
-                <h3 style="color:#00d2ff;">Bincang Seniman & Request</h3>
-                <p>Host: <span class="host-name">Mas Dito</span> & Rina Violin</p>
-                <p style="font-size:0.8rem; color:#ddd; margin-top:5px;">
-                    <i class="fa-solid fa-circle" style="color:red; font-size:0.6rem; animation:pulse 1s infinite;"></i> 
-                    Sedang Berlangsung! Gabung untuk kirim salam.
-                </p>
-            </div>
-            <div style="margin-left:auto;">
-                <a href="https://tiktok.com" target="_blank" class="btn-live-now">
-                    <i class="fa-brands fa-tiktok"></i> GABUNG LIVE
-                </a>
-            </div>
-        </div>
-
-        <!-- JADWAL BESOK -->
+        <!-- JADWAL BESOK (Tetap Statis Dulu atau Dinamis Nanti) -->
         <div class="section-title" style="margin-top:40px; color:#888; border-color:#444;">
-            <i class="fa-regular fa-calendar"></i> Jadwal Besok (Senin)
+            <i class="fa-regular fa-calendar"></i> Jadwal Besok
         </div>
         
         <div class="session-card">
@@ -142,10 +108,127 @@
             <div class="session-info">
                 <h3>Podcast Edukasi</h3>
                 <p>Host: Admin SMIPRO</p>
+                <p style="font-size:0.8rem; color:#666;">Topik: Bedah Lirik Lagu</p>
             </div>
         </div>
 
     </div>
 
+    <!-- SCRIPT FIREBASE -->
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        async function loadRadioSchedule() {
+            const container = document.getElementById('radio-container');
+            
+            // Ambil data dari koleksi 'broadcasts', urutkan berdasarkan 'order' (1, 2, 3)
+            const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
+            const querySnapshot = await getDocs(q);
+
+            // SEEDING DATA DUMMY (Jika Database Kosong)
+            if (querySnapshot.empty) {
+                await seedRadioData();
+                return loadRadioSchedule();
+            }
+
+            container.innerHTML = '';
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+
+                // Logic Tampilan: Apakah Sedang Live?
+                // Jika isLive = true, tambahkan class "live-mode" dan tombol Gabung
+                let cardClass = `session-card ${data.theme}`; // morning, afternoon, night
+                let liveBtnHtml = '';
+                let statusText = '';
+                let liveTitleStyle = '';
+
+                if (data.isLive) {
+                    cardClass += ' live-mode';
+                    liveTitleStyle = 'color:#00d2ff;';
+                    statusText = `
+                    <p style="font-size:0.8rem; color:#ddd; margin-top:5px;">
+                        <i class="fa-solid fa-circle" style="color:red; font-size:0.6rem; animation:pulse 1s infinite;"></i> 
+                        Sedang Berlangsung! Gabung untuk kirim salam.
+                    </p>`;
+                    liveBtnHtml = `
+                    <div style="margin-left:auto;">
+                        <a href="${data.link}" target="_blank" class="btn-live-now">
+                            <i class="fa-brands fa-tiktok"></i> GABUNG LIVE
+                        </a>
+                    </div>`;
+                } else {
+                    // Jika tidak live, tampilkan tombol Selesai (Disabled)
+                    statusText = `<p style="font-size:0.8rem; color:#888; margin-top:5px;">Topik: ${data.topic}</p>`;
+                    liveBtnHtml = `
+                    <div style="margin-left:auto;">
+                        <button class="btn-small" style="background:#333; color:#555; border:none; padding:5px 10px; border-radius:5px; cursor:not-allowed;">Selesai</button>
+                    </div>`;
+                }
+
+                // Render HTML Sesuai Desain Asli
+                container.innerHTML += `
+                <div class="${cardClass}">
+                    <div class="session-time">
+                        <span>${data.sessionName}</span>
+                        <b>${data.time}</b>
+                    </div>
+                    <div class="session-info">
+                        <h3 style="${liveTitleStyle}">${data.title}</h3>
+                        <p>Host: <span class="host-name">${data.host}</span></p>
+                        ${statusText}
+                    </div>
+                    ${liveBtnHtml}
+                </div>`;
+            });
+        }
+
+        // FUNGSI ISI DATA DUMMY (Sesuai Radio.html Asli)
+        async function seedRadioData() {
+            const radioRef = collection(db, "broadcasts");
+
+            // Sesi 1: Pagi
+            await addDoc(radioRef, {
+                order: 1,
+                sessionName: "PAGI",
+                time: "09:00",
+                theme: "morning", // Class CSS kuning
+                title: "Sapa Pagi Probolinggo",
+                host: "Mbak Yuni",
+                topic: "Info lalu lintas & kuliner pagi",
+                isLive: false,
+                link: "#"
+            });
+
+            // Sesi 2: Siang
+            await addDoc(radioRef, {
+                order: 2,
+                sessionName: "SIANG",
+                time: "14:00",
+                theme: "afternoon", // Class CSS oranye
+                title: "Akustik Santai",
+                host: "Solo Hudi",
+                topic: "Live music gitar tunggal",
+                isLive: false,
+                link: "#"
+            });
+
+            // Sesi 3: Malam (Set sebagai LIVE)
+            await addDoc(radioRef, {
+                order: 3,
+                sessionName: "MALAM",
+                time: "19:00",
+                theme: "night", // Class CSS biru
+                title: "Bincang Seniman & Request",
+                host: "Mas Dito & Rina",
+                topic: "Kirim salam & request lagu",
+                isLive: true, // INI YANG BIKIN TOMBOL GABUNG MUNCUL
+                link: "https://tiktok.com/@smipro"
+            });
+        }
+
+        loadRadioSchedule();
+    </script>
 </body>
 </html>
