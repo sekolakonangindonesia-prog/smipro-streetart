@@ -210,41 +210,88 @@ window.saveNews = async function() {
 }
 
 /* =========================================
-   5. KEUANGAN (REQUEST MONITOR)
+   5. KEUANGAN & STATISTIK (UPDATE CANGGIH)
    ========================================= */
 function listenFinance() {
     const list = document.getElementById('admin-req-list');
+    const topPerfList = document.getElementById('top-perf-list');
+    const topSongList = document.getElementById('top-song-list');
+
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
         list.innerHTML = '';
+        
+        // VARIABEL UNTUK HITUNG STATISTIK
+        let perfStats = {};
+        let songStats = {};
+
         if(snapshot.empty) list.innerHTML = '<p style="color:#555;">Belum ada request masuk.</p>';
 
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
             
-            // Tombol ACC
+            // 1. HITUNG STATISTIK (Hanya yang sudah approved/dibayar)
+            if(data.status === 'approved' || data.status === 'done') {
+                // Hitung Performer
+                let pName = data.performer || "Unknown";
+                if(!perfStats[pName]) perfStats[pName] = 0;
+                perfStats[pName]++;
+
+                // Hitung Lagu
+                let sTitle = data.song || "Unknown";
+                // Bersihkan judul (misal: "Nemen " jadi "Nemen") agar hitungannya akurat
+                sTitle = sTitle.trim().toLowerCase(); 
+                if(!songStats[sTitle]) songStats[sTitle] = 0;
+                songStats[sTitle]++;
+            }
+
+            // 2. RENDER LIST REQUEST (Sama seperti sebelumnya)
             let btnAction = '';
             let statusColor = '#333';
             
             if(data.status === 'pending') {
                 btnAction = `<button onclick="verifyPayment('${id}')" style="background:orange; border:none; padding:5px; border-radius:3px; cursor:pointer;">Verifikasi Pembayaran</button>`;
-                statusColor = '#443300'; // Kuning gelap
+                statusColor = '#443300';
             } else {
                 btnAction = `<span style="color:#00ff00;"><i class="fa-solid fa-check"></i> Lunas</span>`;
-                statusColor = '#002200'; // Hijau gelap
+                statusColor = '#002200';
             }
 
             list.innerHTML += `
             <div style="background:${statusColor}; padding:10px; border-radius:5px; border:1px solid #444; display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <b style="color:white;">${data.song}</b> <small style="color:#ccc;">(${data.sender})</small><br>
-                    <span style="color:#00d2ff;">Rp ${parseInt(data.amount).toLocaleString()}</span>
+                    <small style="color:#00d2ff;">${data.performer}</small> • <b style="color:gold;">Rp ${parseInt(data.amount).toLocaleString()}</b>
                 </div>
                 <div>${btnAction}</div>
             </div>`;
         });
+
+        // 3. RENDER HASIL STATISTIK KE TABEL
+        renderStats(perfStats, topPerfList);
+        renderStats(songStats, topSongList);
+    });
+}
+
+// Fungsi Pembantu Render Statistik
+function renderStats(statsObj, container) {
+    // Ubah Object ke Array lalu Sortir dari yang terbesar
+    const sorted = Object.entries(statsObj)
+        .sort(([,a], [,b]) => b - a) // Urutkan angka terbesar
+        .slice(0, 5); // Ambil Top 5 saja
+
+    container.innerHTML = '';
+    if(sorted.length === 0) {
+        container.innerHTML = '<li>Belum ada data.</li>';
+        return;
+    }
+
+    sorted.forEach(([key, val]) => {
+        // Huruf besar di awal kata (Capitalize)
+        const displayKey = key.replace(/\b\w/g, l => l.toUpperCase());
+        container.innerHTML += `<li style="margin-bottom:5px;"><b>${displayKey}</b> <span style="color:#888;">(${val} request)</span></li>`;
     });
 }
 
