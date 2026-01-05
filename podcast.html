@@ -20,48 +20,92 @@
         
         <div class="section-title"><i class="fa-brands fa-youtube" style="color:red;"></i> Episode Terbaru</div>
 
-        <!-- Menggunakan CSS Grid yang sudah ada di style.css -->
-        <div class="podcast-grid">
-            
-            <!-- Video 1 -->
-            <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
-                <div style="position:relative;">
-                    <img src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=400" class="podcast-thumb">
-                    <i class="fa-solid fa-circle-play play-btn-center"></i>
-                </div>
-                <div class="podcast-info">
-                    <h4>Eps 1: Susahnya Jadi Pengamen di Era Digital</h4>
-                    <span><i class="fa-regular fa-clock"></i> 45 Menit • Host: Dito</span>
-                </div>
-            </div>
-
-            <!-- Video 2 -->
-            <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
-                <div style="position:relative;">
-                    <img src="https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=400" class="podcast-thumb">
-                    <i class="fa-solid fa-circle-play play-btn-center"></i>
-                </div>
-                <div class="podcast-info">
-                    <h4>Eps 2: Kisah Sukses Warung Bu Sri</h4>
-                    <span><i class="fa-regular fa-clock"></i> 30 Menit • Host: Yuni</span>
-                </div>
-            </div>
-
-            <!-- Video 3 -->
-            <div class="podcast-card" onclick="window.open('https://youtube.com', '_blank')">
-                <div style="position:relative;">
-                    <img src="https://images.unsplash.com/photo-1478737270239-2f02b77ac618?q=80&w=400" class="podcast-thumb">
-                    <i class="fa-solid fa-circle-play play-btn-center"></i>
-                </div>
-                <div class="podcast-info">
-                    <h4>Eps 3: Tips Lulus Sertifikasi Attitude</h4>
-                    <span><i class="fa-regular fa-clock"></i> 20 Menit • Host: Admin</span>
-                </div>
-            </div>
-
+        <!-- WADAH PODCAST DINAMIS -->
+        <div class="podcast-grid" id="podcast-container">
+            <!-- Loading Indicator -->
+            <p style="text-align:center; color:#666; width:100%; grid-column: 1 / -1;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat video...
+            </p>
         </div>
 
     </div>
+
+    <!-- SCRIPT FIREBASE -->
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // FUNGSI LOAD DATA
+        async function loadPodcasts() {
+            const container = document.getElementById('podcast-container');
+
+            // Ambil data dari koleksi 'podcasts', urutkan berdasarkan 'order' (1, 2, 3...)
+            const q = query(collection(db, "podcasts"), orderBy("order", "asc"));
+            const querySnapshot = await getDocs(q);
+
+            // JIKA KOSONG, ISI DATA DUMMY
+            if (querySnapshot.empty) {
+                await seedPodcastData();
+                return loadPodcasts();
+            }
+
+            container.innerHTML = '';
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                // HTML KARTU (SAMA PERSIS DENGAN DESAIN ASLI)
+                container.innerHTML += `
+                <div class="podcast-card" onclick="window.open('${data.link}', '_blank')">
+                    <div style="position:relative;">
+                        <img src="${data.thumb}" class="podcast-thumb">
+                        <i class="fa-solid fa-circle-play play-btn-center"></i>
+                    </div>
+                    <div class="podcast-info">
+                        <h4>${data.title}</h4>
+                        <span><i class="fa-regular fa-clock"></i> ${data.duration} • Host: ${data.host}</span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // FUNGSI DATA DUMMY (SESUAI PODCAST.HTML ASLI)
+        async function seedPodcastData() {
+            const podRef = collection(db, "podcasts");
+
+            // Video 1
+            await addDoc(podRef, {
+                order: 1,
+                title: 'Eps 1: Susahnya Jadi Pengamen di Era Digital',
+                host: 'Dito',
+                duration: '45 Menit',
+                thumb: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=400',
+                link: 'https://youtube.com'
+            });
+
+            // Video 2
+            await addDoc(podRef, {
+                order: 2,
+                title: 'Eps 2: Kisah Sukses Warung Bu Sri',
+                host: 'Yuni',
+                duration: '30 Menit',
+                thumb: 'https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=400',
+                link: 'https://youtube.com'
+            });
+
+            // Video 3
+            await addDoc(podRef, {
+                order: 3,
+                title: 'Eps 3: Tips Lulus Sertifikasi Attitude',
+                host: 'Admin',
+                duration: '20 Menit',
+                thumb: 'https://images.unsplash.com/photo-1478737270239-2f02b77ac618?q=80&w=400',
+                link: 'https://youtube.com'
+            });
+        }
+
+        loadPodcasts();
+    </script>
 
 </body>
 </html>
