@@ -250,7 +250,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT FIREBASE COMPAT -->
+    <!-- SCRIPT LOGIC (FIX: UPDATE STOK MEJA & NOMOR MEJA DI WA) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
@@ -266,22 +266,21 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // VARS
-        let currentVenueRating = 0, currentPerfRating = 0, targetPerformer = "";
+        // VAR GLOBAL
+        let currentVenueRating = 0;
+        let currentPerfRating = 0;
+        let targetPerformer = "";
+        let selectedWarungId = null; // UNTUK MENYIMPAN ID WARUNG YANG DIPILIH
 
         // --- GLOBAL FUNCTIONS ---
-        // 1. OPEN BOOKING MODAL (DARI TOMBOL)
-        window.openBooking = function(name, id) {
+        function openBooking(name, id) {
             document.getElementById('modal-warung-name').innerText = name;
+            selectedWarungId = id; // SIMPAN ID DISINI
+            
             const now = new Date();
             const timeString = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
             document.getElementById('book-time').value = timeString;
             document.getElementById('booking-modal').style.display = 'flex';
-        }
-
-        // 2. OPEN PROFIL WARUNG (DARI KLIK GAMBAR/NAMA)
-        window.openWarungProfile = function(id) {
-            window.location.href = 'warung-profile.html?id=' + id;
         }
 
         function hitungMeja() {
@@ -300,18 +299,17 @@
             container.innerHTML = '';
             snapshot.forEach(docSnap => {
                 const w = docSnap.data();
+                // HITUNG SISA MEJA
                 const available = w.totalTables - (w.bookedCount || 0);
                 const isFull = available <= 0;
                 
-                // TOMBOL BOOKING TETAP ADA
                 let btnHtml = isFull ? 
                     `<button class="btn-full-ss3">Penuh</button>` : 
                     `<button class="btn-book-ss3" onclick="openBooking('${w.name}', '${docSnap.id}')">Booking</button>`;
                 
                 const imgUrl = w.img || "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200";
 
-                // KLIK GAMBAR/NAMA -> KE PROFIL
-                // KLIK TOMBOL -> KE POPUP BOOKING
+                // TAMPILKAN JUMLAH TERSEDIA
                 container.innerHTML += `
                 <div class="warung-card">
                     <img src="${imgUrl}" class="warung-img" onclick="openWarungProfile('${docSnap.id}')" style="cursor:pointer">
@@ -326,7 +324,12 @@
             });
         });
 
-        // --- PROSES BOOKING (ALGORITMA CERDAS) ---
+        // --- NAVIGASI KE PROFIL ---
+        window.openWarungProfile = function(id) {
+            window.location.href = 'warung-profile.html?id=' + id;
+        }
+
+        // --- CONFIRM BOOKING (DENGAN UPDATE STOK) ---
         window.confirmBooking = async function() {
             const name = document.getElementById('book-name').value;
             let wa = document.getElementById('book-wa').value;
@@ -344,25 +347,38 @@
 
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
             const warungName = document.getElementById('modal-warung-name').innerText;
-
-            // ALGORITMA PENETAPAN MEJA ACAR (SIMULASI 1-15)
-            // Di sistem real, ini harus cek database. Di sini kita simulasi random dulu agar cepat
+            
+            // SIMULASI NOMOR MEJA (Random 1-15)
             const mejaAcak = Math.floor(Math.random() * 15) + 1;
 
+            // 1. SIMPAN BOOKING
             await db.collection("bookings").add({
-                warungName: warungName, customerName: name, customerWA: wa,
+                warungName: warungName, 
+                customerName: name, customerWA: wa,
                 pax: pax, tablesNeeded: qty, arrivalTime: time, expiredTime: expTime,
                 bookingCode: kode, status: 'booked', timestamp: new Date(),
                 tableNum: mejaAcak
             });
 
+            // 2. UPDATE STOK MEJA DI WARUNG (PENTING!)
+            if (selectedWarungId) {
+                const warungRef = db.collection("warungs").doc(selectedWarungId);
+                // Gunakan Increment atomic dari Firebase agar aman
+                await warungRef.update({
+                    bookedCount: firebase.firestore.FieldValue.increment(qty)
+                });
+            }
+
             closeModal('booking-modal');
+            
+            // Reset Form
             document.getElementById('book-name').value = '';
             document.getElementById('book-wa').value = '';
             document.getElementById('book-pax').value = '';
+            document.getElementById('book-qty').value = '0 Meja';
 
-            const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang\n\n✅ *ANDA MENDAPATKAN MEJA: No. ${mejaAcak}*\n(Datang Pukul ${time})\n\n⚠️ *PENTING:* Hangus jika lewat Pukul ${expTime}\nMohon scan QR Meja ${mejaAcak} saat tiba.`;
-
+            const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\n\n📍 *ANDA MENDAPATKAN MEJA: No. ${mejaAcak}*\n(Segera menuju meja ini)\n\n⚠️ *PENTING:* Hangus jika lewat Pukul ${expTime}\nMohon scan QR Meja saat tiba.`;
+            
             if(confirm(`Booking Sukses!\nMeja Anda: ${mejaAcak}\n\nKirim tiket ke WA?`)) {
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
@@ -383,11 +399,15 @@
                 sender: sender, status: 'pending', timestamp: new Date()
             });
 
-            alert("Request Terkirim! Menunggu konfirmasi Admin.");
+            alert("Request Terkirim! Mohon tunggu konfirmasi Admin (Stage Monitor).");
             closeModal('request-modal');
+            document.getElementById('req-song').value = "";
+            document.getElementById('req-msg').value = "";
+            document.getElementById('req-amount').value = "";
+            document.getElementById('req-sender').value = "";
         }
 
-        // --- RATING VENUE & PERF (SAMA SEPERTI SEBELUMNYA) ---
+        // --- RATING (SAMA SEPERTI SEBELUMNYA) ---
         window.rateStar = function(type, n) {
             const containerID = type === 'venue' ? 'venue-stars' : 'perf-stars';
             if(type === 'venue') currentVenueRating = n; else currentPerfRating = n;
@@ -416,7 +436,6 @@
             await db.collection("performer_reviews").add({ performer:targetPerformer, name, rating:currentPerfRating, comment, timestamp:new Date() });
             alert("Penilaian terkirim!"); closeModal('rate-perf-modal');
         }
-        
         async function seedWarungData() {
             await db.collection("warungs").doc("warung_smipro").set({ name: "Warung SMIPRO.ID", totalTables: 15, bookedCount: 0, status: "open", img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" });
         }
