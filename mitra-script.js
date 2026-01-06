@@ -24,27 +24,36 @@ async function initDatabase() {
     }
 }
 
-// Listen Status Warung
+// LISTEN STATUS & PROFIL WARUNG (LENGKAP)
 onSnapshot(doc(db, "warungs", WARUNG_ID), (doc) => {
     if (doc.exists()) {
         const data = doc.data();
+        // Update Header
         document.getElementById('shop-name-display').innerText = data.name;
         document.getElementById('total-table-count').innerText = data.totalTables;
-        document.getElementById('edit-name').value = data.name;
+        
+        // Update Form Profil (Mengisi data yang ada)
+        document.getElementById('edit-name').value = data.name || '';
+        document.getElementById('edit-owner').value = data.owner || '';
+        document.getElementById('edit-phone').value = data.phone || '';
+        document.getElementById('edit-email').value = data.email || '';
+        document.getElementById('edit-pass').value = data.password || ''; // Hati-hati menampilkan password
 
+        // Update Status Buka/Tutup
         const btn = document.getElementById('store-status-btn');
         const txt = document.getElementById('store-status-text');
         
-        // Atur Kelas Tombol Buka/Tutup
         if (data.status === 'open') {
-            btn.classList.remove('closed');
-            btn.classList.add('open');
-            txt.innerText = "BUKA";
+            btn.classList.remove('closed'); btn.classList.add('open'); txt.innerText = "BUKA";
         } else {
-            btn.classList.remove('open');
-            btn.classList.add('closed');
-            txt.innerText = "TUTUP";
+            btn.classList.remove('open'); btn.classList.add('closed'); txt.innerText = "TUTUP";
         }
+        
+        // Simpan info sesi agar tombol Home berfungsi
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('userRole', 'mitra');
+        localStorage.setItem('userLink', 'mitra-dashboard.html');
     }
 });
 
@@ -139,30 +148,67 @@ function renderMenus() {
     });
 }
 
-// GENERATE QR CODE DENGAN TOMBOL DOWNLOAD
 window.renderQRCodes = function() {
     const container = document.getElementById('qr-container');
     const total = document.getElementById('total-table-count').innerText;
     container.innerHTML = '';
-    
     for (let i = 1; i <= total; i++) {
-        // Ganti URL ini dengan URL Website Asli Anda nanti
         const qrData = `https://smipro-app.web.app/checkin.html?w=${WARUNG_ID}&t=${i}`;
         const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
-        
         container.innerHTML += `
         <div class="qr-card">
             <h4>MEJA ${i}</h4>
-            <img src="${qrSrc}" id="qr-img-${i}">
-            <br>
-            <button class="btn-download-qr" onclick="downloadQR('${qrSrc}', ${i})">
-                <i class="fa-solid fa-download"></i> Download
-            </button>
+            <img src="${qrSrc}"><br>
+            <button class="btn-download-qr" onclick="downloadQR('${qrSrc}', ${i})"><i class="fa-solid fa-download"></i> Download</button>
         </div>`;
     }
 }
 
-// --- FUNGSI INTERAKTIF (DIEXPOSE KE WINDOW AGAR BISA DIKLIK) ---
+// --- FUNGSI INTERAKTIF ---
+
+// TOMBOL HOME (Fix)
+window.goHome = function() {
+    // Pastikan session tersimpan sebelum pindah
+    const name = document.getElementById('shop-name-display').innerText;
+    localStorage.setItem('userLoggedIn', 'true');
+    localStorage.setItem('userName', name);
+    localStorage.setItem('userRole', 'mitra');
+    localStorage.setItem('userLink', 'mitra-dashboard.html');
+    window.location.href = 'index.html';
+}
+
+// SIMPAN PROFIL (LENGKAP)
+window.saveProfile = async function() {
+    const newName = document.getElementById('edit-name').value;
+    const newOwner = document.getElementById('edit-owner').value;
+    const newPhone = document.getElementById('edit-phone').value;
+    const newEmail = document.getElementById('edit-email').value;
+    const newPass = document.getElementById('edit-pass').value;
+
+    await updateDoc(doc(db, "warungs", WARUNG_ID), { 
+        name: newName,
+        owner: newOwner,
+        phone: newPhone,
+        email: newEmail,
+        password: newPass
+    });
+    alert("Profil Berhasil Diupdate!");
+}
+
+// PREVIEW IMAGE (FIX untuk Tab Profil)
+window.previewImage = function(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            // Update Header
+            document.getElementById('header-profile-img').src = e.target.result;
+            // Update Tab Profil
+            const profileTabImg = document.getElementById('preview-profile-img');
+            if(profileTabImg) profileTabImg.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
 window.downloadQR = async function(url, tableNum) {
     try {
@@ -175,17 +221,14 @@ window.downloadQR = async function(url, tableNum) {
         link.click();
         document.body.removeChild(link);
     } catch (error) {
-        alert("Gagal mengunduh QR. Coba klik kanan dan 'Save Image'.");
+        alert("Gagal download. Klik kanan gambar lalu Save.");
     }
 }
 
 window.toggleStoreStatus = async function() {
     const btn = document.getElementById('store-status-btn');
-    // Cek status saat ini dari class
     const currentStatus = btn.classList.contains('open') ? 'open' : 'closed';
     const newStatus = currentStatus === 'open' ? 'closed' : 'open';
-    
-    // Update Firebase
     await updateDoc(doc(db, "warungs", WARUNG_ID), { status: newStatus });
 }
 
@@ -208,25 +251,7 @@ window.deleteMenu = async function(docId) {
     if(confirm("Hapus menu ini?")) await deleteDoc(doc(db, "menus", docId));
 }
 
-window.saveProfile = async function() {
-    const newName = document.getElementById('edit-name').value;
-    await updateDoc(doc(db, "warungs", WARUNG_ID), { name: newName });
-    alert("Profil Diupdate!");
-}
-
 window.triggerUpload = function() { document.getElementById('file-input').click(); }
-
-window.previewImage = function(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            document.getElementById('header-profile-img').src = e.target.result;
-            document.getElementById('preview-profile-img').src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
-        // Disini nanti bisa tambahkan logika Upload ke Firebase Storage
-    }
-}
 
 window.editTableCount = async function() {
     let currentTotal = document.getElementById('total-table-count').innerText;
@@ -250,15 +275,15 @@ window.prosesLogout = function() {
     }
 }
 
-// Navigasi Tab
 window.switchTab = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
-    // Cari tombol yang diklik (sedikit trick karena event bubbling)
+    
+    // Highlight tombol yang aktif
     const btns = document.querySelectorAll('.tab-btn');
     btns.forEach(btn => {
-        if(btn.getAttribute('onclick').includes(tabId)) btn.classList.add('active');
+        if(btn.onclick.toString().includes(tabId)) btn.classList.add('active');
     });
     
     if(tabId === 'qr') renderQRCodes();
