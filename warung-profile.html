@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Warung - SMIPRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS KHUSUS PROFIL WARUNG */
+        body { background: #121212; color: white; padding-bottom: 80px; }
+        
+        /* Header Gambar */
+        .profile-header {
+            height: 200px;
+            background: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Bener%20Dasboard3.jpg') center/cover;
+            position: relative;
+        }
+        .header-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #121212); }
+        
+        /* Info Warung (Tengah) */
+        .warung-info-box {
+            text-align: center;
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+            padding: 0 20px;
+        }
+        .warung-avatar {
+            width: 100px; height: 100px; border-radius: 50%;
+            border: 3px solid var(--primary);
+            object-fit: cover; background: #000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        /* Grid Menu (Kotak-Kotak) */
+        .menu-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;
+            padding: 20px;
+        }
+        .menu-card {
+            background: #1e1e1e; border-radius: 10px; overflow: hidden;
+            border: 1px solid #333; transition: 0.3s;
+        }
+        .menu-img { width: 100%; height: 120px; object-fit: cover; }
+        .menu-info { padding: 10px; }
+        .menu-title { font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 5px; }
+        .menu-price { color: gold; font-size: 0.9rem; }
+
+        /* Tombol Booking Melayang di Bawah */
+        .bottom-action {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #1a1a1a; border-top: 1px solid #333;
+            padding: 15px; box-sizing: border-box; display: flex; gap: 10px; z-index: 100;
+        }
+        .btn-status { flex: 1; text-align: center; padding: 12px; font-weight: bold; border-radius: 5px; background: #333; color: #aaa; cursor: default; }
+        .btn-book-action { flex: 2; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-book-action:disabled { background: #555; cursor: not-allowed; }
+
+        /* Modal Popup */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-box { background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative; max-height: 90vh; overflow-y: auto; }
+        .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="profile-header">
+        <button onclick="history.back()" style="position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.5); border:none; color:white; padding:8px 15px; border-radius:20px; cursor:pointer; z-index:20;">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+        <div class="header-overlay"></div>
+    </div>
+
+    <!-- INFO WARUNG -->
+    <div class="warung-info-box">
+        <img src="" id="w-img" class="warung-avatar" onerror="this.src='https://via.placeholder.com/150'">
+        <h2 style="margin:10px 0 5px 0;" id="w-name">Memuat...</h2>
+        <span id="w-status" style="background:#333; padding:3px 10px; border-radius:10px; font-size:0.8rem;">...</span>
+    </div>
+
+    <!-- DAFTAR MENU -->
+    <div class="container">
+        <h3 style="border-bottom:1px solid #333; padding-bottom:10px; margin-top:30px; color:var(--accent);">Daftar Menu</h3>
+        <div id="menu-grid" class="menu-grid">
+            <p style="grid-column:1/-1; text-align:center; color:#666;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat Menu...
+            </p>
+        </div>
+    </div>
+
+    <!-- TOMBOL AKSI BAWAH (STICKY) -->
+    <div class="bottom-action">
+        <div class="btn-status" id="table-status-display">Cek Status...</div>
+        <button id="btn-booking-trigger" class="btn-book-action" onclick="openBookingModal()" disabled>Loading...</button>
+    </div>
+
+    <!-- MODAL BOOKING -->
+    <div id="booking-modal" class="modal-overlay">
+        <div class="modal-box">
+            <i class="fa-solid fa-xmark close-icon" onclick="closeModal()"></i>
+            <h3 style="margin:0; text-align:center;">Booking Meja</h3>
+            <p id="modal-warung-title" style="text-align:center; color:#FFD700; margin-bottom:15px; font-weight:bold;">-</p>
+            
+            <label style="color:#aaa; font-size:0.8rem;">Nama Pemesan</label>
+            <input type="text" id="book-name" class="input-request">
+            
+            <label style="color:#aaa; font-size:0.8rem;">WhatsApp (Untuk Tiket)</label>
+            <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
+            
+            <label style="color:#aaa; font-size:0.8rem;">Rencana Jam Datang</label>
+            <input type="time" id="book-time" class="input-request" style="color-scheme: dark;">
+            
+            <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang</label>
+            <input type="number" id="book-pax" class="input-request" placeholder="Total Orang" oninput="hitungMeja()">
+            
+            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja</label>
+            <input type="text" id="book-qty" class="input-request" readonly style="color:#E50914; font-weight:bold; background:#333;" value="0 Meja">
+
+            <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <b>SISTEM OTOMATIS:</b><br>
+                Meja akan ditentukan sistem secara otomatis. Nomor meja akan dikirim via WA.
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal()">Batal</button>
+                <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="confirmBooking()">Pesan Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // KONFIGURASI
+        const firebaseConfig = {
+            apiKey: "AIzaSyBZcysu-eljECIpQCG7tBKowuN-H8hIRFk",
+            authDomain: "smipro-app.firebaseapp.com",
+            projectId: "smipro-app",
+            storageBucket: "smipro-app.firebasestorage.app",
+            messagingSenderId: "1052427998270",
+            appId: "1:1052427998270:web:5f70ea06e4b10b50fe2d6f"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // AMBIL ID WARUNG DARI URL
+        const params = new URLSearchParams(window.location.search);
+        const warungId = params.get('id');
+        
+        let currentWarungName = "";
+        let totalTables = 0;
+
+        // 1. LOAD DATA WARUNG
+        if(warungId) {
+            db.collection("warungs").doc(warungId).onSnapshot((doc) => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    currentWarungName = data.name;
+                    totalTables = data.totalTables;
+
+                    document.getElementById('w-name').innerText = data.name;
+                    if(data.img) document.getElementById('w-img').src = data.img;
+                    
+                    // Cek Ketersediaan
+                    // Nanti dihitung ulang di server/backend, ini hanya indikator UI
+                    const available = data.totalTables - (data.bookedCount || 0);
+                    const isFull = available <= 0;
+                    
+                    const btnStatus = document.getElementById('table-status-display');
+                    const btnBook = document.getElementById('btn-booking-trigger');
+
+                    if (data.status === 'closed') {
+                        document.getElementById('w-status').innerText = "SEDANG TUTUP";
+                        document.getElementById('w-status').style.color = "red";
+                        btnStatus.innerText = "WARUNG TUTUP";
+                        btnBook.innerText = "TIDAK MENERIMA PESANAN";
+                        btnBook.disabled = true;
+                        btnBook.style.background = "#555";
+                    } else if (isFull) {
+                        document.getElementById('w-status').innerText = "BUKA - PENUH";
+                        document.getElementById('w-status').style.color = "orange";
+                        btnStatus.innerText = "0 Meja";
+                        btnBook.innerText = "FULL BOOKED";
+                        btnBook.disabled = true;
+                        btnBook.style.background = "#555";
+                    } else {
+                        document.getElementById('w-status').innerText = "BUKA";
+                        document.getElementById('w-status').style.color = "#00ff00";
+                        btnStatus.innerText = `${available} Meja Tersedia`;
+                        btnBook.innerText = "BOOKING SEKARANG";
+                        btnBook.disabled = false;
+                        btnBook.style.background = "#E50914";
+                    }
+                }
+            });
+
+            // 2. LOAD MENU (GRID)
+            db.collection("menus").where("warungId", "==", warungId).onSnapshot((snapshot) => {
+                const grid = document.getElementById('menu-grid');
+                grid.innerHTML = '';
+                if(snapshot.empty) {
+                    grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Belum ada menu.</p>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const m = doc.data();
+                    grid.innerHTML += `
+                    <div class="menu-card">
+                        <img src="${m.img}" class="menu-img">
+                        <div class="menu-info">
+                            <span class="menu-title">${m.name}</span>
+                            <span class="menu-price">Rp ${parseInt(m.price).toLocaleString()}</span>
+                        </div>
+                    </div>`;
+                });
+            });
+        } else {
+            alert("Warung tidak ditemukan!");
+            window.location.href = 'venue-stadion.html';
+        }
+
+        // --- LOGIKA BOOKING ---
+        function openBookingModal() {
+            document.getElementById('modal-warung-title').innerText = currentWarungName;
+            const now = new Date();
+            const timeString = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+            document.getElementById('book-time').value = timeString;
+            document.getElementById('booking-modal').style.display = 'flex';
+        }
+
+        function hitungMeja() {
+            let orang = parseInt(document.getElementById('book-pax').value) || 0;
+            let qty = orang < 1 ? 0 : Math.ceil(orang / 4);
+            document.getElementById('book-qty').value = qty + " Meja";
+        }
+
+        function closeModal() { document.getElementById('booking-modal').style.display = 'none'; }
+
+        // --- PROSES KONFIRMASI (AUTO ASSIGN TABLE) ---
+        window.confirmBooking = async function() {
+            const name = document.getElementById('book-name').value;
+            let wa = document.getElementById('book-wa').value;
+            const time = document.getElementById('book-time').value; 
+            const pax = parseInt(document.getElementById('book-pax').value) || 0;
+            const qty = Math.ceil(pax / 4); 
+
+            if(!name || !wa || !time || pax < 1) return alert("Mohon lengkapi data!");
+            if (wa.startsWith('0')) wa = '62' + wa.slice(1);
+
+            // Hitung Jam Hangus
+            let [hours, minutes] = time.split(':').map(Number);
+            let dateObj = new Date();
+            dateObj.setHours(hours); dateObj.setMinutes(minutes + 30); 
+            let expTime = `${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+
+            const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+
+            // --- ALGORITMA PENETAPAN MEJA ---
+            // 1. Cek Meja yang Sedang Dipakai / Dipesan
+            const activeBookings = await db.collection("bookings")
+                .where("warungName", "==", currentWarungName)
+                .where("status", "in", ["active", "booked"]) 
+                .get();
+
+            let usedTables = [];
+            activeBookings.forEach(doc => {
+                const d = doc.data();
+                if (Array.isArray(d.tableNum)) usedTables = [...usedTables, ...d.tableNum];
+                else if (d.tableNum) usedTables.push(d.tableNum);
+            });
+
+            // 2. Cari Meja Kosong
+            let assignedTables = [];
+            for (let i = 1; i <= totalTables; i++) {
+                if (!usedTables.includes(i)) {
+                    assignedTables.push(i);
+                    if (assignedTables.length === qty) break; 
+                }
+            }
+
+            if (assignedTables.length < qty) return alert("Maaf, meja tidak cukup saat ini.");
+
+            // 3. Simpan
+            const finalTableData = assignedTables.length === 1 ? assignedTables[0] : assignedTables;
+
+            await db.collection("bookings").add({
+                warungName: currentWarungName, 
+                customerName: name, customerWA: wa,
+                pax: pax, tablesNeeded: qty, arrivalTime: time, expiredTime: expTime,
+                bookingCode: kode, status: 'booked', timestamp: new Date(),
+                tableNum: finalTableData 
+            });
+
+            closeModal();
+
+            // 4. Kirim WA
+            const mejaStr = Array.isArray(finalTableData) ? finalTableData.join(" & ") : finalTableData;
+            
+            const pesan = `Halo ${name},\n\nBooking Berhasil di *${currentWarungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang\n\n✅ *ANDA MENDAPATKAN MEJA: No. ${mejaStr}*\n(Datang Pukul ${time})\n\n⚠️ *PENTING:* Hangus jika lewat Pukul ${expTime}\nMohon scan QR Meja ${mejaStr} saat tiba.`;
+
+            if(confirm(`Booking Sukses!\nMeja Anda: ${mejaStr}\n\nKirim tiket ke WA?`)) {
+                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
+            }
+        }
+    </script>
+</body>
+</html>
