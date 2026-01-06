@@ -4,53 +4,68 @@ import {
     doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// KONFIGURASI WARUNG (REAL TRIAL)
 const WARUNG_ID = "warung_smipro"; 
 const WARUNG_NAME = "Warung SMIPRO.ID"; 
 
-let currentMenuImageBase64 = null; // Menyimpan data foto menu sementara
+let currentMenuImageBase64 = null; // Wadah foto menu
+
+// --- FUNGSI KOMPRES FOTO (PENTING AGAR PERMANEN) ---
+function compressImage(file, maxWidth, callback) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const scaleFactor = maxWidth / img.width;
+            
+            canvas.width = maxWidth;
+            canvas.height = img.height * scaleFactor;
+            
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            // Kompres jadi JPEG kualitas 0.7 (Cukup bagus tapi ringan)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+            callback(dataUrl);
+        };
+    };
+}
 
 /* =========================================
-   1. INISIALISASI & LISTEN DATA
+   1. INISIALISASI
    ========================================= */
 async function initDatabase() {
     const docRef = doc(db, "warungs", WARUNG_ID);
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) {
         await setDoc(docRef, { 
-            name: WARUNG_NAME, 
-            status: "open", 
-            totalTables: 15, 
-            bookedCount: 0,
-            owner: "Admin Simulasi",
-            phone: "08123456789",
-            email: "admin@smipro.id",
-            img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300"
+            name: WARUNG_NAME, status: "open", totalTables: 15, bookedCount: 0,
+            owner: "Admin Simulasi", phone: "08123456789", email: "admin@smipro.id"
         });
     }
 }
 
-// LISTEN STATUS & PROFIL
+// LISTEN PROFIL
 onSnapshot(doc(db, "warungs", WARUNG_ID), (doc) => {
     if (doc.exists()) {
         const data = doc.data();
         document.getElementById('shop-name-display').innerText = data.name;
         document.getElementById('total-table-count').innerText = data.totalTables;
         
-        // Update Foto Profil
         if(data.img) {
             document.getElementById('header-profile-img').src = data.img;
             document.getElementById('preview-profile-img').src = data.img;
         }
 
-        // Isi Form Profil
+        // Form Profil
         document.getElementById('edit-name').value = data.name || '';
         document.getElementById('edit-owner').value = data.owner || '';
         document.getElementById('edit-phone').value = data.phone || '';
         document.getElementById('edit-email').value = data.email || '';
         document.getElementById('edit-pass').value = data.password || '';
 
-        // Status Buka/Tutup
+        // Status
         const btn = document.getElementById('store-status-btn');
         const txt = document.getElementById('store-status-text');
         if (data.status === 'open') {
@@ -59,15 +74,13 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (doc) => {
             btn.classList.remove('open'); btn.classList.add('closed'); txt.innerText = "TUTUP";
         }
         
-        // Simpan Sesi
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userName', data.name);
         localStorage.setItem('userRole', 'mitra');
-        localStorage.setItem('userLink', 'mitra-dashboard.html');
     }
 });
 
-// LISTEN BOOKING
+// LISTEN BOOKING (Menampilkan Meja yang sudah ditentukan)
 const qBooking = query(collection(db, "bookings"), where("warungName", "==", WARUNG_NAME));
 onSnapshot(qBooking, (snapshot) => {
     const bookings = [];
@@ -107,39 +120,38 @@ onSnapshot(qMenu, (snapshot) => {
 });
 
 /* ========================
-   FUNGSI RENDER & LOGIC
+   RENDER
    ======================== */
-
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
-    
     if (bookings.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#555; grid-column:1/-1;">Belum ada pesanan.</p>';
         return;
     }
-
     bookings.sort((a, b) => (a.status === 'active' ? -1 : 1));
 
     bookings.forEach((b) => {
         let cardHtml = '';
         const qty = b.tablesNeeded || 1;
         
+        // TAMPILKAN NOMOR MEJA YANG SUDAH DIBOOKING (JIKA ADA)
+        const displayMeja = b.tableNum ? `MEJA ${b.tableNum}` : `${qty} MEJA (Belum Set)`;
+
         if (b.status === 'booked') {
             cardHtml = `
             <div class="card-booking waiting">
-                <span class="table-badge" style="background:#555;">RESERVASI (${qty} Meja)</span>
-                <b>${b.customerName}</b>
+                <span class="table-badge" style="background:#555;">RESERVASI: ${displayMeja}</span>
+                <b style="font-size:1.1rem;">${b.customerName}</b>
                 <br><small>Jam: ${b.arrivalTime}</small>
-                <div class="waiting-text">Menunggu Check-In...</div>
+                <br><small>Kode: <b style="color:white;">${b.bookingCode}</b></small>
+                <div class="waiting-text">Menunggu Tamu...</div>
                 <button class="btn-delete" onclick="finishBooking('${b.id}')" style="margin-top:10px; width:100%;">Batalkan</button>
             </div>`;
         } else if (b.status === 'active') {
-            // TAMPILKAN NOMOR MEJA DI SINI JIKA SUDAH CHECKIN
-            const mejaInfo = b.tableNum ? `MEJA ${b.tableNum}` : `${qty} MEJA`;
             cardHtml = `
             <div class="card-booking active">
-                <span class="table-badge">${mejaInfo}</span>
+                <span class="table-badge" style="background:#b71c1c;">${displayMeja}</span>
                 <b>${b.customerName}</b>
                 <br><small>Sedang Makan</small>
                 <button class="btn-primary" style="margin-top:10px; background:white; color:red; width:100%;" onclick="finishBooking('${b.id}')">Kosongkan Meja</button>
@@ -149,33 +161,25 @@ function renderBookings(bookings) {
     });
 }
 
-// UPLOAD FOTO PROFIL (SIMPAN KE FIRESTORE)
+// UPLOAD FOTO PROFIL (KOMPRES DULU)
 window.previewImage = function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = async function (e) {
-            const base64String = e.target.result;
-            // Update Tampilan Dulu
+        compressImage(input.files[0], 300, async (base64String) => {
             document.getElementById('header-profile-img').src = base64String;
             document.getElementById('preview-profile-img').src = base64String;
-            
-            // Simpan Permanen ke Firebase
             await updateDoc(doc(db, "warungs", WARUNG_ID), { img: base64String });
-            alert("Foto Profil Berhasil Disimpan!");
-        };
-        reader.readAsDataURL(input.files[0]);
+            alert("Foto Profil Disimpan!");
+        });
     }
 }
 
-// UPLOAD FOTO MENU (PREVIEW ONLY)
+// UPLOAD FOTO MENU (KOMPRES DULU)
 window.previewMenuImage = function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            currentMenuImageBase64 = e.target.result;
+        compressImage(input.files[0], 400, (base64String) => {
+            currentMenuImageBase64 = base64String;
             document.getElementById('preview-menu-img').src = currentMenuImageBase64;
-        };
-        reader.readAsDataURL(input.files[0]);
+        });
     }
 }
 
@@ -186,6 +190,7 @@ window.addMenu = async function() {
     
     if(!name || !price) return alert("Isi Nama & Harga!");
     
+    // Simpan Menu ke Firebase
     await addDoc(collection(db, "menus"), { 
         warungId: WARUNG_ID, 
         name, price, desc, 
@@ -198,8 +203,11 @@ window.addMenu = async function() {
     document.getElementById('new-menu-price').value = '';
     document.getElementById('preview-menu-img').src = "https://via.placeholder.com/100?text=Foto";
     currentMenuImageBase64 = null;
+    alert("Menu Berhasil Ditambah!");
 }
 
+window.finishBooking = async function(docId) { if (confirm("Kosongkan meja?")) await deleteDoc(doc(db, "bookings", docId)); }
+window.deleteMenu = async function(docId) { if(confirm("Hapus menu?")) await deleteDoc(doc(db, "menus", docId)); }
 window.saveProfile = async function() {
     const data = {
         name: document.getElementById('edit-name').value,
@@ -212,15 +220,7 @@ window.saveProfile = async function() {
     alert("Profil Tersimpan!");
 }
 
-window.finishBooking = async function(docId) {
-    if (confirm("Kosongkan meja ini?")) await deleteDoc(doc(db, "bookings", docId));
-}
-
-window.deleteMenu = async function(docId) {
-    if(confirm("Hapus menu?")) await deleteDoc(doc(db, "menus", docId));
-}
-
-// FUNGSI UMUM LAINNYA
+// Navigasi & UI
 window.triggerUpload = function() { document.getElementById('file-input').click(); }
 window.triggerMenuUpload = function() { document.getElementById('menu-file-input').click(); }
 window.toggleStoreStatus = async function() {
@@ -233,9 +233,7 @@ window.editTableCount = async function() {
     if(count) await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: parseInt(count) });
 }
 window.goHome = function() { window.location.href = 'index.html'; }
-window.prosesLogout = function() {
-    if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; }
-}
+window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; } }
 window.openModalMenu = function() { document.getElementById('modal-menu').style.display = 'flex'; }
 window.closeModalMenu = function() { document.getElementById('modal-menu').style.display = 'none'; }
 window.switchTab = function(tabId) {
@@ -252,7 +250,7 @@ window.downloadQR = async function(url, i) {
         a.href = URL.createObjectURL(blob);
         a.download = `QR_Meja_${i}.png`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    } catch(e) { alert("Gagal download otomatis."); }
+    } catch(e) { alert("Klik kanan gambar -> Save Image"); }
 }
 window.renderQRCodes = function() {
     const container = document.getElementById('qr-container');
@@ -265,5 +263,4 @@ window.renderQRCodes = function() {
     }
 }
 
-// Start
 initDatabase();
