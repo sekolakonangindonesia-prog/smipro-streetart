@@ -147,13 +147,17 @@
 
     <div class="admin-container">
         
-        <!-- === SIDEBAR === -->
+       <!-- UPDATE SIDEBAR HEADER -->
         <nav class="sidebar">
             <div class="sidebar-header">
                 <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:50px;">
                 <h3 style="color:white; margin:10px 0 0; font-size:1rem;">CONTROL TOWER</h3>
-                <small style="color:#555;">Super Admin</small>
-            </div>
+                
+                <!-- TOMBOL HOME ADMIN -->
+                <a href="index.html" style="display:inline-block; margin-top:10px; color:#E50914; text-decoration:none; font-size:0.8rem; border:1px solid #E50914; padding:2px 8px; border-radius:4px;">
+                    <i class="fa-solid fa-house"></i> Lihat Home
+                </a>
+            </div>            
             
             <div class="sidebar-menu">
                 <a href="#" class="menu-item active" onclick="showView('dashboard', this)">
@@ -183,11 +187,23 @@
         <!-- === MAIN CONTENT === -->
         <main class="main-content">
             
-            <!-- VIEW 1: DASHBOARD OVERVIEW -->
+          <!-- VIEW 1: DASHBOARD OVERVIEW -->
             <div id="view-dashboard" class="admin-view">
                 <div class="section-header">
-                    <h2 style="margin:0; color:white;">Dashboard Overview</h2>
-                    <span style="color:#888;" id="current-date">Senin, 05 Jan 2026</span>
+                    <div>
+                        <h2 style="margin:0; color:white;">Dashboard Overview</h2>
+                        <span style="color:#888;" id="current-date">Senin, 05 Jan 2026</span>
+                    </div>
+                    <!-- Profil Admin Pojok Kanan -->
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="text-align:right;">
+                            <b style="display:block; color:white;">Super Admin</b>
+                            <small style="color:#00ff00;">● Online</small>
+                        </div>
+                        <div style="width:40px; height:40px; background:#E50914; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white;">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="stats-grid">
