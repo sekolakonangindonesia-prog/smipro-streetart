@@ -313,13 +313,26 @@
         loadNews();
     </script>
 
-   <!-- Script Cek Login (UPDATE: SUPPORT ADMIN) -->
+  <!-- Script Cek Login (VERSI FIX ANTI-ERROR 404) -->
    <script>
         window.onload = function() {
             const isLoggedIn = localStorage.getItem('userLoggedIn');
             const userName = localStorage.getItem('userName');
-            const userRole = localStorage.getItem('userRole'); // Ambil Role
-            const userLink = localStorage.getItem('userLink'); 
+            const userRole = localStorage.getItem('userRole'); 
+            
+            // --- BAGIAN PERBAIKAN (FALLBACK LINK) ---
+            // Jika Link di memori kosong, kita paksa isi manual sesuai Role
+            let userLink = localStorage.getItem('userLink');
+            
+            if (!userLink || userLink === 'null' || userLink === '') {
+                if (userRole === 'mitra') userLink = 'mitra-dashboard.html';
+                else if (userRole === 'performer') userLink = 'performer-dashboard.html';
+                else if (userRole === 'mentor') userLink = 'mentor-dashboard.html';
+                else if (userRole === 'admin') userLink = 'admin-dashboard.html';
+                else userLink = '#'; // Safety net
+            }
+            // ----------------------------------------
+
             const navArea = document.getElementById('nav-btn-area');
 
             if (navArea) {
@@ -327,8 +340,7 @@
                     // TENTUKAN IKON & WARNA BERDASARKAN ROLE
                     let icon = 'fa-user'; 
                     let color = '#E50914'; // Default Merah
-                    let link = userLink;
-
+                    
                     if (userRole === 'mitra') icon = 'fa-store';
                     if (userRole === 'performer') icon = 'fa-guitar';
                     if (userRole === 'mentor') icon = 'fa-graduation-cap';
@@ -336,13 +348,12 @@
                     // KHUSUS ADMIN
                     if (userRole === 'admin') {
                         icon = 'fa-user-shield';
-                        link = 'admin-dashboard.html'; // Link balik ke dashboard admin
-                        color = '#ff0000'; // Merah Terang
+                        color = '#ff0000'; 
                     }
 
                     // TAMPILKAN DI NAVBAR
                     navArea.innerHTML = `
-                        <a href="${link}" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:${color}; font-weight:800; font-size:1rem;">
+                        <a href="${userLink}" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:${color}; font-weight:800; font-size:1rem;">
                             <i class="fa-solid ${icon}"></i> ${userName}
                         </a>
                     `;
