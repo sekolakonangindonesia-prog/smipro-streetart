@@ -195,21 +195,6 @@
                 window.location.href = 'admin-dashboard.html';
             }
         }
-    </script>
-        
-    // Cek apakah user ini sebenarnya Admin?
-    if(localStorage.getItem('userName') && localStorage.getItem('userName').includes('(Mode Admin)')) {
-        document.getElementById('admin-floating-btn').style.display = 'block';
-    }
-
-    function backToAdmin() {
-        // Kembalikan sesi ke Admin
-        localStorage.setItem('userLoggedIn', 'true');
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('userName', 'Super Admin');
-        window.close(); // Tutup tab ini (karena admin buka di tab baru)
-        // Atau jika tidak di tab baru:
-        window.location.href = 'admin-dashboard.html';
-    }
+    </script>   
 </body>
 </html>
