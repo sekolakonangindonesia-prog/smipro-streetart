@@ -1,63 +1,72 @@
-// mitra-script.js
-
 // --- IMPORT FIREBASE ---
 import { db } from './firebase-config.js';
 import { 
-    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, writeBatch 
+    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const WARUNG_ID = "warung_smipro"; 
-const WARUNG_NAME = "Warung SMIPRO.ID"; 
 
+// Variable Global
 let currentMenuImageBase64 = null; 
-let warungTotalCapacity = 15; // Variable global untuk menyimpan Total Fisik
+let warungTotalCapacity = 15; 
+let currentWarungName = ""; // Kita simpan nama asli dari DB disini
+let unsubscribeBooking = null; // Untuk menghandle listener booking agar dinamis
 
-// --- FUNGSI UTAMA: INIT & LISTENERS ---
+// --- FUNGSI UTAMA: INIT ---
 async function initDatabase() {
     const docRef = doc(db, "warungs", WARUNG_ID);
     const docSnap = await getDoc(docRef);
     
+    // Jika data belum ada, buat default
     if (!docSnap.exists()) {
         await setDoc(docRef, { 
-            name: WARUNG_NAME, status: "open", totalTables: 15, bookedCount: 0,
+            name: "Warung SMIPRO.ID", status: "open", totalTables: 15, bookedCount: 0,
             owner: "Admin Simulasi", phone: "08123456789", email: "admin@smipro.id"
         });
-        warungTotalCapacity = 15;
-    } else {
-        warungTotalCapacity = docSnap.data().totalTables || 15;
     }
 
-    // Auto Cancel check
+    // Jalankan Auto Cancel sekali di awal, lalu looping tiap menit
     checkAutoCancel();
     setInterval(checkAutoCancel, 60000); 
 }
 
-// --- FUNGSI AUTO CANCEL RESERVASI BASI ---
+// --- FUNGSI AUTO CANCEL (PEMBERSIH DATA BASI) ---
 async function checkAutoCancel() {
     const now = new Date();
     const currentHours = String(now.getHours()).padStart(2, '0');
     const currentMinutes = String(now.getMinutes()).padStart(2, '0');
     const currentTimeStr = `${currentHours}:${currentMinutes}`;
     
-    // Logika delete ada di listener di bawah agar real-time
+    // Logika penghapusan ada di dalam listener booking agar realtime
 }
 
-// --- LISTENER WARUNG (PROFIL & STATUS) ---
+// --- 1. LISTENER DATA WARUNG (UTAMA) ---
+// Ini akan jalan pertama kali untuk mengambil Nama Warung & Total Meja
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
-        warungTotalCapacity = data.totalTables; // Simpan Total Fisik ke Variable Global
+        
+        // Simpan Data Penting ke Global
+        warungTotalCapacity = data.totalTables; 
+        const oldName = currentWarungName;
+        currentWarungName = data.name; // Update nama sesuai DB
+
+        // === PENTING: KEMBALIKAN SESI LOGIN (AGAR TOMBOL HOME AMAN) ===
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('userRole', 'mitra');
+        localStorage.setItem('userLink', 'mitra-dashboard.html');
 
         // Update UI Profil
         document.getElementById('shop-name-display').innerText = data.name;
         
-        // Foto Profil
+        // Update Foto
         if(data.img) {
             document.getElementById('header-profile-img').src = data.img;
             document.getElementById('preview-profile-img').src = data.img;
         }
 
-        // Isi Form Profil
+        // Isi Form Edit Profil
         document.getElementById('edit-name').value = data.name || '';
         document.getElementById('edit-owner').value = data.owner || '';
         document.getElementById('edit-phone').value = data.phone || '';
@@ -72,74 +81,89 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         } else {
             btn.classList.remove('open'); btn.classList.add('closed'); txt.innerText = "TUTUP";
         }
+
+        // === LOGIKA DINAMIS: JIKA NAMA WARUNG BERUBAH, RESET LISTENER BOOKING ===
+        // Ini memastikan dashboard selalu "mendengar" booking ke nama yang benar
+        if (oldName !== currentWarungName) {
+            setupBookingListener(currentWarungName);
+        }
     }
 });
 
-// --- LISTENER BOOKING (INTI PERBAIKAN TAMPILAN) ---
-const qBooking = query(collection(db, "bookings"), where("warungName", "==", WARUNG_NAME));
+// --- 2. SETUP LISTENER BOOKING (DIPISAH AGAR DINAMIS) ---
+function setupBookingListener(targetName) {
+    // Matikan listener lama jika ada (biar gak double)
+    if (unsubscribeBooking) {
+        unsubscribeBooking();
+    }
 
-onSnapshot(qBooking, (snapshot) => {
-    const bookings = [];
-    let countActiveTables = 0; // Merah (Makan)
-    let countBookedTables = 0; // Kuning (Reservasi)
-    
-    const now = new Date();
-    const currentHours = String(now.getHours()).padStart(2, '0');
-    const currentMinutes = String(now.getMinutes()).padStart(2, '0');
-    const currentTimeStr = `${currentHours}:${currentMinutes}`;
+    console.log("Mendengarkan pesanan untuk:", targetName);
+    const qBooking = query(collection(db, "bookings"), where("warungName", "==", targetName));
 
-    snapshot.forEach((docSnap) => {
-        const d = docSnap.data();
-        bookings.push({ id: docSnap.id, ...d });
+    // Simpan listener baru ke variable agar bisa dimatikan nanti
+    unsubscribeBooking = onSnapshot(qBooking, (snapshot) => {
+        const bookings = [];
+        let countActiveTables = 0; // Sedang Makan
+        let countBookedTables = 0; // Reservasi
         
-        const qtyMeja = parseInt(d.tablesNeeded) || 1;
+        const now = new Date();
+        const currentHours = String(now.getHours()).padStart(2, '0');
+        const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+        const currentTimeStr = `${currentHours}:${currentMinutes}`;
 
-        // CEK EXPIRED (Hapus booking basi)
-        if (d.status === 'booked' && d.expiredTime && currentTimeStr > d.expiredTime) {
-            deleteDoc(docSnap.ref); 
-            return; 
+        snapshot.forEach((docSnap) => {
+            const d = docSnap.data();
+            bookings.push({ id: docSnap.id, ...d });
+            
+            const qtyMeja = parseInt(d.tablesNeeded) || 1;
+
+            // CEK EXPIRED (Hapus booking basi real-time)
+            if (d.status === 'booked' && d.expiredTime && currentTimeStr > d.expiredTime) {
+                deleteDoc(docSnap.ref); 
+                return; // Skip hitungan
+            }
+
+            // HITUNG STATISTIK
+            if(d.status === 'active') {
+                countActiveTables += qtyMeja;
+            } else if (d.status === 'booked') {
+                countBookedTables += qtyMeja;
+            }
+        });
+        
+        // === UPDATE UI DASHBOARD ===
+        
+        // 1. Hitung Sisa Meja
+        const totalUsed = countActiveTables + countBookedTables;
+        const sisaMeja = warungTotalCapacity - totalUsed;
+        
+        // 2. Update Angka Besar (Sisa Meja)
+        const totalEl = document.getElementById('total-table-count');
+        totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
+        totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
+
+        // 3. Update Label Kecil
+        if(totalEl.parentElement) {
+            const smallLabel = totalEl.parentElement.querySelector('small');
+            if(smallLabel) {
+                smallLabel.innerHTML = `Tersedia <span style="color:#aaa;">(dari Total ${warungTotalCapacity})</span>`;
+            }
         }
 
-        // HITUNG
-        if(d.status === 'active') {
-            countActiveTables += qtyMeja;
-        } else if (d.status === 'booked') {
-            countBookedTables += qtyMeja;
-        }
+        // 4. Update Kotak Lain
+        document.getElementById('occupied-count').innerText = countActiveTables;
+        document.getElementById('booked-count').innerText = countBookedTables;
+
+        // 5. Render Kartu
+        renderBookings(bookings);
+        
+        // 6. SYNC KE DATABASE WARUNG (PENTING BUAT CUSTOMER)
+        // Agar di HP Customer saat buka profil warung, sisa mejanya akurat
+        updateWarungTableCount(totalUsed);
     });
-    
-    // === UPDATE TAMPILAN DASHBOARD (HYBRID INFO) ===
-    
-    // 1. Hitung Sisa Meja (Ini yang Warung butuhkan)
-    const totalUsed = countActiveTables + countBookedTables;
-    const sisaMeja = warungTotalCapacity - totalUsed;
-    
-    // 2. Tampilkan SISA MEJA sebagai Angka Utama (Besar)
-    const totalEl = document.getElementById('total-table-count');
-    totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
-    
-    // Warnai Merah jika 0, Hijau jika ada
-    totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
+}
 
-    // 3. Tampilkan TOTAL FISIK sebagai Teks Kecil di bawahnya
-    if(totalEl.parentElement) {
-        const smallLabel = totalEl.parentElement.querySelector('small');
-        if(smallLabel) {
-            // Tampilan: "Tersedia (dari Total 15)"
-            smallLabel.innerHTML = `Tersedia <span style="color:#aaa;">(dari Total ${warungTotalCapacity})</span>`;
-        }
-    }
-
-    // Kotak 2 & 3
-    document.getElementById('occupied-count').innerText = countActiveTables;
-    document.getElementById('booked-count').innerText = countBookedTables;
-
-    renderBookings(bookings);
-    
-    // Sync ke Database agar Customer lihat sisa yang sama
-    updateWarungTableCount(totalUsed);
-});
-
+// Fungsi Sync Stok ke Dokumen Warung
 async function updateWarungTableCount(totalUsed) {
     try {
         const warungRef = doc(db, "warungs", WARUNG_ID);
@@ -148,6 +172,7 @@ async function updateWarungTableCount(totalUsed) {
 }
 
 // --- RENDER MENU ---
+// Listener Menu tetap terpisah karena pakai ID (Aman)
 const qMenu = query(collection(db, "menus"), where("warungId", "==", WARUNG_ID));
 onSnapshot(qMenu, (snapshot) => {
     const container = document.getElementById('menu-list-container');
@@ -166,7 +191,7 @@ onSnapshot(qMenu, (snapshot) => {
     });
 });
 
-// --- RENDER BOOKING CARDS (Sama seperti sebelumnya) ---
+// --- RENDER BOOKING CARDS ---
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
@@ -227,26 +252,7 @@ function renderBookings(bookings) {
     });
 }
 
-// --- FUNGSI NAVIGASI & CRUD ---
-
-// Edit Jumlah Meja Fisik
-window.editTableCount = async function() {
-    let count = prompt("Ubah TOTAL MEJA FISIK Warung Anda:\n(Saat ini: " + warungTotalCapacity + " Meja)", warungTotalCapacity);
-    
-    if(count) {
-        const val = parseInt(count);
-        if(val > 15) {
-            // Logika Pembatasan 15 Meja
-            alert("⚠️ PERHATIAN: Penambahan di atas 15 meja memerlukan verifikasi Admin/Tim Lapangan.\n\nData akan disimpan sementara, tapi mohon hubungi Admin untuk validasi.");
-            // Di sini kita tetap simpan (biar sistem jalan), tapi memberi peringatan.
-            await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: val });
-        } else {
-             await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: val });
-        }
-    }
-}
-
-// Helper Compress
+// --- HELPER & CRUD ---
 function compressImage(file, maxWidth, callback) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -263,8 +269,6 @@ function compressImage(file, maxWidth, callback) {
         };
     };
 }
-
-// Uploads
 window.previewImage = function(input) {
     if (input.files && input.files[0]) {
         compressImage(input.files[0], 300, async (base64) => {
@@ -313,6 +317,10 @@ window.toggleStoreStatus = async function() {
     const btn = document.getElementById('store-status-btn');
     const newStatus = btn.classList.contains('open') ? 'closed' : 'open';
     await updateDoc(doc(db, "warungs", WARUNG_ID), { status: newStatus });
+}
+window.editTableCount = async function() {
+    let count = prompt("Total Meja Baru:", warungTotalCapacity);
+    if(count) await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: parseInt(count) });
 }
 window.goHome = function() { window.location.href = 'index.html'; }
 window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; } }
