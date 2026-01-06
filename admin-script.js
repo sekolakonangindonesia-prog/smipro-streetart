@@ -163,6 +163,80 @@ window.loginAsPerf = function(name) {
 }
 
 /* =========================================
+   6. MANAJEMEN MENTOR (BARU)
+   ========================================= */
+async function loadMentorData() {
+    const tbody = document.getElementById('mentor-table-body');
+    const q = query(collection(db, "mentors"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada data mentor. Klik tombol Generate.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            const btnLogin = `<button class="btn-action btn-view" onclick="loginAsMentor('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk Dashboard</button>`;
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteMentor('${id}')"><i class="fa-solid fa-trash"></i></button>`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${data.photo || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">
+                        <b>${data.name}</b>
+                    </div>
+                </td>
+                <td><span style="color:#FFD700;">${data.expertise}</span></td>
+                <td><span style="color:#00ff00;">Aktif</span></td>
+                <td>${btnLogin} ${btnDel}</td>
+            </tr>`;
+        });
+    });
+}
+
+// FUNGSI LOGIN SEBAGAI MENTOR
+window.loginAsMentor = function(id, name) {
+    if(confirm(`Masuk ke Dashboard Mentor: ${name}?`)) {
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userRole', 'mentor');
+        localStorage.setItem('userName', name);
+        localStorage.setItem('userLink', 'mentor-dashboard.html'); // Agar tidak error 404
+        
+        // Simpan ID mentor yang sedang login agar nanti Dashboard Mentor tahu data mana yang harus diambil
+        localStorage.setItem('mentorId', id); 
+
+        window.open('mentor-dashboard.html', '_blank');
+    }
+}
+
+window.deleteMentor = async function(id) {
+    if(confirm("Hapus mentor ini?")) await deleteDoc(doc(db, "mentors", id));
+}
+
+// FUNGSI ISI DATA MENTOR OTOMATIS (Sesuai Request Kamu)
+window.seedMentors = async function() {
+    const mentorRef = collection(db, "mentors");
+    
+    const dataMentors = [
+        { name: "Bpk. Andigo", expertise: "Musik Management", photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200", bio: "Ahli manajemen musik dengan pengalaman 10 tahun.", phone: "0812345678" },
+        { name: "Ibu Putri", expertise: "Stage Act", photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", bio: "Mantan aktris teater yang fokus pada ekspresi panggung.", phone: "0812345679" },
+        { name: "Bpk. Ervan", expertise: "Visual Management", photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", bio: "Desainer visual untuk branding artis.", phone: "0812345680" },
+        { name: "Bpk. Anton", expertise: "Public Speaking", photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200", bio: "Motivator dan pelatih komunikasi publik.", phone: "0812345681" },
+        { name: "Bpk. Dwi Laksono", expertise: "Music Director", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200", bio: "Arranger musik untuk berbagai festival nasional.", phone: "0812345682" }
+    ];
+
+    for (const m of dataMentors) {
+        await addDoc(mentorRef, m);
+    }
+    alert("Data 5 Mentor Berhasil Dibuat!");
+}
+
+/* =========================================
    4. CMS: UPDATE JADWAL & BERITA
    ========================================= */
 window.saveSchedule = async function() {
@@ -371,3 +445,4 @@ loadStats();
 loadMitraData();
 loadPerformerDemo();
 listenFinance();
+loadMentorData()
