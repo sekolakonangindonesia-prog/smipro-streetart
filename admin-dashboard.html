@@ -419,6 +419,40 @@
                 window.location.href = 'index.html';
             }
         }
+
+        /* === TAMBAHAN CSS RESPONSIF (HP) === */
+        @media (max-width: 768px) {
+            .admin-container { flex-direction: column; }
+            
+            /* Sidebar jadi Header Kecil di HP */
+            .sidebar { 
+                width: 100%; height: auto; position: relative; 
+                flex-direction: row; overflow-x: auto;
+                border-bottom: 1px solid #333; border-right: none;
+            }
+            .sidebar-header { display: none; } /* Sembunyikan logo besar */
+            .sidebar-menu { 
+                display: flex; flex-direction: row; padding: 0; 
+                white-space: nowrap; 
+            }
+            .menu-item { 
+                padding: 15px; font-size: 0.8rem; 
+                flex-direction: column; gap: 5px; text-align: center;
+            }
+            .menu-item span { display: block; font-size: 0.7rem; }
+            
+            /* Main Content Full Width */
+            .main-content { margin-left: 0; padding: 15px; }
+
+            /* Grid Statistik jadi 1 Kolom */
+            .stats-grid { grid-template-columns: 1fr; }
+
+            /* Layout Split Monitor jadi Atas-Bawah */
+            .split-monitor { grid-template-columns: 1fr !important; }
+
+            /* Tabel bisa discroll */
+            .table-responsive { overflow-x: auto; }
+        }
     </script>
 </body>
 </html>
