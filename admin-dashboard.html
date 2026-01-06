@@ -168,6 +168,9 @@
                 </a>
                 <a href="#" class="menu-item" onclick="showView('performer', this)">
                     <i class="fa-solid fa-guitar"></i> <span>Data Performer</span>
+                </a>               
+                <a href="#" class="menu-item" onclick="showView('mentor', this)">
+                    <i class="fa-solid fa-chalkboard-user"></i> <span>Data Mentor</span>
                 </a>
                 <a href="#" class="menu-item" onclick="showView('cms', this)">
                     <i class="fa-solid fa-pen-to-square"></i> <span>Kelola Konten</span>
@@ -275,6 +278,28 @@
                     </thead>
                     <tbody id="perf-table-body">
                         <!-- Data Performer di sini -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- VIEW BARU: MANAJEMEN MENTOR -->
+            <div id="view-mentor" class="admin-view hidden">
+                <div class="section-header">
+                    <h2 style="margin:0; color:white;">Data Mentor & Pelatih</h2>
+                    <!-- Tombol ini nanti untuk isi data dummy awal -->
+                    <button class="btn-action btn-edit" onclick="seedMentors()">+ Generate Data Awal</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Mentor</th>
+                            <th>Spesialisasi</th>
+                            <th>Status</th>
+                            <th>Aksi (Super User)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mentor-table-body">
+                        <tr><td colspan="4" style="text-align:center; color:#555;">Memuat data mentor...</td></tr>
                     </tbody>
                 </table>
             </div>
