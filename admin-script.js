@@ -64,15 +64,17 @@ async function loadMitraData() {
     });
 }
 
-// FUNGSI SAKTI: LOGIN SEBAGAI MITRA
+// FUNGSI SAKTI: LOGIN SEBAGAI MITRA (REVISI)
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name} sebagai Admin?`)) {
-        // Timpa LocalStorage seolah-olah kita adalah Mitra tersebut
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userName', name + " (Mode Admin)");
-        // Buka di tab baru agar panel admin tidak tertutup
-        window.open('mitra-dashboard.html', '_blank');
+        
+        // REVISI: Tambahkan ini agar tidak Error 404 di Index
+        localStorage.setItem('userLink', 'mitra-dashboard.html'); 
+        
+        window.location.href = 'mitra-dashboard.html';
     }
 }
 
@@ -118,15 +120,19 @@ window.loadPerformerDemo = function() {
     });
 }
 
+// FUNGSI SAKTI: LOGIN SEBAGAI PERFORMER (REVISI)
 window.loginAsPerf = function(name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'performer');
         localStorage.setItem('userName', name + " (Admin)");
-        window.open('performer-dashboard.html', '_blank');
+        
+        // REVISI: Tambahkan ini agar tidak Error 404
+        localStorage.setItem('userLink', 'performer-dashboard.html');
+        
+        window.location.href = 'performer-dashboard.html';
     }
 }
-
 /* =========================================
    4. CMS: UPDATE JADWAL & BERITA
    ========================================= */
