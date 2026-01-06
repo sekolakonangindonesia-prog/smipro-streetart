@@ -1,3 +1,5 @@
+// mitra-script.js
+
 // --- IMPORT FIREBASE ---
 import { db } from './firebase-config.js';
 import { 
@@ -8,7 +10,7 @@ const WARUNG_ID = "warung_smipro";
 const WARUNG_NAME = "Warung SMIPRO.ID"; 
 
 let currentMenuImageBase64 = null; 
-let warungTotalCapacity = 15; // Default
+let warungTotalCapacity = 15; // Variable global untuk menyimpan Total Fisik
 
 // --- FUNGSI UTAMA: INIT & LISTENERS ---
 async function initDatabase() {
@@ -36,23 +38,20 @@ async function checkAutoCancel() {
     const currentHours = String(now.getHours()).padStart(2, '0');
     const currentMinutes = String(now.getMinutes()).padStart(2, '0');
     const currentTimeStr = `${currentHours}:${currentMinutes}`;
-
-    // Kita tidak query delete di sini agar tidak konflik listener
-    // Delete dilakukan saat listener mendeteksi expired di bawah
+    
+    // Logika delete ada di listener di bawah agar real-time
 }
 
 // --- LISTENER WARUNG (PROFIL & STATUS) ---
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
-        warungTotalCapacity = data.totalTables; 
+        warungTotalCapacity = data.totalTables; // Simpan Total Fisik ke Variable Global
 
         // Update UI Profil
         document.getElementById('shop-name-display').innerText = data.name;
         
-        // KITA TIDAK UPDATE ANGKA TOTAL MEJA DISINI LAGI
-        // KARENA AKAN DI-OVERWRITE OLEH LISTENER BOOKING DI BAWAH (UNTUK MENAMPILKAN SISA)
-        
+        // Foto Profil
         if(data.img) {
             document.getElementById('header-profile-img').src = data.img;
             document.getElementById('preview-profile-img').src = data.img;
@@ -76,7 +75,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     }
 });
 
-// --- LISTENER BOOKING (INTI PERBAIKAN DISINI) ---
+// --- LISTENER BOOKING (INTI PERBAIKAN TAMPILAN) ---
 const qBooking = query(collection(db, "bookings"), where("warungName", "==", WARUNG_NAME));
 
 onSnapshot(qBooking, (snapshot) => {
@@ -95,7 +94,7 @@ onSnapshot(qBooking, (snapshot) => {
         
         const qtyMeja = parseInt(d.tablesNeeded) || 1;
 
-        // CEK EXPIRED
+        // CEK EXPIRED (Hapus booking basi)
         if (d.status === 'booked' && d.expiredTime && currentTimeStr > d.expiredTime) {
             deleteDoc(docSnap.ref); 
             return; 
@@ -109,22 +108,26 @@ onSnapshot(qBooking, (snapshot) => {
         }
     });
     
-    // === UPDATE TAMPILAN DASHBOARD ===
+    // === UPDATE TAMPILAN DASHBOARD (HYBRID INFO) ===
     
-    // 1. Hitung Sisa Meja
+    // 1. Hitung Sisa Meja (Ini yang Warung butuhkan)
     const totalUsed = countActiveTables + countBookedTables;
     const sisaMeja = warungTotalCapacity - totalUsed;
     
-    // 2. Update Angka di Kotak
-    // Kotak 1: SISA MEJA (Dulu Total)
+    // 2. Tampilkan SISA MEJA sebagai Angka Utama (Besar)
     const totalEl = document.getElementById('total-table-count');
-    totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; // Jaga biar gak minus
+    totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
     
-    // Ubah Label kecil di bawah angka 15 itu menjadi "Meja Kosong"
-    // Caranya kita cari elemen <small> di dalam parent yang sama
+    // Warnai Merah jika 0, Hijau jika ada
+    totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
+
+    // 3. Tampilkan TOTAL FISIK sebagai Teks Kecil di bawahnya
     if(totalEl.parentElement) {
         const smallLabel = totalEl.parentElement.querySelector('small');
-        if(smallLabel) smallLabel.innerText = "Meja Kosong";
+        if(smallLabel) {
+            // Tampilan: "Tersedia (dari Total 15)"
+            smallLabel.innerHTML = `Tersedia <span style="color:#aaa;">(dari Total ${warungTotalCapacity})</span>`;
+        }
     }
 
     // Kotak 2 & 3
@@ -163,7 +166,7 @@ onSnapshot(qMenu, (snapshot) => {
     });
 });
 
-// --- RENDER BOOKING CARDS ---
+// --- RENDER BOOKING CARDS (Sama seperti sebelumnya) ---
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
@@ -224,7 +227,26 @@ function renderBookings(bookings) {
     });
 }
 
-// --- HELPER (COMPRESS IMAGE) ---
+// --- FUNGSI NAVIGASI & CRUD ---
+
+// Edit Jumlah Meja Fisik
+window.editTableCount = async function() {
+    let count = prompt("Ubah TOTAL MEJA FISIK Warung Anda:\n(Saat ini: " + warungTotalCapacity + " Meja)", warungTotalCapacity);
+    
+    if(count) {
+        const val = parseInt(count);
+        if(val > 15) {
+            // Logika Pembatasan 15 Meja
+            alert("⚠️ PERHATIAN: Penambahan di atas 15 meja memerlukan verifikasi Admin/Tim Lapangan.\n\nData akan disimpan sementara, tapi mohon hubungi Admin untuk validasi.");
+            // Di sini kita tetap simpan (biar sistem jalan), tapi memberi peringatan.
+            await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: val });
+        } else {
+             await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: val });
+        }
+    }
+}
+
+// Helper Compress
 function compressImage(file, maxWidth, callback) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -242,7 +264,7 @@ function compressImage(file, maxWidth, callback) {
     };
 }
 
-// --- FUNGSI NAVIGASI & CRUD ---
+// Uploads
 window.previewImage = function(input) {
     if (input.files && input.files[0]) {
         compressImage(input.files[0], 300, async (base64) => {
@@ -292,10 +314,6 @@ window.toggleStoreStatus = async function() {
     const newStatus = btn.classList.contains('open') ? 'closed' : 'open';
     await updateDoc(doc(db, "warungs", WARUNG_ID), { status: newStatus });
 }
-window.editTableCount = async function() {
-    let count = prompt("Total Meja Baru:", warungTotalCapacity);
-    if(count) await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: parseInt(count) });
-}
 window.goHome = function() { window.location.href = 'index.html'; }
 window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; } }
 window.openModalMenu = function() { document.getElementById('modal-menu').style.display = 'flex'; }
@@ -326,5 +344,4 @@ window.renderQRCodes = function() {
     }
 }
 
-// Start
 initDatabase();
