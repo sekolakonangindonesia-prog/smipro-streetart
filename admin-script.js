@@ -216,96 +216,126 @@ window.saveNews = async function() {
 }
 
 /* =========================================
-   5. KEUANGAN & STATISTIK (UPDATE CANGGIH)
+   5. KEUANGAN & LIVE MONITOR (INTEGRATED)
    ========================================= */
-function listenFinance() {
-    const list = document.getElementById('admin-req-list');
-    const topPerfList = document.getElementById('top-perf-list');
-    const topSongList = document.getElementById('top-song-list');
+let allHistoryData = []; // Simpan data lokal untuk filtering
 
+function listenFinance() {
+    const liveList = document.getElementById('live-req-list');
+    const historyList = document.getElementById('history-req-list');
+    const totalLabel = document.getElementById('total-revenue-live');
+
+    // Ambil data request diurutkan waktu terbaru
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
-        list.innerHTML = '';
-        
-        // VARIABEL UNTUK HITUNG STATISTIK
-        let perfStats = {};
-        let songStats = {};
+        liveList.innerHTML = '';
+        allHistoryData = []; // Reset data lokal
+        let totalDuit = 0;
 
-        if(snapshot.empty) list.innerHTML = '<p style="color:#555;">Belum ada request masuk.</p>';
+        if(snapshot.empty) {
+            liveList.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
+            historyList.innerHTML = '<p style="color:#555; text-align:center;">Kosong.</p>';
+            return;
+        }
 
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-            
-            // 1. HITUNG STATISTIK (Hanya yang sudah approved/dibayar)
+
+            // HITUNG TOTAL PENDAPATAN (Hanya yang status approved/done)
             if(data.status === 'approved' || data.status === 'done') {
-                // Hitung Performer
-                let pName = data.performer || "Unknown";
-                if(!perfStats[pName]) perfStats[pName] = 0;
-                perfStats[pName]++;
-
-                // Hitung Lagu
-                let sTitle = data.song || "Unknown";
-                // Bersihkan judul (misal: "Nemen " jadi "Nemen") agar hitungannya akurat
-                sTitle = sTitle.trim().toLowerCase(); 
-                if(!songStats[sTitle]) songStats[sTitle] = 0;
-                songStats[sTitle]++;
+                totalDuit += parseInt(data.amount || 0);
             }
 
-            // 2. RENDER LIST REQUEST (Sama seperti sebelumnya)
-            let btnAction = '';
-            let statusColor = '#333';
+            // --- PISAHKAN TAMPILAN ---
             
-            if(data.status === 'pending') {
-                btnAction = `<button onclick="verifyPayment('${id}')" style="background:orange; border:none; padding:5px; border-radius:3px; cursor:pointer;">Verifikasi Pembayaran</button>`;
-                statusColor = '#443300';
-            } else {
-                btnAction = `<span style="color:#00ff00;"><i class="fa-solid fa-check"></i> Lunas</span>`;
-                statusColor = '#002200';
+            // 1. JIKA STATUS PENDING (Masuk Kolom KIRI)
+            if (data.status === 'pending') {
+                liveList.innerHTML += `
+                <div style="background:#332b00; padding:10px; border-radius:5px; border-left:4px solid #FFD700; animation:slideIn 0.3s;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <b style="color:white;">${data.song}</b>
+                        <span style="background:#FFD700; color:black; padding:2px 5px; border-radius:3px; font-weight:bold;">Rp ${parseInt(data.amount).toLocaleString()}</span>
+                    </div>
+                    <p style="color:#ccc; font-size:0.9rem; margin:5px 0;">"${data.message}"</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <small style="color:#aaa;">Utk: ${data.performer}</small>
+                        <div>
+                            <button onclick="deleteReq('${id}')" style="background:#333; color:red; border:1px solid #555; cursor:pointer; padding:5px;"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="verifyPayment('${id}')" style="background:var(--green); color:black; border:none; padding:5px 10px; border-radius:3px; font-weight:bold; cursor:pointer;">TERIMA</button>
+                        </div>
+                    </div>
+                </div>`;
+            } 
+            
+            // 2. JIKA STATUS APPROVED/DONE (Masuk Array Data utk Kolom KANAN)
+            else {
+                // Simpan ke array dulu biar bisa difilter
+                allHistoryData.push({ id, ...data });
             }
-
-            list.innerHTML += `
-            <div style="background:${statusColor}; padding:10px; border-radius:5px; border:1px solid #444; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <b style="color:white;">${data.song}</b> <small style="color:#ccc;">(${data.sender})</small><br>
-                    <small style="color:#00d2ff;">${data.performer}</small> • <b style="color:gold;">Rp ${parseInt(data.amount).toLocaleString()}</b>
-                </div>
-                <div>${btnAction}</div>
-            </div>`;
         });
 
-        // 3. RENDER HASIL STATISTIK KE TABEL
-        renderStats(perfStats, topPerfList);
-        renderStats(songStats, topSongList);
+        // Update Label Total
+        if(totalLabel) totalLabel.innerText = "Rp " + totalDuit.toLocaleString('id-ID');
+
+        // Render Riwayat Awal (Mode All)
+        filterHistory();
     });
 }
 
-// Fungsi Pembantu Render Statistik
-function renderStats(statsObj, container) {
-    // Ubah Object ke Array lalu Sortir dari yang terbesar
-    const sorted = Object.entries(statsObj)
-        .sort(([,a], [,b]) => b - a) // Urutkan angka terbesar
-        .slice(0, 5); // Ambil Top 5 saja
+// LOGIKA FILTER RIWAYAT
+window.filterHistory = function() {
+    const filter = document.getElementById('history-filter').value; // all, today, week, month
+    const historyList = document.getElementById('history-req-list');
+    historyList.innerHTML = '';
 
-    container.innerHTML = '';
-    if(sorted.length === 0) {
-        container.innerHTML = '<li>Belum ada data.</li>';
+    const now = new Date();
+    
+    // Filter Data
+    const filtered = allHistoryData.filter(item => {
+        if (!item.timestamp) return true; // Kalau gak ada tanggal, tampilkan aja
+        const itemDate = item.timestamp.toDate ? item.timestamp.toDate() : new Date(item.timestamp);
+        
+        if (filter === 'all') return true;
+        if (filter === 'today') {
+            return itemDate.toDateString() === now.toDateString();
+        }
+        if (filter === 'month') {
+            return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+    });
+
+    // Render Hasil Filter
+    if(filtered.length === 0) {
+        historyList.innerHTML = '<p style="color:#555; text-align:center;">Tidak ada data pada periode ini.</p>';
         return;
     }
 
-    sorted.forEach(([key, val]) => {
-        // Huruf besar di awal kata (Capitalize)
-        const displayKey = key.replace(/\b\w/g, l => l.toUpperCase());
-        container.innerHTML += `<li style="margin-bottom:5px;"><b>${displayKey}</b> <span style="color:#888;">(${val} request)</span></li>`;
+    filtered.forEach(data => {
+        historyList.innerHTML += `
+        <div style="background:#1a1a1a; padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <b style="color:white; font-size:0.9rem;">${data.song}</b>
+                <br><small style="color:#00d2ff;">${data.performer}</small>
+                <span style="color:#555; font-size:0.7rem;"> • ${data.sender}</span>
+            </div>
+            <div style="text-align:right;">
+                <b style="color:var(--green);">+ ${parseInt(data.amount).toLocaleString()}</b>
+                <br><small style="color:#aaa;">Lunas</small>
+            </div>
+        </div>`;
     });
 }
 
-window.verifyPayment = async function(id) {
-    if(confirm("Dana sudah masuk ke rekening Admin?")) {
-        await updateDoc(doc(db, "requests", id), { status: 'approved' });
+window.deleteReq = async function(id) {
+    if(confirm("Hapus / Tolak request ini?")) {
+        await deleteDoc(doc(db, "requests", id));
     }
 }
+
+// Pastikan import deleteDoc ditambahkan di paling atas file admin-script.js jika belum ada
 
 // JALANKAN SAAT LOAD
 loadStats();
