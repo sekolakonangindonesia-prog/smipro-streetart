@@ -13,7 +13,8 @@
         
         .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
         .btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        
+        .logo-nav img { width: 35px; border-radius: 50%; border: 2px solid var(--primary); }
+
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
         
         /* LAYOUT SPLIT ATAS */
@@ -31,26 +32,46 @@
 
         /* LIVE PANEL KANAN */
         .live-panel { background: #151515; border: 1px solid #333; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; height: 350px; }
+        .live-badge { background: red; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; animation: pulse 1s infinite; float: right; }
         .perf-item { display: flex; gap: 10px; background: #222; padding: 10px; margin-bottom: 5px; border-radius: 5px; align-items: center; }
+        .perf-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
         
-        /* Tombol Request Lagu */
+        /* Tombol Request Lagu (FIXED) */
         .btn-req { 
-            width: 100%; background: #E50914; color: white; padding: 12px; border: none; 
-            border-radius: 5px; margin-top: auto; font-weight: bold; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; 
+            background: #E50914; 
+            color: white; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 5px; 
+            margin-top: auto; 
+            font-weight: bold; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px;
         }
+        .btn-req:hover { background: #b71c1c; }
 
-        /* WARUNG GRID */
+        /* === STYLE WARUNG (MIRIP SS3) === */
         .section-title { color: #FFD700; margin: 40px 0 15px; font-size: 1.2rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
         .warung-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
         .warung-card { background: #1a1a1a; border-radius: 10px; border: 1px solid #333; overflow: hidden; text-align: center; transition: 0.3s; }
+        .warung-card:hover { transform: translateY(-5px); border-color: #555; }
         .warung-img { width: 100%; height: 100px; object-fit: cover; background: #333; }
         .warung-body { padding: 12px; }
         .warung-name { font-size: 1rem; font-weight: 800; color: white; margin-bottom: 5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .warung-stats { font-size: 0.8rem; margin-bottom: 10px; display: block; }
         
+        /* Tombol Booking */
         .btn-book-ss3 { background: #E50914; color: white; border: none; padding: 8px 0; width: 100%; border-radius: 20px; font-weight: bold; cursor: pointer; }
         .btn-full-ss3 { background: #555; color: #aaa; border: none; padding: 8px 0; width: 100%; border-radius: 20px; font-weight: bold; cursor: not-allowed; }
+
+        /* REVIEW BAWAH */
+        .review-box { background: #1e1e1e; padding: 20px; border-radius: 10px; margin-top: 40px; border: 1px solid #333; }
+        .input-dark { width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; }
 
         /* MODAL POPUP */
         .modal-overlay {
@@ -60,16 +81,42 @@
         .modal-box {
             background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative;
         }
+        /* Logo di dalam Modal */
         .modal-logo { width: 80px; display: block; margin: 0 auto 15px auto; filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
         
         .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; }
         .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
+
+        /* === PERBAIKAN TAMPILAN HP (REVISI UKURAN) === */
+        @media (max-width: 600px) {
+            /* 1. Bintang Lebih Kecil & Rapi */
+            .stars-input i {
+                font-size: 0.9rem !important; /* Ukuran pas (tidak terlalu besar) */
+                margin: 0 2px; /* Jarak antar bintang dirapatkan */
+            }
+
+            /* 2. Tombol Kirim Menyesuaikan */
+            .btn-book-ss3 {
+                font-size: 0.75rem; /* Teks tombol sedikit lebih kecil */
+                padding: 8px 12px;  /* Padding disesuaikan */
+                width: auto !important; /* Lebar otomatis mengikuti teks */
+                min-width: 70px;
+            }
+
+            /* 3. Jarak antara Bintang dan Tombol */
+            .review-content > div[style*="display:flex"] {
+                gap: 5px; 
+                justify-content: space-between; /* Pastikan rata kiri-kanan */
+            }
+        }
+        
     </style>
 </head>
 <body>
 
     <nav class="top-nav">
+        <!-- LOGO KECIL DI NAVIGASI (BARU) -->
         <a href="index.html" class="logo-container" style="display:flex; align-items:center; text-decoration:none; gap:10px;">
             <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:35px; height:35px; border-radius:50%; border:2px solid #E50914;">
             <span style="font-weight:800; color:#E50914; font-size:1.1rem;">SMIPRO</span>
@@ -94,16 +141,44 @@
                     <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold;">ON AIR</span>
                 </div>
                 
-                <!-- PERFORMER LIST -->
-                <div class="perf-item">
-                    <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" style="width:40px; height:40px; border-radius:50%;">
-                    <div><b style="color:white;">Rina Violin</b><br><small style="color:gold;">★ 4.9</small></div>
+                <!-- PERFORMER 1 -->
+                <div class="perf-item" style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; border-radius:5px; margin-bottom:5px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" style="width:45px; height:45px; border-radius:50%; object-fit:cover;">
+                        <div>
+                            <b style="display:block; font-size:0.95rem;">Rina Violin</b>
+                            <!-- AKUMULASI RATING DISINI -->
+                            <small style="color:gold; font-size:0.8rem;">
+                                <i class="fa-solid fa-star"></i> 4.9 <span style="color:#aaa;">(Ulasan)</span>
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- TOMBOL BERI NILAI (BINTANG) -->
+                    <div onclick="openRatePerformer('Rina Violin')" style="cursor:pointer; border:1px solid #555; padding:5px 8px; border-radius:50%; transition:0.3s;" title="Beri Nilai">
+                        <i class="fa-regular fa-star" style="color:#E50914;"></i>
+                    </div>
                 </div>
-                <div class="perf-item">
-                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" style="width:40px; height:40px; border-radius:50%;">
-                    <div><b style="color:white;">Acoustic Boys</b><br><small style="color:gold;">★ 4.8</small></div>
+
+                <!-- PERFORMER 2 -->
+                <div class="perf-item" style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; border-radius:5px; margin-bottom:5px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" style="width:45px; height:45px; border-radius:50%; object-fit:cover;">
+                        <div>
+                            <b style="display:block; font-size:0.95rem;">Acoustic Boys</b>
+                            <!-- AKUMULASI RATING DISINI -->
+                            <small style="color:gold; font-size:0.8rem;">
+                                <i class="fa-solid fa-star"></i> 4.8 <span style="color:#aaa;">(Ulasan)</span>
+                            </small>
+                        </div>
+                    </div>
+                    <!-- TOMBOL BERI NILAI (BINTANG) -->
+                    <div onclick="openRatePerformer('Acoustic Boys')" style="cursor:pointer; border:1px solid #555; padding:5px 8px; border-radius:50%; transition:0.3s;" title="Beri Nilai">
+                        <i class="fa-regular fa-star" style="color:#E50914;"></i>
+                    </div>
                 </div>
                 
+                <!-- TOMBOL REQUEST -->
                 <button class="btn-req" onclick="openRequestModal()" style="margin-top:auto;">
                     <i class="fa-solid fa-music"></i> Request Lagu & Sawer
                 </button>
@@ -114,259 +189,300 @@
 
         <!-- DAFTAR WARUNG -->
         <div class="section-title">PILIH WARUNG & BOOKING MEJA</div>
-        <div id="warung-grid-ss3" class="warung-grid">
-            <p style="grid-column:1/-1; text-align:center; padding:20px; color:#888;">
-                <i class="fa-solid fa-circle-notch fa-spin"></i> Menyiapkan Data Warung...
-            </p>
+        <div id="warung-grid-ss3" class="warung-grid"></div>
+
+               
+       <!-- 3. BAGIAN BAWAH: REVIEW LOKASI (REVISI FINAL) -->
+        <div class="review-section-wrapper">
+            <div class="review-box" style="display:flex; flex-direction:column; gap:20px;">
+                
+                <!-- ATAS: FOTO & INPUT -->
+                <div style="display:flex; gap:20px; align-items:start;">
+                    
+                    <!-- KIRI: FOTO & AKUMULASI -->
+                    <div style="width:120px; text-align:center;">
+                        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Stadion%20Bayuangga.jpg" class="venue-photo-review" style="width:100%; height:120px; object-fit:cover; border-radius:10px; border:2px solid #555;">
+                        <!-- Akumulasi Rating -->
+                        <div style="margin-top:10px;">
+                            <div style="color:gold; font-size:1.2rem;">★★★★☆</div>
+                            <span style="font-weight:bold; color:white;">4.8 / 5.0</span>
+                        </div>
+                    </div>
+
+                    <!-- KANAN: FORM INPUT -->
+                    <div style="flex:1;">
+                        <h3 style="margin-top:0;">Ulasan Tempat</h3>
+                        <p style="color:#aaa; font-size:0.9rem; margin-top:-5px;">Bagaimana fasilitas di Stadion Bayuangga?</p>
+                        
+                        <textarea id="venue-comment" class="input-dark" style="height:80px;" placeholder="Tulis masukan Anda..."></textarea>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <!-- Input Bintang -->
+                            <div class="stars-input" id="venue-stars">
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 1)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 2)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 3)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 4)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                                <i class="fa-solid fa-star" onclick="rateStar('venue', 5)" style="font-size:1.5rem; color:#444; cursor:pointer;"></i>
+                            </div>
+                            <button class="btn-book-ss3" style="width:120px;" onclick="submitVenueRating()">Kirim</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- BAWAH: LIST ULASAN ORANG -->
+                <div style="border-top:1px dashed #444; padding-top:15px;">
+                    <h4 style="margin:0 0 10px 0; color:#888;">Ulasan Terbaru:</h4>
+                    <div id="venue-reviews-list" style="max-height:300px; overflow-y:auto;">
+                        <!-- Contoh Ulasan Dummy -->
+                        <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid gold;">
+                            <b style="color:white;">Budi Santoso</b> <small style="color:gold;">★★★★★</small>
+                            <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"Tempatnya luas, parkir aman, dan banyak pilihan makanan enak. Live music-nya juga keren!"</p>
+                        </div>
+                        <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid #ccc;">
+                            <b style="color:white;">Siti Aminah</b> <small style="color:gold;">★★★★☆</small>
+                            <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"Suasana asik buat nongkrong, cuma kadang agak susah cari meja kosong kalau malam minggu."</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-        
-        <!-- REVIEW LOKASI -->
-        <div class="review-box" style="margin-top:40px; background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
-            <h3 style="margin-top:0;">Ulasan Tempat</h3>
-            <textarea id="venue-comment" class="input-request" style="height:80px;" placeholder="Bagaimana suasana di sini?"></textarea>
-            <button class="btn-book-ss3" style="width:100px;" onclick="alert('Terima kasih atas ulasan Anda!')">Kirim</button>
+
+    <!-- MODAL RATING PERFORMER (POPUP) -->
+    <div id="rate-perf-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <i class="fa-solid fa-xmark close-icon" onclick="closeModal('rate-perf-modal')" style="position:absolute; top:15px; right:15px; cursor:pointer; color:#888; font-size:1.2rem;"></i>
+            
+            <!-- LOGO SMIPRO -->
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo" style="width:70px; display:block; margin:0 auto 10px auto;">
+            
+            <h3 style="margin:0; color:#E50914; text-align:center;">Nilai Penampilan</h3>
+            <p id="rate-target-name" style="font-weight:bold; color:white; text-align:center; margin-bottom:20px;">Nama Artis</p>
+            
+            <!-- INPUT BINTANG -->
+            <div class="stars-input" id="perf-stars" style="text-align:center; margin-bottom:20px;">
+                <i class="fa-solid fa-star" onclick="rateStar('perf', 1)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
+                <i class="fa-solid fa-star" onclick="rateStar('perf', 2)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
+                <i class="fa-solid fa-star" onclick="rateStar('perf', 3)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
+                <i class="fa-solid fa-star" onclick="rateStar('perf', 4)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
+                <i class="fa-solid fa-star" onclick="rateStar('perf', 5)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
+            </div>
+            
+            <textarea id="perf-comment" class="input-dark" placeholder="Tulis ulasan/komentar untuk performer ini..." style="width:100%; padding:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:5px; margin-bottom:10px;"></textarea>
+            
+            <button onclick="submitPerfRating()" style="width:100%; background:#E50914; color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Kirim Penilaian</button>
         </div>
     </div>
-
+        
+        
     <!-- MODAL REQUEST -->
+    <!-- MODAL 1: REQUEST & SAWER (REVISI) -->
     <div id="request-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="fa-solid fa-xmark close-icon" onclick="closeModal('request-modal')"></i>
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo">
+            
             <h3 style="margin-top:0; color:#E50914;">Request Lagu</h3>
-            <p style="color:#aaa; font-size:0.9rem;">Sawer performer favoritmu!</p>
-            <input type="text" class="input-request" placeholder="Judul Lagu">
-            <input type="number" class="input-request" placeholder="Nominal Sawer (Rp)">
-            <button class="btn-book-ss3" onclick="alert('Request Terkirim!'); closeModal('request-modal');">KIRIM REQUEST</button>
+            
+            <select id="req-target" class="input-dark">
+                <option>Rina Violin</option>
+                <option>Acoustic Boys</option>
+            </select>
+            <input type="text" id="req-song" class="input-dark" placeholder="Judul Lagu">
+            <input type="text" id="req-msg" class="input-dark" placeholder="Ucapan / Salam">
+            <input type="number" id="req-amount" class="input-dark" placeholder="Nominal Sawer (Rp)">
+            
+            <!-- AREA QRIS & DOWNLOAD -->
+            <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin:10px 0;">
+                <!-- GAMBAR QRIS ASLI -->
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" style="width:100%; max-width:150px;">
+                
+                <!-- TOMBOL DOWNLOAD -->
+                <a href="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" download="QRIS_SMIPRO.png" class="btn-book-ss3" style="background:#333; display:inline-block; width:auto; padding:5px 15px; margin-top:5px; text-decoration:none; font-size:0.8rem; color:white;">
+                    <i class="fa-solid fa-download"></i> Simpan Gambar QRIS
+                </a>
+            </div>
+
+            <p style="font-size:0.7rem; color:#aaa; text-align:center; margin-top:0;">Simpan QR -> Bayar di E-Wallet -> Konfirmasi</p>
+            
+            <input type="text" id="req-sender" class="input-dark" placeholder="Nama Pemilik Rekening (Wajib)" style="border:1px solid #E50914;">
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-full-ss3" style="background:#444; color:white; cursor:pointer;" onclick="closeModal('request-modal')">Batal</button>
+                <!-- TOMBOL DIGANTI TEKSNYA -->
+                <button class="btn-book-ss3" onclick="sendRequest()">SAYA SUDAH TRANSFER</button>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL BOOKING -->
+    <!-- MODAL BOOKING (DENGAN LOGO) -->
     <div id="booking-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="fa-solid fa-xmark close-icon" onclick="closeModal('booking-modal')"></i>
             
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo">
+            <!-- LOGO SMIPRO -->
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo" alt="Logo SMIPRO">
             
-            <h3 style="margin:0; text-align:center;">Form Booking</h3>
-            <p id="modal-warung-name" style="text-align:center; color:#FFD700; margin-bottom:15px; font-weight:bold;">-</p>
+            <h3 style="margin:0; text-align:center;">Booking Meja</h3>
+            <p id="modal-warung-name" style="text-align:center; color:#FFD700; margin-bottom:15px; font-weight:bold;">Nama Warung</p>
             
-            <label style="color:#aaa; font-size:0.8rem;">Nama Pemesan</label>
-            <input type="text" id="book-name" class="input-request">
+            <label style="color:#aaa; font-size:0.8rem;">Jam Booking</label>
+            <input type="text" id="book-time" class="input-request" readonly style="background:#333; color:#888;">
 
-            <label style="color:#aaa; font-size:0.8rem;">WhatsApp (Untuk Kode Tiket)</label>
-            <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
-
-            <!-- INPUT JAM KEDATANGAN -->
-            <label style="color:#aaa; font-size:0.8rem;">Rencana Jam Datang</label>
-            <input type="time" id="book-time" class="input-request" style="color-scheme: dark;">
+            <input type="text" id="book-name" class="input-request" placeholder="Nama Pemesan">
+            <input type="number" id="book-wa" class="input-request" placeholder="Nomor WhatsApp">
+            <input type="number" id="book-pax" class="input-request" placeholder="Jumlah Orang" oninput="hitungMeja()">
             
-            <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang (Dewasa/Anak)</label>
-            <input type="number" id="book-pax" class="input-request" placeholder="Total Orang" oninput="hitungMeja()">
-            
-            <!-- KALKULASI MEJA OTOMATIS -->
-            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja (1 Meja = 4 Org)</label>
+            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja</label>
             <input type="text" id="book-qty" class="input-request" readonly style="color:#E50914; font-weight:bold; background:#333;" value="0 Meja">
 
-            <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
-                <i class="fa-solid fa-triangle-exclamation"></i> <b>PENTING:</b><br>
-                Meja akan otomatis <b>dikosongkan (Hangus)</b> jika Anda belum check-in 30 menit setelah Jam Datang.
-            </div>
-
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal('booking-modal')">Batal</button>
                 <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="confirmBooking()">Booking</button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT LOGIC -->
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, onSnapshot, addDoc, query, orderBy, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <!-- SCRIPT (Disatukan agar pasti jalan) -->
+    <script>
+        const warungs = [
+            { id: 1, name: "Warung Bu Sri", total: 15, available: 10, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
+            { id: 2, name: "Kopi Pakde Jono", total: 10, available: 8, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
+            { id: 3, name: "Angkringan Mas Boy", total: 20, available: 2, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" },
+            { id: 4, name: "Sate Taichan Pro", total: 12, available: 0, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300" },
+            { id: 5, name: "Ropang Gaul", total: 15, available: 15, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300" }
+        ];
 
-        // LOAD DATA WARUNG (REALTIME FIREBASE)
+        // RENDER WARUNG
         const container = document.getElementById('warung-grid-ss3');
-        
-        // Agar tidak error, kita gunakan fungsi global window.openBooking
-        window.openBooking = function(name, id) {
-            document.getElementById('modal-warung-name').innerText = name;
-            
-            // Set Default Jam ke Jam Sekarang
-            const now = new Date();
-            const timeString = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
-            document.getElementById('book-time').value = timeString;
+        if(container) {
+            warungs.forEach(w => {
+                const isFull = w.available === 0;
+                const statusColor = isFull ? 'red' : '#00ff00';
+                const statusText = isFull ? '0 / ' + w.total + ' Meja' : w.available + ' / ' + w.total + ' Meja';
 
-            document.getElementById('booking-modal').style.display = 'flex';
-        }
-
-        // --- 1. RENDER WARUNG & AUTO SEEDING ---
-        const warungCol = collection(db, "warungs");
-        const q = query(warungCol);
-
-        onSnapshot(q, (snapshot) => {
-            // == LOGIKA SEEDING (ISI DATA OTOMATIS JIKA KOSONG) ==
-            if (snapshot.empty) {
-                console.log("Database Kosong, Mengisi Data Simulasi...");
-                seedWarungData();
-                return;
-            }
-
-            container.innerHTML = '';
-            snapshot.forEach(docSnap => {
-                const w = docSnap.data();
-                // Hitung ketersediaan (Logic sederhana: total - booked)
-                const available = w.totalTables - (w.bookedCount || 0);
-                const isFull = available <= 0;
-                
-                let btnHtml = isFull ? 
+                let buttonHtml = isFull ? 
                     `<button class="btn-full-ss3">Penuh</button>` : 
-                    `<button class="btn-book-ss3" onclick="openBooking('${w.name}', '${docSnap.id}')">Booking</button>`;
-
-                // Gunakan default image jika img tidak ada
-                const imgUrl = w.img || "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200";
+                    `<button class="btn-book-ss3" onclick="openBooking(${w.id}, '${w.name}')">Booking</button>`;
 
                 container.innerHTML += `
                 <div class="warung-card">
-                    <img src="${imgUrl}" class="warung-img">
+                    <img src="${w.img}" class="warung-img">
                     <div class="warung-body">
                         <span class="warung-name">${w.name}</span>
-                        <span class="warung-stats" style="color:${isFull ? 'red':'#00ff00'}">
-                            ${isFull ? '0' : available} / ${w.totalTables} Meja Tersedia
-                        </span>
-                        ${btnHtml}
+                        <span class="warung-stats" style="color:${statusColor}">${statusText}</span>
+                        ${buttonHtml}
                     </div>
                 </div>`;
             });
-        });
-
-        // FUNGSI ISI DATA DUMMY
-        async function seedWarungData() {
-            // Gunakan setDoc dengan ID tertentu agar ID-nya cantik (bukan random string)
-            // Ini memudahkan untuk Login Mitra nanti
-            
-            // 1. Warung Bu Sri
-            await setDoc(doc(db, "warungs", "warung_bu_sri"), {
-                name: "Warung Bu Sri",
-                totalTables: 15,
-                bookedCount: 0,
-                status: "open",
-                img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300"
-            });
-
-            // 2. Kopi Pakde Jono
-            await setDoc(doc(db, "warungs", "kopi_pakde"), {
-                name: "Kopi Pakde Jono",
-                totalTables: 10,
-                bookedCount: 2,
-                status: "open",
-                img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300"
-            });
-
-            // 3. Angkringan Mas Boy
-            await setDoc(doc(db, "warungs", "angkringan_boy"), {
-                name: "Angkringan Mas Boy",
-                totalTables: 20,
-                bookedCount: 0,
-                status: "open",
-                img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300"
-            });
-
-             // 4. Sate Taichan Pro
-             await setDoc(doc(db, "warungs", "sate_taichan"), {
-                name: "Sate Taichan Pro",
-                totalTables: 12,
-                bookedCount: 0,
-                status: "open",
-                img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300"
-            });
-
-            // 5. Ropang Gaul
-            await setDoc(doc(db, "warungs", "ropang_gaul"), {
-                name: "Ropang Gaul",
-                totalTables: 15,
-                bookedCount: 0,
-                status: "open",
-                img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300"
-            });
-
-            console.log("Data Warung Berhasil Dibuat!");
         }
 
-        // --- 2. HITUNG MEJA (1 MEJA = 4 ORANG) ---
-        window.hitungMeja = function() {
+        // FUNGSI BUKA MODAL RATING
+        function openRatePerformer(name) {
+            document.getElementById('rate-target-name').innerText = name;
+            // Reset bintang
+            rateStar('perf', 0); 
+            document.getElementById('rate-perf-modal').style.display = 'flex';
+        }
+
+        // FUNGSI KLIK BINTANG (WARNA GOLD)
+        function rateStar(type, n) {
+            // type 'perf' untuk performer, 'venue' untuk lokasi
+            let containerID = type === 'perf' ? 'perf-stars' : 'venue-stars';
+            const stars = document.querySelectorAll('#' + containerID + ' i');
+            
+            stars.forEach((s, index) => {
+                if (index < n) {
+                    s.style.color = '#FFD700'; // Emas
+                } else {
+                    s.style.color = '#444'; // Abu-abu
+                }
+            });
+        }
+
+        // FUNGSI KIRIM RATING
+        function submitPerfRating() {
+            const comment = document.getElementById('perf-comment').value;
+            alert("Terima kasih! Penilaian Anda untuk performer telah dikirim.");
+            closeModal('rate-perf-modal');
+        }
+
+        // FUNGSI TUTUP MODAL
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // FUNGSI MODAL (WAJIB JALAN)
+        function openRequestModal() {
+            document.getElementById('request-modal').style.display = 'flex';
+        }
+
+        function sendRequest() {
+            alert("Request Terkirim! Admin akan memverifikasi.");
+            closeModal('request-modal');
+        }
+
+        function openBooking(id, name) {
+            document.getElementById('modal-warung-name').innerText = name;
+            const now = new Date();
+            document.getElementById('book-time').value = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0') + " WIB";
+            document.getElementById('booking-modal').style.display = 'flex';
+        }
+
+        function hitungMeja() {
             let orang = parseInt(document.getElementById('book-pax').value) || 0;
-            if(orang < 1) {
-                document.getElementById('book-qty').value = "0 Meja";
-                return;
-            }
-            // Rumus Ceiling: 4->1, 5->2, 8->2, 9->3
-            let qty = Math.ceil(orang / 4);
+            let qty = orang > 0 ? Math.ceil(orang/4) : 0;
             document.getElementById('book-qty').value = qty + " Meja";
         }
 
-        // --- 3. KONFIRMASI BOOKING & WA ---
-        window.confirmBooking = async function() {
-            const name = document.getElementById('book-name').value;
-            const wa = document.getElementById('book-wa').value;
-            const time = document.getElementById('book-time').value; // Jam Datang
-            const pax = parseInt(document.getElementById('book-pax').value) || 0;
-            const qty = Math.ceil(pax / 4); // Hitung lagi untuk keamanan
+        function confirmBooking() {
+        const name = document.getElementById('book-name').value;
+        const wa = document.getElementById('book-wa').value;
+        const qty = parseInt(document.getElementById('book-qty').value);
 
-            if(!name || !wa || !time || pax < 1) return alert("Mohon lengkapi semua data!");
+        if(!name || !wa || !qty) return alert("Lengkapi data!");
 
-            // HITUNG JAM HANGUS (Expired Time)
-            // Ambil jam dan menit dari input time
-            let [hours, minutes] = time.split(':').map(Number);
-            let dateObj = new Date();
-            dateObj.setHours(hours);
-            dateObj.setMinutes(minutes + 30); // Tambah 30 Menit
+        const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+        closeModal('booking-modal');
             
-            // Format Jam Hangus (HH:MM)
-            let expHours = String(dateObj.getHours()).padStart(2, '0');
-            let expMinutes = String(dateObj.getMinutes()).padStart(2, '0');
-            let expTime = `${expHours}:${expMinutes}`;
+            // 3. RESET FORM (Mengosongkan isian)
+            document.getElementById('book-name').value = '';
+            document.getElementById('book-wa').value = '';
+            document.getElementById('book-pax').value = '';
+            document.getElementById('book-qty').value = '0 Meja';
 
-            const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
-            const warungName = document.getElementById('modal-warung-name').innerText;
-
-            // Simpan ke Firebase (Booking Waiting)
-            await addDoc(collection(db, "bookings"), {
-                warungName: warungName,
-                customerName: name,
-                customerWA: wa,
-                pax: pax,
-                tablesNeeded: qty,
-                arrivalTime: time,
-                expiredTime: expTime, // Simpan jam hangus
-                bookingCode: kode,
-                status: 'booked', // Status awal
-                timestamp: new Date()
-            });
-
+            // 4. Tutup Modal
             closeModal('booking-modal');
-
-            // KIRIM PESAN WA (YANG TEGAS)
-            const pesan = `Halo ${name},
             
-Booking Berhasil di *${warungName}*
----------------------------
-Kode Tiket: *${kode}*
-Jumlah: ${pax} Orang (${qty} Meja)
-Rencana Datang: Pukul ${time}
-
-⚠️ *PENTING:*
-Pesanan Anda berlaku hingga *Pukul ${expTime}*.
-Mohon scan QR Meja sebelum jam tersebut. Jika terlambat, sistem otomatis membatalkan pesanan.
-
-Terima kasih.`;
-
-            if(confirm(`Booking Sukses!\nKode: ${kode}\n\nKirim tiket ke WhatsApp sekarang?`)) {
-                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
-            }
+            // 5. Konfirmasi & Buka WA
+            // Menggunakan format link wa.me yang benar dengan kode negara
+            if(confirm(`Booking Berhasil!\nKode: ${kode}\n\nKirim tiket ke WhatsApp?`)) {
+            window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
         }
+    }
 
-        window.openRequestModal = function() { document.getElementById('request-modal').style.display = 'flex'; }
-        window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // KIRIM REVIEW LOKASI (APPEND DI BAWAH)
+        window.submitVenueRating = function() {
+            const txt = document.getElementById('venue-comment').value;
+            if(!txt) return alert("Tulis ulasan dulu!");
+            
+            // Tambahkan ke list ulasan (Paling Atas)
+            const list = document.getElementById('venue-reviews-list');
+            const newReview = `
+                <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid var(--primary); animation:fadeIn 0.5s;">
+                    <b style="color:white;">Anda (Baru Saja)</b> <small style="color:gold;">★★★★★</small>
+                    <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"${txt}"</p>
+                </div>`;
+            
+            list.insertAdjacentHTML('afterbegin', newReview);
+            
+            document.getElementById('venue-comment').value = ''; // Reset
+            alert("Ulasan Terkirim!");
+        }
     </script>
 </body>
 </html>
