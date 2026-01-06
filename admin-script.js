@@ -222,18 +222,79 @@ window.deleteMentor = async function(id) {
 window.seedMentors = async function() {
     const mentorRef = collection(db, "mentors");
     
+   // Data Mentor Sesuai Request
     const dataMentors = [
-        { name: "Bpk. Andigo", expertise: "Musik Management", photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200", bio: "Ahli manajemen musik dengan pengalaman 10 tahun.", phone: "0812345678" },
-        { name: "Ibu Putri", expertise: "Stage Act", photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", bio: "Mantan aktris teater yang fokus pada ekspresi panggung.", phone: "0812345679" },
-        { name: "Bpk. Ervan", expertise: "Visual Management", photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", bio: "Desainer visual untuk branding artis.", phone: "0812345680" },
-        { name: "Bpk. Anton", expertise: "Public Speaking", photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200", bio: "Motivator dan pelatih komunikasi publik.", phone: "0812345681" },
-        { name: "Bpk. Dwi Laksono", expertise: "Music Director", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200", bio: "Arranger musik untuk berbagai festival nasional.", phone: "0812345682" }
+        { 
+            id: "1", // ID Khusus agar linknya nanti mentor-profile.html?id=1
+            name: "Andik Laksono", 
+            specialist: "Music Director & Audio Engineer", 
+            email: "andigomusicpro@gmail.com",
+            phone: "082319867817",
+            img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300", // Foto dummy dulu
+            portfolio: [
+                "Owner AndiGO Music Electronik",
+                "Song Maker & Music Arranger",
+                "Sound & Audio Engineers",
+                "Audio & Music Recording",
+                "Lead & Vocal Instructor",
+                "Audio, Sound & Music Conceptor"
+            ],
+            profession: [
+                "Music Performer",
+                "Audio Engineer",
+                "Store Owner of AndiGO Music Electronik"
+            ]
+        },
+        { 
+            id: "2",
+            name: "Ervansyah", 
+            specialist: "Visual Director & Multimedia", 
+            email: "yusufkonang33@gmail.com",
+            phone: "085230659995",
+            img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300", 
+            portfolio: [
+                "Owner CV. BRIEFCOM",
+                "Fotografer",
+                "Videografer",
+                "Desain dan Percetakan"
+            ],
+            profession: [
+                "Fotografer",
+                "Videografer",
+                "Design Grafis",
+                "Produser",
+                "Sutradara",
+                "Content Writer",
+                "Editor"
+            ]
+        },
+        { 
+            id: "3",
+            name: "Anton", 
+            specialist: "Public Speaking & Communication", 
+            email: "anton.public@smipro.id", // Email sementara
+            phone: "081xxxxxxxxx",
+            img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=300",
+            portfolio: [
+                "Master of Ceremony (MC) Event Nasional",
+                "Moderator Seminar Publik",
+                "Trainer Komunikasi Efektif"
+            ],
+            profession: [
+                "Public Speaker",
+                "Communication Coach",
+                "Event Host"
+            ]
+        }
     ];
 
+    // Proses Upload ke Firebase dengan ID Tertentu
     for (const m of dataMentors) {
-        await addDoc(mentorRef, m);
+        // Kita gunakan setDoc agar bisa menentukan ID dokumen (1, 2, 3)
+        await setDoc(doc(db, "mentors", m.id), m);
     }
-    alert("Data 5 Mentor Berhasil Dibuat!");
+    alert("Data Mentor (Andik, Ervansyah, Anton) Berhasil Diupload ke Firebase!");
+    loadMentorData(); // Refresh tabel
 }
 
 /* =========================================
