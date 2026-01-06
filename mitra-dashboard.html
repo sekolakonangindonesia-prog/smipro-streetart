@@ -7,25 +7,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* CSS DASHBOARD (TIDAK ADA YANG DIUBAH DARI DESAIN ASLI) */
+        /* STYLE LAMA (Header, Tab, Controls) TETAP SAMA */
         .mitra-header-bg { height: 150px; background: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Bener%20Dasboard3.jpg') center/cover; position: relative; }
         .mitra-header-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, #121212); }
         .mitra-profile-pic { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); position: absolute; bottom: -40px; left: 20px; object-fit: cover; background: #000; cursor: pointer; z-index: 20; transition: transform 0.3s; }
         .mitra-profile-pic:hover { transform: scale(1.1); border-color: white; }
         .mitra-controls { padding: 50px 20px 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        
         .shop-switch { display: flex; align-items: center; gap: 10px; cursor: pointer; background: #222; padding: 5px 15px; border-radius: 20px; border: 1px solid #444; transition: 0.3s; }
         .shop-switch.open { border-color: #00ff00; }
         .shop-switch.closed { border-color: red; }
         .indicator { width: 10px; height: 10px; border-radius: 50%; background: red; transition: 0.3s; }
         .shop-switch.open .indicator { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
-        
         .mitra-tabs { display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 20px; overflow-x: auto; }
         .tab-btn { flex: 1; padding: 15px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
         .tab-btn.active { color: white; border-bottom-color: var(--primary); }
-        
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
+        
+        /* STYLE BOOKING & STATS */
         .stat-card-mitra { background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #333; position: relative; }
         .edit-icon { position: absolute; top: 10px; right: 10px; color: #888; cursor: pointer; font-size: 0.9rem; }
         .booking-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px; }
@@ -34,19 +33,35 @@
         .waiting-text { color: #ffeb3b; font-size: 0.8rem; margin-top: 10px; font-style: italic; }
         .active-text { color: red; font-weight: bold; font-size: 0.8rem; margin-top: 10px; }
         .table-badge { font-size: 1.2rem; font-weight: bold; color: white; display: block; margin-bottom: 5px; }
-        .menu-item { display: flex; gap: 15px; background: #222; padding: 10px; border-radius: 10px; margin-bottom: 10px; align-items: center; border: 1px solid #333; }
-        .menu-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
         .btn-delete { background: #333; color: #ff4444; border: 1px solid #555; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+        /* === NEW STYLE: MENU GRID (KOTAK-KOTAK) === */
+        .menu-grid-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 Kolom di HP */
+            gap: 15px;
+        }
+        .menu-card {
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+            text-align: center;
+        }
+        .menu-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        .menu-details { padding: 10px; }
         
-        /* FORM STYLE */
+        /* QR & PROFILE */
         .profile-form label { display: block; color: #aaa; margin-top: 15px; font-size: 0.9rem; }
         .input-mitra { width: 100%; background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 5px; margin-top: 5px; }
-        
         .qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; margin-top: 20px; }
         .qr-card { background: white; padding: 15px; border-radius: 10px; text-align: center; color: black; }
         .qr-card img { width: 100%; max-width: 120px; }
         .btn-download-qr { background: #333; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 10px; font-size: 0.8rem; cursor: pointer; }
-        
         .print-note { background: #222; padding: 15px; border-radius: 10px; border: 1px dashed #555; margin-bottom: 20px; font-size: 0.9rem; color: #ccc; }
         
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
@@ -56,17 +71,21 @@
 </head>
 <body>
 
+    <!-- INPUT FILE UNTUK PROFIL -->
     <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
+    
+    <!-- INPUT FILE UNTUK MENU (BARU) -->
+    <input type="file" id="menu-file-input" style="display:none;" accept="image/*" onchange="previewMenuImage(this)">
 
     <div class="mitra-header-bg">
         <div class="mitra-header-overlay"></div>
-         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="position:absolute; top:15px; left:15px; width:50px; z-index:10;">
+         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
+             style="position:absolute; top:15px; left:15px; width:50px; z-index:10;">
         
-        <!-- FOTO HEADER (ID: header-profile-img) -->
-        <img src="https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200" class="mitra-profile-pic" id="header-profile-img" onclick="triggerUpload()">
+        <!-- FOTO HEADER -->
+        <img src="" class="mitra-profile-pic" id="header-profile-img" onclick="triggerUpload()" onerror="this.src='https://via.placeholder.com/150'">
         
         <div style="position:absolute; top:20px; right:20px; display:flex; gap:10px; z-index:20;">
-            <!-- TOMBOL HOME YANG BENAR (Tanpa Logout) -->
             <button onclick="goHome()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;">
                 <i class="fa-solid fa-house"></i> Home
             </button>
@@ -78,7 +97,7 @@
     
     <div class="mitra-controls">
         <div>
-            <h2 style="margin:0;" id="shop-name-display">Warung Bu Sri</h2>
+            <h2 style="margin:0;" id="shop-name-display">Loading...</h2>
             <small style="color:#aaa;">Stadion Bayuangga Zone</small>
         </div>
         <div class="shop-switch open" id="store-status-btn" onclick="toggleStoreStatus()">
@@ -100,7 +119,7 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:30px;">
                 <div class="stat-card-mitra">
                     <i class="fa-solid fa-pen edit-icon" onclick="editTableCount()"></i>
-                    <h1 id="total-table-count" style="margin:0; color:var(--primary); font-size:1.5rem;">15</h1>
+                    <h1 id="total-table-count" style="margin:0; color:var(--primary); font-size:1.5rem;">-</h1>
                     <small style="font-size:0.7rem;">Total Meja</small>
                 </div>
                 <div class="stat-card-mitra" style="border-color:#ff4444;">
@@ -125,12 +144,12 @@
             <div id="qr-container" class="qr-grid"></div>
         </div>
 
-        <!-- TAB 3: MENU -->
+        <!-- TAB 3: MENU (GRID LAYOUT) -->
         <div id="tab-menu" class="tab-content">
             <button class="btn-primary" onclick="openModalMenu()" style="margin-bottom:20px; width:100%; background:var(--primary); padding:12px; border:none; border-radius:5px; color:white; font-weight:bold; cursor:pointer;">
                 <i class="fa-solid fa-plus"></i> Tambah Menu Baru
             </button>
-            <div id="menu-list-container"></div>
+            <div id="menu-list-container" class="menu-grid-display"></div>
         </div>
 
         <!-- TAB 4: PROFIL LENGKAP -->
@@ -138,16 +157,14 @@
             <div class="profile-form" style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
                 <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Pengaturan Akun</h3>
                 
-                <!-- PREVIEW FOTO (ID: preview-profile-img) -->
                 <div style="text-align:center; margin-bottom:20px;">
-                    <img src="https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200" id="preview-profile-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); margin-bottom:10px;">
+                    <img src="" id="preview-profile-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); margin-bottom:10px;" onerror="this.src='https://via.placeholder.com/150'">
                     <br>
                     <button class="btn-small" style="background:#333; border:1px solid #555; color:white;" onclick="triggerUpload()"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</button>
                 </div>
 
-                <!-- FORM LENGKAP KEMBALI -->
                 <label>Nama Warung</label>
-                <input type="text" id="edit-name" class="input-mitra" value="Warung Bu Sri">
+                <input type="text" id="edit-name" class="input-mitra">
 
                 <label>Nama Pemilik</label>
                 <input type="text" id="edit-owner" class="input-mitra" placeholder="Nama Pemilik">
@@ -158,7 +175,7 @@
                 <label>Email Login</label>
                 <input type="email" id="edit-email" class="input-mitra" placeholder="email@contoh.com">
 
-                <label>Password (Biarkan kosong jika tidak diubah)</label>
+                <label>Password</label>
                 <input type="password" id="edit-pass" class="input-mitra" placeholder="******">
 
                 <button class="btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%; background:var(--green); border:none; padding:12px; border-radius:5px; color:black; font-weight:bold; cursor:pointer;">SIMPAN PERUBAHAN</button>
@@ -166,13 +183,21 @@
         </div>
     </div>
 
-    <!-- MODAL MENU -->
+    <!-- MODAL MENU (DENGAN FOTO) -->
     <div id="modal-menu" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0;">Tambah Menu</h3>
+            
+            <!-- PREVIEW FOTO MENU -->
+            <div style="text-align:center; margin-bottom:10px; border:1px dashed #555; padding:10px; border-radius:5px; cursor:pointer;" onclick="triggerMenuUpload()">
+                <img id="preview-menu-img" src="https://via.placeholder.com/100?text=Foto" style="width:100px; height:100px; object-fit:cover;">
+                <p style="font-size:0.8rem; color:#aaa; margin:5px 0;">Klik untuk Upload Foto</p>
+            </div>
+
             <input type="text" id="new-menu-name" class="input-mitra" placeholder="Nama Makanan">
             <input type="number" id="new-menu-price" class="input-mitra" placeholder="Harga (Rp)">
             <textarea id="new-menu-desc" class="input-mitra" placeholder="Deskripsi singkat" style="height:60px;"></textarea>
+            
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModalMenu()">Batal</button>
                 <button class="btn-small" style="background:var(--primary); color:white; flex:1;" onclick="addMenu()">Simpan</button>
@@ -181,28 +206,5 @@
     </div>
 
     <script type="module" src="mitra-script.js"></script>
-
-    <!-- ADMIN BACK BUTTON -->
-    <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <button onclick="backToAdmin()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
-            <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
-        </button>
-    </div>
-
-    <script>
-        // CEK ADMIN
-        const checkName = localStorage.getItem('userName');
-        if(checkName && (checkName.includes('Mode Admin') || checkName.includes('(Admin)'))) {
-            document.getElementById('admin-floating-btn').style.display = 'block';
-        }
-        function backToAdmin() {
-            if(confirm("Kembali ke Control Tower Admin?")) {
-                localStorage.setItem('userRole', 'admin');
-                localStorage.setItem('userName', 'Super Admin');
-                localStorage.setItem('userLink', 'admin-dashboard.html'); 
-                window.location.href = 'admin-dashboard.html';
-            }
-        }
-    </script>   
 </body>
 </html>
