@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT LOGIC (VERSI FIX WA, RESET FORM, RATING, AUTO-SEEDING - PASTI JALAN) -->
+    <!-- SCRIPT (FIREBASE COMPAT - PASTI JALAN) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
@@ -265,40 +265,39 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // VAR GLOBAL UNTUK RATING
+        // VAR GLOBAL
         let currentVenueRating = 0;
         let currentPerfRating = 0;
-        let targetPerformer = ""; // Nama performer yang sedang dinilai
+        let targetPerformer = "";
 
-        // --- GLOBAL FUNCTIONS (Dapat dipanggil dari HTML) ---
-        window.openBooking = function(name, id) {
+        // --- GLOBAL FUNCTIONS ---
+        function openBooking(name, id) {
             document.getElementById('modal-warung-name').innerText = name;
-            
             const now = new Date();
             const timeString = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
             document.getElementById('book-time').value = timeString;
-
             document.getElementById('booking-modal').style.display = 'flex';
         }
 
-        window.hitungMeja = function() {
+        function hitungMeja() {
             let orang = parseInt(document.getElementById('book-pax').value) || 0;
             let qty = orang < 1 ? 0 : Math.ceil(orang / 4);
             document.getElementById('book-qty').value = qty + " Meja";
         }
 
-        window.openRequestModal = function() { document.getElementById('request-modal').style.display = 'flex'; }
-        window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; }
+        function openRequestModal() { document.getElementById('request-modal').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // --- FUNGSI BINTANG (UNTUK VENUE & PERFORMER) ---
+        // --- FUNGSI BINTANG ---
         window.rateStar = function(type, n) {
+            // type: 'venue' atau 'perf'
             const containerID = type === 'venue' ? 'venue-stars' : 'perf-stars';
             if(type === 'venue') currentVenueRating = n;
             else currentPerfRating = n;
 
             const stars = document.querySelectorAll('#' + containerID + ' i');
             stars.forEach((s, index) => {
-                if (index < n) s.classList.add('active'); // Tambah class 'active' untuk warna gold
+                if (index < n) s.classList.add('active');
                 else s.classList.remove('active');
             });
         }
@@ -320,7 +319,7 @@
             alert("Terima kasih atas ulasan Anda!");
             document.getElementById('venue-reviewer-name').value = '';
             document.getElementById('venue-comment').value = '';
-            rateStar('venue', 0); // Reset bintang
+            rateStar('venue', 0);
         }
 
         // --- LOAD REVIEW VENUE (REALTIME) ---
@@ -341,6 +340,7 @@
                 totalBintang += r.rating;
                 count++;
                 
+                // Buat string bintang
                 let starStr = "";
                 for(let i=0; i<5; i++) {
                     starStr += i < r.rating ? "★" : "☆";
@@ -356,6 +356,7 @@
                 </div>`;
             });
 
+            // Update Rata-rata
             if(count > 0) {
                 let avg = (totalBintang / count).toFixed(1);
                 document.getElementById('avg-score').innerText = avg + " / 5.0";
@@ -366,7 +367,7 @@
         window.openRatePerformer = function(name) {
             targetPerformer = name;
             document.getElementById('rate-target-name').innerText = name;
-            rateStar('perf', 0); // Reset bintang
+            rateStar('perf', 0);
             document.getElementById('rate-perf-modal').style.display = 'flex';
         }
 
@@ -385,22 +386,15 @@
             });
 
             alert("Penilaian terkirim!");
-            document.getElementById('perf-reviewer-name').value = ''; // Reset form
-            document.getElementById('perf-comment').value = ''; // Reset form
+            document.getElementById('perf-reviewer-name').value = '';
+            document.getElementById('perf-comment').value = '';
             closeModal('rate-perf-modal');
         }
 
-
-        // --- RENDER WARUNG & AUTO SEEDING ---
+        // --- RENDER WARUNG ---
         const container = document.getElementById('warung-grid-ss3');
-        
         db.collection("warungs").onSnapshot((snapshot) => {
-            if (snapshot.empty) { 
-                console.log("Database Kosong, Mengisi Data Simulasi Warung...");
-                seedWarungData(); 
-                return; 
-            }
-
+            if (snapshot.empty) { seedWarungData(); return; }
             container.innerHTML = '';
             snapshot.forEach(docSnap => {
                 const w = docSnap.data();
@@ -430,9 +424,7 @@
             const dummyWarungs = [
                 { id: "warung_bu_sri", name: "Warung Bu Sri", total: 15, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
                 { id: "kopi_pakde", name: "Kopi Pakde Jono", total: 10, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
-                { id: "angkringan_boy", name: "Angkringan Mas Boy", total: 20, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" },
-                { id: "sate_taichan", name: "Sate Taichan Pro", total: 12, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300" },
-                { id: "ropang_gaul", name: "Ropang Gaul", total: 15, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300" }
+                { id: "angkringan_boy", name: "Angkringan Mas Boy", total: 20, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" }
             ];
             const batch = db.batch();
             dummyWarungs.forEach(w => {
@@ -483,12 +475,12 @@
             document.getElementById('book-pax').value = '';
             document.getElementById('book-qty').value = '0 Meja';
 
-            const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\n---------------------------\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\nRencana Datang: Pukul ${time}\n\n⚠️ *PENTING:*\nPesanan Anda berlaku hingga *Pukul ${expTime}*.\nMohon scan QR Meja sebelum jam tersebut agar tidak hangus.\n\nTerima kasih.`;
+            const pesan = `Halo ${name},\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\nRencana Datang: Pukul ${time}\n\n⚠️ *PENTING:*\nPesanan Anda berlaku hingga *Pukul ${expTime}*.\nMohon scan QR Meja sebelum jam tersebut agar tidak hangus.\n\nTerima kasih.`;
 
             if(confirm(`Booking Sukses!\nKode: ${kode}\n\nKirim tiket ke WhatsApp sekarang?`)) {
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
         }
-    </script>    
+    </script>
 </body>
 </html>
