@@ -252,29 +252,42 @@
 
     <!-- MODAL RATING PERFORMER (POPUP) -->
     <div id="rate-perf-modal" class="modal-overlay" style="display:none;">
-        <div class="modal-box">
-            <i class="fa-solid fa-xmark close-icon" onclick="closeModal('rate-perf-modal')" style="position:absolute; top:15px; right:15px; cursor:pointer; color:#888; font-size:1.2rem;"></i>
-            
-            <!-- LOGO SMIPRO -->
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo" style="width:70px; display:block; margin:0 auto 10px auto;">
-            
-            <h3 style="margin:0; color:#E50914; text-align:center;">Nilai Penampilan</h3>
-            <p id="rate-target-name" style="font-weight:bold; color:white; text-align:center; margin-bottom:20px;">Nama Artis</p>
-            
-            <!-- INPUT BINTANG -->
-            <div class="stars-input" id="perf-stars" style="text-align:center; margin-bottom:20px;">
-                <i class="fa-solid fa-star" onclick="rateStar('perf', 1)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
-                <i class="fa-solid fa-star" onclick="rateStar('perf', 2)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
-                <i class="fa-solid fa-star" onclick="rateStar('perf', 3)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
-                <i class="fa-solid fa-star" onclick="rateStar('perf', 4)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
-                <i class="fa-solid fa-star" onclick="rateStar('perf', 5)" style="font-size:2rem; color:#444; margin:0 5px; cursor:pointer;"></i>
-            </div>
-            
-            <textarea id="perf-comment" class="input-dark" placeholder="Tulis ulasan/komentar untuk performer ini..." style="width:100%; padding:10px; background:#2a2a2a; border:1px solid #444; color:white; border-radius:5px; margin-bottom:10px;"></textarea>
-            
-            <button onclick="submitPerfRating()" style="width:100%; background:#E50914; color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Kirim Penilaian</button>
-        </div>
+        
+<div class="modal-box">
+    <i class="fa-solid fa-xmark close-icon" onclick="closeModal('booking-modal')"></i>
+    
+    <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-logo">
+    
+    <h3 style="margin:0; text-align:center;">Form Booking</h3>
+    <p id="modal-warung-name" style="text-align:center; color:#FFD700; margin-bottom:15px; font-weight:bold;">-</p>
+    
+    <label style="color:#aaa; font-size:0.8rem;">Nama Pemesan</label>
+    <input type="text" id="book-name" class="input-request">
+
+    <label style="color:#aaa; font-size:0.8rem;">WhatsApp (Untuk Kode Tiket)</label>
+    <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
+
+    <!-- BAGIAN BARU: JAM DATANG -->
+    <label style="color:#aaa; font-size:0.8rem;">Rencana Jam Datang</label>
+    <input type="time" id="book-time" class="input-request" style="color-scheme: dark;">
+    
+    <!-- BAGIAN BARU: JUMLAH ORANG (AUTO HITUNG) -->
+    <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang (Dewasa/Anak)</label>
+    <input type="number" id="book-pax" class="input-request" placeholder="Total Orang" oninput="hitungMeja()">
+    
+    <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja (1 Meja = 4 Org)</label>
+    <input type="text" id="book-qty" class="input-request" readonly style="color:#E50914; font-weight:bold; background:#333;" value="0 Meja">
+
+    <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
+        <i class="fa-solid fa-triangle-exclamation"></i> <b>PENTING:</b><br>
+        Meja otomatis <b>HANGUS</b> jika belum Check-In 30 menit setelah Jam Datang.
     </div>
+
+    <div style="display:flex; gap:10px;">
+        <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal('booking-modal')">Batal</button>
+        <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="confirmBooking()">Booking</button>
+    </div>
+</div>
         
         
     <!-- MODAL REQUEST -->
@@ -347,142 +360,159 @@
 
     <!-- SCRIPT (Disatukan agar pasti jalan) -->
     <script>
-        const warungs = [
-            { id: 1, name: "Warung Bu Sri", total: 15, available: 10, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
-            { id: 2, name: "Kopi Pakde Jono", total: 10, available: 8, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
-            { id: 3, name: "Angkringan Mas Boy", total: 20, available: 2, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" },
-            { id: 4, name: "Sate Taichan Pro", total: 12, available: 0, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300" },
-            { id: 5, name: "Ropang Gaul", total: 15, available: 15, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300" }
+        import { db } from './firebase-config.js';
+    import { collection, onSnapshot, addDoc, query, orderBy, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // LOAD DATA WARUNG (REALTIME FIREBASE)
+    const container = document.getElementById('warung-grid-ss3');
+    
+    // Agar tidak error, kita gunakan fungsi global window.openBooking
+    window.openBooking = function(name, id) {
+        document.getElementById('modal-warung-name').innerText = name;
+        
+        // Set Default Jam ke Jam Sekarang
+        const now = new Date();
+        const timeString = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+        document.getElementById('book-time').value = timeString;
+
+        document.getElementById('booking-modal').style.display = 'flex';
+    }
+
+    // --- 1. RENDER WARUNG & AUTO SEEDING ---
+    const warungCol = collection(db, "warungs");
+    const q = query(warungCol);
+
+    onSnapshot(q, (snapshot) => {
+        // == LOGIKA SEEDING (ISI DATA OTOMATIS JIKA KOSONG) ==
+        if (snapshot.empty) {
+            console.log("Database Kosong, Mengisi Data Simulasi...");
+            seedWarungData();
+            return;
+        }
+
+        container.innerHTML = '';
+        snapshot.forEach(docSnap => {
+            const w = docSnap.data();
+            // Hitung ketersediaan (Logic sederhana: total - booked)
+            const available = w.totalTables - (w.bookedCount || 0);
+            const isFull = available <= 0;
+            
+            let btnHtml = isFull ? 
+                `<button class="btn-full-ss3">Penuh</button>` : 
+                `<button class="btn-book-ss3" onclick="openBooking('${w.name}', '${docSnap.id}')">Booking</button>`;
+
+            // Gunakan default image jika img tidak ada
+            const imgUrl = w.img || "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200";
+
+            container.innerHTML += `
+            <div class="warung-card">
+                <img src="${imgUrl}" class="warung-img">
+                <div class="warung-body">
+                    <span class="warung-name">${w.name}</span>
+                    <span class="warung-stats" style="color:${isFull ? 'red':'#00ff00'}">
+                        ${isFull ? '0' : available} / ${w.totalTables} Meja Tersedia
+                    </span>
+                    ${btnHtml}
+                </div>
+            </div>`;
+        });
+    });
+
+    // FUNGSI ISI DATA DUMMY (Hanya jalan sekali jika database kosong)
+    async function seedWarungData() {
+        // Kita pakai ID Khusus agar nanti gampang loginnya
+        const dummyWarungs = [
+            { id: "warung_bu_sri", name: "Warung Bu Sri", total: 15, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
+            { id: "kopi_pakde", name: "Kopi Pakde Jono", total: 10, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
+            { id: "angkringan_boy", name: "Angkringan Mas Boy", total: 20, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" },
+            { id: "sate_taichan", name: "Sate Taichan Pro", total: 12, img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=300" },
+            { id: "ropang_gaul", name: "Ropang Gaul", total: 15, img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300" }
         ];
 
-        // RENDER WARUNG
-        const container = document.getElementById('warung-grid-ss3');
-        if(container) {
-            warungs.forEach(w => {
-                const isFull = w.available === 0;
-                const statusColor = isFull ? 'red' : '#00ff00';
-                const statusText = isFull ? '0 / ' + w.total + ' Meja' : w.available + ' / ' + w.total + ' Meja';
-
-                let buttonHtml = isFull ? 
-                    `<button class="btn-full-ss3">Penuh</button>` : 
-                    `<button class="btn-book-ss3" onclick="openBooking(${w.id}, '${w.name}')">Booking</button>`;
-
-                container.innerHTML += `
-                <div class="warung-card">
-                    <img src="${w.img}" class="warung-img">
-                    <div class="warung-body">
-                        <span class="warung-name">${w.name}</span>
-                        <span class="warung-stats" style="color:${statusColor}">${statusText}</span>
-                        ${buttonHtml}
-                    </div>
-                </div>`;
+        for (const w of dummyWarungs) {
+            await setDoc(doc(db, "warungs", w.id), {
+                name: w.name,
+                totalTables: w.total,
+                bookedCount: 0,
+                status: "open",
+                img: w.img
             });
-        }
-
-        // FUNGSI BUKA MODAL RATING
-        function openRatePerformer(name) {
-            document.getElementById('rate-target-name').innerText = name;
-            // Reset bintang
-            rateStar('perf', 0); 
-            document.getElementById('rate-perf-modal').style.display = 'flex';
-        }
-
-        // FUNGSI KLIK BINTANG (WARNA GOLD)
-        function rateStar(type, n) {
-            // type 'perf' untuk performer, 'venue' untuk lokasi
-            let containerID = type === 'perf' ? 'perf-stars' : 'venue-stars';
-            const stars = document.querySelectorAll('#' + containerID + ' i');
-            
-            stars.forEach((s, index) => {
-                if (index < n) {
-                    s.style.color = '#FFD700'; // Emas
-                } else {
-                    s.style.color = '#444'; // Abu-abu
-                }
-            });
-        }
-
-        // FUNGSI KIRIM RATING
-        function submitPerfRating() {
-            const comment = document.getElementById('perf-comment').value;
-            alert("Terima kasih! Penilaian Anda untuk performer telah dikirim.");
-            closeModal('rate-perf-modal');
-        }
-
-        // FUNGSI TUTUP MODAL
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        // FUNGSI MODAL (WAJIB JALAN)
-        function openRequestModal() {
-            document.getElementById('request-modal').style.display = 'flex';
-        }
-
-        function sendRequest() {
-            alert("Request Terkirim! Admin akan memverifikasi.");
-            closeModal('request-modal');
-        }
-
-        function openBooking(id, name) {
-            document.getElementById('modal-warung-name').innerText = name;
-            const now = new Date();
-            document.getElementById('book-time').value = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0') + " WIB";
-            document.getElementById('booking-modal').style.display = 'flex';
-        }
-
-        function hitungMeja() {
-            let orang = parseInt(document.getElementById('book-pax').value) || 0;
-            let qty = orang > 0 ? Math.ceil(orang/4) : 0;
-            document.getElementById('book-qty').value = qty + " Meja";
-        }
-
-        function confirmBooking() {
-        const name = document.getElementById('book-name').value;
-        const wa = document.getElementById('book-wa').value;
-        const qty = parseInt(document.getElementById('book-qty').value);
-
-        if(!name || !wa || !qty) return alert("Lengkapi data!");
-
-        const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
-        closeModal('booking-modal');
-            
-            // 3. RESET FORM (Mengosongkan isian)
-            document.getElementById('book-name').value = '';
-            document.getElementById('book-wa').value = '';
-            document.getElementById('book-pax').value = '';
-            document.getElementById('book-qty').value = '0 Meja';
-
-            // 4. Tutup Modal
-            closeModal('booking-modal');
-            
-            // 5. Konfirmasi & Buka WA
-            // Menggunakan format link wa.me yang benar dengan kode negara
-            if(confirm(`Booking Berhasil!\nKode: ${kode}\n\nKirim tiket ke WhatsApp?`)) {
-            window.open(`https://wa.me/${wa}?text=Halo ${name}, Kode Booking Anda: ${kode}`, '_blank');
         }
     }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        // KIRIM REVIEW LOKASI (APPEND DI BAWAH)
-        window.submitVenueRating = function() {
-            const txt = document.getElementById('venue-comment').value;
-            if(!txt) return alert("Tulis ulasan dulu!");
-            
-            // Tambahkan ke list ulasan (Paling Atas)
-            const list = document.getElementById('venue-reviews-list');
-            const newReview = `
-                <div style="background:#222; padding:10px; border-radius:8px; margin-bottom:10px; border-left:3px solid var(--primary); animation:fadeIn 0.5s;">
-                    <b style="color:white;">Anda (Baru Saja)</b> <small style="color:gold;">★★★★★</small>
-                    <p style="margin:5px 0 0 0; font-size:0.9rem; color:#ccc;">"${txt}"</p>
-                </div>`;
-            
-            list.insertAdjacentHTML('afterbegin', newReview);
-            
-            document.getElementById('venue-comment').value = ''; // Reset
-            alert("Ulasan Terkirim!");
+    // --- 2. HITUNG MEJA (1 MEJA = 4 ORANG) ---
+    window.hitungMeja = function() {
+        let orang = parseInt(document.getElementById('book-pax').value) || 0;
+        if(orang < 1) {
+            document.getElementById('book-qty').value = "0 Meja";
+            return;
         }
+        // Rumus Ceiling: 4->1, 5->2, 8->2, 9->3
+        let qty = Math.ceil(orang / 4);
+        document.getElementById('book-qty').value = qty + " Meja";
+    }
+
+    // --- 3. KONFIRMASI BOOKING & WA ---
+    window.confirmBooking = async function() {
+        const name = document.getElementById('book-name').value;
+        const wa = document.getElementById('book-wa').value;
+        const time = document.getElementById('book-time').value; // Jam Datang
+        const pax = parseInt(document.getElementById('book-pax').value) || 0;
+        const qty = Math.ceil(pax / 4); 
+
+        if(!name || !wa || !time || pax < 1) return alert("Mohon lengkapi semua data!");
+
+        // HITUNG JAM HANGUS (Jam Datang + 30 Menit)
+        let [hours, minutes] = time.split(':').map(Number);
+        let dateObj = new Date();
+        dateObj.setHours(hours);
+        dateObj.setMinutes(minutes + 30); 
+        
+        let expHours = String(dateObj.getHours()).padStart(2, '0');
+        let expMinutes = String(dateObj.getMinutes()).padStart(2, '0');
+        let expTime = `${expHours}:${expMinutes}`;
+
+        const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+        const warungName = document.getElementById('modal-warung-name').innerText;
+
+        // Simpan ke Firebase (Booking Waiting)
+        await addDoc(collection(db, "bookings"), {
+            warungName: warungName,
+            customerName: name,
+            customerWA: wa,
+            pax: pax,
+            tablesNeeded: qty,
+            arrivalTime: time,
+            expiredTime: expTime, // Data ini penting untuk sistem Anti-PHP
+            bookingCode: kode,
+            status: 'booked', // Status awal
+            timestamp: new Date()
+        });
+
+        closeModal('booking-modal');
+
+        // KIRIM PESAN WA
+        const pesan = `Halo ${name},
+        
+Booking Berhasil di *${warungName}*
+---------------------------
+Kode Tiket: *${kode}*
+Jumlah: ${pax} Orang (${qty} Meja)
+Rencana Datang: Pukul ${time}
+
+⚠️ *PENTING:*
+Pesanan Anda berlaku hingga *Pukul ${expTime}*.
+Mohon scan QR Meja sebelum jam tersebut agar tidak hangus.
+
+Terima kasih.`;
+
+        if(confirm(`Booking Sukses!\nKode: ${kode}\n\nKirim tiket ke WhatsApp sekarang?`)) {
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
+        }
+    }
+
+    window.openRequestModal = function() { document.getElementById('request-modal').style.display = 'flex'; }
+    window.closeModal = function(id) { document.getElementById(id).style.display = 'none'; }
     </script>
 </body>
 </html>
