@@ -290,7 +290,6 @@
 
         // --- FUNGSI BINTANG ---
         window.rateStar = function(type, n) {
-            // type: 'venue' atau 'perf'
             const containerID = type === 'venue' ? 'venue-stars' : 'perf-stars';
             if(type === 'venue') currentVenueRating = n;
             else currentPerfRating = n;
@@ -340,7 +339,6 @@
                 totalBintang += r.rating;
                 count++;
                 
-                // Buat string bintang
                 let starStr = "";
                 for(let i=0; i<5; i++) {
                     starStr += i < r.rating ? "★" : "☆";
@@ -356,7 +354,6 @@
                 </div>`;
             });
 
-            // Update Rata-rata
             if(count > 0) {
                 let avg = (totalBintang / count).toFixed(1);
                 document.getElementById('avg-score').innerText = avg + " / 5.0";
@@ -391,7 +388,7 @@
             closeModal('rate-perf-modal');
         }
 
-        // --- RENDER WARUNG ---
+        // --- RENDER WARUNG & AUTO SEEDING ---
         const container = document.getElementById('warung-grid-ss3');
         db.collection("warungs").onSnapshot((snapshot) => {
             if (snapshot.empty) { seedWarungData(); return; }
@@ -421,17 +418,16 @@
         });
 
         async function seedWarungData() {
-            const dummyWarungs = [
-                { id: "warung_bu_sri", name: "Warung Bu Sri", total: 15, img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" },
-                { id: "kopi_pakde", name: "Kopi Pakde Jono", total: 10, img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" },
-                { id: "angkringan_boy", name: "Angkringan Mas Boy", total: 20, img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=300" }
-            ];
-            const batch = db.batch();
-            dummyWarungs.forEach(w => {
-                const docRef = db.collection("warungs").doc(w.id);
-                batch.set(docRef, { name: w.name, totalTables: w.total, bookedCount: 0, status: "open", img: w.img });
+            // Gunakan ID 'warung_smipro' agar cocok dengan mitra-script.js
+            await db.collection("warungs").doc("warung_smipro").set({
+                name: "Warung SMIPRO.ID",
+                totalTables: 15,
+                bookedCount: 0,
+                status: "open",
+                img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300"
             });
-            await batch.commit();
+            // Tambah dummy lain
+            await db.collection("warungs").doc("kopi_pakde").set({ name: "Kopi Pakde", totalTables: 10, bookedCount: 0, status: "open", img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=300" });
         }
 
         // --- KONFIRMASI BOOKING ---
@@ -460,27 +456,29 @@
 
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
             const warungName = document.getElementById('modal-warung-name').innerText;
+            
+            // SIMULASI NOMOR MEJA (Random 1-15 untuk pesan WA & Database)
+            const mejaAcak = Math.floor(Math.random() * 15) + 1;
 
             await db.collection("bookings").add({
                 warungName: warungName, customerName: name, customerWA: wa,
                 pax: pax, tablesNeeded: qty, arrivalTime: time, expiredTime: expTime,
-                bookingCode: kode, status: 'booked', timestamp: new Date()
+                bookingCode: kode, status: 'booked', timestamp: new Date(),
+                tableNum: mejaAcak // SIMPAN NOMOR MEJA
             });
 
             closeModal('booking-modal');
-
-            // FIX NO 2: RESET FORM SETELAH SUKSES
             document.getElementById('book-name').value = '';
             document.getElementById('book-wa').value = '';
             document.getElementById('book-pax').value = '';
             document.getElementById('book-qty').value = '0 Meja';
 
-            const pesan = `Halo ${name},\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\nRencana Datang: Pukul ${time}\n\n⚠️ *PENTING:*\nPesanan Anda berlaku hingga *Pukul ${expTime}*.\nMohon scan QR Meja sebelum jam tersebut agar tidak hangus.\n\nTerima kasih.`;
-
-            if(confirm(`Booking Sukses!\nKode: ${kode}\n\nKirim tiket ke WhatsApp sekarang?`)) {
+            const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\n\n📍 *REKOMENDASI MEJA: No. ${mejaAcak}*\n(Segera menuju meja ini)\n\n⚠️ *PENTING:* Hangus jika lewat Pukul ${expTime}`;
+            
+            if(confirm(`Booking Sukses!\nKode: ${kode}\nMeja No: ${mejaAcak}\n\nKirim tiket ke WA?`)) {
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
         }
-    </script>
+    </script>    
 </body>
 </html>
