@@ -4,6 +4,46 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* =========================================
+   0. LOGIKA NAVIGASI (SIDEBAR & TABS) - PERBAIKAN
+   ========================================= */
+
+// Fungsi Ganti Halaman (Sidebar)
+window.showView = function(viewId, btn) {
+    // 1. Sembunyikan semua view
+    document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+    
+    // 2. Tampilkan view yang dipilih
+    const target = document.getElementById('view-' + viewId);
+    if(target) {
+        target.classList.remove('hidden');
+    } else {
+        console.error("View tidak ditemukan: " + viewId);
+    }
+    
+    // 3. Atur tombol aktif di sidebar
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+}
+
+// Fungsi Ganti Tab CMS (Jadwal/Radio/Berita)
+window.switchCmsTab = function(tabId, btn) {
+    document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// Fungsi Logout
+window.adminLogout = function() {
+    if(confirm("Keluar dari Panel Admin?")) {
+        localStorage.removeItem('userLoggedIn');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userName');
+        window.location.href = 'index.html';
+    }
+}
+
+/* =========================================
    1. INIT & OVERVIEW STATS
    ========================================= */
 async function loadStats() {
@@ -11,8 +51,7 @@ async function loadStats() {
     const mitraSnap = await getDocs(collection(db, "warungs"));
     document.getElementById('count-mitra').innerText = mitraSnap.size;
 
-    // Hitung Performer (Simulasi jika ada koleksi performers)
-    // Untuk demo, kita set statis atau ambil dari dummy nanti
+    // Hitung Performer (Dummy)
     document.getElementById('count-perf').innerText = "5"; 
 
     // Hitung Total Saweran (Pending + Approved)
@@ -29,14 +68,12 @@ async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
     const q = query(collection(db, "warungs"));
     
-    // Realtime Listener agar kalau ada Mitra daftar, admin langsung tahu
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
             
-            // Cek jika meja > 15 tapi belum diverifikasi (Simulasi logic)
             let statusBadge = `<span style="color:#00ff00;">Verified</span>`;
             let actionBtn = '';
 
@@ -45,7 +82,6 @@ async function loadMitraData() {
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
 
-            // Tombol Login Sebagai (Impersonate)
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             
             tbody.innerHTML += `
@@ -64,21 +100,17 @@ async function loadMitraData() {
     });
 }
 
-// FUNGSI SAKTI: LOGIN SEBAGAI MITRA (REVISI)
+// FUNGSI SAKTI: LOGIN SEBAGAI MITRA (FIXED)
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name} sebagai Admin?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userName', name + " (Mode Admin)");
-        
-        // REVISI: Tambahkan ini agar tidak Error 404 di Index
-        localStorage.setItem('userLink', 'mitra-dashboard.html'); 
-        
-        window.location.href = 'mitra-dashboard.html';
+        localStorage.setItem('userLink', 'mitra-dashboard.html'); // Link penting agar tidak 404
+        window.open('mitra-dashboard.html', '_blank');
     }
 }
 
-// APPROVE MEJA > 15
 window.approveTable = async function(id) {
     if(confirm("Setujui permintaan penambahan meja?")) {
         await updateDoc(doc(db, "warungs", id), { adminApproved: true });
@@ -93,7 +125,6 @@ window.deleteMitra = async function(id) {
 /* =========================================
    3. MANAJEMEN PERFORMER
    ========================================= */
-// Kita buat data dummy performer di table untuk demo
 window.loadPerformerDemo = function() {
     const tbody = document.getElementById('perf-table-body');
     const performers = [
@@ -120,19 +151,17 @@ window.loadPerformerDemo = function() {
     });
 }
 
-// FUNGSI SAKTI: LOGIN SEBAGAI PERFORMER (REVISI)
+// FUNGSI SAKTI: LOGIN SEBAGAI PERFORMER (FIXED)
 window.loginAsPerf = function(name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'performer');
         localStorage.setItem('userName', name + " (Admin)");
-        
-        // REVISI: Tambahkan ini agar tidak Error 404
-        localStorage.setItem('userLink', 'performer-dashboard.html');
-        
-        window.location.href = 'performer-dashboard.html';
+        localStorage.setItem('userLink', 'performer-dashboard.html'); // Link penting
+        window.open('performer-dashboard.html', '_blank');
     }
 }
+
 /* =========================================
    4. CMS: UPDATE JADWAL & BERITA
    ========================================= */
@@ -140,19 +169,15 @@ window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const location = document.getElementById('sched-location').value;
 
-    // Ambil data 3 artis dari form
     let performers = [];
-    
-    // Artis 1
     if(document.getElementById('p1-name').value) {
         performers.push({
             name: document.getElementById('p1-name').value,
             time: document.getElementById('p1-time').value,
             genre: document.getElementById('p1-genre').value,
-            img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" // Default img
+            img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100"
         });
     }
-    // Artis 2
     if(document.getElementById('p2-name').value) {
         performers.push({
             name: document.getElementById('p2-name').value,
@@ -161,7 +186,6 @@ window.saveSchedule = async function() {
             img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100"
         });
     }
-    // Artis 3
     if(document.getElementById('p3-name').value) {
         performers.push({
             name: document.getElementById('p3-name').value,
@@ -173,28 +197,18 @@ window.saveSchedule = async function() {
 
     if(!displayDate) return alert("Tanggal wajib diisi!");
 
-    // STRATEGI: Cari event 'main' yang lama, update isinya. Kalau gak ada, buat baru.
     const q = query(collection(db, "events"), where("type", "==", "main"));
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
-        // Update yang ada
         const docId = snapshot.docs[0].id;
-        await updateDoc(doc(db, "events", docId), {
-            displayDate: displayDate,
-            location: location,
-            performers: performers
-        });
+        await updateDoc(doc(db, "events", docId), { displayDate, location, performers });
         alert("Jadwal Berhasil Diupdate!");
     } else {
-        // Buat baru
         await addDoc(collection(db, "events"), {
             type: "main",
-            date: new Date().toISOString().split('T')[0], // Tgl hari ini
-            displayDate: displayDate,
-            location: location,
-            statusText: "ON SCHEDULE",
-            performers: performers
+            date: new Date().toISOString().split('T')[0],
+            displayDate, location, statusText: "ON SCHEDULE", performers
         });
         alert("Jadwal Baru Dibuat!");
     }
@@ -207,31 +221,32 @@ window.saveNews = async function() {
     if(!title) return alert("Judul berita kosong!");
 
     await addDoc(collection(db, "news"), {
-        title: title,
-        tag: tag || "INFO",
-        date: "Baru saja",
+        title: title, tag: tag || "INFO", date: "Baru saja",
         thumb: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=100"
     });
-    alert("Berita diterbitkan ke Halaman Depan!");
+    alert("Berita diterbitkan!");
 }
 
 /* =========================================
    5. KEUANGAN & LIVE MONITOR (INTEGRATED)
    ========================================= */
-let allHistoryData = []; // Simpan data lokal untuk filtering
+let allHistoryData = []; 
 
 function listenFinance() {
     const liveList = document.getElementById('live-req-list');
     const historyList = document.getElementById('history-req-list');
     const totalLabel = document.getElementById('total-revenue-live');
+    const topPerfList = document.getElementById('top-perf-list');
+    const topSongList = document.getElementById('top-song-list');
 
-    // Ambil data request diurutkan waktu terbaru
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
         liveList.innerHTML = '';
-        allHistoryData = []; // Reset data lokal
+        allHistoryData = []; 
         let totalDuit = 0;
+        let perfStats = {};
+        let songStats = {};
 
         if(snapshot.empty) {
             liveList.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
@@ -243,17 +258,26 @@ function listenFinance() {
             const data = docSnap.data();
             const id = docSnap.id;
 
-            // HITUNG TOTAL PENDAPATAN (Hanya yang status approved/done)
+            // HITUNG STATISTIK (Hanya yang Approved)
             if(data.status === 'approved' || data.status === 'done') {
                 totalDuit += parseInt(data.amount || 0);
+                
+                // Hitung Performer
+                let pName = data.performer || "Unknown";
+                if(!perfStats[pName]) perfStats[pName] = 0;
+                perfStats[pName]++;
+
+                // Hitung Lagu
+                let sTitle = data.song || "Unknown";
+                sTitle = sTitle.trim().toLowerCase(); 
+                if(!songStats[sTitle]) songStats[sTitle] = 0;
+                songStats[sTitle]++;
             }
 
-            // --- PISAHKAN TAMPILAN ---
-            
-            // 1. JIKA STATUS PENDING (Masuk Kolom KIRI)
+            // PISAHKAN PENDING vs RIWAYAT
             if (data.status === 'pending') {
                 liveList.innerHTML += `
-                <div style="background:#332b00; padding:10px; border-radius:5px; border-left:4px solid #FFD700; animation:slideIn 0.3s;">
+                <div style="background:#332b00; padding:10px; border-radius:5px; border-left:4px solid #FFD700; margin-bottom:10px;">
                     <div style="display:flex; justify-content:space-between;">
                         <b style="color:white;">${data.song}</b>
                         <span style="background:#FFD700; color:black; padding:2px 5px; border-radius:3px; font-weight:bold;">Rp ${parseInt(data.amount).toLocaleString()}</span>
@@ -262,54 +286,59 @@ function listenFinance() {
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <small style="color:#aaa;">Utk: ${data.performer}</small>
                         <div>
-                            <button onclick="deleteReq('${id}')" style="background:#333; color:red; border:1px solid #555; cursor:pointer; padding:5px;"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteReq('${id}')" style="background:#333; color:red; border:1px solid #555; cursor:pointer; padding:5px; margin-right:5px;"><i class="fa-solid fa-trash"></i></button>
                             <button onclick="verifyPayment('${id}')" style="background:var(--green); color:black; border:none; padding:5px 10px; border-radius:3px; font-weight:bold; cursor:pointer;">TERIMA</button>
                         </div>
                     </div>
                 </div>`;
-            } 
-            
-            // 2. JIKA STATUS APPROVED/DONE (Masuk Array Data utk Kolom KANAN)
-            else {
-                // Simpan ke array dulu biar bisa difilter
+            } else {
                 allHistoryData.push({ id, ...data });
             }
         });
 
-        // Update Label Total
         if(totalLabel) totalLabel.innerText = "Rp " + totalDuit.toLocaleString('id-ID');
-
-        // Render Riwayat Awal (Mode All)
-        filterHistory();
+        
+        filterHistory(); // Refresh riwayat
+        
+        // Render Statistik jika elemennya ada (di View Keuangan)
+        if(topPerfList) renderStats(perfStats, topPerfList);
+        if(topSongList) renderStats(songStats, topSongList);
     });
 }
 
-// LOGIKA FILTER RIWAYAT
-window.filterHistory = function() {
-    const filter = document.getElementById('history-filter').value; // all, today, week, month
-    const historyList = document.getElementById('history-req-list');
-    historyList.innerHTML = '';
+// Fungsi Helper Statistik
+function renderStats(statsObj, container) {
+    const sorted = Object.entries(statsObj).sort(([,a], [,b]) => b - a).slice(0, 5);
+    container.innerHTML = '';
+    if(sorted.length === 0) container.innerHTML = '<li>Belum ada data.</li>';
+    sorted.forEach(([key, val]) => {
+        const displayKey = key.replace(/\b\w/g, l => l.toUpperCase());
+        container.innerHTML += `<li style="margin-bottom:5px;"><b>${displayKey}</b> <span style="color:#888;">(${val})</span></li>`;
+    });
+}
 
+// Filter Riwayat
+window.filterHistory = function() {
+    const filter = document.getElementById('history-filter') ? document.getElementById('history-filter').value : 'all';
+    const historyList = document.getElementById('history-req-list');
+    
+    // Pastikan elemen ada (karena mungkin sedang di tab lain)
+    if(!historyList) return;
+
+    historyList.innerHTML = '';
     const now = new Date();
     
-    // Filter Data
     const filtered = allHistoryData.filter(item => {
-        if (!item.timestamp) return true; // Kalau gak ada tanggal, tampilkan aja
+        if (!item.timestamp) return true;
         const itemDate = item.timestamp.toDate ? item.timestamp.toDate() : new Date(item.timestamp);
-        
         if (filter === 'all') return true;
-        if (filter === 'today') {
-            return itemDate.toDateString() === now.toDateString();
-        }
-        if (filter === 'month') {
-            return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
-        }
+        if (filter === 'today') return itemDate.toDateString() === now.toDateString();
+        if (filter === 'month') return itemDate.getMonth() === now.getMonth();
         return true;
     });
 
-    // Render Hasil Filter
     if(filtered.length === 0) {
-        historyList.innerHTML = '<p style="color:#555; text-align:center;">Tidak ada data pada periode ini.</p>';
+        historyList.innerHTML = '<p style="color:#555; text-align:center;">Tidak ada data.</p>';
         return;
     }
 
@@ -329,13 +358,13 @@ window.filterHistory = function() {
     });
 }
 
-window.deleteReq = async function(id) {
-    if(confirm("Hapus / Tolak request ini?")) {
-        await deleteDoc(doc(db, "requests", id));
-    }
+window.verifyPayment = async function(id) {
+    if(confirm("Dana sudah masuk ke rekening Admin?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
 }
 
-// Pastikan import deleteDoc ditambahkan di paling atas file admin-script.js jika belum ada
+window.deleteReq = async function(id) {
+    if(confirm("Hapus request ini?")) await deleteDoc(doc(db, "requests", id));
+}
 
 // JALANKAN SAAT LOAD
 loadStats();
