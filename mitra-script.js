@@ -1,7 +1,7 @@
 // --- IMPORT FIREBASE ---
 import { db } from './firebase-config.js';
 import { 
-    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc 
+    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, increment 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const WARUNG_ID = "warung_smipro"; 
@@ -10,14 +10,13 @@ const WARUNG_ID = "warung_smipro";
 let currentMenuImageBase64 = null; 
 let warungTotalCapacity = 15; 
 let currentWarungName = ""; 
-let unsubscribeBooking = null; // Untuk menghandle listener booking agar dinamis
+let unsubscribeBooking = null; 
 
 // --- FUNGSI UTAMA: INIT ---
 async function initDatabase() {
     const docRef = doc(db, "warungs", WARUNG_ID);
     const docSnap = await getDoc(docRef);
     
-    // Jika data belum ada, buat default
     if (!docSnap.exists()) {
         await setDoc(docRef, { 
             name: "Warung SMIPRO.ID", status: "open", totalTables: 15, bookedCount: 0,
@@ -31,34 +30,29 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
         
-        // Simpan Data Penting ke Global
         warungTotalCapacity = data.totalTables || 15; 
         const oldName = currentWarungName;
-        currentWarungName = data.name; // Update nama sesuai DB
+        currentWarungName = data.name; 
 
-        // === KEMBALIKAN SESI LOGIN (AGAR TOMBOL HOME AMAN) ===
+        // Set Sesi (Hati-hati ini bisa bentrok dengan Admin, tapi biarkan dulu sesuai request)
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userName', data.name);
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userLink', 'mitra-dashboard.html');
 
-        // Update UI Profil
         document.getElementById('shop-name-display').innerText = data.name;
         
-        // Update Foto
         if(data.img) {
             document.getElementById('header-profile-img').src = data.img;
             document.getElementById('preview-profile-img').src = data.img;
         }
 
-        // Isi Form Edit Profil
         document.getElementById('edit-name').value = data.name || '';
         document.getElementById('edit-owner').value = data.owner || '';
         document.getElementById('edit-phone').value = data.phone || '';
         document.getElementById('edit-email').value = data.email || '';
         document.getElementById('edit-pass').value = data.password || '';
 
-        // Status Buka/Tutup
         const btn = document.getElementById('store-status-btn');
         const txt = document.getElementById('store-status-text');
         if (data.status === 'open') {
@@ -67,39 +61,30 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
             btn.classList.remove('open'); btn.classList.add('closed'); txt.innerText = "TUTUP";
         }
 
-        // === LOGIKA DINAMIS: JIKA NAMA WARUNG BERUBAH, RESET LISTENER BOOKING ===
         if (oldName !== currentWarungName) {
             setupBookingListener(currentWarungName);
         }
     }
 });
 
-// --- 2. SETUP LISTENER BOOKING (DIPERBAIKI) ---
+// --- 2. SETUP LISTENER BOOKING (VERSI FIX DATE) ---
 function setupBookingListener(targetName) {
-    // Matikan listener lama jika ada
-    if (unsubscribeBooking) {
-        unsubscribeBooking();
-    }
+    if (unsubscribeBooking) { unsubscribeBooking(); }
 
-    // Listener baru berdasarkan Nama Warung yang aktif
     const qBooking = query(collection(db, "bookings"), where("warungName", "==", targetName));
 
     unsubscribeBooking = onSnapshot(qBooking, (snapshot) => {
         const bookings = [];
-        let countActiveTables = 0; // Sedang Makan
-        let countBookedTables = 0; // Reservasi
+        let countActiveTables = 0; 
+        let countBookedTables = 0; 
         
-        // Ambil Waktu Sekarang
         const now = new Date();
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
             
-            // --- LOGIKA BARU: CEK EXPIRED (AUTO CANCEL) ---
+            // CEK EXPIRED (Format Baru: YYYY-MM-DDTHH:MM)
             let isExpired = false;
-            
-            // Cek jika status 'booked' dan waktu sekarang melewati expiredTime
-            // Format d.expiredTime sekarang adalah "YYYY-MM-DDTHH:MM"
             if (d.status === 'booked' && d.expiredTime) {
                 const expiredDate = new Date(d.expiredTime);
                 if (now > expiredDate) {
@@ -107,13 +92,11 @@ function setupBookingListener(targetName) {
                 }
             }
 
-            // Jika Expired, Hapus dari Database & Jangan Tampilkan
             if (isExpired) {
                 deleteDoc(docSnap.ref); 
-                return; // Skip item ini
+                return; 
             }
 
-            // Jika Aman, Masukkan ke List
             bookings.push({ id: docSnap.id, ...d });
             
             const qtyMeja = parseInt(d.tablesNeeded) || 1;
@@ -125,19 +108,15 @@ function setupBookingListener(targetName) {
             }
         });
         
-        // === UPDATE UI DASHBOARD ===
-        
-        // 1. Hitung Sisa Meja
+        // UPDATE UI
         const totalUsed = countActiveTables + countBookedTables;
         const sisaMeja = warungTotalCapacity - totalUsed;
         
-        // 2. Update Angka Besar (Sisa Meja)
         const totalEl = document.getElementById('total-table-count');
         if(totalEl) {
             totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
             totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
             
-            // 3. Update Label Kecil (FIX: Menampilkan Total Kapasitas)
             if(totalEl.parentElement) {
                 const smallLabel = totalEl.parentElement.querySelector('small');
                 if(smallLabel) {
@@ -146,19 +125,14 @@ function setupBookingListener(targetName) {
             }
         }
 
-        // 4. Update Kotak Lain
         document.getElementById('occupied-count').innerText = countActiveTables;
         document.getElementById('booked-count').innerText = countBookedTables;
 
-        // 5. Render Kartu
         renderBookings(bookings);
-        
-        // 6. SYNC KE DATABASE WARUNG
         updateWarungTableCount(totalUsed);
     });
 }
 
-// Fungsi Sync Stok ke Dokumen Warung
 async function updateWarungTableCount(totalUsed) {
     try {
         const warungRef = doc(db, "warungs", WARUNG_ID);
@@ -185,7 +159,7 @@ onSnapshot(qMenu, (snapshot) => {
     });
 });
 
-// --- RENDER BOOKING CARDS (DIPERBAIKI) ---
+// --- RENDER BOOKING CARDS ---
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
@@ -201,21 +175,14 @@ function renderBookings(bookings) {
         let cardHtml = '';
         const qty = b.tablesNeeded || 1;
         
-        // Tampilan Meja
         let displayMeja = "Belum Assign";
         if(b.tableNum) {
-            if(Array.isArray(b.tableNum)) {
-                displayMeja = "MEJA " + b.tableNum.join(", ");
-            } else {
-                displayMeja = "MEJA " + b.tableNum;
-            }
+            displayMeja = Array.isArray(b.tableNum) ? "MEJA " + b.tableNum.join(", ") : "MEJA " + b.tableNum;
         } else {
              displayMeja = `${qty} MEJA (Pending)`;
         }
 
-        // Format Tampilan Tanggal & Jam
         let displayDate = b.bookingDate || "Hari Ini";
-        // Ambil Jam dari expiredTime (ambil HH:MM dari YYYY-MM-DDTHH:MM)
         let displayExpired = b.expiredTime && b.expiredTime.includes('T') ? b.expiredTime.split('T')[1] : (b.expiredTime || "-");
 
         if (b.status === 'booked') {
@@ -226,14 +193,11 @@ function renderBookings(bookings) {
                     <span style="background:#333; color:gold; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
                 </div>
                 <b style="font-size:1.1rem; display:block; margin:5px 0;">${b.customerName}</b>
-                
                 <small><i class="fa-solid fa-calendar"></i> Tgl: <b>${displayDate}</b></small><br>
                 <small><i class="fa-solid fa-clock"></i> Rencana: ${b.arrivalTime}</small><br>
                 <small><i class="fa-solid fa-hourglass-half"></i> Hangus Pukul: <b style="color:#ff4444;">${displayExpired}</b></small><br>
                 <small>Kode: <b style="color:white; letter-spacing:1px;">${b.bookingCode}</b></small>
-                
                 <div class="waiting-text">Menunggu Tamu Check-In...</div>
-                
                 <div style="display:flex; gap:5px; margin-top:10px;">
                     <button class="btn-delete" onclick="finishBooking('${b.id}')" style="width:100%;">Batalkan</button>
                 </div>
@@ -272,7 +236,7 @@ function compressImage(file, maxWidth, callback) {
     };
 }
 
-// Upload & CRUD
+// EXPORT FUNGSI KE WINDOW (Supaya bisa di-klik di HTML)
 window.previewImage = function(input) {
     if (input.files && input.files[0]) {
         compressImage(input.files[0], 300, async (base64) => {
@@ -337,7 +301,6 @@ window.switchTab = function(tabId) {
     if(tabId === 'qr') renderQRCodes();
 }
 
-// === FIX QR CODE OTOMATIS IKUT DOMAIN ===
 window.downloadQR = async function(url, i) {
     try {
         const res = await fetch(url);
@@ -352,17 +315,12 @@ window.downloadQR = async function(url, i) {
 window.renderQRCodes = function() {
     const container = document.getElementById('qr-container');
     container.innerHTML = '';
-    
-    // DETEKSI URL OTOMATIS
     const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
-    
     for (let i = 1; i <= warungTotalCapacity; i++) {
-        // Link yang benar: https://domain-anda.com/checkin.html?w=ID&t=1
         const qrData = `${baseUrl}/checkin.html?w=${WARUNG_ID}&t=${i}`;
         const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
         container.innerHTML += `<div class="qr-card"><h4>MEJA ${i}</h4><img src="${qrSrc}"><br><button class="btn-download-qr" onclick="downloadQR('${qrSrc}', ${i})">Download</button></div>`;
     }
 }
 
-// Start
 initDatabase();
