@@ -209,6 +209,9 @@
             
             <label style="color:#aaa; font-size:0.8rem;">WhatsApp</label>
             <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
+
+            <label style="color:#aaa; font-size:0.8rem;">Tanggal Booking</label>
+            <input type="date" id="book-date" class="input-request" style="color-scheme: dark;">  
             
             <label style="color:#aaa; font-size:0.8rem;">Rencana Jam Datang</label>
             <input type="time" id="book-time" class="input-request" style="color-scheme: dark;">
@@ -333,17 +336,22 @@
         window.confirmBooking = async function() {
             const name = document.getElementById('book-name').value;
             let wa = document.getElementById('book-wa').value;
+            // --- GANTI DENGAN INI ---
+            const dateVal = document.getElementById('book-date').value; // Ambil Tanggal
             const time = document.getElementById('book-time').value; 
             const pax = parseInt(document.getElementById('book-pax').value) || 0;
             const qty = Math.ceil(pax / 4); 
 
-            if(!name || !wa || !time || pax < 1) return alert("Mohon lengkapi semua data!");
+            // Validasi ditambah cek (!dateVal)
+            if(!name || !wa || !time || !dateVal || pax < 1) return alert("Mohon lengkapi data (termasuk Tanggal)!");
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-            let [hours, minutes] = time.split(':').map(Number);
-            let dateObj = new Date();
-            dateObj.setHours(hours); dateObj.setMinutes(minutes + 30); 
-            let expTime = `${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+            // LOGIKA BARU: CUT-OFF JAM 17:30
+            const cutoffTime = "17:30"; 
+            // Gabung Tanggal + Jam Cutoff (Format: 2026-01-10T17:30)
+            // Ini biar nanti sistem bisa hapus otomatis pas jam segitu
+            const fullExpiredTime = `${dateVal}T${cutoffTime}`;
+            // --- AKHIR KODE BARU ---
 
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
             const warungName = document.getElementById('modal-warung-name').innerText;
@@ -355,7 +363,14 @@
             await db.collection("bookings").add({
                 warungName: warungName, 
                 customerName: name, customerWA: wa,
-                pax: pax, tablesNeeded: qty, arrivalTime: time, expiredTime: expTime,
+                pax: pax, tablesNeeded: qty, 
+                
+                // --- BAGIAN INI DIUBAH/DITAMBAH ---
+                bookingDate: dateVal,         // Tambah simpan tanggal
+                arrivalTime: time,            // Jam rencana datang
+                expiredTime: fullExpiredTime, // GANTI jadi fullExpiredTime
+                // ----------------------------------
+
                 bookingCode: kode, status: 'booked', timestamp: new Date(),
                 tableNum: mejaAcak
             });
@@ -377,7 +392,7 @@
             document.getElementById('book-pax').value = '';
             document.getElementById('book-qty').value = '0 Meja';
 
-            const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\n\n📍 *ANDA MENDAPATKAN MEJA: No. ${mejaAcak}*\n(Segera menuju meja ini)\n\n⚠️ *PENTING:* Hangus jika lewat Pukul ${expTime}\nMohon scan QR Meja saat tiba.`;
+             const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nTanggal: ${dateVal}\nJumlah: ${pax} Orang (${qty} Meja)\n\n📍 *ANDA MENDAPATKAN MEJA: No. ${mejaAcak}*\n(Datang Pukul ${time})\n\n⚠️ *PENTING:* Harap Check-In/Datang sebelum Pukul *17:30 WIB*.\nLewat dari jam tersebut, meja otomatis dilepas ke pengunjung lain.`;
             
             if(confirm(`Booking Sukses!\nMeja Anda: ${mejaAcak}\n\nKirim tiket ke WA?`)) {
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
