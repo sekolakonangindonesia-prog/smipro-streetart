@@ -282,22 +282,42 @@
             }
         }
     
-        // Cek apakah user ini sebenarnya Admin?
-        const checkName = localStorage.getItem('userName');
-        if(checkName && (checkName.includes('Mode Admin') || checkName.includes('(Admin)'))) {
-            document.getElementById('admin-floating-btn').style.display = 'block';
-        }
+       // --- SCRIPT KHUSUS LOGIKA ADMIN (GANTI BAGIAN INI DI BAWAH) ---
 
-        function backToAdmin() {
-            if(confirm("Kembali ke Control Tower Admin?")) {
-                // Kembalikan sesi ke Admin
-                localStorage.setItem('userLoggedIn', 'true');
-                localStorage.setItem('userRole', 'admin');
-                localStorage.setItem('userName', 'Super Admin');
-                localStorage.setItem('userLink', 'admin-dashboard.html'); // Penting
-                window.location.href = 'admin-dashboard.html';
-            }
+    // Cek apakah user ini adalah Admin yang sedang menyamar?
+    if (localStorage.getItem('adminOrigin') === 'true') {
+        
+        // 1. Tampilkan Tombol Floating "KEMBALI KE ADMIN"
+        const floatBtn = document.getElementById('admin-floating-btn');
+        if(floatBtn) floatBtn.style.display = 'block';
+
+        // 2. PERBAIKAN TOMBOL HOME (Agar balik jadi Admin saat klik Home)
+        const homeBtn = document.getElementById('nav-home-btn');
+        if (homeBtn) {
+            // Matikan fungsi bawaan HTML (onclick="location.href...")
+            homeBtn.removeAttribute("onclick");
+            
+            // Pasang fungsi baru khusus Admin
+            homeBtn.addEventListener('click', function() {
+                if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
+                    // KEMBALIKAN IDENTITAS ADMIN
+                    localStorage.setItem('userRole', 'admin');
+                    localStorage.setItem('userName', 'Super Admin');
+                    localStorage.setItem('userLink', 'admin-dashboard.html'); 
+                    
+                    // Pindah ke Index
+                    window.location.href = 'index.html';
+                }
+            });
         }
-    </script>
-</body>
-</html>
+    }
+
+    // Fungsi untuk Tombol Floating (Balik ke Dashboard Admin)
+    function backToAdmin() {
+        if(confirm("Kembali ke Control Tower Admin?")) {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('userName', 'Super Admin');
+            localStorage.setItem('userLink', 'admin-dashboard.html');
+            window.location.href = 'admin-dashboard.html';
+        }
+    }
