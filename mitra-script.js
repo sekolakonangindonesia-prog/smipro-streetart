@@ -105,18 +105,27 @@ function setupBookingListener(targetName) {
         const currentMinutes = String(now.getMinutes()).padStart(2, '0');
         const currentTimeStr = `${currentHours}:${currentMinutes}`;
 
-        snapshot.forEach((docSnap) => {
-            const d = docSnap.data();
-            bookings.push({ id: docSnap.id, ...d });
-            
-            const qtyMeja = parseInt(d.tablesNeeded) || 1;
+       // Di dalam setupBookingListener...
 
-            // CEK EXPIRED (Hapus booking basi real-time)
-            // Jika status booked DAN jam sekarang > jam expired
-            if (d.status === 'booked' && d.expiredTime && currentTimeStr > d.expiredTime) {
-                deleteDoc(docSnap.ref); 
-                return; // Jangan dihitung, lanjut ke item berikutnya
-            }
+    snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+    
+        // Ambil Waktu Sekarang Lengkap (Tgl + Jam)
+        const now = new Date();
+        // Format ISO lokal sederhana: "YYYY-MM-DDTHH:MM"
+        // (Tips: Gunakan library atau format manual agar akurat sesuai zona waktu WIB)
+    
+        // Cara Manual membandingkan waktu sekarang vs expiredTime database
+        const expiredDateObj = new Date(d.expiredTime); // d.expiredTime formatnya "2026-01-10T17:30"
+    
+        if (d.status === 'booked' && now > expiredDateObj) {
+            // JIKA WAKTU SEKARANG MELEWATI BATAS CUT-OFF
+            deleteDoc(docSnap.ref); // Hapus booking
+        
+            // Opsional: Update stok meja kembali (biasanya otomatis jika listener menghitung ulang)
+            return; 
+        }    
+    // ... sisa kode hitung statistik ...
 
             // HITUNG STATISTIK
             if(d.status === 'active') {
