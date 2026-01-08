@@ -332,72 +332,106 @@
             window.location.href = 'warung-profile.html?id=' + id;
         }
 
-        // --- CONFIRM BOOKING (DENGAN UPDATE STOK) ---
-        window.confirmBooking = async function() {
-            const name = document.getElementById('book-name').value;
-            let wa = document.getElementById('book-wa').value;
-            // --- GANTI DENGAN INI ---
-            const dateVal = document.getElementById('book-date').value; // Ambil Tanggal
-            const time = document.getElementById('book-time').value; 
-            const pax = parseInt(document.getElementById('book-pax').value) || 0;
-            const qty = Math.ceil(pax / 4); 
+       // --- GANTI FUNGSI confirmBooking DENGAN INI ---
+window.confirmBooking = async function() {
+    const name = document.getElementById('book-name').value;
+    let wa = document.getElementById('book-wa').value;
+    
+    // Ambil Input Tanggal & Jam
+    const dateVal = document.getElementById('book-date').value; 
+    const time = document.getElementById('book-time').value; 
+    
+    // Hitung Kebutuhan Meja
+    const pax = parseInt(document.getElementById('book-pax').value) || 0;
+    const qty = Math.ceil(pax / 4); 
 
-            // Validasi ditambah cek (!dateVal)
-            if(!name || !wa || !time || !dateVal || pax < 1) return alert("Mohon lengkapi data (termasuk Tanggal)!");
-            if (wa.startsWith('0')) wa = '62' + wa.slice(1);
+    // Validasi
+    if(!name || !wa || !time || !dateVal || pax < 1) return alert("Mohon lengkapi semua data!");
+    if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-            // LOGIKA BARU: CUT-OFF JAM 17:30
-            const cutoffTime = "17:30"; 
-            // Gabung Tanggal + Jam Cutoff (Format: 2026-01-10T17:30)
-            // Ini biar nanti sistem bisa hapus otomatis pas jam segitu
-            const fullExpiredTime = `${dateVal}T${cutoffTime}`;
-            // --- AKHIR KODE BARU ---
+    // Hitung Expired (Cut-off 17:30)
+    const fullExpiredTime = `${dateVal}T17:30`;
+    
+    const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+    const warungName = document.getElementById('modal-warung-name').innerText;
+    
+    // === LOGIKA BARU: CARI MULTIPLE MEJA KOSONG ===
+    
+    // 1. Cek Meja mana saja yang SEDANG TERPAKAI di Warung ini
+    const snapshot = await db.collection("bookings")
+        .where("warungName", "==", warungName)
+        .where("status", "in", ["active", "booked"])
+        .get();
 
-            const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
-            const warungName = document.getElementById('modal-warung-name').innerText;
-            
-            // SIMULASI NOMOR MEJA (Random 1-15)
-            const mejaAcak = Math.floor(Math.random() * 15) + 1;
-
-            // 1. SIMPAN BOOKING
-            await db.collection("bookings").add({
-                warungName: warungName, 
-                customerName: name, customerWA: wa,
-                pax: pax, tablesNeeded: qty, 
-                
-                // --- BAGIAN INI DIUBAH/DITAMBAH ---
-                bookingDate: dateVal,         // Tambah simpan tanggal
-                arrivalTime: time,            // Jam rencana datang
-                expiredTime: fullExpiredTime, // GANTI jadi fullExpiredTime
-                // ----------------------------------
-
-                bookingCode: kode, status: 'booked', timestamp: new Date(),
-                tableNum: mejaAcak
-            });
-
-            // 2. UPDATE STOK MEJA DI WARUNG (PENTING!)
-            if (selectedWarungId) {
-                const warungRef = db.collection("warungs").doc(selectedWarungId);
-                // Gunakan Increment atomic dari Firebase agar aman
-                await warungRef.update({
-                    bookedCount: firebase.firestore.FieldValue.increment(qty)
-                });
-            }
-
-            closeModal('booking-modal');
-            
-            // Reset Form
-            document.getElementById('book-name').value = '';
-            document.getElementById('book-wa').value = '';
-            document.getElementById('book-pax').value = '';
-            document.getElementById('book-qty').value = '0 Meja';
-
-             const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nTanggal: ${dateVal}\nJumlah: ${pax} Orang (${qty} Meja)\n\n📍 *ANDA MENDAPATKAN MEJA: No. ${mejaAcak}*\n(Datang Pukul ${time})\n\n⚠️ *PENTING:* Harap Check-In/Datang sebelum Pukul *17:30 WIB*.\nLewat dari jam tersebut, meja otomatis dilepas ke pengunjung lain.`;
-            
-            if(confirm(`Booking Sukses!\nMeja Anda: ${mejaAcak}\n\nKirim tiket ke WA?`)) {
-                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
-            }
+    let usedTables = [];
+    snapshot.forEach(doc => {
+        const d = doc.data();
+        // Handle jika data lama cuma angka, data baru array
+        if(Array.isArray(d.tableNum)) {
+            usedTables.push(...d.tableNum); // Gabung array
+        } else {
+            usedTables.push(d.tableNum);
         }
+    });
+
+    // 2. Cari Meja Kosong (Looping 1 s/d 15)
+    let assignedTables = []; // Ini untuk menyimpan meja yang didapat (misal: [8, 9])
+    
+    for(let i = 1; i <= 15; i++) {
+        // Jika meja "i" tidak ada di daftar terpakai, ambil!
+        if(!usedTables.includes(i)) {
+            assignedTables.push(i);
+            
+            // Jika jumlah meja yang didapat sudah sesuai kebutuhan (qty), BERHENTI
+            if(assignedTables.length === qty) break;
+        }
+    }
+
+    // 3. Cek apakah meja cukup?
+    if(assignedTables.length < qty) {
+        return alert(`Mohon maaf, meja tidak cukup. Hanya tersisa ${assignedTables.length} meja kosong.`);
+    }
+
+    // 4. Format Text untuk WA (Contoh: "8 & 9")
+    const mejaString = assignedTables.join(" & ");
+
+    // === SIMPAN KE DATABASE ===
+    await db.collection("bookings").add({
+        warungName: warungName, 
+        customerName: name, customerWA: wa,
+        pax: pax, tablesNeeded: qty, 
+        bookingDate: dateVal,
+        arrivalTime: time, 
+        expiredTime: fullExpiredTime,
+        bookingCode: kode, status: 'booked', timestamp: new Date(),
+        
+        // PENTING: Simpan sebagai Array agar Check-in bisa scan salah satu
+        tableNum: assignedTables 
+    });
+
+    // Update Stok Meja di Dokumen Warung
+    if (selectedWarungId) {
+        const warungRef = db.collection("warungs").doc(selectedWarungId);
+        await warungRef.update({
+            bookedCount: firebase.firestore.FieldValue.increment(qty)
+        });
+    }
+
+    closeModal('booking-modal');
+    
+    // Reset Form
+    document.getElementById('book-name').value = '';
+    document.getElementById('book-wa').value = '';
+    document.getElementById('book-pax').value = '';
+    document.getElementById('book-qty').value = '0 Meja';
+
+    // === KIRIM WA (FORMAT BARU DENGAN 2 NOMOR MEJA) ===
+    const pesan = `Halo ${name},\n\nBooking Berhasil di *${warungName}*\nKode Tiket: *${kode}*\nTanggal: ${dateVal}\nJumlah: ${pax} Orang (${qty} Meja)\n\n✅ *ANDA MENDAPATKAN MEJA: No. ${mejaString}*\n(Datang Pukul ${time})\n\n*INFO:* Anda bisa scan QR di meja no ${assignedTables[0]} atau ${assignedTables[1] || ''} untuk check-in.\n\n⚠️ *PENTING:* Harap Check-In sebelum Pukul *17:30 WIB*.\nLewat dari jam tersebut, meja otomatis dilepas ke pengunjung lain.`;
+    
+    if(confirm(`Booking Sukses!\nMeja Anda: ${mejaString}\n\nKirim tiket ke WA?`)) {
+        window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
+    }
+}
 
         // --- REQUEST SAWER ---
         window.sendRequest = async function() {
