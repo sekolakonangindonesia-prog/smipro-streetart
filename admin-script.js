@@ -59,16 +59,22 @@ async function loadMitraData() {
     });
 }
 
+// --- UPDATE 1: Login Mitra (Menyimpan jejak 'mitra') ---
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userName', name + " (Mode Admin)");
         localStorage.setItem('userLink', 'mitra-dashboard.html');
-        localStorage.setItem('adminOrigin', 'true'); // Flag Admin
-        window.location.href = 'mitra-dashboard.html'; // TAB SAMA
+        localStorage.setItem('adminOrigin', 'true'); 
+        
+        // CATAT JEJAK: Admin berangkat dari tab 'mitra'
+        localStorage.setItem('adminReturnTab', 'mitra'); 
+        
+        window.location.href = 'mitra-dashboard.html';
     }
 }
+
 window.approveTable = async function(id) { if(confirm("Setujui?")) await updateDoc(doc(db, "warungs", id), { adminApproved: true }); }
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
@@ -107,14 +113,19 @@ window.seedPerformer = async function() {
     alert("Performer Dibuat! Silakan klik 'Masuk'.");
 }
 
+// --- UPDATE 2: Login Performer (Menyimpan jejak 'performer') ---
 window.loginAsPerf = function(id, name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'performer');
         localStorage.setItem('userName', name + " (Admin)");
         localStorage.setItem('userLink', 'performer-dashboard.html');
-        localStorage.setItem('adminOrigin', 'true'); // Flag Admin
-        window.location.href = 'performer-dashboard.html'; // TAB SAMA
+        localStorage.setItem('adminOrigin', 'true');
+        
+        // CATAT JEJAK: Admin berangkat dari tab 'performer'
+        localStorage.setItem('adminReturnTab', 'performer');
+        
+        window.location.href = 'performer-dashboard.html';
     }
 }
 window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "performers", id)); }
@@ -185,8 +196,12 @@ window.loginAsMentor = function(id, name) {
         localStorage.setItem('userName', name);
         localStorage.setItem('userLink', 'mentor-dashboard.html'); 
         localStorage.setItem('mentorId', id);
-        localStorage.setItem('adminOrigin', 'true'); // Flag Admin
-        window.location.href = 'mentor-dashboard.html'; // TAB SAMA
+        localStorage.setItem('adminOrigin', 'true');
+        
+        // CATAT JEJAK: Admin berangkat dari tab 'mentor'
+        localStorage.setItem('adminReturnTab', 'mentor');
+        
+        window.location.href = 'mentor-dashboard.html';
     }
 }
 window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "mentors", id)); }
