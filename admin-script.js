@@ -11,7 +11,7 @@ window.showView = function(viewId, btn) {
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + viewId);
     if(target) target.classList.remove('hidden');
-    if(viewId === 'cms') renderRadioForm();
+    // if(viewId === 'cms') renderRadioForm(); // Opsional jika belum ada fungsinya
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
@@ -51,7 +51,8 @@ async function loadMitraData() {
                 statusBadge = `<span style="color:orange;">Butuh Approval</span>`;
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
-            // PERBAIKAN: window.location.href (Tab Sama)
+            
+            // TOMBOL MASUK DENGAN KLASIFIKASI TAB 'mitra'
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             
             tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.owner||'-'}</td><td>${data.totalTables}</td><td>${statusBadge}</td><td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
@@ -59,7 +60,7 @@ async function loadMitraData() {
     });
 }
 
-// --- UPDATE 1: Login Mitra (Menyimpan jejak 'mitra') ---
+// --- UPDATE: Login Mitra (Catat Jejak 'mitra') ---
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -68,7 +69,7 @@ window.loginAsMitra = function(id, name) {
         localStorage.setItem('userLink', 'mitra-dashboard.html');
         localStorage.setItem('adminOrigin', 'true'); 
         
-        // CATAT JEJAK: Admin berangkat dari tab 'mitra'
+        // CATAT JEJAK TAB
         localStorage.setItem('adminReturnTab', 'mitra'); 
         
         window.location.href = 'mitra-dashboard.html';
@@ -94,9 +95,11 @@ async function loadPerformerData() {
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-            // PERBAIKAN: window.location.href (Tab Sama)
+            
+            // TOMBOL MASUK DENGAN KLASIFIKASI TAB 'performer'
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
+            
             tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td><span style="color:#00ff00;">Verified</span></td><td>${btnLogin} ${btnDel}</td></tr>`;
         });
     });
@@ -113,7 +116,7 @@ window.seedPerformer = async function() {
     alert("Performer Dibuat! Silakan klik 'Masuk'.");
 }
 
-// --- UPDATE 2: Login Performer (Menyimpan jejak 'performer') ---
+// --- UPDATE: Login Performer (Catat Jejak 'performer') ---
 window.loginAsPerf = function(id, name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -122,7 +125,7 @@ window.loginAsPerf = function(id, name) {
         localStorage.setItem('userLink', 'performer-dashboard.html');
         localStorage.setItem('adminOrigin', 'true');
         
-        // CATAT JEJAK: Admin berangkat dari tab 'performer'
+        // CATAT JEJAK TAB
         localStorage.setItem('adminReturnTab', 'performer');
         
         window.location.href = 'performer-dashboard.html';
@@ -141,15 +144,18 @@ async function loadMentorData() {
         if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Klik Generate.</td></tr>'; return; }
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
+            
+            // TOMBOL MASUK DENGAN KLASIFIKASI TAB 'mentor'
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsMentor('${docSnap.id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteMentor('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            
             tbody.innerHTML += `<tr><td>${data.name}</td><td>${data.specialist}</td><td>Aktif</td><td>${btnLogin} ${btnDel}</td></tr>`;
         });
     });
 }
-// --- GANTI FUNGSI seedMentors DENGAN INI ---
+
+// --- FUNGSI SEED MENTOR YANG SUDAH BENAR ---
 window.seedMentors = async function() {
-    // Data Dummy 3 Mentor
     const mentorsData = [
         {
             name: "Bpk. Andigo",
@@ -176,19 +182,18 @@ window.seedMentors = async function() {
 
     if(confirm("Generate 3 Data Mentor Dummy ke Database?")) {
         try {
-            // Loop untuk memasukkan satu per satu
             for (const m of mentorsData) {
                 await addDoc(collection(db, "mentors"), m);
             }
             alert("Sukses! 3 Mentor telah ditambahkan.");
-            // Refresh tabel otomatis (memanggil fungsi load yang sudah ada)
             loadMentorData(); 
         } catch (e) {
-            console.error(e);
             alert("Gagal menambahkan data: " + e.message);
         }
     }
 }
+
+// --- UPDATE: Login Mentor (Catat Jejak 'mentor') ---
 window.loginAsMentor = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -198,7 +203,7 @@ window.loginAsMentor = function(id, name) {
         localStorage.setItem('mentorId', id);
         localStorage.setItem('adminOrigin', 'true');
         
-        // CATAT JEJAK: Admin berangkat dari tab 'mentor'
+        // CATAT JEJAK TAB
         localStorage.setItem('adminReturnTab', 'mentor');
         
         window.location.href = 'mentor-dashboard.html';
@@ -210,3 +215,32 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
 loadMitraData();
 loadPerformerData();
 loadMentorData();
+
+/* =========================================
+   4. FITUR TAMBAHAN: AUTO-RETURN TAB
+   (Letakkan di paling bawah)
+   ========================================= */
+setTimeout(() => {
+    // 1. Cek apakah ada catatan tab terakhir?
+    const lastTab = localStorage.getItem('adminReturnTab');
+
+    if (lastTab) {
+        console.log("Mencoba kembali ke tab:", lastTab);
+
+        // 2. Cari semua tombol menu di sidebar
+        const allMenus = document.querySelectorAll('.menu-item');
+        
+        // 3. Loop cari tombol yang cocok dengan kata kunci
+        allMenus.forEach(btn => {
+            const clickAttr = btn.getAttribute('onclick');
+            // Jika onclick mengandung kata kunci (misal 'mitra', 'performer', 'mentor')
+            if (clickAttr && clickAttr.includes(lastTab)) {
+                // KLIK TOMBOLNYA SECARA OTOMATIS
+                btn.click();
+            }
+        });
+
+        // 4. Hapus catatan
+        localStorage.removeItem('adminReturnTab');
+    }
+}, 500); // Jeda 0.5 detik
