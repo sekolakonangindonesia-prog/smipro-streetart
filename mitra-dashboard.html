@@ -86,7 +86,7 @@
         <img src="" class="mitra-profile-pic" id="header-profile-img" onclick="triggerUpload()" onerror="this.src='https://via.placeholder.com/150'">
         
         <div style="position:absolute; top:20px; right:20px; display:flex; gap:10px; z-index:20;">
-            <button onclick="goHome()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;">
+            <button id="btn-home-nav" onclick="goHome()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;">
                 <i class="fa-solid fa-house"></i> Home
             </button>
             <button onclick="prosesLogout()" style="background:rgba(229, 9, 20, 0.8); color:white; border:none; padding:5px 12px; border-radius:5px; cursor:pointer;">
@@ -214,24 +214,34 @@
         </button>
     </div>
 
-    <!-- SCRIPT KHUSUS LOGIKA ADMIN -->
+   <!-- SCRIPT KHUSUS LOGIKA ADMIN (TIMPA SCRIPT LAMA DI PALING BAWAH) -->
     <script>
         // Cek apakah user ini adalah Admin yang sedang menyamar?
         if (localStorage.getItem('adminOrigin') === 'true') {
             
             // 1. Tampilkan Tombol Floating "Kembali ke Admin"
-            document.getElementById('admin-floating-btn').style.display = 'block';
+            const floatBtn = document.getElementById('admin-floating-btn');
+            if(floatBtn) floatBtn.style.display = 'block';
 
-            // 2. UBAH PERILAKU TOMBOL HOME (Agar balik jadi Admin saat klik Home)
-            // Kita timpa fungsi goHome() yang ada di mitra-script.js
-            window.goHome = function() {
-                if(confirm("Kembali ke Halaman Depan sebagai SUPER ADMIN?")) {
-                    // Restore sesi Admin
-                    localStorage.setItem('userRole', 'admin');
-                    localStorage.setItem('userName', 'Super Admin');
-                    // Redirect
-                    window.location.href = 'index.html';
-                }
+            // 2. PERBAIKAN TOMBOL HOME (Agar balik jadi Admin saat klik Home)
+            const homeBtn = document.getElementById('btn-home-nav');
+            if (homeBtn) {
+                // Matikan fungsi goHome() bawaan mitra
+                homeBtn.removeAttribute("onclick");
+                
+                // Pasang fungsi baru khusus Admin
+                homeBtn.addEventListener('click', function() {
+                    if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
+                        // KEMBALIKAN IDENTITAS ADMIN
+                        localStorage.setItem('userRole', 'admin');
+                        localStorage.setItem('userName', 'Super Admin');
+                        // Hapus jejak penyamaran (Opsional, tapi sebaiknya jangan dihapus biar konsisten)
+                        // localStorage.removeItem('adminOrigin'); 
+                        
+                        // Pindah ke Index
+                        window.location.href = 'index.html';
+                    }
+                });
             }
         }
 
