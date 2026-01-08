@@ -24,16 +24,6 @@ async function initDatabase() {
             owner: "Admin Simulasi", phone: "08123456789", email: "admin@smipro.id"
         });
     }
-
-    // Jalankan Auto Cancel sekali di awal, lalu looping tiap menit
-    checkAutoCancel();
-    setInterval(checkAutoCancel, 60000); 
-}
-
-// --- FUNGSI AUTO CANCEL (PEMBERSIH DATA BASI) ---
-async function checkAutoCancel() {
-    // Logika penghapusan ada di dalam listener booking di bawah agar realtime
-    // Fungsi ini dipanggil hanya untuk memicu interval
 }
 
 // --- 1. LISTENER DATA WARUNG (UTAMA) ---
@@ -42,7 +32,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         const data = docSnap.data();
         
         // Simpan Data Penting ke Global
-        warungTotalCapacity = data.totalTables; 
+        warungTotalCapacity = data.totalTables || 15; 
         const oldName = currentWarungName;
         currentWarungName = data.name; // Update nama sesuai DB
 
@@ -84,9 +74,9 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     }
 });
 
-// --- 2. SETUP LISTENER BOOKING (DIPISAH AGAR DINAMIS) ---
+// --- 2. SETUP LISTENER BOOKING (DIPERBAIKI) ---
 function setupBookingListener(targetName) {
-    // Matikan listener lama jika ada (biar gak double)
+    // Matikan listener lama jika ada
     if (unsubscribeBooking) {
         unsubscribeBooking();
     }
@@ -99,35 +89,35 @@ function setupBookingListener(targetName) {
         let countActiveTables = 0; // Sedang Makan
         let countBookedTables = 0; // Reservasi
         
+        // Ambil Waktu Sekarang
         const now = new Date();
-        // Format jam menit saat ini (HH:MM)
-        const currentHours = String(now.getHours()).padStart(2, '0');
-        const currentMinutes = String(now.getMinutes()).padStart(2, '0');
-        const currentTimeStr = `${currentHours}:${currentMinutes}`;
 
-       // Di dalam setupBookingListener...
+        snapshot.forEach((docSnap) => {
+            const d = docSnap.data();
+            
+            // --- LOGIKA BARU: CEK EXPIRED (AUTO CANCEL) ---
+            let isExpired = false;
+            
+            // Cek jika status 'booked' dan waktu sekarang melewati expiredTime
+            // Format d.expiredTime sekarang adalah "YYYY-MM-DDTHH:MM"
+            if (d.status === 'booked' && d.expiredTime) {
+                const expiredDate = new Date(d.expiredTime);
+                if (now > expiredDate) {
+                    isExpired = true;
+                }
+            }
 
-    snapshot.forEach((docSnap) => {
-        const d = docSnap.data();
-    
-        // Ambil Waktu Sekarang Lengkap (Tgl + Jam)
-        const now = new Date();
-        // Format ISO lokal sederhana: "YYYY-MM-DDTHH:MM"
-        // (Tips: Gunakan library atau format manual agar akurat sesuai zona waktu WIB)
-    
-        // Cara Manual membandingkan waktu sekarang vs expiredTime database
-        const expiredDateObj = new Date(d.expiredTime); // d.expiredTime formatnya "2026-01-10T17:30"
-    
-        if (d.status === 'booked' && now > expiredDateObj) {
-            // JIKA WAKTU SEKARANG MELEWATI BATAS CUT-OFF
-            deleteDoc(docSnap.ref); // Hapus booking
-        
-            // Opsional: Update stok meja kembali (biasanya otomatis jika listener menghitung ulang)
-            return; 
-        }    
-    // ... sisa kode hitung statistik ...
+            // Jika Expired, Hapus dari Database & Jangan Tampilkan
+            if (isExpired) {
+                deleteDoc(docSnap.ref); 
+                return; // Skip item ini
+            }
 
-            // HITUNG STATISTIK
+            // Jika Aman, Masukkan ke List
+            bookings.push({ id: docSnap.id, ...d });
+            
+            const qtyMeja = parseInt(d.tablesNeeded) || 1;
+
             if(d.status === 'active') {
                 countActiveTables += qtyMeja;
             } else if (d.status === 'booked') {
@@ -143,14 +133,16 @@ function setupBookingListener(targetName) {
         
         // 2. Update Angka Besar (Sisa Meja)
         const totalEl = document.getElementById('total-table-count');
-        totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
-        totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
-
-        // 3. Update Label Kecil
-        if(totalEl.parentElement) {
-            const smallLabel = totalEl.parentElement.querySelector('small');
-            if(smallLabel) {
-                smallLabel.innerHTML = `Tersedia <span style="color:#aaa;">(dari Total ${warungTotalCapacity})</span>`;
+        if(totalEl) {
+            totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
+            totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
+            
+            // 3. Update Label Kecil (FIX: Menampilkan Total Kapasitas)
+            if(totalEl.parentElement) {
+                const smallLabel = totalEl.parentElement.querySelector('small');
+                if(smallLabel) {
+                    smallLabel.innerHTML = `Tersedia <span style="color:#aaa;">(dari Total ${warungTotalCapacity})</span>`;
+                }
             }
         }
 
@@ -193,7 +185,7 @@ onSnapshot(qMenu, (snapshot) => {
     });
 });
 
-// --- RENDER BOOKING CARDS ---
+// --- RENDER BOOKING CARDS (DIPERBAIKI) ---
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
@@ -209,17 +201,22 @@ function renderBookings(bookings) {
         let cardHtml = '';
         const qty = b.tablesNeeded || 1;
         
-        // Format Tampilan Meja di Kartu
+        // Tampilan Meja
         let displayMeja = "Belum Assign";
         if(b.tableNum) {
             if(Array.isArray(b.tableNum)) {
-                displayMeja = "MEJA " + b.tableNum.join(" & ");
+                displayMeja = "MEJA " + b.tableNum.join(", ");
             } else {
                 displayMeja = "MEJA " + b.tableNum;
             }
         } else {
              displayMeja = `${qty} MEJA (Pending)`;
         }
+
+        // Format Tampilan Tanggal & Jam
+        let displayDate = b.bookingDate || "Hari Ini";
+        // Ambil Jam dari expiredTime (ambil HH:MM dari YYYY-MM-DDTHH:MM)
+        let displayExpired = b.expiredTime && b.expiredTime.includes('T') ? b.expiredTime.split('T')[1] : (b.expiredTime || "-");
 
         if (b.status === 'booked') {
             cardHtml = `
@@ -229,8 +226,10 @@ function renderBookings(bookings) {
                     <span style="background:#333; color:gold; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
                 </div>
                 <b style="font-size:1.1rem; display:block; margin:5px 0;">${b.customerName}</b>
-                <small><i class="fa-solid fa-clock"></i> Datang: <b>${b.arrivalTime}</b></small><br>
-                <small><i class="fa-solid fa-hourglass-half"></i> Hangus: <b style="color:#ff4444;">${b.expiredTime}</b></small><br>
+                
+                <small><i class="fa-solid fa-calendar"></i> Tgl: <b>${displayDate}</b></small><br>
+                <small><i class="fa-solid fa-clock"></i> Rencana: ${b.arrivalTime}</small><br>
+                <small><i class="fa-solid fa-hourglass-half"></i> Hangus Pukul: <b style="color:#ff4444;">${displayExpired}</b></small><br>
                 <small>Kode: <b style="color:white; letter-spacing:1px;">${b.bookingCode}</b></small>
                 
                 <div class="waiting-text">Menunggu Tamu Check-In...</div>
