@@ -153,5 +153,46 @@
     </div>
 
     <script src="mentor-script.js"></script>
+    <!-- === TOMBOL KHUSUS ADMIN (MODAL SUPER USER) === -->
+    <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
+        <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
+        </button>
+    </div>
+
+    <!-- SCRIPT KHUSUS LOGIKA ADMIN -->
+    <script>
+        // Cek apakah user ini adalah Admin yang sedang menyamar?
+        if (localStorage.getItem('adminOrigin') === 'true') {
+            
+            // 1. Tampilkan Tombol Floating
+            document.getElementById('admin-floating-btn').style.display = 'block';
+
+            // 2. UBAH PERILAKU TOMBOL HOME (Manual override karena di HTML pakai onclick langsung)
+            // Kita cari tombol home berdasarkan ikonnya (fa-house) lalu ganti onclick-nya
+            const allButtons = document.getElementsByTagName('button');
+            for (let btn of allButtons) {
+                if (btn.innerHTML.includes('fa-house') || btn.innerText.includes('Home')) {
+                    btn.onclick = function() {
+                        if(confirm("Kembali ke Halaman Depan sebagai SUPER ADMIN?")) {
+                            localStorage.setItem('userRole', 'admin');
+                            localStorage.setItem('userName', 'Super Admin');
+                            window.location.href = 'index.html';
+                        }
+                    };
+                }
+            }
+        }
+
+        // Fungsi Balik ke Dashboard Admin
+        function backToAdminDashboard() {
+            if(confirm("Kembali ke Control Tower Admin?")) {
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('userName', 'Super Admin');
+                localStorage.setItem('userLink', 'admin-dashboard.html');
+                window.location.href = 'admin-dashboard.html';
+            }
+        }
+    </script>
 </body>
 </html>
