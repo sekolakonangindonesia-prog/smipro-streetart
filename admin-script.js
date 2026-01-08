@@ -136,7 +136,48 @@ async function loadMentorData() {
         });
     });
 }
-window.seedMentors = async function() { /* Kode sama seperti sebelumnya (Andik, Ervan, Anton) */ }
+// --- GANTI FUNGSI seedMentors DENGAN INI ---
+window.seedMentors = async function() {
+    // Data Dummy 3 Mentor
+    const mentorsData = [
+        {
+            name: "Bpk. Andigo",
+            specialist: "Musik Management",
+            img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200",
+            portfolio: ["Manajer Band Indie 2010-2020", "Promotor Festival Jazz Jatim"],
+            profession: ["Dosen Musik", "Event Organizer"]
+        },
+        {
+            name: "Ibu Putri",
+            specialist: "Stage Act & Koreo",
+            img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200",
+            portfolio: ["Koreografer Tari Nasional", "Mentor Idol 2019"],
+            profession: ["Penari Profesional", "Guru Seni"]
+        },
+        {
+            name: "Bpk. Ervan",
+            specialist: "Visual Management",
+            img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200",
+            portfolio: ["Stage Designer Konser Amal", "Fotografer Event"],
+            profession: ["Desainer Grafis", "Art Director"]
+        }
+    ];
+
+    if(confirm("Generate 3 Data Mentor Dummy ke Database?")) {
+        try {
+            // Loop untuk memasukkan satu per satu
+            for (const m of mentorsData) {
+                await addDoc(collection(db, "mentors"), m);
+            }
+            alert("Sukses! 3 Mentor telah ditambahkan.");
+            // Refresh tabel otomatis (memanggil fungsi load yang sudah ada)
+            loadMentorData(); 
+        } catch (e) {
+            console.error(e);
+            alert("Gagal menambahkan data: " + e.message);
+        }
+    }
+}
 window.loginAsMentor = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
