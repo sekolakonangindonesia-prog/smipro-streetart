@@ -220,19 +220,56 @@
         </button>
     </div>
 
-    <script>
-         // --- SCRIPT PINTAR (CEK SIAPA YANG LIHAT) ---
+   <script>
+        // --- 1. LOGIKA SAAT HALAMAN DIMUAT (MENTOR & ADMIN CHECK) ---
         window.onload = function() {
-            const role = localStorage.getItem('userRole'); // Cek Role
-            const navBtn = document.getElementById('nav-home-btn'); // Kasih ID dulu di tombol Home
+            const role = localStorage.getItem('userRole'); 
+            const navBtn = document.getElementById('nav-home-btn'); 
 
+            // A. JIKA YANG LIHAT ADALAH MENTOR
             if(role === 'mentor') {
-                // JIKA MENTOR YANG LIHAT: Ubah tombol Home jadi Back
                 navBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Kembali ke Mentor';
-                navBtn.onclick = function() { window.location.href = 'mentor-dashboard.html'; };
+                // Paksa ganti fungsi onclick
+                navBtn.onclick = function(e) { 
+                    e.preventDefault();
+                    window.location.href = 'mentor-dashboard.html'; 
+                };
+            }
+
+            // B. JIKA YANG LIHAT ADALAH ADMIN (IMPERSONATE)
+            if (localStorage.getItem('adminOrigin') === 'true') {
+                
+                // 1. Tampilkan Tombol Floating di Kanan Bawah
+                document.getElementById('admin-floating-btn').style.display = 'block';
+
+                // 2. BAJAK TOMBOL HOME (Teknik Cloning agar bersih)
+                // Kita beri jeda dikit biar aman
+                setTimeout(() => {
+                    const oldBtn = document.getElementById('nav-home-btn');
+                    if (oldBtn) {
+                        const newBtn = oldBtn.cloneNode(true);
+                        
+                        // Ubah Teks biar Admin sadar
+                        newBtn.innerHTML = '<i class="fa-solid fa-house"></i> Home (Super Admin)';
+                        
+                        newBtn.onclick = function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
+                                localStorage.setItem('userRole', 'admin');
+                                localStorage.setItem('userName', 'Super Admin');
+                                localStorage.setItem('userLink', 'admin-dashboard.html'); 
+                                window.location.href = 'index.html';
+                            }
+                        };
+                        // Pasang tombol baru
+                        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+                    }
+                }, 500);
             }
         };
         
+        // --- 2. FUNGSI NAVIGASI TAB ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -240,28 +277,29 @@
             event.currentTarget.classList.add('active');
         }
 
+        // --- 3. FUNGSI DOKUMEN ---
         function openModalDoc(title) {
             document.getElementById('doc-title').innerText = "Preview: " + title;
             document.getElementById('modal-doc').style.display = 'flex';
         }
 
-        // --- FUNGSI DOWNLOAD SIMULASI ---
         function downloadFile(filename) {
-            // Ini akan memaksa browser mendownload file teks dummy
             const text = "Ini adalah simulasi isi dokumen legal untuk " + filename + ".\n\nHak Cipta SMIPRO 2025.";
             const blob = new Blob([text], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = filename; // Nama file saat didownload
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             alert("File " + filename + " berhasil diunduh ke HP Anda!");
         }
 
+        // --- 4. FUNGSI UPLOAD & LOGOUT ---
         function triggerUpload() { document.getElementById('file-input').click(); }
+        
         function previewImage(input) {
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
@@ -278,46 +316,19 @@
                 localStorage.removeItem('userLoggedIn');
                 localStorage.removeItem('userName');
                 localStorage.removeItem('userLink');
+                // Hapus juga adminOrigin biar bersih
+                localStorage.removeItem('adminOrigin');
                 window.location.href = 'index.html';
             }
         }
-    
-       // --- SCRIPT KHUSUS LOGIKA ADMIN (GANTI BAGIAN INI DI BAWAH) ---
 
-    // Cek apakah user ini adalah Admin yang sedang menyamar?
-    if (localStorage.getItem('adminOrigin') === 'true') {
-        
-        // 1. Tampilkan Tombol Floating "KEMBALI KE ADMIN"
-        const floatBtn = document.getElementById('admin-floating-btn');
-        if(floatBtn) floatBtn.style.display = 'block';
-
-        // 2. PERBAIKAN TOMBOL HOME (Agar balik jadi Admin saat klik Home)
-        const homeBtn = document.getElementById('nav-home-btn');
-        if (homeBtn) {
-            // Matikan fungsi bawaan HTML (onclick="location.href...")
-            homeBtn.removeAttribute("onclick");
-            
-            // Pasang fungsi baru khusus Admin
-            homeBtn.addEventListener('click', function() {
-                if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
-                    // KEMBALIKAN IDENTITAS ADMIN
-                    localStorage.setItem('userRole', 'admin');
-                    localStorage.setItem('userName', 'Super Admin');
-                    localStorage.setItem('userLink', 'admin-dashboard.html'); 
-                    
-                    // Pindah ke Index
-                    window.location.href = 'index.html';
-                }
-            });
+        // --- 5. FUNGSI TOMBOL FLOATING (FIX NAMA FUNGSI) ---
+        function backToAdminDashboard() {
+            if(confirm("Kembali ke Control Tower Admin?")) {
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('userName', 'Super Admin');
+                localStorage.setItem('userLink', 'admin-dashboard.html');
+                window.location.href = 'admin-dashboard.html';
+            }
         }
-    }
-
-    // Fungsi untuk Tombol Floating (Balik ke Dashboard Admin)
-    function backToAdmin() {
-        if(confirm("Kembali ke Control Tower Admin?")) {
-            localStorage.setItem('userRole', 'admin');
-            localStorage.setItem('userName', 'Super Admin');
-            localStorage.setItem('userLink', 'admin-dashboard.html');
-            window.location.href = 'admin-dashboard.html';
-        }
-    }
+    </script>
