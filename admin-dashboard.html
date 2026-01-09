@@ -592,7 +592,7 @@
                 </div>
             </div>
             
-    <!-- SCRIPT LOGIKA -->
+  <!-- SCRIPT LOGIKA -->
     <script type="module" src="admin-script.js"></script>
 
     <!-- Script Navigasi Sederhana (UI Only) -->
@@ -603,16 +603,13 @@
             window.location.href = 'admin-login.html';
         }
 
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-         function goToHomeAsAdmin() {
-            // Pastikan status tetap Admin
-            localStorage.setItem('userRole', 'admin');
-            localStorage.setItem('userName', 'Super Admin');
-            window.location.href = 'index.html';
+        // Tampilkan Tanggal Hari Ini
+        const dateEl = document.getElementById('current-date');
+        if(dateEl) {
+            dateEl.innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
-    </script>
 
+        // Fungsi Navigasi Tab Sidebar
         function showView(viewId, btn) {
             // Sembunyikan semua view
             document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
@@ -621,9 +618,10 @@
             
             // Atur tombol aktif
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            btn.classList.add('active');
+            if(btn) btn.classList.add('active');
         }
 
+        // Fungsi Tab CMS
         function switchCmsTab(tabId, btn) {
             document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
@@ -631,48 +629,19 @@
             btn.classList.add('active');
         }
 
+        // Fungsi Logout
         function adminLogout() {
             if(confirm("Keluar dari Panel Admin?")) {
                 localStorage.removeItem('userLoggedIn');
                 localStorage.removeItem('userRole');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('adminOrigin');
                 window.location.href = 'index.html';
             }
         }
-
-        /* === TAMBAHAN CSS RESPONSIF (HP) === */
-        @media (max-width: 768px) {
-            .admin-container { flex-direction: column; }
-            
-            /* Sidebar jadi Header Kecil di HP */
-            .sidebar { 
-                width: 100%; height: auto; position: relative; 
-                flex-direction: row; overflow-x: auto;
-                border-bottom: 1px solid #333; border-right: none;
-            }
-            .sidebar-header { display: none; } /* Sembunyikan logo besar */
-            .sidebar-menu { 
-                display: flex; flex-direction: row; padding: 0; 
-                white-space: nowrap; 
-            }
-            .menu-item { 
-                padding: 15px; font-size: 0.8rem; 
-                flex-direction: column; gap: 5px; text-align: center;
-            }
-            .menu-item span { display: block; font-size: 0.7rem; }
-            
-            /* Main Content Full Width */
-            .main-content { margin-left: 0; padding: 15px; }
-
-            /* Grid Statistik jadi 1 Kolom */
-            .stats-grid { grid-template-columns: 1fr; }
-
-            /* Layout Split Monitor jadi Atas-Bawah */
-            .split-monitor { grid-template-columns: 1fr !important; }
-
-            /* Tabel bisa discroll */
-            .table-responsive { overflow-x: auto; }
-        }
     </script>
+</body>
+</html>
            
 </body>
 </html>
