@@ -141,6 +141,65 @@
             .menu-item { justify-content: center; padding: 15px 0; }
             .menu-item i { width: auto; font-size: 1.2rem; }
         }
+
+        /* === CSS TAMBAHAN UNTUK SPLIT VIEW KEUANGAN === */
+        .finance-split-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr; /* Kiri lebih kecil, Kanan lebih lebar */
+            gap: 20px;
+            /* Agar tinggi menyesuaikan layar dan bisa discroll terpisah */
+            height: calc(100vh - 100px); 
+        }
+
+        /* KOLOM KIRI (LIVE) */
+        .live-panel-container {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto; /* Scrollable */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* KOLOM KANAN (HISTORY) */
+        .history-panel-container {
+            overflow-y: auto; /* Scrollable */
+            padding-right: 5px;
+        }
+
+        /* KARTU LIVE MINI (Diadaptasi dari Stage Monitor) */
+        .req-card-mini {
+            background: #151515;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+            position: relative;
+        }
+        .req-card-mini.pending { border-left: 5px solid #ffeb3b; }
+        .req-card-mini.approved { border-left: 5px solid #00ff00; }
+        
+        .mini-amount {
+            position: absolute; top: 10px; right: 10px;
+            background: #333; color: gold; padding: 2px 8px; 
+            border-radius: 4px; font-size: 0.8rem; font-weight: bold;
+        }
+        
+        /* Tombol Aksi Kecil */
+        .btn-mini-action {
+            width: 100%; padding: 8px; margin-top: 10px;
+            border: none; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        .btn-acc { background: #00ff00; color: black; }
+        .btn-finish { background: #333; color: #ccc; border: 1px solid #555; }
+        .btn-finish:hover { background: #E50914; color: white; border-color: red; }
+
+        /* Responsif HP: Jadi tumpuk ke bawah */
+        @media (max-width: 900px) {
+            .finance-split-container { grid-template-columns: 1fr; height: auto; }
+            .live-panel-container { height: 500px; margin-bottom: 20px; }
+        }
     </style>
 </head>
 <body>
@@ -369,77 +428,87 @@
                 </div>
             </div>
         
-            <!-- VIEW 5: KEUANGAN & MONITOR (REVISI ANALITIK) -->
+            <!-- VIEW 5: KEUANGAN (SPLIT COMMAND CENTER) -->
             <div id="view-finance" class="admin-view hidden">
-                <div class="section-header">
-                    <h2 style="margin:0; color:white;">Laporan Keuangan & Statistik</h2>
+                
+                <div class="finance-split-container">
                     
-                    <!-- Filter Waktu -->
-                    <select id="finance-filter" onchange="loadFinanceStats()" style="padding:10px; background:#222; color:white; border:1px solid #444; border-radius:5px;">
-                        <option value="today">Hari Ini</option>
-                        <option value="week">7 Hari Terakhir</option>
-                        <option value="month">Bulan Ini</option>
-                        <option value="all">Semua Waktu</option>
-                    </select>
-                </div>
-
-                <!-- 1. KARTU TOTAL -->
-                <div class="stats-grid">
-                    <div class="stat-card" style="border-color:#00ff00;">
-                        <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-money-bill-wave"></i></div>
-                        <div>
-                            <h3 style="margin:0; color:white; font-size:1.8rem;" id="fin-total-amount">Rp 0</h3>
-                            <small style="color:#888;">Total Saweran (Verified)</small>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-list-check"></i></div>
-                        <div>
-                            <h3 style="margin:0; color:white;" id="fin-total-req">0</h3>
-                            <small style="color:#888;">Total Lagu Request</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. ANALISA PERFORMER & LAGU (Grid 2 Kolom) -->
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:30px;">
-                    
-                    <!-- LEADERBOARD PERFORMER -->
-                    <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333;">
-                        <h3 style="margin-top:0; color:#FFD700;"><i class="fa-solid fa-trophy"></i> Top Performer (Cuan)</h3>
-                        <div id="top-performer-list">
-                            <p style="color:#555;">Memuat data...</p>
+                    <!-- === KOLOM KIRI: LIVE MONITOR (OPERASIONAL) === -->
+                    <div class="live-panel-container">
+                        <h3 style="margin-top:0; color:#E50914; border-bottom:1px dashed #333; padding-bottom:10px;">
+                            <i class="fa-solid fa-satellite-dish"></i> LIVE CONTROL
+                        </h3>
+                        <p style="color:#666; font-size:0.8rem; margin-bottom:15px;">
+                            Pantau request masuk. Klik "Dana Masuk" untuk ACC, klik "Selesai" untuk arsip ke kanan.
+                        </p>
+                        
+                        <!-- WADAH KARTU LIVE -->
+                        <div id="admin-live-list">
+                            <p style="text-align:center; color:#444; margin-top:50px;">Menunggu request...</p>
                         </div>
                     </div>
 
-                    <!-- TRENDING SONG -->
-                    <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333;">
-                        <h3 style="margin-top:0; color:#00d2ff;"><i class="fa-solid fa-music"></i> Lagu Terlaris</h3>
-                        <div id="top-song-list">
-                            <p style="color:#555;">Memuat data...</p>
+                    <!-- === KOLOM KANAN: LAPORAN & STATISTIK === -->
+                    <div class="history-panel-container">
+                        <div class="section-header">
+                            <h2 style="margin:0; color:white;">Laporan Keuangan</h2>
+                            <select id="finance-filter" onchange="loadFinanceStats()" style="padding:5px; background:#222; color:white; border:1px solid #444; border-radius:5px;">
+                                <option value="today">Hari Ini</option>
+                                <option value="week">7 Hari Terakhir</option>
+                                <option value="month">Bulan Ini</option>
+                                <option value="all">Semua Waktu</option>
+                            </select>
                         </div>
-                    </div>
-                </div>
 
-                <!-- 3. TABEL RIWAYAT TRANSAKSI -->
-                <div class="section-title">Riwayat Transaksi (Finished)</div>
-                <div style="overflow-x:auto;">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Pengirim</th>
-                                <th>Lagu</th>
-                                <th>Performer</th>
-                                <th>Nominal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="finance-history-body">
-                            <!-- Data JS -->
-                        </tbody>
-                    </table>
+                        <!-- STATISTIK RINGKAS -->
+                        <div class="stats-grid">
+                            <div class="stat-card" style="border-color:#00ff00;">
+                                <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-money-bill-wave"></i></div>
+                                <div>
+                                    <h3 style="margin:0; color:white;" id="fin-total-amount">Rp 0</h3>
+                                    <small style="color:#888;">Total Pendapatan</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fa-solid fa-music"></i></div>
+                                <div>
+                                    <h3 style="margin:0; color:white;" id="fin-total-req">0</h3>
+                                    <small style="color:#888;">Total Request</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TOP PERFORMER & SONG -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                            <div style="background:#151515; padding:15px; border-radius:10px; border:1px solid #333;">
+                                <h4 style="margin-top:0; color:#FFD700;">Top Performer</h4>
+                                <div id="top-performer-list"></div>
+                            </div>
+                            <div style="background:#151515; padding:15px; border-radius:10px; border:1px solid #333;">
+                                <h4 style="margin-top:0; color:#00d2ff;">Lagu Populer</h4>
+                                <div id="top-song-list"></div>
+                            </div>
+                        </div>
+
+                        <!-- TABEL RIWAYAT -->
+                        <h4 style="color:#888; border-bottom:1px solid #333; padding-bottom:5px;">Riwayat Transaksi (Finished)</h4>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Pengirim</th>
+                                    <th>Lagu</th>
+                                    <th>Artis</th>
+                                    <th>Nominal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finance-history-body"></tbody>
+                        </table>
+                    </div>
+
                 </div>
             </div>
+            
     <!-- SCRIPT LOGIKA -->
     <script type="module" src="admin-script.js"></script>
 
