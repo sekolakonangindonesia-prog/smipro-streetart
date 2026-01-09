@@ -605,6 +605,14 @@
 
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+         function goToHomeAsAdmin() {
+            // Pastikan status tetap Admin
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('userName', 'Super Admin');
+            window.location.href = 'index.html';
+        }
+    </script>
+
         function showView(viewId, btn) {
             // Sembunyikan semua view
             document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
