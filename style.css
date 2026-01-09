@@ -36,15 +36,11 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 .icon-box { font-size: 1.5rem; color: #555; width: 40px; text-align: center; }
 .venue-card:not(.disabled) .icon-box { color: var(--primary); }
 
-/* PERFORMER (HOVER ADDED) */
+/* PERFORMER GRID SYSTEM (FIXED) */
 .performer-wrap {
     display: grid;
-    /* Ini rahasianya: 
-       - auto-fit: Mengisi ruang yang ada
-       - minmax(100px, 1fr): Lebar minimal kartu 100px. 
-         Jika layar HP kecil, dia otomatis turun ke bawah jadi 2 atau 3 kolom.
-    */
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+    /* GANTI auto-fit JADI auto-fill agar kartu tidak melar selebar layar */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
     gap: 15px;
     margin-top: 15px;
 }
@@ -52,7 +48,7 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
 /* Kartu Artis */
 .artist-card { 
     background: #222; 
-    padding: 15px 10px; /* Padding sedikit dikecilkan agar muat banyak di HP */
+    padding: 15px 10px; 
     border-radius: 12px; 
     text-align: center; 
     cursor: pointer; 
@@ -64,6 +60,7 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    height: 100%; /* Agar tinggi seragam */
 }
 
 /* Efek Hover */
@@ -410,3 +407,33 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark
         background-position: center center;
     }
 }
+
+/* === TAMBAHAN STYLE UNTUK SOSIAL MEDIA DI PROFIL === */
+
+.bio-socials {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    border-top: 1px dashed #444;
+    padding-top: 15px;
+}
+
+.bio-socials a {
+    text-decoration: none;
+    transition: transform 0.3s;
+    display: inline-block;
+}
+
+.bio-socials a:hover {
+    transform: scale(1.2);
+}
+
+.bio-socials i {
+    font-size: 2rem; /* Ukuran ikon diperbesar */
+}
+
+/* Warna Brand Sosmed */
+.fa-instagram { color: #C13584; }
+.fa-tiktok { color: #00f2ea; }
+.fa-youtube { color: #ff0000; }
