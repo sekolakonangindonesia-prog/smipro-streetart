@@ -39,7 +39,7 @@
 
     <div class="container">
 
-        <!-- === JADWAL UTAMA (DINAMIS DARI FIREBASE) === -->
+        <!-- === JADWAL UTAMA === -->
         <div id="home-schedule-container">
             <div class="main-schedule-card">
                 <div class="msc-info" style="text-align:center;">
@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <!-- === RADIO CARD (DINAMIS DARI FIREBASE) === -->
+        <!-- === RADIO CARD === -->
         <div id="home-radio-container">
             <div class="main-schedule-card cyan-theme">
                 <div class="msc-info" style="text-align:center;">
@@ -57,7 +57,7 @@
             </div>
         </div>
                  
-        <!-- 1. LIST ANGKRINGAN (FULL DINAMIS + SUPER ADMIN SWITCH) -->
+        <!-- 1. LIST ANGKRINGAN (FULL DINAMIS) -->
         <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
         
         <div id="venue-list-container">
@@ -70,7 +70,6 @@
         <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Profil)</div>
         
         <div class="performer-wrap">
-            <!-- (Isi Kartu Artis Tetap Sama) -->
             <div class="artist-card" onclick="location.href='profile.html?id=1'">
                 <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=150" class="artist-img"><div>Rina Violin</div>
             </div>
@@ -124,7 +123,7 @@
             <button class="btn-dukung" onclick="alert('Terima kasih!')">Donasi Pengembangan</button>
         </div>
 
-        <!-- 6. BERITA (DINAMIS) -->
+        <!-- 6. BERITA -->
         <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
         <div id="home-news-container">
             <div class="news-card"><div>Memuat Berita...</div></div>
@@ -137,12 +136,13 @@
     <!-- SCRIPT DATA DINAMIS -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, getDocs, query, orderBy, limit, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { 
+            collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // === 1. LOAD JADWAL UTAMA ===
         async function loadMainSchedule() {
             const container = document.getElementById('home-schedule-container');
-            // Ambil 1 event 'main' terbaru (berdasarkan tanggal)
             const q = query(collection(db, "events"), orderBy("date", "asc")); 
             const querySnapshot = await getDocs(q);
 
@@ -150,21 +150,15 @@
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.type === 'main' && !foundMain) { // Ambil yang pertama ketemu
+                if (data.type === 'main' && !foundMain) { 
                     foundMain = true;
                     
-                    // Ambil nama performer dari Array
                     let artistNames = "Berbagai Artis Pilihan";
                     if(data.performers && data.performers.length > 0) {
                         artistNames = data.performers.map(p => p.name).join(", ");
                     }
-
-                    // TANGGAL SPLIT (Sabtu 03 Jan)
-                    // Kita asumsikan format displayDate admin adalah: "Hari, Tanggal Bulan Tahun"
-                    // Untuk Index, kita parsing manual atau tampilkan apa adanya. 
-                    // Agar rapi, kita pakai data mentah displayDate saja.
                     
-                    const dateParts = data.displayDate.split(' '); // [Sabtu,, 03, Januari, 2026]
+                    const dateParts = data.displayDate.split(' '); 
                     const hari = dateParts[0].replace(',','').toUpperCase();
                     const tgl = dateParts[1];
                     const blnThn = dateParts[2].substr(0,3).toUpperCase() + " " + dateParts[3];
@@ -199,16 +193,14 @@
         // === 2. LOAD RADIO UTAMA ===
         async function loadMainRadio() {
             const container = document.getElementById('home-radio-container');
-            // Ambil Radio sesi Malam (order 3) atau yang sedang LIVE
-            const q = query(collection(db, "broadcasts"), orderBy("order", "desc")); // Biasanya malam ordernya tinggi
+            const q = query(collection(db, "broadcasts"), orderBy("order", "desc"));
             const querySnapshot = await getDocs(q);
             
             let dataToShow = null;
             querySnapshot.forEach(doc => {
                 const d = doc.data();
-                if(d.isLive) dataToShow = d; // Prioritas yang Live
+                if(d.isLive) dataToShow = d; 
             });
-            // Kalau gak ada yang live, ambil yang terakhir (Malam)
             if(!dataToShow && !querySnapshot.empty) {
                 dataToShow = querySnapshot.docs[0].data();
             }
@@ -239,22 +231,30 @@
             }
         }
 
-        // === 3. LOAD BERITA (SEEDING JIKA KOSONG) ===
+        // === 3. LOAD BERITA ===
         async function loadNews() {
             const container = document.getElementById('home-news-container');
             const q = query(collection(db, "news"), orderBy("date", "desc"), limit(1));
             const querySnapshot = await getDocs(q);
 
             if(querySnapshot.empty) {
-                await seedNews(); // Isi data berita pertama kali
-                return loadNews();
+                container.innerHTML = '<div class="news-card"><div>Belum ada berita.</div></div>';
+                return;
             }
 
             container.innerHTML = '';
             querySnapshot.forEach(doc => {
                 const data = doc.data();
+                
+                let clickAction = "";
+                if (data.type === 'external') {
+                    clickAction = `window.open('${data.url}', '_blank')`;
+                } else {
+                    clickAction = `location.href='news-read.html?id=${doc.id}'`;
+                }
+
                 container.innerHTML = `
-                <div class="news-card">
+                <div class="news-card" onclick="${clickAction}" style="cursor:pointer;">
                     <img src="${data.thumb}" class="news-thumb">
                     <div>
                         <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">${data.tag}</span>
@@ -265,66 +265,53 @@
             });
         }
 
-        async function seedNews() {
-            await addDoc(collection(db, "news"), {
-                title: "Festival Musik 2025 Segera Hadir",
-                date: "2 Jam yang lalu",
-                tag: "EVENT",
-                thumb: "https://images.unsplash.com/photo-1514525253440-b393452e3383?q=80&w=100"
-            });
-        }
-
-        // START ALL
-        loadMainSchedule();
-        loadMainRadio();
-        loadNews();
-
-        // --- TAMBAHKAN IMPORT UPDATE DOC DI PALING ATAS SCRIPT ---
-        import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // === 4. LOAD VENUE (SUPER ADMIN MODE) ===
+        // === 4. LOAD VENUE (AUTO-SEED FIX) ===
         async function loadVenues() {
             const container = document.getElementById('venue-list-container');
-            
-            // Cek apakah yang login adalah Admin?
             const isAdmin = localStorage.getItem('userRole') === 'admin';
 
             const q = query(collection(db, "venues"), orderBy("order", "asc"));
             
-            // Realtime Listener (Agar saat saklar digeser, HP lain langsung berubah)
             onSnapshot(q, (snapshot) => {
+                // JIKA DATA KOSONG, TAMPILKAN TOMBOL GENERATE (DARURAT)
+                if(snapshot.empty) {
+                    if(isAdmin) {
+                        container.innerHTML = `
+                        <div style="text-align:center; padding:20px; border:1px dashed red; border-radius:10px;">
+                            <p style="color:red;">Data Lokasi Belum Ada!</p>
+                            <button onclick="window.seedVenuesDirect()" style="background:red; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">
+                                GENERATE 5 LOKASI AWAL
+                            </button>
+                        </div>`;
+                    } else {
+                        container.innerHTML = `<p style="text-align:center;color:#666;">Lokasi belum tersedia.</p>`;
+                    }
+                    return;
+                }
+
                 container.innerHTML = '';
                 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
                     const isOpen = data.status === 'open';
-                    
-                    // Tentukan Warna & Teks Badge
                     const badgeClass = isOpen ? 'active' : 'soon';
                     const badgeText = isOpen ? 'BUKA' : 'SOON';
                     
-                    // Tentukan Aksi Klik Kartu (User Biasa)
-                    // Sementara semua diarahkan ke venue-stadion.html (Nanti bisa diubah per ID)
                     let cardAction = isOpen ? `location.href='venue-stadion.html'` : `alert('${data.name} Segera Hadir!')`;
-                    
-                    // Jika Admin, matikan klik kartu agar tidak pindah saat mau geser saklar
                     if(isAdmin) cardAction = ""; 
 
-                    // --- FITUR ADMIN: TOMBOL SAKLAR (SWITCH) ---
                     let adminSwitchHTML = "";
                     if (isAdmin) {
-                        // Tombol Toggle On/Off
                         const toggleColor = isOpen ? '#00ff00' : '#333';
                         const toggleIcon = isOpen ? 'fa-toggle-on' : 'fa-toggle-off';
                         
                         adminSwitchHTML = `
-                        <div style="margin-left:10px; text-align:center; z-index:100;" onclick="toggleVenueStatus('${docSnap.id}', '${data.status}')">
+                        <div style="margin-left:10px; text-align:center; z-index:100;" onclick="window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
                             <i class="fa-solid ${toggleIcon}" style="color:${toggleColor}; font-size:2rem; cursor:pointer; transition:0.3s;"></i>
                             <div style="font-size:0.6rem; color:#888;">ADMIN</div>
                         </div>`;
                     }
 
-                    // Render HTML
                     container.innerHTML += `
                     <div class="venue-card ${isOpen ? '' : 'disabled'}" onclick="${cardAction}" style="display:flex; align-items:center;">
                         <div class="icon-box"><i class="fa-solid ${data.icon}"></i></div>
@@ -332,40 +319,53 @@
                             <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span></h3>
                             <small style="color:#888;">${data.desc}</small>
                         </div>
-                        ${adminSwitchHTML} <!-- Saklar Admin Muncul Disini -->
-                        ${!isAdmin ? '<i class="fa-solid fa-chevron-right"></i>' : ''}
+                        ${adminSwitchHTML}
                     </div>`;
                 });
             });
         }
 
-        // FUNGSI GANTI STATUS (Admin Only)
-        // Kita tempel ke window agar bisa dipanggil onclick
+        // === FUNGSI BANTUAN (GLOBAL WINDOW) ===
+        
         window.toggleVenueStatus = async function(id, currentStatus) {
-            // Cegah event bubbling (agar kartu tidak terklik)
             event.stopPropagation(); 
-            
             const newStatus = currentStatus === 'open' ? 'closed' : 'open';
             if(confirm(`Ubah status menjadi ${newStatus.toUpperCase()}?`)) {
-                await updateDoc(doc(db, "venues", id), {
-                    status: newStatus
-                });
+                await updateDoc(doc(db, "venues", id), { status: newStatus });
             }
         }
 
-        // Panggil fungsi
+        window.seedVenuesDirect = async function() {
+            const venuesData = [
+                { name: "Stadion Bayuangga Zone", status: "open", icon: "fa-door-open", order: 1, desc: "Pusat Kuliner & Seni Utama" },
+                { name: "Angkringan TWSL", status: "closed", icon: "fa-tree", order: 2, desc: "Taman Wisata Studi Lingkungan" },
+                { name: "Angkringan Siaman", status: "closed", icon: "fa-mug-hot", order: 3, desc: "Suasana Klasik Kota" },
+                { name: "Angkringan A. Yani", status: "closed", icon: "fa-road", order: 4, desc: "Pinggir Jalan Protokol" },
+                { name: "Angkringan GOR Mastrip", status: "closed", icon: "fa-volleyball", order: 5, desc: "Area Olahraga & Santai" }
+            ];
+            
+            if(confirm("Generate data lokasi sekarang?")) {
+                for (const v of venuesData) {
+                    await addDoc(collection(db, "venues"), v);
+                }
+                alert("Selesai! Lokasi akan muncul otomatis.");
+            }
+        }
+
+        // START ALL
+        loadMainSchedule();
+        loadMainRadio();
+        loadNews();
         loadVenues();
     </script>
 
-  <!-- Script Cek Login (VERSI FIX ANTI-ERROR 404) -->
+  <!-- Script Cek Login -->
    <script>
         window.onload = function() {
             const isLoggedIn = localStorage.getItem('userLoggedIn');
             const userName = localStorage.getItem('userName');
             const userRole = localStorage.getItem('userRole'); 
             
-            // --- BAGIAN PERBAIKAN (FALLBACK LINK) ---
-            // Jika Link di memori kosong, kita paksa isi manual sesuai Role
             let userLink = localStorage.getItem('userLink');
             
             if (!userLink || userLink === 'null' || userLink === '') {
@@ -373,36 +373,31 @@
                 else if (userRole === 'performer') userLink = 'performer-dashboard.html';
                 else if (userRole === 'mentor') userLink = 'mentor-dashboard.html';
                 else if (userRole === 'admin') userLink = 'admin-dashboard.html';
-                else userLink = '#'; // Safety net
+                else userLink = '#'; 
             }
-            // ----------------------------------------
 
             const navArea = document.getElementById('nav-btn-area');
 
             if (navArea) {
                 if (isLoggedIn === 'true') {
-                    // TENTUKAN IKON & WARNA BERDASARKAN ROLE
                     let icon = 'fa-user'; 
-                    let color = '#E50914'; // Default Merah
+                    let color = '#E50914'; 
                     
                     if (userRole === 'mitra') icon = 'fa-store';
                     if (userRole === 'performer') icon = 'fa-guitar';
                     if (userRole === 'mentor') icon = 'fa-graduation-cap';
                     
-                    // KHUSUS ADMIN
                     if (userRole === 'admin') {
                         icon = 'fa-user-shield';
                         color = '#ff0000'; 
                     }
 
-                    // TAMPILKAN DI NAVBAR
                     navArea.innerHTML = `
                         <a href="${userLink}" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:${color}; font-weight:800; font-size:1rem;">
                             <i class="fa-solid ${icon}"></i> ${userName}
                         </a>
                     `;
                 } else {
-                    // JIKA BELUM LOGIN
                     navArea.innerHTML = `
                         <a href="login.html" class="btn-mitra">
                             <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
@@ -412,7 +407,6 @@
             }
         };
     </script>
-    
 
 </body>
 </html>
