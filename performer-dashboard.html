@@ -269,35 +269,49 @@
         <div id="player-content" style="width:100%; max-width:800px; text-align:center;"></div>
     </div>
 
-    <script>
-        // DATA DUMMY (Bisa dihapus jika sudah connect DB)
-        let galleryData = [
-            { id: 1, type: 'video', title: 'Live Performance', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', thumb: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300' },
-            { id: 2, type: 'audio', title: 'Cover Lagu Nemen', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', thumb: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=300' }
-        ];
+   <script type="module">
+        import { db } from './firebase-config.js';
+        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // ID Performer yang sedang login/diedit
+        const PERF_ID = localStorage.getItem('performerId');
+
+        // --- 1. LOGIKA UTAMA SAAT LOAD ---
         window.onload = function() {
+            // Validasi Login
+            if(!localStorage.getItem('userLoggedIn')) {
+                window.location.href = 'index.html';
+                return;
+            }
+
             const role = localStorage.getItem('userRole'); 
             const isAdmin = localStorage.getItem('adminOrigin') === 'true';
             const navBtn = document.getElementById('nav-home-btn');
 
-            // 1. CEK HAK AKSES TOMBOL UPLOAD
+            // Load Data Profil dari Firebase
+            if(PERF_ID) {
+                loadProfileData();
+            } else {
+                alert("Error: ID Performer tidak ditemukan. Silakan login ulang.");
+            }
+
+            // A. CEK HAK AKSES TOMBOL UPLOAD
             if (isAdmin || role === 'mentor') {
                 document.getElementById('btn-add-gallery').style.display = 'block';
             }
 
-            // 2. NAVIGASI MENTOR
+            // B. NAVIGASI MENTOR
             if(role === 'mentor') {
                 navBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Kembali ke Mentor';
                 navBtn.onclick = function(e) { e.preventDefault(); window.location.href = 'mentor-dashboard.html'; };
             }
 
-            // 3. NAVIGASI ADMIN
+            // C. NAVIGASI ADMIN
             if (isAdmin) {
                 document.getElementById('admin-floating-btn').style.display = 'block';
                 setTimeout(() => {
                     const oldBtn = document.getElementById('nav-home-btn');
-                    if (oldBtn && role !== 'mentor') {
+                    if (oldBtn && role !== 'mentor') { 
                         const newBtn = oldBtn.cloneNode(true);
                         newBtn.innerHTML = '<i class="fa-solid fa-house"></i> Home (Super Admin)';
                         newBtn.onclick = function(e) {
@@ -314,21 +328,102 @@
                 }, 500);
             }
 
-            // 4. LOAD GALERI
+            // D. LOAD GALERI (Sementara masih dummy localStorage, nanti bisa diganti Firebase juga)
             loadGallery();
         };
+
+        // --- 2. FUNGSI CRUD FIREBASE (PROFIL) ---
+        async function loadProfileData() {
+            try {
+                const docRef = doc(db, "performers", PERF_ID);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    // Isi Header
+                    document.querySelector('.perf-info h1').innerText = data.name;
+                    document.querySelector('.perf-info p').innerText = `Genre: ${data.genre} • Rating: ${data.rating || '-'}`;
+                    if(data.img) {
+                        document.getElementById('header-profile-img').src = data.img;
+                        document.getElementById('preview-profile-img').src = data.img;
+                    }
+
+                    // Isi Form
+                    document.getElementById('edit-name').value = data.name;
+                    document.getElementById('edit-bio').value = data.bio || "";
+                    document.getElementById('edit-ig').value = data.link_ig || "";
+                    document.getElementById('edit-tiktok').value = data.link_tiktok || "";
+                    document.getElementById('edit-yt').value = data.link_yt || "";
+
+                } else {
+                    console.log("No such document!");
+                }
+            } catch (e) {
+                console.error("Error loading profile:", e);
+            }
+        }
+
+        window.saveProfileData = async function() {
+            if(!PERF_ID) return;
+            
+            const bio = document.getElementById('edit-bio').value;
+            const ig = document.getElementById('edit-ig').value;
+            const tiktok = document.getElementById('edit-tiktok').value;
+            const yt = document.getElementById('edit-yt').value;
+
+            try {
+                const docRef = doc(db, "performers", PERF_ID);
+                await updateDoc(docRef, {
+                    bio: bio,
+                    link_ig: ig,
+                    link_tiktok: tiktok,
+                    link_yt: yt
+                });
+                alert("Profil Berhasil Diupdate!");
+                // Refresh data header
+                loadProfileData(); 
+            } catch (e) {
+                alert("Gagal menyimpan: " + e.message);
+            }
+        }
+
+        // --- 3. FUNGSI UPLOAD FOTO (BASE64 FIREBASE) ---
+        window.triggerUpload = function() { document.getElementById('file-input').click(); }
+        
+        window.previewImage = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = async function (e) {
+                    const base64 = e.target.result;
+                    // Tampilkan preview dulu
+                    document.getElementById('header-profile-img').src = base64;
+                    document.getElementById('preview-profile-img').src = base64;
+                    
+                    // Simpan ke Firebase langsung
+                    if(confirm("Simpan foto profil baru ini?")) {
+                        await updateDoc(doc(db, "performers", PERF_ID), { img: base64 });
+                        alert("Foto tersimpan!");
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- 4. FUNGSI GALERI & PLAYER (TETAP SEPERTI SEBELUMNYA) ---
+        let galleryData = [];
 
         function loadGallery() {
             const container = document.getElementById('gallery-container');
             container.innerHTML = '';
-            
-            const storedData = localStorage.getItem('perf_gallery');
+            const storedData = localStorage.getItem('perf_gallery_' + PERF_ID); // Unik per ID
             if(storedData) { galleryData = JSON.parse(storedData); }
+
+            if(galleryData.length === 0) container.innerHTML = '<p style="color:#666;">Belum ada konten.</p>';
 
             galleryData.forEach(item => {
                 let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
                 let typeText = item.type === 'video' ? 'Video Full' : 'Audio MP3';
-                
                 container.innerHTML += `
                 <div class="track-card" onclick="playMedia('${item.type}', '${item.url}')">
                     <img src="${item.thumb || 'https://via.placeholder.com/150'}" class="track-img">
@@ -339,72 +434,52 @@
             });
         }
 
-        function openAddModal() { document.getElementById('modal-add-gallery').style.display = 'flex'; }
+        window.openAddModal = function() { document.getElementById('modal-add-gallery').style.display = 'flex'; }
 
-        function saveGalleryItem() {
+        window.saveGalleryItem = function() {
             const title = document.getElementById('add-title').value;
             const type = document.getElementById('add-type').value;
             let url = document.getElementById('add-url').value;
             const thumb = document.getElementById('add-thumb').value;
 
-            if(!title || !url) return alert("Isi Judul & Link!");
+            if(!title || !url) return alert("Isi data!");
+            if(type === 'video' && url.includes('watch?v=')) url = url.replace('watch?v=', 'embed/');
 
-            // Fix YouTube Link
-            if(type === 'video' && url.includes('watch?v=')) {
-                url = url.replace('watch?v=', 'embed/');
-            } else if (type === 'video' && url.includes('youtu.be/')) {
-                url = url.replace('youtu.be/', 'www.youtube.com/embed/');
-            }
-
-            const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300?text=No+Img' };
+            const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300' };
             galleryData.push(newItem);
-            localStorage.setItem('perf_gallery', JSON.stringify(galleryData));
+            
+            // Simpan lokal dulu (Nanti bisa diupgrade ke Firebase Subcollection)
+            localStorage.setItem('perf_gallery_' + PERF_ID, JSON.stringify(galleryData));
 
             alert("Konten Ditambahkan!");
             document.getElementById('modal-add-gallery').style.display = 'none';
             loadGallery();
-            
-            document.getElementById('add-title').value = '';
-            document.getElementById('add-url').value = '';
         }
 
-        function playMedia(type, url) {
+        window.playMedia = function(type, url) {
             const modal = document.getElementById('modal-player');
             const content = document.getElementById('player-content');
             modal.style.display = 'flex';
-
-            if(type === 'video') {
-                content.innerHTML = `<iframe width="100%" height="450" src="${url}" frameborder="0" allowfullscreen style="border-radius:10px;"></iframe>`;
-            } else {
-                content.innerHTML = `
-                    <div style="background:#222; padding:30px; border-radius:15px; border:1px solid #444;">
-                        <i class="fa-solid fa-music fa-4x" style="color:var(--primary); margin-bottom:20px;"></i>
-                        <h3 style="color:white;">Now Playing</h3>
-                        <audio controls autoplay style="width:100%; margin-top:20px;">
-                            <source src="${url}" type="audio/mpeg">
-                        </audio>
-                    </div>`;
-            }
+            if(type === 'video') content.innerHTML = `<iframe width="100%" height="450" src="${url}" frameborder="0" allowfullscreen></iframe>`;
+            else content.innerHTML = `<div style="background:#222;padding:30px;"><audio controls autoplay src="${url}" style="width:100%"></audio></div>`;
         }
 
-        function closePlayer() {
+        window.closePlayer = function() {
             document.getElementById('modal-player').style.display = 'none';
             document.getElementById('player-content').innerHTML = '';
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(e => e.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+        // --- FUNGSI GLOBAL LAINNYA ---
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tabId).style.display = 'block';
             event.currentTarget.classList.add('active');
         }
-
-        function openModalDoc(t) { document.getElementById('doc-title').innerText=t; document.getElementById('modal-doc').style.display='flex'; }
-        function downloadFile(f) { alert("Download simulasi: "+f); }
-        function triggerUpload() { document.getElementById('file-input').click(); }
-        function previewImage(i) { if(i.files[0]) { var r = new FileReader(); r.onload=e=>document.getElementById('header-profile-img').src=e.target.result; r.readAsDataURL(i.files[0]); } }
-        function prosesLogout() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
-        function backToAdminDashboard() { if(confirm("Kembali ke Admin?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); localStorage.setItem('userLink','admin-dashboard.html'); window.location.href='admin-dashboard.html'; } }
+        window.openModalDoc = function(t) { document.getElementById('doc-title').innerText=t; document.getElementById('modal-doc').style.display='flex'; }
+        window.downloadFile = function(f) { alert("Download: "+f); }
+        window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
+        window.backToAdminDashboard = function() { if(confirm("Kembali ke Admin?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); localStorage.setItem('userLink','admin-dashboard.html'); window.location.href='admin-dashboard.html'; } }
     </script>
 </body>
 </html>
