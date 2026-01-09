@@ -155,40 +155,88 @@ async function loadMentorData() {
     });
 }
 
+// --- FUNGSI SEED MENTOR (DATA FIX REAL) ---
 window.seedMentors = async function() {
+    // HAPUS DULU SEMUA DATA MENTOR LAMA AGAR BERSIH (OPSIONAL TAPI DISARANKAN)
+    // Tapi karena ini seed, kita asumsikan Anda hapus manual dulu di Admin (tombol tong sampah).
+
     const mentorsData = [
         {
-            name: "Bpk. Andigo",
-            specialist: "Musik Management",
-            img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200",
-            portfolio: ["Manajer Band Indie 2010-2020", "Promotor Festival Jazz Jatim"],
-            profession: ["Dosen Musik", "Event Organizer"]
+            name: "Andik Laksono",
+            email: "andigomusicpro@gmail.com",
+            phone: "082319867817",
+            specialist: "Musik & Audio Engineering", // Judul Singkat untuk Kartu Depan
+            img: "https://via.placeholder.com/150", // Nanti mereka upload sendiri
+            portfolio: [
+                "Owner AndiGO music Electronik",
+                "SongWriter & Music Arranger",
+                "Sound & Audio Engineers",
+                "Audio & Music Recording",
+                "Lead & Vocal instructor",
+                "Audio, Sound & Music Conceptor",
+                "" // Slot 7 Kosong
+            ],
+            profession: [
+                "Music performer",
+                "Audio engineer",
+                "Store Owner of AndiGO Music Electronik",
+                "", "", "", "" // Sisa Slot Kosong
+            ]
         },
         {
-            name: "Ibu Putri",
-            specialist: "Stage Act & Koreo",
-            img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200",
-            portfolio: ["Koreografer Tari Nasional", "Mentor Idol 2019"],
-            profession: ["Penari Profesional", "Guru Seni"]
-        },
-        {
-            name: "Bpk. Ervan",
+            name: "Ervansyah",
+            email: "yusufkonang33@gmail.com",
+            phone: "085230659995",
             specialist: "Visual Management",
-            img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200",
-            portfolio: ["Stage Designer Konser Amal", "Fotografer Event"],
-            profession: ["Desainer Grafis", "Art Director"]
+            img: "https://via.placeholder.com/150",
+            portfolio: [
+                "Owner CV. BRIEFCOM",
+                "Fotografer",
+                "Videografer",
+                "Desain dan Percetakan",
+                "", "", ""
+            ],
+            profession: [
+                "Fotografer",
+                "Videografer",
+                "Design grafis",
+                "Produser",
+                "Sutradara",
+                "Content Writer",
+                "Editor"
+            ]
+        },
+        {
+            name: "Antony",
+            email: "gustinara.top@gmail.com",
+            phone: "085859823588",
+            specialist: "Public Relations",
+            img: "https://via.placeholder.com/150",
+            portfolio: [
+                "SongWriter & Music Arranger",
+                "Broadcasting Journalism",
+                "Public speaking",
+                "Public Relations",
+                "", "", ""
+            ],
+            profession: [
+                "Program Director",
+                "Audio engineer",
+                "Owner Sekola Konang Indonesia",
+                "", "", "", ""
+            ]
         }
     ];
 
-    if(confirm("Generate 3 Data Mentor Dummy ke Database?")) {
+    if(confirm("Masukkan Data FIX 3 Mentor (Andik, Ervan, Antony) ke Database?")) {
         try {
             for (const m of mentorsData) {
                 await addDoc(collection(db, "mentors"), m);
             }
-            alert("Sukses! 3 Mentor telah ditambahkan.");
+            alert("Sukses! Data Mentor FIX Masuk Database.");
             loadMentorData(); 
         } catch (e) {
-            alert("Gagal menambahkan data: " + e.message);
+            alert("Gagal: " + e.message);
         }
     }
 }
