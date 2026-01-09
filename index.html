@@ -59,16 +59,13 @@
             </div>
         </div>
                  
-        <!-- 1. LIST ANGKRINGAN -->
+      <!-- 1. LIST ANGKRINGAN (DINAMIS) -->
         <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
         
-        <!-- Stadion (AKTIF) -->
-        <a href="venue-stadion.html" class="venue-card">
-            <div class="icon-box"><i class="fa-solid fa-door-open"></i></div>
-            <div style="flex:1;">
-                <h3 style="margin:0;">Stadion Bayuangga Zone <span class="badge active">BUKA</span></h3>
-                <small style="color:#888;">Pusat Kuliner & Seni Utama</small>
-            </div>
+        <!-- WADAH YANG AKAN DIISI JAVASCRIPT -->
+        <div id="venue-list-container">
+            <p style="text-align:center; color:#888;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat Lokasi...</p>
+        </div>
             <i class="fa-solid fa-chevron-right"></i>
         </a>
 
@@ -311,6 +308,83 @@
         loadMainSchedule();
         loadMainRadio();
         loadNews();
+
+        // --- TAMBAHKAN IMPORT UPDATE DOC DI PALING ATAS SCRIPT ---
+        import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // === 4. LOAD VENUE (SUPER ADMIN MODE) ===
+        async function loadVenues() {
+            const container = document.getElementById('venue-list-container');
+            
+            // Cek apakah yang login adalah Admin?
+            const isAdmin = localStorage.getItem('userRole') === 'admin';
+
+            const q = query(collection(db, "venues"), orderBy("order", "asc"));
+            
+            // Realtime Listener (Agar saat saklar digeser, HP lain langsung berubah)
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = '';
+                
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const isOpen = data.status === 'open';
+                    
+                    // Tentukan Warna & Teks Badge
+                    const badgeClass = isOpen ? 'active' : 'soon';
+                    const badgeText = isOpen ? 'BUKA' : 'SOON';
+                    
+                    // Tentukan Aksi Klik Kartu (User Biasa)
+                    // Sementara semua diarahkan ke venue-stadion.html (Nanti bisa diubah per ID)
+                    let cardAction = isOpen ? `location.href='venue-stadion.html'` : `alert('${data.name} Segera Hadir!')`;
+                    
+                    // Jika Admin, matikan klik kartu agar tidak pindah saat mau geser saklar
+                    if(isAdmin) cardAction = ""; 
+
+                    // --- FITUR ADMIN: TOMBOL SAKLAR (SWITCH) ---
+                    let adminSwitchHTML = "";
+                    if (isAdmin) {
+                        // Tombol Toggle On/Off
+                        const toggleColor = isOpen ? '#00ff00' : '#333';
+                        const toggleIcon = isOpen ? 'fa-toggle-on' : 'fa-toggle-off';
+                        
+                        adminSwitchHTML = `
+                        <div style="margin-left:10px; text-align:center; z-index:100;" onclick="toggleVenueStatus('${docSnap.id}', '${data.status}')">
+                            <i class="fa-solid ${toggleIcon}" style="color:${toggleColor}; font-size:2rem; cursor:pointer; transition:0.3s;"></i>
+                            <div style="font-size:0.6rem; color:#888;">ADMIN</div>
+                        </div>`;
+                    }
+
+                    // Render HTML
+                    container.innerHTML += `
+                    <div class="venue-card ${isOpen ? '' : 'disabled'}" onclick="${cardAction}" style="display:flex; align-items:center;">
+                        <div class="icon-box"><i class="fa-solid ${data.icon}"></i></div>
+                        <div style="flex:1;">
+                            <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span></h3>
+                            <small style="color:#888;">${data.desc}</small>
+                        </div>
+                        ${adminSwitchHTML} <!-- Saklar Admin Muncul Disini -->
+                        ${!isAdmin ? '<i class="fa-solid fa-chevron-right"></i>' : ''}
+                    </div>`;
+                });
+            });
+        }
+
+        // FUNGSI GANTI STATUS (Admin Only)
+        // Kita tempel ke window agar bisa dipanggil onclick
+        window.toggleVenueStatus = async function(id, currentStatus) {
+            // Cegah event bubbling (agar kartu tidak terklik)
+            event.stopPropagation(); 
+            
+            const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+            if(confirm(`Ubah status menjadi ${newStatus.toUpperCase()}?`)) {
+                await updateDoc(doc(db, "venues", id), {
+                    status: newStatus
+                });
+            }
+        }
+
+        // Panggil fungsi
+        loadVenues();
     </script>
 
   <!-- Script Cek Login (VERSI FIX ANTI-ERROR 404) -->
