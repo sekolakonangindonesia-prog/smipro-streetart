@@ -207,6 +207,150 @@ loadPerformerData();
 loadMentorData();
 
 /* =========================================
+   CMS MODULE (JADWAL, RADIO, BERITA)
+   ========================================= */
+
+// 1. SAVE SCHEDULE (JADWAL)
+window.saveSchedule = async function() {
+    const displayDate = document.getElementById('sched-display-date').value;
+    const realDate = document.getElementById('sched-real-date').value;
+    const location = document.getElementById('sched-location').value;
+    
+    // Ambil Data Artis
+    const performers = [
+        {
+            name: document.getElementById('p1-name').value,
+            time: document.getElementById('p1-time').value,
+            genre: document.getElementById('p1-genre').value,
+            img: "https://via.placeholder.com/100" // Default dulu
+        },
+        {
+            name: document.getElementById('p2-name').value,
+            time: document.getElementById('p2-time').value,
+            genre: document.getElementById('p2-genre').value,
+            img: "https://via.placeholder.com/100"
+        },
+        {
+            name: document.getElementById('p3-name').value,
+            time: document.getElementById('p3-time').value,
+            genre: document.getElementById('p3-genre').value,
+            img: "https://via.placeholder.com/100"
+        }
+    ].filter(p => p.name !== ""); // Hanya ambil yang diisi
+
+    if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
+
+    if(confirm("Publish Jadwal Baru?")) {
+        await addDoc(collection(db, "events"), {
+            type: "main",
+            displayDate: displayDate,
+            date: realDate,
+            location: location,
+            statusText: "ON SCHEDULE",
+            performers: performers,
+            timestamp: new Date()
+        });
+        alert("Jadwal Berhasil Dipublish!");
+    }
+}
+
+// 2. RADIO SYSTEM (LOAD & UPDATE)
+let currentRadioDocId = null; // Menyimpan ID dokumen yang sedang diedit
+
+// Dipanggil saat dropdown sesi berubah
+window.loadRadioSessionData = async function() {
+    const sessionName = document.getElementById('radio-session-select').value;
+    const editArea = document.getElementById('radio-edit-area');
+    
+    if(!sessionName) {
+        editArea.style.display = 'none';
+        return;
+    }
+
+    // Cari dokumen berdasarkan sessionName (PAGI/SIANG/MALAM)
+    const q = query(collection(db, "broadcasts"), where("sessionName", "==", sessionName), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if(!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+        currentRadioDocId = docSnap.id; // Simpan ID untuk update nanti
+
+        // Isi Form
+        document.getElementById('radio-title').value = data.title;
+        document.getElementById('radio-host').value = data.host;
+        document.getElementById('radio-topic').value = data.topic;
+        document.getElementById('radio-link').value = data.link;
+        document.getElementById('radio-live-toggle').checked = data.isLive;
+
+        editArea.style.display = 'block';
+    } else {
+        alert("Data Sesi belum ada. Harap hubungi developer untuk 'Seed Radio'.");
+        editArea.style.display = 'none';
+    }
+}
+
+window.saveRadioUpdate = async function() {
+    if(!currentRadioDocId) return;
+
+    if(confirm("Simpan perubahan jadwal siaran?")) {
+        await updateDoc(doc(db, "broadcasts", currentRadioDocId), {
+            title: document.getElementById('radio-title').value,
+            host: document.getElementById('radio-host').value,
+            topic: document.getElementById('radio-topic').value,
+            link: document.getElementById('radio-link').value,
+            isLive: document.getElementById('radio-live-toggle').checked
+        });
+        alert("Jadwal Radio Diupdate!");
+    }
+}
+
+// 3. BERITA SYSTEM (HYBRID)
+window.toggleNewsInput = function() {
+    const type = document.getElementById('news-type').value;
+    if(type === 'external') {
+        document.getElementById('news-input-external').style.display = 'block';
+        document.getElementById('news-input-internal').style.display = 'none';
+    } else {
+        document.getElementById('news-input-external').style.display = 'none';
+        document.getElementById('news-input-internal').style.display = 'block';
+    }
+}
+
+window.saveNews = async function() {
+    const title = document.getElementById('news-title').value;
+    const tag = document.getElementById('news-tag').value;
+    const thumb = document.getElementById('news-thumb').value;
+    const type = document.getElementById('news-type').value;
+    
+    let newsData = {
+        title: title,
+        tag: tag,
+        thumb: thumb || "https://via.placeholder.com/150",
+        type: type,
+        date: new Date().toLocaleDateString('id-ID'), // Simpan tanggal string
+        timestamp: new Date() // Simpan tanggal sortable
+    };
+
+    if (type === 'external') {
+        newsData.url = document.getElementById('news-url').value;
+        if(!newsData.url) return alert("Link Berita wajib diisi!");
+    } else {
+        newsData.content = document.getElementById('news-content').value;
+        if(!newsData.content) return alert("Isi Berita wajib diisi!");
+    }
+
+    if(!title) return alert("Judul wajib diisi!");
+
+    if(confirm("Publish Berita ini?")) {
+        await addDoc(collection(db, "news"), newsData);
+        alert("Berita Berhasil Dipublish!");
+        // Reset form
+        document.getElementById('news-title').value = '';
+    }
+}
+
+/* =========================================
    4. MODUL KEUANGAN & LIVE COMMAND CENTER (FINAL)
    ========================================= */
 
