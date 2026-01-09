@@ -256,7 +256,7 @@
         // === 4. LOAD VENUE (AUTO-SEED FIX) ===
         async function loadVenues() {
             const container = document.getElementById('venue-list-container');
-           const userRole = localStorage.getItem('userRole');
+            const userRole = localStorage.getItem('userRole');
             const userName = localStorage.getItem('userName');
             const isAdmin = userRole === 'admin' && userName === 'Super Admin';
             const q = query(collection(db, "venues"), orderBy("order", "asc"));
