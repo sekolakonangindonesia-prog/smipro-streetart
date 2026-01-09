@@ -363,7 +363,7 @@
                 </table>
             </div>
 
-            <!-- VIEW 4: CMS (KONTEN) -->
+           <!-- VIEW 4: CMS (UPDATE FINAL) -->
             <div id="view-cms" class="admin-view hidden">
                 <div class="section-header">
                     <h2 style="margin:0; color:white;">Kelola Konten Publik</h2>
@@ -375,55 +375,120 @@
                     <button class="sub-tab-btn" onclick="switchCmsTab('cms-news', this)">Berita & Podcast</button>
                 </div>
 
-                <!-- SUB TAB: JADWAL -->
+                <!-- SUB TAB: JADWAL (MENGGUNAKAN ID YANG SAMA DENGAN JS) -->
                 <div id="cms-schedule" class="cms-content">
                     <div class="cms-form-group">
                         <h4 style="margin-top:0; color:#E50914;">Update Jadwal Minggu Ini</h4>
+                        
                         <label class="cms-label">Tanggal Tampilan (Contoh: Sabtu, 03 JAN 2026)</label>
                         <input type="text" id="sched-display-date" class="cms-input">
                         
+                        <label class="cms-label">Format Tanggal Database (YYYY-MM-DD)</label>
+                        <input type="date" id="sched-real-date" class="cms-input" style="color-scheme:dark;">
+
                         <label class="cms-label">Lokasi</label>
                         <input type="text" id="sched-location" class="cms-input" value="Stadion Bayuangga Zone">
 
                         <hr style="border-color:#333; margin:15px 0;">
-                        <label class="cms-label">Artis 1 (Nama | Jam | Genre)</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="p1-name" class="cms-input" placeholder="Nama Artis">
-                            <input type="text" id="p1-time" class="cms-input" placeholder="Jam Tampil">
+                        <small style="color:#888; display:block; margin-bottom:10px;">Masukan 3 Artis Utama:</small>
+
+                        <!-- ARTIS 1 -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="p1-name" class="cms-input" placeholder="Nama Artis 1">
+                            <input type="text" id="p1-time" class="cms-input" placeholder="Jam (19.00 - 20.00)">
                             <input type="text" id="p1-genre" class="cms-input" placeholder="Genre">
                         </div>
 
-                        <label class="cms-label">Artis 2</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="p2-name" class="cms-input" placeholder="Nama Artis">
-                            <input type="text" id="p2-time" class="cms-input" placeholder="Jam Tampil">
+                        <!-- ARTIS 2 -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="p2-name" class="cms-input" placeholder="Nama Artis 2">
+                            <input type="text" id="p2-time" class="cms-input" placeholder="Jam">
                             <input type="text" id="p2-genre" class="cms-input" placeholder="Genre">
                         </div>
 
-                        <label class="cms-label">Artis 3</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="p3-name" class="cms-input" placeholder="Nama Artis">
-                            <input type="text" id="p3-time" class="cms-input" placeholder="Jam Tampil">
+                        <!-- ARTIS 3 -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="p3-name" class="cms-input" placeholder="Nama Artis 3">
+                            <input type="text" id="p3-time" class="cms-input" placeholder="Jam">
                             <input type="text" id="p3-genre" class="cms-input" placeholder="Genre">
                         </div>
 
-                        <button class="btn-action btn-delete" style="width:100%; padding:15px; font-weight:bold;" onclick="saveSchedule()">PUBLISH JADWAL</button>
+                        <button class="btn-action btn-delete" style="width:100%; padding:15px; font-weight:bold;" onclick="saveSchedule()">PUBLISH JADWAL BARU</button>
                     </div>
                 </div>
 
-                <!-- SUB TAB: RADIO -->
+                <!-- SUB TAB: RADIO (KONSEP EDIT SLOT) -->
                 <div id="cms-radio" class="cms-content hidden">
-                    <p style="color:#888;">Pengaturan Jadwal Siaran TikTok akan muncul di sini.</p>
-                    <!-- Form Radio nanti di JS -->
+                    <div class="cms-form-group">
+                        <h4 style="margin-top:0; color:#00d2ff;">Atur Jadwal Siaran</h4>
+                        
+                        <label class="cms-label">Pilih Sesi untuk Diedit</label>
+                        <select id="radio-session-select" class="cms-input" onchange="loadRadioSessionData()">
+                            <option value="">-- Pilih Sesi --</option>
+                            <option value="PAGI">Sesi Pagi (09:00)</option>
+                            <option value="SIANG">Sesi Siang (14:00)</option>
+                            <option value="MALAM">Sesi Malam (19:00)</option>
+                        </select>
+
+                        <div id="radio-edit-area" style="display:none; border-top:1px dashed #444; padding-top:15px; margin-top:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:#111; padding:10px; border-radius:5px; border:1px solid #333;">
+                                <span style="color:white; font-weight:bold;">Status Siaran:</span>
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                                    <input type="checkbox" id="radio-live-toggle" style="width:20px; height:20px;">
+                                    <span style="color:#00d2ff; font-weight:bold;">LIVE SEKARANG</span>
+                                </label>
+                            </div>
+
+                            <label class="cms-label">Judul Acara</label>
+                            <input type="text" id="radio-title" class="cms-input">
+
+                            <label class="cms-label">Nama Host</label>
+                            <input type="text" id="radio-host" class="cms-input">
+
+                            <label class="cms-label">Topik Bahasan</label>
+                            <input type="text" id="radio-topic" class="cms-input">
+                            
+                            <label class="cms-label">Link Streaming (TikTok/Lainnya)</label>
+                            <input type="text" id="radio-link" class="cms-input">
+
+                            <button class="btn-action btn-view" style="width:100%; padding:12px; background:#00d2ff; color:black; font-weight:bold;" onclick="saveRadioUpdate()">SIMPAN PERUBAHAN</button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- SUB TAB: BERITA -->
+                <!-- SUB TAB: BERITA (KONSEP HYBRID) -->
                 <div id="cms-news" class="cms-content hidden">
                     <div class="cms-form-group">
-                        <h4 style="margin-top:0; color:#E50914;">Update Berita / Running Text</h4>
-                        <input type="text" id="news-title" class="cms-input" placeholder="Judul Berita">
-                        <input type="text" id="news-tag" class="cms-input" placeholder="Tag (EVENT/INFO)">
-                        <button class="btn-action btn-view" onclick="saveNews()">Update Berita</button>
+                        <h4 style="margin-top:0; color:#E50914;">Publish Berita Baru</h4>
+                        
+                        <label class="cms-label">Judul Berita</label>
+                        <input type="text" id="news-title" class="cms-input" placeholder="Judul Headline">
+                        
+                        <label class="cms-label">Kategori Tag</label>
+                        <input type="text" id="news-tag" class="cms-input" placeholder="Misal: EVENT, INFO, LIPUTAN">
+
+                        <label class="cms-label">Link Gambar Thumbnail</label>
+                        <input type="text" id="news-thumb" class="cms-input" placeholder="https://...">
+
+                        <label class="cms-label">Tipe Berita</label>
+                        <select id="news-type" class="cms-input" onchange="toggleNewsInput()">
+                            <option value="external">Eksternal (Link ke Media Lain)</option>
+                            <option value="internal">Internal (Tulis Sendiri)</option>
+                        </select>
+
+                        <!-- Input Link -->
+                        <div id="news-input-external">
+                            <label class="cms-label">Link URL Berita</label>
+                            <input type="text" id="news-url" class="cms-input" placeholder="https://detik.com/...">
+                        </div>
+
+                        <!-- Input Tulis Sendiri -->
+                        <div id="news-input-internal" style="display:none;">
+                            <label class="cms-label">Isi Berita</label>
+                            <textarea id="news-content" class="cms-input" style="height:150px;" placeholder="Tulis narasi berita di sini..."></textarea>
+                        </div>
+
+                        <button class="btn-action btn-view" onclick="saveNews()" style="margin-top:15px; width:100%;">PUBLISH BERITA</button>
                     </div>
                 </div>
             </div>
