@@ -7,7 +7,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* CSS SAMA PERSIS SEPERTI SEBELUMNYA */
+        /* CSS KHUSUS FILTER */
+        .filter-container {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .filter-label { color: #aaa; font-size: 0.9rem; white-space: nowrap; }
+        .filter-select {
+            width: 100%;
+            padding: 10px;
+            background: #000;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .filter-select:focus { border-color: var(--primary); outline: none; }
+
+        /* CSS KARTU LAMA (TETAP SAMA) */
         .schedule-card-main {
             background: linear-gradient(135deg, #222 0%, #111 100%);
             border: 1px solid var(--primary);
@@ -55,22 +79,27 @@
 
     <div class="container">
         
+        <!-- FITUR BARU: FILTER LOKASI -->
+        <div class="filter-container">
+            <i class="fa-solid fa-filter" style="color:var(--primary);"></i>
+            <select id="location-filter" class="filter-select">
+                <option value="all">-- Tampilkan Semua Lokasi --</option>
+                <!-- Opsi Lokasi akan diisi otomatis oleh JS -->
+            </select>
+        </div>
+
         <!-- SECTION 1: MINGGU INI -->
         <div class="section-title"><i class="fa-solid fa-fire"></i> Minggu Ini</div>
         
-        <!-- WADAH KOSONG (Nanti diisi Script) -->
         <div id="main-event-container">
-            <!-- TAMPILAN SEMENTARA SEBELUM DATA MUNCUL -->
-            <div style="text-align:center; padding:50px; border:1px dashed #444; border-radius:10px; color:#888;">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:10px;"></i><br>
-                Sedang memuat jadwal terbaru...
+            <div style="text-align:center; padding:50px; color:#888;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Memuat jadwal...
             </div>
         </div>
 
         <!-- SECTION 2: JADWAL MENDATANG -->
         <div class="section-title"><i class="fa-regular fa-calendar"></i> Jadwal Berikutnya (Upcoming)</div>
 
-        <!-- WADAH KOSONG (Nanti diisi Script) -->
         <div id="upcoming-event-list">
              <p style="text-align:center; color:#555;">Memuat data...</p>
         </div>
@@ -79,44 +108,70 @@
         <center><small style="color:#666;">Jadwal dapat berubah sewaktu-waktu.</small></center>
     </div>
 
-    <!-- SCRIPT (LOGIKA PENGAMBIL DATA) -->
+    <!-- SCRIPT LOGIKA -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, getDocs, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // FUNGSI UTAMA: MENGAMBIL DATA DAN MENYUSUN HTML
-        async function loadSchedule() {
+        // 1. FUNGSI ISI DROPDOWN DARI DATABASE
+        async function loadVenueOptions() {
+            const select = document.getElementById('location-filter');
+            // Ambil data lokasi dari koleksi 'venues'
+            const q = query(collection(db, "venues"), orderBy("order", "asc"));
+            const snapshot = await getDocs(q);
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Buat opsi baru
+                const option = document.createElement("option");
+                option.value = data.name; // Value sesuai nama lokasi (misal: "Angkringan TWSL")
+                option.text = data.name;
+                select.appendChild(option);
+            });
+
+            // Tambahkan Event Listener: Kalau diganti, load ulang jadwal
+            select.addEventListener('change', () => {
+                loadSchedule(select.value);
+            });
+        }
+
+        // 2. FUNGSI LOAD JADWAL (DENGAN FILTER)
+        async function loadSchedule(filterLoc = 'all') {
             const mainContainer = document.getElementById('main-event-container');
             const upcomingContainer = document.getElementById('upcoming-event-list');
             
-            // Ambil data 'events' dari database
+            mainContainer.innerHTML = '<p style="text-align:center; color:#888;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</p>';
+            
+            // Ambil semua event urut tanggal
             const q = query(collection(db, "events"), orderBy("date", "asc"));
             const querySnapshot = await getDocs(q);
 
-            // JIKA DATABASE KOSONG (Belum ada yang diinput Admin)
-            if (querySnapshot.empty) {
-                // Kita isi data dummy DULU supaya tampilan tidak kosong melompong saat kamu cek sekarang.
-                // Nanti fitur seedDatabase() ini kita hapus kalau Admin Dashboard sudah jadi.
-                await seedDatabase(); 
-                return loadSchedule(); // Refresh biar muncul
-            }
-
-            // KOSONGKAN WADAH (Hapus loading spinner)
             mainContainer.innerHTML = '';
             upcomingContainer.innerHTML = '';
 
-            // LOOPING DATA DARI DATABASE
+            if (querySnapshot.empty) {
+                mainContainer.innerHTML = '<p style="text-align:center; color:#666;">Belum ada jadwal.</p>';
+                return;
+            }
+
+            let foundAny = false;
+
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
 
-                // === 1. JIKA TIPE DATA ADALAH EVENT UTAMA (MINGGU INI) ===
+                // === LOGIKA FILTER ===
+                // Jika filter bukan 'all', DAN lokasi event TIDAK SAMA dengan filter -> SKIP
+                if (filterLoc !== 'all' && data.location !== filterLoc) {
+                    return; 
+                }
+
+                foundAny = true;
+
+                // TAMPILKAN MAIN EVENT
                 if (data.type === 'main') {
-                    
-                    // Siapkan HTML untuk 3 Performer
                     let performersHtml = '';
                     if (data.performers && data.performers.length > 0) {
                         data.performers.forEach(p => {
-                            // Ini menggunakan struktur HTML class="performer-list-item" yang SAMA PERSIS dengan desain asli
                             performersHtml += `
                             <div class="performer-list-item">
                                 <img src="${p.img}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
@@ -129,24 +184,21 @@
                         });
                     }
 
-                    // Gabungkan menjadi Kartu Utama (Desain Tetap Sama)
                     mainContainer.innerHTML += `
                     <div class="schedule-card-main">
                         <div style="display:flex; justify-content:space-between; align-items:start;">
                             <div>
                                 <h2>${data.displayDate}</h2>
-                                <p style="color:#ccc; margin-top:-10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: ${data.location}</p>
+                                <p style="color:#ccc; margin-top:-10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: <b>${data.location}</b></p>
                             </div>
                             <span class="badge active" style="font-size:0.9rem; padding:5px 10px;">${data.statusText}</span>
                         </div>
                         <hr style="border:0; border-top:1px solid #444; margin:20px 0;">
-                        
-                        <!-- List Artis Dimasukkan Disini -->
                         ${performersHtml}
                     </div>`;
                 } 
                 
-                // === 2. JIKA TIPE DATA ADALAH UPCOMING (JADWAL MENDATANG) ===
+                // TAMPILKAN UPCOMING EVENT (Jika lokasi sesuai filter juga)
                 else if (data.type === 'upcoming') {
                     upcomingContainer.innerHTML += `
                     <div class="upcoming-item">
@@ -161,33 +213,15 @@
                     </div>`;
                 }
             });
+
+            if (!foundAny) {
+                mainContainer.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">Tidak ada jadwal di lokasi ini.</p>';
+            }
         }
 
-        // FUNGSI BANTUAN: ISI DATA DUMMY OTOMATIS (Hanya jika database kosong)
-        // Ini supaya kamu bisa lihat hasilnya sekarang. Nanti Admin yang akan input data ini.
-        async function seedDatabase() {
-            const eventsRef = collection(db, "events");
-            
-            // CONTOH DATA YANG AKAN DIINPUT ADMIN NANTI:
-            await addDoc(eventsRef, {
-                type: "main",
-                date: "2026-01-03", 
-                displayDate: "Sabtu, 03 Januari 2026",
-                location: "Stadion Bayuangga Zone",
-                statusText: "ON SCHEDULE",
-                // Ini Array 3 Artis yang kamu maksud
-                performers: [
-                    { name: "Rina Violinist", time: "19.00 - 20.00 WIB", genre: "Instrumental & Akustik", img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" },
-                    { name: "The Acoustic Boys", time: "20.00 - 21.00 WIB", genre: "Pop Jawa & Koplo", img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" },
-                    { name: "Keroncong Pro", time: "21.00 - Selesai", genre: "Tembang Kenangan", img: "https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=100" }
-                ]
-            });
-            // Data Upcoming dummy...
-            await addDoc(eventsRef, { type: "upcoming", date: "2026-01-10", dateNum: "10", dateMonth: "JAN", title: "Jazz Night Special", desc: "Menampilkan: Jazz Trio & Solo Hudi" });
-            await addDoc(eventsRef, { type: "upcoming", date: "2026-01-17", dateNum: "17", dateMonth: "JAN", title: "Rock Legend Tribute", desc: "Menampilkan: Rock Ballad Pro" });
-        }
-
-        loadSchedule();
+        // INIT
+        loadVenueOptions(); // Isi dropdown dulu
+        loadSchedule('all'); // Load semua jadwal pertama kali
     </script>
 </body>
 </html>
