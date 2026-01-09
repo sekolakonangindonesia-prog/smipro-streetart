@@ -7,22 +7,15 @@ import {
    0. LOGIKA NAVIGASI (SIDEBAR & TABS)
    ========================================= */
 
-// FUNGSI showView (GABUNGAN FINAL)
 window.showView = function(viewId, btn) {
-    // 1. Sembunyikan semua view
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    
-    // 2. Tampilkan view yang dipilih
     const target = document.getElementById('view-' + viewId);
     if(target) target.classList.remove('hidden');
     
-    // 3. Khusus Tab Finance: Load Datanya
+    // Auto Load Data Khusus
     if(viewId === 'finance') renderFinanceData(); 
-    
-    // 4. Khusus Tab CMS: Reset radio form jika perlu (opsional)
-    // if(viewId === 'cms') ...
+    if(viewId === 'cms') loadArtistDropdowns(); // <--- TAMBAHAN: Isi Dropdown Artis
 
-    // 5. Update status tombol aktif
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
@@ -62,9 +55,7 @@ async function loadMitraData() {
                 statusBadge = `<span style="color:orange;">Butuh Approval</span>`;
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
-            
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
-            
             tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.owner||'-'}</td><td>${data.totalTables}</td><td>${statusBadge}</td><td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
         });
     });
@@ -119,23 +110,19 @@ window.seedPerformer = async function() {
     alert("Performer Dibuat! Silakan klik 'Masuk'.");
 }
 
-// --- UPDATE: Login Performer (Simpan ID Dokumen) ---
 window.loginAsPerf = function(id, name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'performer');
         localStorage.setItem('userName', name + " (Admin)");
-        
-        // INI KUNCINYA: Simpan ID Dokumen Firebase agar bisa diedit nanti
         localStorage.setItem('performerId', id); 
-        
         localStorage.setItem('userLink', 'performer-dashboard.html');
         localStorage.setItem('adminOrigin', 'true');
         localStorage.setItem('adminReturnTab', 'performer');
-        
         window.location.href = 'performer-dashboard.html';
     }
 }
+window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "performers", id)); }
 
 /* =========================================
    3. MANAJEMEN MENTOR
@@ -155,7 +142,6 @@ async function loadMentorData() {
     });
 }
 
-// --- REVISI DATA MENTOR (ANTON) ---
 window.seedMentors = async function() {
     const mentorsData = [
         {
@@ -166,7 +152,7 @@ window.seedMentors = async function() {
             profession: ["Dosen Musik", "Event Organizer"]
         },
         {
-            name: "Bpk. Anton", // SUDAH DIGANTI ANTON
+            name: "Bpk. Anton",
             specialist: "Public Speaking", 
             img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200",
             portfolio: ["MC Kondang Jawa Timur", "Trainer Komunikasi"],
@@ -212,13 +198,33 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
    4. CMS MODULE (JADWAL, RADIO, BERITA)
    ========================================= */
 
+// --- BARU: ISI DROPDOWN ARTIS OTOMATIS ---
+async function loadArtistDropdowns() {
+    const selects = ['p1-name', 'p2-name', 'p3-name'];
+    const q = query(collection(db, "performers"), orderBy("name", "asc"));
+    const snapshot = await getDocs(q);
+    
+    // Simpan opsi HTML dalam variabel
+    let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        optionsHTML += `<option value="${data.name}">${data.name}</option>`;
+    });
+
+    // Masukkan ke 3 dropdown
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.innerHTML = optionsHTML;
+    });
+}
+
 // 1. SAVE SCHEDULE (JADWAL)
 window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
     
-    // Ambil Data Artis
     const performers = [
         {
             name: document.getElementById('p1-name').value,
@@ -238,7 +244,7 @@ window.saveSchedule = async function() {
             genre: document.getElementById('p3-genre').value,
             img: "https://via.placeholder.com/100"
         }
-    ].filter(p => p.name !== ""); 
+    ].filter(p => p.name !== "" && p.name !== "Lainnya"); // Filter
 
     if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
 
@@ -507,13 +513,6 @@ window.finishReq = async function(id) {
 }
 
 /* =========================================
-   6. AUTO-RETURN TAB & INIT
-   ========================================= */
-loadMitraData();
-loadPerformerData();
-loadMentorData();
-
-/* =========================================
    6. SETUP DATA LOKASI (SEEDING)
    ========================================= */
 window.seedVenues = async function() {
@@ -533,6 +532,13 @@ window.seedVenues = async function() {
     }
 }
 
+/* =========================================
+   7. AUTO-RETURN TAB & INIT
+   ========================================= */
+loadMitraData();
+loadPerformerData();
+loadMentorData();
+
 setTimeout(() => {
     const lastTab = localStorage.getItem('adminReturnTab');
     if (lastTab) {
@@ -547,4 +553,3 @@ setTimeout(() => {
         localStorage.removeItem('adminReturnTab');
     }
 }, 500);
-
