@@ -207,13 +207,16 @@ loadPerformerData();
 loadMentorData();
 
 /* =========================================
-   4. MODUL KEUANGAN & STATISTIK (FIXED)
+   4. MODUL KEUANGAN & LIVE COMMAND CENTER (FINAL)
    ========================================= */
 
+// Expose fungsi ke window
 window.loadFinanceStats = function() {
-    renderFinanceData();
+    renderFinanceData(); // Kolom Kanan
+    renderLiveMonitor(); // Kolom Kiri
 }
 
+// A. LOGIKA KOLOM KANAN (STATISTIK & HISTORY)
 let financeUnsubscribe = null;
 
 async function renderFinanceData() {
@@ -222,6 +225,7 @@ async function renderFinanceData() {
     const perfContainer = document.getElementById('top-performer-list');
     const songContainer = document.getElementById('top-song-list');
     
+    // Query data 'finished'
     const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
     if(financeUnsubscribe) financeUnsubscribe();
@@ -241,18 +245,15 @@ async function renderFinanceData() {
             const date = d.timestamp.toDate(); 
             let include = false;
 
+            // Filter Waktu
             if (filterType === 'all') include = true;
-            else if (filterType === 'today') {
-                if (date >= now) include = true;
-            }
+            else if (filterType === 'today') { if (date >= now) include = true; }
             else if (filterType === 'week') {
-                const weekAgo = new Date(now);
-                weekAgo.setDate(now.getDate() - 7);
+                const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
                 if (date >= weekAgo) include = true;
             }
             else if (filterType === 'month') {
-                const monthAgo = new Date(now);
-                monthAgo.setMonth(now.getMonth() - 1);
+                const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 1);
                 if (date >= monthAgo) include = true;
             }
 
@@ -268,44 +269,99 @@ async function renderFinanceData() {
                 if (!songStats[displaySong]) songStats[displaySong] = 0;
                 songStats[displaySong] += 1;
 
-                const dateStr = date.toLocaleDateString('id-ID') + ' ' + date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                const dateStr = date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                 historyHTML += `
                 <tr>
-                    <td><small style="color:#888;">${dateStr}</small></td>
+                    <td>${dateStr}</td>
                     <td>${d.sender}</td>
                     <td>${d.song}</td>
                     <td>${d.performer}</td>
-                    <td style="color:#00ff00; font-weight:bold;">Rp ${parseInt(d.amount).toLocaleString()}</td>
+                    <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
                 </tr>`;
             }
         });
 
         document.getElementById('fin-total-amount').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('fin-total-req').innerText = totalCount;
-        tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data pada periode ini.</td></tr>';
+        tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center; color:#555;">Belum ada data arsip.</td></tr>';
 
-        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 5);
+        // Render Top Perf
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 3);
         perfContainer.innerHTML = '';
-        sortedPerf.forEach(([name, amount], index) => {
-            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? 'silver' : '#cd7f32');
-            const borderStyle = index < 3 ? `border-left: 3px solid ${rankColor};` : '';
-            perfContainer.innerHTML += `
-            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px; ${borderStyle}">
-                <span><b>#${index+1}</b> ${name}</span>
-                <span style="color:#00ff00;">Rp ${amount.toLocaleString()}</span>
-            </div>`;
+        sortedPerf.forEach(([name, amount], i) => {
+            perfContainer.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem;"><span>${i+1}. ${name}</span><span style="color:gold;">Rp ${amount.toLocaleString()}</span></div>`;
         });
 
-        const sortedSong = Object.entries(songStats).sort(([,a], [,b]) => b - a).slice(0, 5);
+        // Render Top Song
+        const sortedSong = Object.entries(songStats).sort(([,a], [,b]) => b - a).slice(0, 3);
         songContainer.innerHTML = '';
-        sortedSong.forEach(([name, count], index) => {
-            songContainer.innerHTML += `
-            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px;">
-                <span>${name}</span>
-                <span style="background:#333; padding:2px 8px; border-radius:10px; font-size:0.8rem;">${count} x</span>
+        sortedSong.forEach(([name, count], i) => {
+            songContainer.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem;"><span>${i+1}. ${name}</span><span style="color:#aaa;">${count}x</span></div>`;
+        });
+    });
+}
+
+// B. LOGIKA KOLOM KIRI (LIVE MONITOR)
+let liveUnsubscribe = null;
+
+async function renderLiveMonitor() {
+    const list = document.getElementById('admin-live-list');
+    // Ambil Pending & Approved
+    const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
+
+    if(liveUnsubscribe) liveUnsubscribe();
+
+    liveUnsubscribe = onSnapshot(q, (snapshot) => {
+        list.innerHTML = '';
+        if(snapshot.empty) {
+            list.innerHTML = '<p style="text-align:center; color:#444; margin-top:50px;">Tidak ada antrian.</p>';
+            return;
+        }
+
+        // Sort Manual (Approved duluan)
+        let requests = [];
+        snapshot.forEach(doc => requests.push({id: doc.id, ...doc.data()}));
+        requests.sort((a,b) => {
+            if(a.status === b.status) return a.timestamp - b.timestamp;
+            return a.status === 'approved' ? -1 : 1;
+        });
+
+        requests.forEach(d => {
+            let btnAction = '';
+            let statusText = '';
+
+            if(d.status === 'pending') {
+                statusText = '<span style="color:#ffeb3b; font-size:0.8rem;">⏳ MENUNGGU DANA</span>';
+                btnAction = `<button class="btn-mini-action btn-acc" onclick="approveReq('${d.id}')">TERIMA DANA</button>`;
+            } else {
+                statusText = '<span style="color:#00ff00; font-size:0.8rem;">✅ LUNAS (ON AIR)</span>';
+                btnAction = `<button class="btn-mini-action btn-finish" onclick="finishReq('${d.id}')">SELESAI / ARSIP</button>`;
+            }
+
+            list.innerHTML += `
+            <div class="req-card-mini ${d.status}">
+                <div class="mini-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
+                <div>${statusText}</div>
+                <h4 style="margin:5px 0; color:white;">${d.song}</h4>
+                <small style="color:#aaa;">Dari: ${d.sender} • Untuk: ${d.performer}</small>
+                ${btnAction}
             </div>`;
         });
     });
+}
+
+// C. FUNGSI AKSI (EXPORT KE WINDOW)
+window.approveReq = async function(id) {
+    if(confirm("Pastikan dana sudah masuk mutasi?")) {
+        await updateDoc(doc(db, "requests", id), { status: 'approved' });
+    }
+}
+
+window.finishReq = async function(id) {
+    if(confirm("Arsipkan request ini ke Laporan?")) {
+        // Pindah status jadi finished -> Otomatis hilang dari Kiri, muncul di Kanan
+        await updateDoc(doc(db, "requests", id), { status: 'finished' });
+    }
 }
 
 /* =========================================
