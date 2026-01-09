@@ -33,6 +33,19 @@ window.adminLogout = function() {
     }
 }
 
+window.showView = function(viewId, btn) {
+    document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById('view-' + viewId);
+    if(target) target.classList.remove('hidden');
+    
+    // --- TAMBAHAN BARIS INI ---
+    if(viewId === 'finance') renderFinanceData(); 
+    // --------------------------
+
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+}
+
 /* =========================================
    1. MANAJEMEN MITRA
    ========================================= */
@@ -215,6 +228,137 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
 loadMitraData();
 loadPerformerData();
 loadMentorData();
+
+/* =========================================
+   4. MODUL KEUANGAN & STATISTIK (BARU)
+   ========================================= */
+
+// Expose fungsi ke window agar bisa dipanggil dari HTML (onchange)
+window.loadFinanceStats = function() {
+    renderFinanceData();
+}
+
+// Listener Data Keuangan
+let financeUnsubscribe = null;
+
+async function renderFinanceData() {
+    const filterType = document.getElementById('finance-filter').value; // today, week, month, all
+    const tbody = document.getElementById('finance-history-body');
+    const perfContainer = document.getElementById('top-performer-list');
+    const songContainer = document.getElementById('top-song-list');
+    
+    // Query semua data 'finished' (arsip)
+    // Catatan: Idealnya di real-world app, ini pakai agregasi server. 
+    // Tapi untuk skala ini, client-side processing masih aman.
+    const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
+
+    if(financeUnsubscribe) financeUnsubscribe();
+
+    financeUnsubscribe = onSnapshot(q, (snapshot) => {
+        let totalMoney = 0;
+        let totalCount = 0;
+        let perfStats = {}; // { 'NamaArtis': TotalUang }
+        let songStats = {}; // { 'JudulLagu': JumlahRequest }
+        let historyHTML = '';
+
+        const now = new Date();
+        now.setHours(0,0,0,0); // Set ke jam 00:00 hari ini
+
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const date = d.timestamp.toDate(); // Convert Firestore Timestamp
+            let include = false;
+
+            // --- LOGIKA FILTER WAKTU ---
+            if (filterType === 'all') include = true;
+            else if (filterType === 'today') {
+                if (date >= now) include = true;
+            }
+            else if (filterType === 'week') {
+                const weekAgo = new Date(now);
+                weekAgo.setDate(now.getDate() - 7);
+                if (date >= weekAgo) include = true;
+            }
+            else if (filterType === 'month') {
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(now.getMonth() - 1);
+                if (date >= monthAgo) include = true;
+            }
+
+            if (include) {
+                // 1. Hitung Total
+                totalMoney += parseInt(d.amount);
+                totalCount++;
+
+                // 2. Hitung Statistik Performer (Cuan)
+                // Bersihkan nama performer (trim spasi)
+                const pName = d.performer ? d.performer.trim() : "Unknown";
+                if (!perfStats[pName]) perfStats[pName] = 0;
+                perfStats[pName] += parseInt(d.amount);
+
+                // 3. Hitung Statistik Lagu (Popularitas)
+                const sName = d.song ? d.song.trim().toLowerCase() : "unknown"; // Lowercase biar 'Nemen' & 'nemen' sama
+                // Simpan judul asli untuk display (kapitalisasi pertama)
+                const displaySong = d.song; 
+                
+                if (!songStats[displaySong]) songStats[displaySong] = 0;
+                songStats[displaySong] += 1;
+
+                // 4. Masukkan ke Tabel Riwayat
+                const dateStr = date.toLocaleDateString('id-ID') + ' ' + date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                historyHTML += `
+                <tr>
+                    <td><small style="color:#888;">${dateStr}</small></td>
+                    <td>${d.sender}</td>
+                    <td>${d.song}</td>
+                    <td>${d.performer}</td>
+                    <td style="color:#00ff00; font-weight:bold;">Rp ${parseInt(d.amount).toLocaleString()}</td>
+                </tr>`;
+            }
+        });
+
+        // UPDATE UI DASHBOARD
+        document.getElementById('fin-total-amount').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('fin-total-req').innerText = totalCount;
+        tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data pada periode ini.</td></tr>';
+
+        // RENDER TOP PERFORMER (Sort by Uang Terbanyak)
+        // Ubah Object ke Array -> Sort -> Ambil Top 5
+        const sortedPerf = Object.entries(perfStats)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+        
+        perfContainer.innerHTML = '';
+        sortedPerf.forEach(([name, amount], index) => {
+            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? 'silver' : '#cd7f32'); // Emas, Perak, Perunggu
+            const borderStyle = index < 3 ? `border-left: 3px solid ${rankColor};` : '';
+            
+            perfContainer.innerHTML += `
+            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px; ${borderStyle}">
+                <span><b>#${index+1}</b> ${name}</span>
+                <span style="color:#00ff00;">Rp ${amount.toLocaleString()}</span>
+            </div>`;
+        });
+
+        // RENDER TOP SONG (Sort by Jumlah Request)
+        const sortedSong = Object.entries(songStats)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+
+        songContainer.innerHTML = '';
+        sortedSong.forEach(([name, count], index) => {
+            songContainer.innerHTML += `
+            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px;">
+                <span>${name}</span>
+                <span style="background:#333; padding:2px 8px; border-radius:10px; font-size:0.8rem;">${count} x</span>
+            </div>`;
+        });
+    });
+}
+
+// Panggil fungsi ini saat Admin Script dimuat,
+// Tapi sebaiknya dipanggil saat Tab Keuangan diklik (showView).
+// Cari fungsi showView di atas, tambahkan: if(viewId === 'finance') loadFinanceStats();
 
 /* =========================================
    4. FITUR TAMBAHAN: AUTO-RETURN TAB
