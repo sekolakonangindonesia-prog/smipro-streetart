@@ -119,18 +119,23 @@ window.seedPerformer = async function() {
     alert("Performer Dibuat! Silakan klik 'Masuk'.");
 }
 
+// --- UPDATE: Login Performer (Simpan ID Dokumen) ---
 window.loginAsPerf = function(id, name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'performer');
         localStorage.setItem('userName', name + " (Admin)");
+        
+        // INI KUNCINYA: Simpan ID Dokumen Firebase agar bisa diedit nanti
+        localStorage.setItem('performerId', id); 
+        
         localStorage.setItem('userLink', 'performer-dashboard.html');
         localStorage.setItem('adminOrigin', 'true');
         localStorage.setItem('adminReturnTab', 'performer');
+        
         window.location.href = 'performer-dashboard.html';
     }
 }
-window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "performers", id)); }
 
 /* =========================================
    3. MANAJEMEN MENTOR
