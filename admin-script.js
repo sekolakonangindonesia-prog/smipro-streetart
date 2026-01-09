@@ -7,11 +7,19 @@ import {
    0. LOGIKA NAVIGASI (SIDEBAR & TABS)
    ========================================= */
 
+// FUNGSI showView GABUNGAN (YANG BENAR)
 window.showView = function(viewId, btn) {
+    // 1. Sembunyikan semua view
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+    
+    // 2. Tampilkan view yang dipilih
     const target = document.getElementById('view-' + viewId);
     if(target) target.classList.remove('hidden');
-    // if(viewId === 'cms') renderRadioForm(); // Opsional jika belum ada fungsinya
+    
+    // 3. Tambahan: Jika buka Finance, load datanya
+    if(viewId === 'finance') renderFinanceData(); 
+
+    // 4. Update status tombol aktif
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
@@ -31,19 +39,6 @@ window.adminLogout = function() {
         localStorage.removeItem('adminOrigin'); 
         window.location.href = 'index.html';
     }
-}
-
-window.showView = function(viewId, btn) {
-    document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById('view-' + viewId);
-    if(target) target.classList.remove('hidden');
-    
-    // --- TAMBAHAN BARIS INI ---
-    if(viewId === 'finance') renderFinanceData(); 
-    // --------------------------
-
-    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-    if(btn) btn.classList.add('active');
 }
 
 /* =========================================
@@ -73,7 +68,7 @@ async function loadMitraData() {
     });
 }
 
-// --- UPDATE: Login Mitra (Catat Jejak 'mitra') ---
+// Login Mitra (Catat Jejak 'mitra')
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -81,10 +76,7 @@ window.loginAsMitra = function(id, name) {
         localStorage.setItem('userName', name + " (Mode Admin)");
         localStorage.setItem('userLink', 'mitra-dashboard.html');
         localStorage.setItem('adminOrigin', 'true'); 
-        
-        // CATAT JEJAK TAB
         localStorage.setItem('adminReturnTab', 'mitra'); 
-        
         window.location.href = 'mitra-dashboard.html';
     }
 }
@@ -93,7 +85,7 @@ window.approveTable = async function(id) { if(confirm("Setujui?")) await updateD
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
 /* =========================================
-   2. MANAJEMEN PERFORMER (PENTING)
+   2. MANAJEMEN PERFORMER
    ========================================= */
 async function loadPerformerData() {
     const tbody = document.getElementById('perf-table-body');
@@ -108,11 +100,8 @@ async function loadPerformerData() {
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-            
-            // TOMBOL MASUK DENGAN KLASIFIKASI TAB 'performer'
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
-            
             tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td><span style="color:#00ff00;">Verified</span></td><td>${btnLogin} ${btnDel}</td></tr>`;
         });
     });
@@ -129,7 +118,6 @@ window.seedPerformer = async function() {
     alert("Performer Dibuat! Silakan klik 'Masuk'.");
 }
 
-// --- UPDATE: Login Performer (Catat Jejak 'performer') ---
 window.loginAsPerf = function(id, name) {
     if(confirm(`Masuk ke Studio ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -137,10 +125,7 @@ window.loginAsPerf = function(id, name) {
         localStorage.setItem('userName', name + " (Admin)");
         localStorage.setItem('userLink', 'performer-dashboard.html');
         localStorage.setItem('adminOrigin', 'true');
-        
-        // CATAT JEJAK TAB
         localStorage.setItem('adminReturnTab', 'performer');
-        
         window.location.href = 'performer-dashboard.html';
     }
 }
@@ -157,17 +142,13 @@ async function loadMentorData() {
         if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Klik Generate.</td></tr>'; return; }
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            
-            // TOMBOL MASUK DENGAN KLASIFIKASI TAB 'mentor'
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsMentor('${docSnap.id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteMentor('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
-            
             tbody.innerHTML += `<tr><td>${data.name}</td><td>${data.specialist}</td><td>Aktif</td><td>${btnLogin} ${btnDel}</td></tr>`;
         });
     });
 }
 
-// --- FUNGSI SEED MENTOR YANG SUDAH BENAR ---
 window.seedMentors = async function() {
     const mentorsData = [
         {
@@ -206,7 +187,6 @@ window.seedMentors = async function() {
     }
 }
 
-// --- UPDATE: Login Mentor (Catat Jejak 'mentor') ---
 window.loginAsMentor = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -215,10 +195,7 @@ window.loginAsMentor = function(id, name) {
         localStorage.setItem('userLink', 'mentor-dashboard.html'); 
         localStorage.setItem('mentorId', id);
         localStorage.setItem('adminOrigin', 'true');
-        
-        // CATAT JEJAK TAB
         localStorage.setItem('adminReturnTab', 'mentor');
-        
         window.location.href = 'mentor-dashboard.html';
     }
 }
@@ -230,26 +207,21 @@ loadPerformerData();
 loadMentorData();
 
 /* =========================================
-   4. MODUL KEUANGAN & STATISTIK (BARU)
+   4. MODUL KEUANGAN & STATISTIK (FIXED)
    ========================================= */
 
-// Expose fungsi ke window agar bisa dipanggil dari HTML (onchange)
 window.loadFinanceStats = function() {
     renderFinanceData();
 }
 
-// Listener Data Keuangan
 let financeUnsubscribe = null;
 
 async function renderFinanceData() {
-    const filterType = document.getElementById('finance-filter').value; // today, week, month, all
+    const filterType = document.getElementById('finance-filter').value; 
     const tbody = document.getElementById('finance-history-body');
     const perfContainer = document.getElementById('top-performer-list');
     const songContainer = document.getElementById('top-song-list');
     
-    // Query semua data 'finished' (arsip)
-    // Catatan: Idealnya di real-world app, ini pakai agregasi server. 
-    // Tapi untuk skala ini, client-side processing masih aman.
     const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
     if(financeUnsubscribe) financeUnsubscribe();
@@ -257,19 +229,18 @@ async function renderFinanceData() {
     financeUnsubscribe = onSnapshot(q, (snapshot) => {
         let totalMoney = 0;
         let totalCount = 0;
-        let perfStats = {}; // { 'NamaArtis': TotalUang }
-        let songStats = {}; // { 'JudulLagu': JumlahRequest }
+        let perfStats = {}; 
+        let songStats = {}; 
         let historyHTML = '';
 
         const now = new Date();
-        now.setHours(0,0,0,0); // Set ke jam 00:00 hari ini
+        now.setHours(0,0,0,0); 
 
         snapshot.forEach(doc => {
             const d = doc.data();
-            const date = d.timestamp.toDate(); // Convert Firestore Timestamp
+            const date = d.timestamp.toDate(); 
             let include = false;
 
-            // --- LOGIKA FILTER WAKTU ---
             if (filterType === 'all') include = true;
             else if (filterType === 'today') {
                 if (date >= now) include = true;
@@ -286,25 +257,17 @@ async function renderFinanceData() {
             }
 
             if (include) {
-                // 1. Hitung Total
                 totalMoney += parseInt(d.amount);
                 totalCount++;
 
-                // 2. Hitung Statistik Performer (Cuan)
-                // Bersihkan nama performer (trim spasi)
                 const pName = d.performer ? d.performer.trim() : "Unknown";
                 if (!perfStats[pName]) perfStats[pName] = 0;
                 perfStats[pName] += parseInt(d.amount);
 
-                // 3. Hitung Statistik Lagu (Popularitas)
-                const sName = d.song ? d.song.trim().toLowerCase() : "unknown"; // Lowercase biar 'Nemen' & 'nemen' sama
-                // Simpan judul asli untuk display (kapitalisasi pertama)
                 const displaySong = d.song; 
-                
                 if (!songStats[displaySong]) songStats[displaySong] = 0;
                 songStats[displaySong] += 1;
 
-                // 4. Masukkan ke Tabel Riwayat
                 const dateStr = date.toLocaleDateString('id-ID') + ' ' + date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
                 historyHTML += `
                 <tr>
@@ -317,22 +280,15 @@ async function renderFinanceData() {
             }
         });
 
-        // UPDATE UI DASHBOARD
         document.getElementById('fin-total-amount').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('fin-total-req').innerText = totalCount;
         tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data pada periode ini.</td></tr>';
 
-        // RENDER TOP PERFORMER (Sort by Uang Terbanyak)
-        // Ubah Object ke Array -> Sort -> Ambil Top 5
-        const sortedPerf = Object.entries(perfStats)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5);
-        
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 5);
         perfContainer.innerHTML = '';
         sortedPerf.forEach(([name, amount], index) => {
-            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? 'silver' : '#cd7f32'); // Emas, Perak, Perunggu
+            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? 'silver' : '#cd7f32');
             const borderStyle = index < 3 ? `border-left: 3px solid ${rankColor};` : '';
-            
             perfContainer.innerHTML += `
             <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px; ${borderStyle}">
                 <span><b>#${index+1}</b> ${name}</span>
@@ -340,11 +296,7 @@ async function renderFinanceData() {
             </div>`;
         });
 
-        // RENDER TOP SONG (Sort by Jumlah Request)
-        const sortedSong = Object.entries(songStats)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5);
-
+        const sortedSong = Object.entries(songStats).sort(([,a], [,b]) => b - a).slice(0, 5);
         songContainer.innerHTML = '';
         sortedSong.forEach(([name, count], index) => {
             songContainer.innerHTML += `
@@ -356,35 +308,20 @@ async function renderFinanceData() {
     });
 }
 
-// Panggil fungsi ini saat Admin Script dimuat,
-// Tapi sebaiknya dipanggil saat Tab Keuangan diklik (showView).
-// Cari fungsi showView di atas, tambahkan: if(viewId === 'finance') loadFinanceStats();
-
 /* =========================================
-   4. FITUR TAMBAHAN: AUTO-RETURN TAB
-   (Letakkan di paling bawah)
+   5. AUTO-RETURN TAB
    ========================================= */
 setTimeout(() => {
-    // 1. Cek apakah ada catatan tab terakhir?
     const lastTab = localStorage.getItem('adminReturnTab');
-
     if (lastTab) {
         console.log("Mencoba kembali ke tab:", lastTab);
-
-        // 2. Cari semua tombol menu di sidebar
         const allMenus = document.querySelectorAll('.menu-item');
-        
-        // 3. Loop cari tombol yang cocok dengan kata kunci
         allMenus.forEach(btn => {
             const clickAttr = btn.getAttribute('onclick');
-            // Jika onclick mengandung kata kunci (misal 'mitra', 'performer', 'mentor')
             if (clickAttr && clickAttr.includes(lastTab)) {
-                // KLIK TOMBOLNYA SECARA OTOMATIS
                 btn.click();
             }
         });
-
-        // 4. Hapus catatan
         localStorage.removeItem('adminReturnTab');
     }
-}, 500); // Jeda 0.5 detik
+}, 500);
