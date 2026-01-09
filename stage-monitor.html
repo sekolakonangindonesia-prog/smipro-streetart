@@ -8,46 +8,57 @@
     <style>
         body { background: black; color: white; font-family: sans-serif; padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
-        
         .request-grid { display: grid; gap: 15px; }
         
+        /* CARD STYLE */
         .req-card { 
             background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; 
             display: flex; justify-content: space-between; align-items: center;
+            animation: fadeIn 0.5s;
         }
         
         /* WARNA STATUS */
-        .req-card.pending { border-left: 5px solid #ffeb3b; } /* Kuning */
-        .req-card.approved { border-left: 5px solid #00ff00; background: #0a290a; } /* Hijau */
+        .req-card.pending { border-left: 8px solid #ffeb3b; background: #1a1a00; } /* Kuning */
+        .req-card.approved { border-left: 8px solid #00ff00; background: #001a00; } /* Hijau */
 
-        .amount-badge { background: #333; padding: 5px 10px; border-radius: 5px; font-weight: bold; color: gold; }
-        .sender-info { color: #00d2ff; font-weight: bold; font-size: 0.9rem; }
+        .amount-badge { background: #333; padding: 8px 15px; border-radius: 5px; font-weight: bold; color: gold; font-size: 1.2rem; }
+        .sender-info { color: #00d2ff; font-weight: bold; font-size: 1rem; }
         
-        .btn-acc { background: #00ff00; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-done { background: #333; color: #888; border: 1px solid #555; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        .btn-del { background: #ff0000; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+        .btn-acc { background: #00ff00; color: black; border: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-acc:hover { background: #00cc00; }
 
-        h1 { margin: 0; color: red; }
+        .btn-done { background: #333; color: white; border: 1px solid #666; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-done:hover { background: #555; }
+
+        .btn-del { background: #b71c1c; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+
+        h1 { margin: 0; color: #E50914; letter-spacing: 2px; }
+        h2 { font-size: 2rem; margin: 5px 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>STAGE MONITOR</h1>
+        <div>
+            <h1>STAGE MONITOR</h1>
+            <small style="color:#888;">Layar Kontrol Request & Saweran</small>
+        </div>
         <div style="text-align: right;">
-            <span style="font-size: 2rem;" id="clock">00:00</span>
-            <div style="color: #888;">Admin Panel</div>
+            <span style="font-size: 3rem; font-weight:bold; font-family: monospace;" id="clock">00:00</span>
         </div>
     </div>
 
     <!-- LIST REQUEST -->
     <div id="request-list" class="request-grid">
-        <p style="text-align:center; color:#555;">Menunggu request masuk...</p>
+        <p style="text-align:center; color:#555; font-size: 1.2rem; margin-top: 50px;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Menunggu sinyal request...
+        </p>
     </div>
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // JAM DIGITAL
         setInterval(() => {
@@ -55,42 +66,59 @@
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
         }, 1000);
 
-        // LISTEN DATA REALTIME
-        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        // LISTEN DATA REALTIME (HANYA PENDING & APPROVED)
+        // Kita filter supaya yang 'finished' tidak muncul di layar ini (tapi tetap ada di database)
+        const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
         
         onSnapshot(q, (snapshot) => {
             const list = document.getElementById('request-list');
             list.innerHTML = '';
 
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const id = docSnap.id;
-                
-                // Tampilan Tombol Berbeda Tergantung Status
+            if(snapshot.empty) {
+                list.innerHTML = '<p style="text-align:center; color:#555; font-size:1.2rem; margin-top:50px;">Tidak ada antrian lagu.</p>';
+                return;
+            }
+
+            // Convert ke Array dulu biar bisa disort manual (karena 'in' query membatasi sorting di firestore)
+            let requests = [];
+            snapshot.forEach(doc => requests.push({id: doc.id, ...doc.data()}));
+            
+            // Sort: Approved duluan, baru Pending. Lalu berdasarkan waktu.
+            requests.sort((a,b) => {
+                if(a.status === b.status) return a.timestamp - b.timestamp;
+                return a.status === 'approved' ? -1 : 1;
+            });
+
+            requests.forEach((data) => {
                 let actionBtns = '';
+                let statusLabel = '';
+
                 if(data.status === 'pending') {
-                    // Tombol ACC (Jika uang sudah masuk)
-                    actionBtns = `<button class="btn-acc" onclick="approveReq('${id}')">TERIMA DANA</button>`;
+                    statusLabel = '<span style="color:#ffeb3b; font-weight:bold;">⏳ MENUNGGU KONFIRMASI DANA</span>';
+                    // Tombol Terima Dana
+                    actionBtns = `<button class="btn-acc" onclick="approveReq('${data.id}')"><i class="fa-solid fa-check"></i> DANA MASUK</button>`;
                 } else {
-                    // Tombol Selesai (Jika sudah dinyanyikan)
-                    actionBtns = `<button class="btn-done" onclick="deleteReq('${id}')">SUDAH DINYANYIKAN</button>`;
+                    statusLabel = '<span style="color:#00ff00; font-weight:bold;">✅ LUNAS - SIAP NYANYI</span>';
+                    // Tombol Selesai (Arsip)
+                    actionBtns = `<button class="btn-done" onclick="finishReq('${data.id}')"><i class="fa-solid fa-box-archive"></i> SELESAI</button>`;
                 }
 
-                // Tambahkan Tombol Hapus (Sampah)
-                actionBtns += `<button class="btn-del" onclick="deleteReq('${id}')"><i class="fa-solid fa-trash"></i></button>`;
+                // Tombol Hapus Permanen (Kecil Merah)
+                const delBtn = `<button class="btn-del" onclick="deleteReq('${data.id}')" title="Hapus Permanen"><i class="fa-solid fa-trash"></i></button>`;
 
                 const html = `
                 <div class="req-card ${data.status}">
                     <div style="flex:1;">
+                        <div style="margin-bottom:5px;">${statusLabel}</div>
                         <span class="sender-info">Dari: ${data.sender}</span>
-                        <h2 style="margin:5px 0;">${data.song}</h2>
-                        <p style="margin:0; color:#ccc;">"${data.message}"</p>
-                        <small style="color:#888;">Untuk: ${data.performer}</small>
+                        <h2>"${data.song}"</h2>
+                        <p style="margin:0; color:#ccc; font-size:1.1rem;">Pesan: "${data.message}"</p>
+                        <small style="color:#888;">Target: <b>${data.performer}</b></small>
                     </div>
-                    <div style="text-align:right; min-width: 150px;">
+                    <div style="text-align:right; min-width: 200px;">
                         <div class="amount-badge">Rp ${parseInt(data.amount).toLocaleString()}</div>
-                        <br>
-                        ${actionBtns}
+                        <br><br>
+                        ${actionBtns} ${delBtn}
                     </div>
                 </div>`;
                 
@@ -98,15 +126,24 @@
             });
         });
 
-        // FUNGSI WINDOW (Agar bisa dipanggil onclick)
+        // FUNGSI WINDOW
         window.approveReq = async (id) => {
-            if(confirm("Yakin dana sudah masuk mutasi?")) {
+            if(confirm("Apakah dana sudah masuk ke rekening?")) {
                 await updateDoc(doc(db, "requests", id), { status: 'approved' });
             }
         }
 
+        // FUNGSI BARU: FINISH (Bukan Delete)
+        window.finishReq = async (id) => {
+            if(confirm("Lagu sudah selesai dinyanyikan? Data akan diarsipkan.")) {
+                // Ubah status jadi 'finished' agar hilang dari layar tapi tetap ada di database
+                await updateDoc(doc(db, "requests", id), { status: 'finished' });
+            }
+        }
+
+        // FUNGSI DELETE (Hanya untuk spam/test)
         window.deleteReq = async (id) => {
-            if(confirm("Hapus request ini?")) {
+            if(confirm("Hapus PERMANEN? Data tidak akan masuk laporan keuangan!")) {
                 await deleteDoc(doc(db, "requests", id));
             }
         }
