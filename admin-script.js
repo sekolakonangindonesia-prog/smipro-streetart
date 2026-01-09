@@ -507,6 +507,26 @@ loadMitraData();
 loadPerformerData();
 loadMentorData();
 
+/* =========================================
+   6. SETUP DATA LOKASI (SEEDING)
+   ========================================= */
+window.seedVenues = async function() {
+    const venuesData = [
+        { name: "Stadion Bayuangga Zone", status: "open", icon: "fa-door-open", order: 1, desc: "Pusat Kuliner & Seni Utama" },
+        { name: "Angkringan TWSL", status: "closed", icon: "fa-tree", order: 2, desc: "Taman Wisata Studi Lingkungan" },
+        { name: "Angkringan Siaman", status: "closed", icon: "fa-mug-hot", order: 3, desc: "Suasana Klasik Kota" },
+        { name: "Angkringan A. Yani", status: "closed", icon: "fa-road", order: 4, desc: "Pinggir Jalan Protokol" },
+        { name: "Angkringan GOR Mastrip", status: "closed", icon: "fa-volleyball", order: 5, desc: "Area Olahraga & Santai" }
+    ];
+
+    if(confirm("Buat Data 5 Lokasi Awal di Database?")) {
+        for (const v of venuesData) {
+            await addDoc(collection(db, "venues"), v);
+        }
+        alert("Berhasil! 5 Lokasi telah dibuat.");
+    }
+}
+
 setTimeout(() => {
     const lastTab = localStorage.getItem('adminReturnTab');
     if (lastTab) {
