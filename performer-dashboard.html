@@ -25,7 +25,7 @@
             position: relative;
             z-index: 5;
             cursor: pointer;
-            margin-bottom: 10px; /* Tambah jarak bawah */
+            margin-bottom: 10px;
         }
         .perf-pic { 
             width: 100%; height: 100%; 
@@ -117,50 +117,40 @@
     <div class="container">
         <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
 
-        <!-- TAB 1: GALERI -->
+        <!-- TAB 1: GALERI (BARU) -->
         <div id="tab-galeri" class="tab-content active">
-            <h3 style="color:var(--accent); margin-top:0;">Rekaman Performance</h3>
-            <p style="color:#888; font-size:0.9rem; margin-top:-10px;">Review penampilanmu sendiri untuk evaluasi.</p>
-            <div class="track-grid">
-                <div class="track-card" onclick="alert('Memutar Video...')">
-                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" class="track-img">
-                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
-                    <span class="track-title">Live di Stadion Bayuangga</span>
-                    <span class="track-type"><i class="fa-solid fa-video"></i> Video Full</span>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 style="color:var(--accent); margin-top:0;">Rekaman Performance</h3>
+                    <p style="color:#888; font-size:0.9rem; margin-top:-5px;">Dokumentasi hasil editing.</p>
                 </div>
-                <div class="track-card" onclick="alert('Memutar Audio...')">
-                    <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200" class="track-img">
-                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
-                    <span class="track-title">Nemen (Cover Akustik)</span>
-                    <span class="track-type"><i class="fa-solid fa-music"></i> Audio MP3</span>
-                </div>
+                <!-- TOMBOL KHUSUS ADMIN/MENTOR -->
+                <button id="btn-add-gallery" onclick="openAddModal()" style="display:none; background:var(--primary); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    <i class="fa-solid fa-plus"></i> Tambah Konten
+                </button>
+            </div>
+
+            <!-- Grid Galeri Dinamis -->
+            <div class="track-grid" id="gallery-container">
+                <p style="color:#666;">Memuat galeri...</p>
             </div>
         </div>
 
         <!-- TAB 2: DOKUMEN -->
         <div id="tab-dokumen" class="tab-content">
             <h3>Dokumen Legalitas</h3>
-            
-            <!-- Dokumen 1 -->
             <div class="doc-item">
                 <i class="fa-solid fa-certificate doc-icon"></i>
                 <div style="flex:1;"><b>Sertifikat Lulus Bengkel</b><br><small style="color:#aaa;">20 Des 2025</small></div>
                 <button class="btn-action-doc" onclick="openModalDoc('Sertifikat')"><i class="fa-regular fa-eye"></i> Lihat</button>
-                
-                <!-- TOMBOL DOWNLOAD BERFUNGSI -->
                 <button class="btn-action-doc" onclick="downloadFile('Sertifikat_Lulus_Bengkel.pdf')"><i class="fa-solid fa-download"></i> Unduh</button>
             </div>
-
-            <!-- Dokumen 2 -->
             <div class="doc-item" style="border-color:var(--primary);">
                 <i class="fa-solid fa-file-contract doc-icon"></i>
                 <div style="flex:1;"><b>MOU Kontrak Management</b><br><small style="color:var(--primary);">AKTIF s/d Des 2026</small></div>
                 <button class="btn-action-doc" onclick="openModalDoc('MOU')"><i class="fa-regular fa-eye"></i> Lihat</button>
-                
-                <!-- TOMBOL DOWNLOAD BERFUNGSI -->
                 <button class="btn-action-doc" onclick="downloadFile('MOU_Kontrak_Kerja_Sama.pdf')"><i class="fa-solid fa-download"></i> Unduh</button>
             </div>
-
             <div style="background:#332b00; padding:15px; border-radius:10px; margin-top:20px; color:#ffeb3b; font-size:0.9rem;">
                 <i class="fa-solid fa-triangle-exclamation"></i> <b>PERHATIAN:</b><br>
                 Sesuai MOU Pasal 3, dilarang tampil komersial di luar management tanpa izin.
@@ -200,7 +190,7 @@
 
     </div>
 
-    <!-- MODAL VIEW -->
+    <!-- MODAL VIEW DOKUMEN -->
     <div id="modal-doc" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#fff; width:100%; max-width:500px; height:80vh; padding:20px; border-radius:10px; position:relative; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
@@ -213,48 +203,79 @@
         </div>
     </div>
 
-    <!-- === TOMBOL KHUSUS ADMIN (MODAL SUPER USER) === -->
+    <!-- === TOMBOL KHUSUS ADMIN === -->
     <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
         <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
             <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
         </button>
     </div>
 
-   <script>
-        // --- 1. LOGIKA SAAT HALAMAN DIMUAT (MENTOR & ADMIN CHECK) ---
+    <!-- MODAL INPUT GALERI (ADMIN ONLY) -->
+    <div id="modal-add-gallery" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
+            <h3 style="margin-top:0; color:white;">Tambah Galeri</h3>
+            
+            <label style="color:#aaa; font-size:0.8rem;">Judul Lagu/Video</label>
+            <input type="text" id="add-title" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
+
+            <label style="color:#aaa; font-size:0.8rem;">Tipe Konten</label>
+            <select id="add-type" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
+                <option value="video">Video (YouTube)</option>
+                <option value="audio">Audio (MP3 Link)</option>
+            </select>
+
+            <label style="color:#aaa; font-size:0.8rem;">Link URL</label>
+            <input type="text" id="add-url" placeholder="YouTube / MP3 Link" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
+
+            <label style="color:#aaa; font-size:0.8rem;">Link Thumbnail (Opsional)</label>
+            <input type="text" id="add-thumb" placeholder="https://..." style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:20px; border-radius:5px;">
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('modal-add-gallery').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
+                <button onclick="saveGalleryItem()" style="flex:1; padding:10px; background:var(--primary); border:none; color:white; border-radius:5px; cursor:pointer;">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PLAYER -->
+    <div id="modal-player" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:4000; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+        <button onclick="closePlayer()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+        <div id="player-content" style="width:100%; max-width:800px; text-align:center;"></div>
+    </div>
+
+    <script>
+        // DATA DUMMY (Bisa dihapus jika sudah connect DB)
+        let galleryData = [
+            { id: 1, type: 'video', title: 'Live Performance', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', thumb: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300' },
+            { id: 2, type: 'audio', title: 'Cover Lagu Nemen', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', thumb: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=300' }
+        ];
+
         window.onload = function() {
             const role = localStorage.getItem('userRole'); 
-            const navBtn = document.getElementById('nav-home-btn'); 
+            const isAdmin = localStorage.getItem('adminOrigin') === 'true';
+            const navBtn = document.getElementById('nav-home-btn');
 
-            // A. JIKA YANG LIHAT ADALAH MENTOR
-            if(role === 'mentor') {
-                navBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Kembali ke Mentor';
-                // Paksa ganti fungsi onclick
-                navBtn.onclick = function(e) { 
-                    e.preventDefault();
-                    window.location.href = 'mentor-dashboard.html'; 
-                };
+            // 1. CEK HAK AKSES TOMBOL UPLOAD
+            if (isAdmin || role === 'mentor') {
+                document.getElementById('btn-add-gallery').style.display = 'block';
             }
 
-            // B. JIKA YANG LIHAT ADALAH ADMIN (IMPERSONATE)
-            if (localStorage.getItem('adminOrigin') === 'true') {
-                
-                // 1. Tampilkan Tombol Floating di Kanan Bawah
-                document.getElementById('admin-floating-btn').style.display = 'block';
+            // 2. NAVIGASI MENTOR
+            if(role === 'mentor') {
+                navBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Kembali ke Mentor';
+                navBtn.onclick = function(e) { e.preventDefault(); window.location.href = 'mentor-dashboard.html'; };
+            }
 
-                // 2. BAJAK TOMBOL HOME (Teknik Cloning agar bersih)
-                // Kita beri jeda dikit biar aman
+            // 3. NAVIGASI ADMIN
+            if (isAdmin) {
+                document.getElementById('admin-floating-btn').style.display = 'block';
                 setTimeout(() => {
                     const oldBtn = document.getElementById('nav-home-btn');
-                    if (oldBtn) {
+                    if (oldBtn && role !== 'mentor') {
                         const newBtn = oldBtn.cloneNode(true);
-                        
-                        // Ubah Teks biar Admin sadar
                         newBtn.innerHTML = '<i class="fa-solid fa-house"></i> Home (Super Admin)';
-                        
                         newBtn.onclick = function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
+                            e.preventDefault(); e.stopPropagation();
                             if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
                                 localStorage.setItem('userRole', 'admin');
                                 localStorage.setItem('userName', 'Super Admin');
@@ -262,73 +283,102 @@
                                 window.location.href = 'index.html';
                             }
                         };
-                        // Pasang tombol baru
                         oldBtn.parentNode.replaceChild(newBtn, oldBtn);
                     }
                 }, 500);
             }
+
+            // 4. LOAD GALERI
+            loadGallery();
         };
-        
-        // --- 2. FUNGSI NAVIGASI TAB ---
+
+        function loadGallery() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+            
+            const storedData = localStorage.getItem('perf_gallery');
+            if(storedData) { galleryData = JSON.parse(storedData); }
+
+            galleryData.forEach(item => {
+                let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
+                let typeText = item.type === 'video' ? 'Video Full' : 'Audio MP3';
+                
+                container.innerHTML += `
+                <div class="track-card" onclick="playMedia('${item.type}', '${item.url}')">
+                    <img src="${item.thumb || 'https://via.placeholder.com/150'}" class="track-img">
+                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                    <span class="track-title">${item.title}</span>
+                    <span class="track-type"><i class="fa-solid ${icon}"></i> ${typeText}</span>
+                </div>`;
+            });
+        }
+
+        function openAddModal() { document.getElementById('modal-add-gallery').style.display = 'flex'; }
+
+        function saveGalleryItem() {
+            const title = document.getElementById('add-title').value;
+            const type = document.getElementById('add-type').value;
+            let url = document.getElementById('add-url').value;
+            const thumb = document.getElementById('add-thumb').value;
+
+            if(!title || !url) return alert("Isi Judul & Link!");
+
+            // Fix YouTube Link
+            if(type === 'video' && url.includes('watch?v=')) {
+                url = url.replace('watch?v=', 'embed/');
+            } else if (type === 'video' && url.includes('youtu.be/')) {
+                url = url.replace('youtu.be/', 'www.youtube.com/embed/');
+            }
+
+            const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300?text=No+Img' };
+            galleryData.push(newItem);
+            localStorage.setItem('perf_gallery', JSON.stringify(galleryData));
+
+            alert("Konten Ditambahkan!");
+            document.getElementById('modal-add-gallery').style.display = 'none';
+            loadGallery();
+            
+            document.getElementById('add-title').value = '';
+            document.getElementById('add-url').value = '';
+        }
+
+        function playMedia(type, url) {
+            const modal = document.getElementById('modal-player');
+            const content = document.getElementById('player-content');
+            modal.style.display = 'flex';
+
+            if(type === 'video') {
+                content.innerHTML = `<iframe width="100%" height="450" src="${url}" frameborder="0" allowfullscreen style="border-radius:10px;"></iframe>`;
+            } else {
+                content.innerHTML = `
+                    <div style="background:#222; padding:30px; border-radius:15px; border:1px solid #444;">
+                        <i class="fa-solid fa-music fa-4x" style="color:var(--primary); margin-bottom:20px;"></i>
+                        <h3 style="color:white;">Now Playing</h3>
+                        <audio controls autoplay style="width:100%; margin-top:20px;">
+                            <source src="${url}" type="audio/mpeg">
+                        </audio>
+                    </div>`;
+            }
+        }
+
+        function closePlayer() {
+            document.getElementById('modal-player').style.display = 'none';
+            document.getElementById('player-content').innerHTML = '';
+        }
+
         function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(e => e.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
             document.getElementById('tab-' + tabId).style.display = 'block';
             event.currentTarget.classList.add('active');
         }
 
-        // --- 3. FUNGSI DOKUMEN ---
-        function openModalDoc(title) {
-            document.getElementById('doc-title').innerText = "Preview: " + title;
-            document.getElementById('modal-doc').style.display = 'flex';
-        }
-
-        function downloadFile(filename) {
-            const text = "Ini adalah simulasi isi dokumen legal untuk " + filename + ".\n\nHak Cipta SMIPRO 2025.";
-            const blob = new Blob([text], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            alert("File " + filename + " berhasil diunduh ke HP Anda!");
-        }
-
-        // --- 4. FUNGSI UPLOAD & LOGOUT ---
+        function openModalDoc(t) { document.getElementById('doc-title').innerText=t; document.getElementById('modal-doc').style.display='flex'; }
+        function downloadFile(f) { alert("Download simulasi: "+f); }
         function triggerUpload() { document.getElementById('file-input').click(); }
-        
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    document.getElementById('header-profile-img').src = e.target.result;
-                    document.getElementById('preview-profile-img').src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function prosesLogout() {
-            if(confirm("Yakin ingin keluar?")) {
-                localStorage.removeItem('userLoggedIn');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userLink');
-                // Hapus juga adminOrigin biar bersih
-                localStorage.removeItem('adminOrigin');
-                window.location.href = 'index.html';
-            }
-        }
-
-        // --- 5. FUNGSI TOMBOL FLOATING (FIX NAMA FUNGSI) ---
-        function backToAdminDashboard() {
-            if(confirm("Kembali ke Control Tower Admin?")) {
-                localStorage.setItem('userRole', 'admin');
-                localStorage.setItem('userName', 'Super Admin');
-                localStorage.setItem('userLink', 'admin-dashboard.html');
-                window.location.href = 'admin-dashboard.html';
-            }
-        }
+        function previewImage(i) { if(i.files[0]) { var r = new FileReader(); r.onload=e=>document.getElementById('header-profile-img').src=e.target.result; r.readAsDataURL(i.files[0]); } }
+        function prosesLogout() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
+        function backToAdminDashboard() { if(confirm("Kembali ke Admin?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); localStorage.setItem('userLink','admin-dashboard.html'); window.location.href='admin-dashboard.html'; } }
     </script>
+</body>
+</html>
