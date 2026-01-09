@@ -66,25 +66,12 @@
             </p>
         </div>
 
-        <!-- 2. TOP 5 PERFORMER -->
+       <!-- 2. TOP 5 PERFORMER (DINAMIS) -->
         <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Profil)</div>
         
-        <div class="performer-wrap">
-            <div class="artist-card" onclick="location.href='profile.html?id=1'">
-                <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=150" class="artist-img"><div>Rina Violin</div>
-            </div>
-            <div class="artist-card" onclick="location.href='profile.html?id=2'">
-                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=150" class="artist-img"><div>Acoustic Boys</div>
-            </div>
-            <div class="artist-card" onclick="location.href='profile.html?id=3'">
-                <img src="https://images.unsplash.com/photo-1526218626217-dc65b9d6e630?q=80&w=150" class="artist-img"><div>Rock Ballad</div>
-            </div>
-            <div class="artist-card" onclick="location.href='profile.html?id=4'">
-                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150" class="artist-img"><div>Siti Keroncong</div>
-            </div>
-            <div class="artist-card" onclick="location.href='profile.html?id=5'">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150" class="artist-img"><div>Solo Hudi</div>
-            </div>
+        <!-- WADAH YANG AKAN DIISI SCRIPT -->
+        <div class="performer-wrap" id="top-performer-container">
+            <p style="text-align:center; width:100%; color:#888;">Memuat Artis...</p>
         </div>
 
         <!-- 3. PELATIHAN -->
@@ -406,6 +393,37 @@
                 }
             }
         };
+       // === 5. LOAD TOP 5 PERFORMER ===
+        async function loadTopPerformers() {
+            const container = document.getElementById('top-performer-container');
+            
+            // Ambil data performers, urutkan berdasarkan rating (descending), limit 5
+            const q = query(collection(db, "performers"), orderBy("rating", "desc"), limit(5));
+            const querySnapshot = await getDocs(q);
+
+            if(querySnapshot.empty) {
+                container.innerHTML = '<p style="text-align:center; width:100%; color:#666;">Belum ada performer terdaftar.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const defaultImg = "https://via.placeholder.com/150";
+                
+                // PENTING: Link ini membawa ID unik Firebase (doc.id)
+                // Jadi profile.html nanti bisa membaca data yang benar.
+                container.innerHTML += `
+                <div class="artist-card" onclick="location.href='profile.html?id=${doc.id}'">
+                    <img src="${data.img || defaultImg}" class="artist-img">
+                    <div>${data.name}</div>
+                </div>`;
+            });
+        }
+
+        // PANGGIL FUNGSI INI DI BAGIAN START ALL
+        loadTopPerformers();
     </script>
 
 </body>
