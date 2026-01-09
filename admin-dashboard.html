@@ -213,7 +213,7 @@
                 <h3 style="color:white; margin:10px 0 0; font-size:1rem;">CONTROL TOWER</h3>
                 
                 <!-- TOMBOL HOME ADMIN -->
-                <a href="#" onclick="goToHomeAsAdmin()" style="display:inline-block; margin-top:10px; color:#E50914; text-decoration:none; font-size:0.8rem; border:1px solid #E50914; padding:2px 8px; border-radius:4px;">
+                <a href="index.html" style="display:inline-block; margin-top:10px; color:#E50914; text-decoration:none; font-size:0.8rem; border:1px solid #E50914; padding:2px 8px; border-radius:4px;">
                     <i class="fa-solid fa-house"></i> Lihat Home
                 </a>
             </div>            
@@ -665,16 +665,6 @@
             .table-responsive { overflow-x: auto; }
         }
     </script>
-            <script>
-        // ... script lama ...
-
-        // FUNGSI BARU: KE HOME TANPA LOGOUT
-        function goToHomeAsAdmin() {
-            // Pastikan status tetap Admin
-            localStorage.setItem('userRole', 'admin');
-            localStorage.setItem('userName', 'Super Admin');
-            window.location.href = 'index.html';
-        }
-    </script>
+           
 </body>
 </html>
