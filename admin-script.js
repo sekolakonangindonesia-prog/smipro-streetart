@@ -7,7 +7,7 @@ import {
    0. LOGIKA NAVIGASI (SIDEBAR & TABS)
    ========================================= */
 
-// FUNGSI showView GABUNGAN (YANG BENAR)
+// FUNGSI showView (GABUNGAN FINAL)
 window.showView = function(viewId, btn) {
     // 1. Sembunyikan semua view
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
@@ -16,10 +16,13 @@ window.showView = function(viewId, btn) {
     const target = document.getElementById('view-' + viewId);
     if(target) target.classList.remove('hidden');
     
-    // 3. Tambahan: Jika buka Finance, load datanya
+    // 3. Khusus Tab Finance: Load Datanya
     if(viewId === 'finance') renderFinanceData(); 
+    
+    // 4. Khusus Tab CMS: Reset radio form jika perlu (opsional)
+    // if(viewId === 'cms') ...
 
-    // 4. Update status tombol aktif
+    // 5. Update status tombol aktif
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
@@ -60,7 +63,6 @@ async function loadMitraData() {
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
             
-            // TOMBOL MASUK DENGAN KLASIFIKASI TAB 'mitra'
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             
             tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.owner||'-'}</td><td>${data.totalTables}</td><td>${statusBadge}</td><td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
@@ -68,7 +70,6 @@ async function loadMitraData() {
     });
 }
 
-// Login Mitra (Catat Jejak 'mitra')
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
@@ -201,13 +202,8 @@ window.loginAsMentor = function(id, name) {
 }
 window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "mentors", id)); }
 
-// INIT
-loadMitraData();
-loadPerformerData();
-loadMentorData();
-
 /* =========================================
-   CMS MODULE (JADWAL, RADIO, BERITA)
+   4. CMS MODULE (JADWAL, RADIO, BERITA)
    ========================================= */
 
 // 1. SAVE SCHEDULE (JADWAL)
@@ -222,7 +218,7 @@ window.saveSchedule = async function() {
             name: document.getElementById('p1-name').value,
             time: document.getElementById('p1-time').value,
             genre: document.getElementById('p1-genre').value,
-            img: "https://via.placeholder.com/100" // Default dulu
+            img: "https://via.placeholder.com/100" 
         },
         {
             name: document.getElementById('p2-name').value,
@@ -236,7 +232,7 @@ window.saveSchedule = async function() {
             genre: document.getElementById('p3-genre').value,
             img: "https://via.placeholder.com/100"
         }
-    ].filter(p => p.name !== ""); // Hanya ambil yang diisi
+    ].filter(p => p.name !== ""); 
 
     if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
 
@@ -255,9 +251,8 @@ window.saveSchedule = async function() {
 }
 
 // 2. RADIO SYSTEM (LOAD & UPDATE)
-let currentRadioDocId = null; // Menyimpan ID dokumen yang sedang diedit
+let currentRadioDocId = null; 
 
-// Dipanggil saat dropdown sesi berubah
 window.loadRadioSessionData = async function() {
     const sessionName = document.getElementById('radio-session-select').value;
     const editArea = document.getElementById('radio-edit-area');
@@ -267,16 +262,14 @@ window.loadRadioSessionData = async function() {
         return;
     }
 
-    // Cari dokumen berdasarkan sessionName (PAGI/SIANG/MALAM)
     const q = query(collection(db, "broadcasts"), where("sessionName", "==", sessionName), limit(1));
     const querySnapshot = await getDocs(q);
 
     if(!querySnapshot.empty) {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
-        currentRadioDocId = docSnap.id; // Simpan ID untuk update nanti
+        currentRadioDocId = docSnap.id; 
 
-        // Isi Form
         document.getElementById('radio-title').value = data.title;
         document.getElementById('radio-host').value = data.host;
         document.getElementById('radio-topic').value = data.topic;
@@ -328,8 +321,8 @@ window.saveNews = async function() {
         tag: tag,
         thumb: thumb || "https://via.placeholder.com/150",
         type: type,
-        date: new Date().toLocaleDateString('id-ID'), // Simpan tanggal string
-        timestamp: new Date() // Simpan tanggal sortable
+        date: new Date().toLocaleDateString('id-ID'), 
+        timestamp: new Date() 
     };
 
     if (type === 'external') {
@@ -345,22 +338,19 @@ window.saveNews = async function() {
     if(confirm("Publish Berita ini?")) {
         await addDoc(collection(db, "news"), newsData);
         alert("Berita Berhasil Dipublish!");
-        // Reset form
         document.getElementById('news-title').value = '';
     }
 }
 
 /* =========================================
-   4. MODUL KEUANGAN & LIVE COMMAND CENTER (FINAL)
+   5. MODUL KEUANGAN & LIVE COMMAND CENTER
    ========================================= */
 
-// Expose fungsi ke window
 window.loadFinanceStats = function() {
     renderFinanceData(); // Kolom Kanan
     renderLiveMonitor(); // Kolom Kiri
 }
 
-// A. LOGIKA KOLOM KANAN (STATISTIK & HISTORY)
 let financeUnsubscribe = null;
 
 async function renderFinanceData() {
@@ -369,7 +359,6 @@ async function renderFinanceData() {
     const perfContainer = document.getElementById('top-performer-list');
     const songContainer = document.getElementById('top-song-list');
     
-    // Query data 'finished'
     const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
     if(financeUnsubscribe) financeUnsubscribe();
@@ -389,7 +378,6 @@ async function renderFinanceData() {
             const date = d.timestamp.toDate(); 
             let include = false;
 
-            // Filter Waktu
             if (filterType === 'all') include = true;
             else if (filterType === 'today') { if (date >= now) include = true; }
             else if (filterType === 'week') {
@@ -429,18 +417,26 @@ async function renderFinanceData() {
         document.getElementById('fin-total-req').innerText = totalCount;
         tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center; color:#555;">Belum ada data arsip.</td></tr>';
 
-        // Render Top Perf
-        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 3);
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 5);
         perfContainer.innerHTML = '';
-        sortedPerf.forEach(([name, amount], i) => {
-            perfContainer.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem;"><span>${i+1}. ${name}</span><span style="color:gold;">Rp ${amount.toLocaleString()}</span></div>`;
+        sortedPerf.forEach(([name, amount], index) => {
+            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? 'silver' : '#cd7f32');
+            const borderStyle = index < 3 ? `border-left: 3px solid ${rankColor};` : '';
+            perfContainer.innerHTML += `
+            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px; ${borderStyle}">
+                <span><b>#${index+1}</b> ${name}</span>
+                <span style="color:#00ff00;">Rp ${amount.toLocaleString()}</span>
+            </div>`;
         });
 
-        // Render Top Song
-        const sortedSong = Object.entries(songStats).sort(([,a], [,b]) => b - a).slice(0, 3);
+        const sortedSong = Object.entries(songStats).sort(([,a], [,b]) => b - a).slice(0, 5);
         songContainer.innerHTML = '';
-        sortedSong.forEach(([name, count], i) => {
-            songContainer.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem;"><span>${i+1}. ${name}</span><span style="color:#aaa;">${count}x</span></div>`;
+        sortedSong.forEach(([name, count], index) => {
+            songContainer.innerHTML += `
+            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px;">
+                <span>${name}</span>
+                <span style="background:#333; padding:2px 8px; border-radius:10px; font-size:0.8rem;">${count} x</span>
+            </div>`;
         });
     });
 }
@@ -450,7 +446,6 @@ let liveUnsubscribe = null;
 
 async function renderLiveMonitor() {
     const list = document.getElementById('admin-live-list');
-    // Ambil Pending & Approved
     const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
 
     if(liveUnsubscribe) liveUnsubscribe();
@@ -462,7 +457,6 @@ async function renderLiveMonitor() {
             return;
         }
 
-        // Sort Manual (Approved duluan)
         let requests = [];
         snapshot.forEach(doc => requests.push({id: doc.id, ...doc.data()}));
         requests.sort((a,b) => {
@@ -494,7 +488,6 @@ async function renderLiveMonitor() {
     });
 }
 
-// C. FUNGSI AKSI (EXPORT KE WINDOW)
 window.approveReq = async function(id) {
     if(confirm("Pastikan dana sudah masuk mutasi?")) {
         await updateDoc(doc(db, "requests", id), { status: 'approved' });
@@ -503,14 +496,17 @@ window.approveReq = async function(id) {
 
 window.finishReq = async function(id) {
     if(confirm("Arsipkan request ini ke Laporan?")) {
-        // Pindah status jadi finished -> Otomatis hilang dari Kiri, muncul di Kanan
         await updateDoc(doc(db, "requests", id), { status: 'finished' });
     }
 }
 
 /* =========================================
-   5. AUTO-RETURN TAB
+   6. AUTO-RETURN TAB & INIT
    ========================================= */
+loadMitraData();
+loadPerformerData();
+loadMentorData();
+
 setTimeout(() => {
     const lastTab = localStorage.getItem('adminReturnTab');
     if (lastTab) {
