@@ -602,46 +602,101 @@ setTimeout(() => {
         localStorage.removeItem('adminReturnTab');
     }
 }, 500);
-<!-- VIEW BARU: MANAJEMEN SISWA (BENGKEL) -->
-            <div id="view-students" class="admin-view hidden">
-                <div class="section-header">
-                    <h2 style="margin:0; color:white;">Bengkel Siswa (Calon Performer)</h2>
-                </div>
+/* =========================================
+   MANAJEMEN SISWA (BENGKEL) - DENGAN FOTO
+   ========================================= */
+
+let currentStudentBase64 = null; // Variabel penampung foto sementara
+
+// 1. FUNGSI PREVIEW FOTO (Dipanggil dari HTML)
+window.previewStudentImg = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentStudentBase64 = e.target.result; // Simpan data foto
+            document.getElementById('student-preview').src = currentStudentBase64; // Tampilkan
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 2. TAMBAH SISWA KE DATABASE
+window.addStudent = async function() {
+    const name = document.getElementById('new-student-name').value;
+    const genre = document.getElementById('new-student-genre').value;
+    // Gunakan foto default jika user tidak upload
+    const img = currentStudentBase64 || "https://via.placeholder.com/150"; 
+
+    if(!name || !genre) return alert("Isi Nama dan Genre!");
+
+    if(confirm("Masukkan siswa ini ke Bengkel?")) {
+        await addDoc(collection(db, "students"), {
+            name: name,
+            genre: genre,
+            img: img, // Simpan foto
+            scores: {}, 
+            status: "training", 
+            timestamp: new Date()
+        });
+        
+        alert("Siswa berhasil masuk Bengkel!");
+        // Reset Form
+        document.getElementById('new-student-name').value = '';
+        document.getElementById('new-student-genre').value = '';
+        document.getElementById('student-preview').src = "https://via.placeholder.com/100?text=Foto";
+        currentStudentBase64 = null;
+    }
+}
+
+// 3. LOAD DATA SISWA (TAMPIL DI TABEL)
+async function loadStudentData() {
+    const tbody = document.getElementById('student-table-body');
+    if(!tbody) return;
+
+    onSnapshot(query(collection(db, "students"), orderBy("timestamp", "desc")), (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada siswa dalam pelatihan.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            
+            // Hitung Rata-Rata Nilai
+            const scores = Object.values(data.scores || {});
+            let scoreText = `<span style="color:#888;">Belum dinilai</span>`;
+            
+            if(scores.length > 0) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                scoreText = `<b style="color:gold;">Rata-rata: ${avg.toFixed(1)}</b> (${scores.length} Mentor)`;
                 
-                <!-- FORM INPUT SISWA -->
-                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px; display:flex; gap:20px; align-items:center;">
-                    
-                    <!-- 1. UPLOAD FOTO BULAT -->
-                    <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('student-file').click()">
-                        <img id="student-preview" src="https://via.placeholder.com/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
-                        <input type="file" id="student-file" style="display:none;" accept="image/*" onchange="previewStudentImg(this)">
-                        <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Foto</div>
-                    </div>
+                // Cek Kelulusan (Misal: 3 mentor sudah menilai & rata-rata >= 90)
+                if (scores.length >= 3 && avg >= 90) {
+                    scoreText += `<br><span style="color:#00ff00; font-size:0.8rem;">SIAP LULUS!</span>`;
+                }
+            }
 
-                    <!-- 2. FORM DATA -->
-                    <div style="flex:1;">
-                        <h4 style="margin-top:0; color:#FFD700; margin-bottom:10px;">Tambah Siswa Baru</h4>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                            <input type="text" id="new-student-name" class="cms-input" placeholder="Nama Siswa / Grup" style="margin:0;">
-                            <input type="text" id="new-student-genre" class="cms-input" placeholder="Genre Musik" style="margin:0;">
-                        </div>
-                        <button class="btn-action btn-view" onclick="addStudent()" style="width:100%;">+ Masukkan ke Bengkel</button>
-                    </div>
-                </div>
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteStudent('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            
+            // Foto Bulat Kecil di Tabel
+            const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">`;
 
-                <!-- TABEL DAFTAR SISWA -->
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th style="width:50px;">Foto</th> <!-- Kolom Foto -->
-                            <th>Nama Siswa</th>
-                            <th>Genre</th>
-                            <th>Status Nilai</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="student-table-body">
-                        <tr><td colspan="5" style="text-align:center; color:#555;">Memuat data...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            tbody.innerHTML += `
+            <tr>
+                <td>${imgHTML}</td>
+                <td><b>${data.name}</b></td>
+                <td>${data.genre}</td>
+                <td>${scoreText}</td>
+                <td>${btnDel}</td>
+            </tr>`;
+        });
+    });
+}
+
+window.deleteStudent = async function(id) {
+    if(confirm("Hapus siswa dari Bengkel?")) await deleteDoc(doc(db, "students", id));
+}
+
+// JALANKAN FUNGSINYA
+loadStudentData();
