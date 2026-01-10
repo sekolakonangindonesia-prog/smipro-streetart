@@ -49,8 +49,8 @@
         .golden-list { list-style: none; padding: 0; margin: 0; }
         .golden-list li { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; color: #ccc; font-size: 0.95rem; line-height: 1.4; }
         .golden-list li i { color: #FFD700; margin-top: 4px; font-size: 0.8rem; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .gallery-item { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 16/9; border: 1px solid #333; cursor: pointer; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;}
+        .gallery-item { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 16/9; border: 1px solid #333; background: #000; cursor: pointer; }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
         .gallery-item:hover img { transform: scale(1.1); }
         .gallery-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; }
@@ -152,49 +152,61 @@
                 document.getElementById('m-specialist').innerText = data.specialist;
                 if(data.img) document.getElementById('m-img').src = data.img;
 
-                // 2. ISI PORTOFOLIO (Array)
+                // 2. ISI PORTOFOLIO (Hanya yang ada isinya)
                 const listPort = document.getElementById('list-portfolio');
                 listPort.innerHTML = "";
                 if(data.portfolio && data.portfolio.length > 0) {
-                    data.portfolio.forEach(item => {
-                        listPort.innerHTML += `<li><i class="fa-solid fa-circle-check"></i> ${item}</li>`;
-                    });
-                } else {
-                    listPort.innerHTML = "<li>Belum ada data portofolio.</li>";
+                data.portfolio.forEach(item => {
+                // TAMBAHAN: Cek jika item tidak kosong
+                if (item && item.trim() !== "") {
+                listPort.innerHTML += `<li><i class="fa-solid fa-circle-check"></i> ${item}</li>`;
+                    }
+                 });
                 }
+                // Jika setelah diloop ternyata kosong semua
+                if (listPort.innerHTML === "") listPort.innerHTML = "<li>-</li>";
 
-                // 3. ISI PROFESI (Array)
+               // 3. ISI PROFESI (Hanya yang ada isinya)
                 const listProf = document.getElementById('list-profession');
                 listProf.innerHTML = "";
                 if(data.profession && data.profession.length > 0) {
-                    data.profession.forEach(item => {
-                        listProf.innerHTML += `<li><i class="fa-solid fa-user-tie"></i> ${item}</li>`;
+                data.profession.forEach(item => {
+                // TAMBAHAN: Cek jika item tidak kosong
+                if (item && item.trim() !== "") {
+                listProf.innerHTML += `<li><i class="fa-solid fa-user-tie"></i> ${item}</li>`;
+                    }
                     });
-                } else {
-                    listProf.innerHTML = "<li>Belum ada data profesi.</li>";
                 }
+                if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
 
-                // 5. ISI GALERI KARYA (DYNAMIC)
+                // 5. ISI GALERI KARYA (PLAY DI DALAM KOTAK)
                 const galleryContainer = document.getElementById('gallery-container');
                 galleryContainer.innerHTML = "";
-    
+
                 if (data.gallery && data.gallery.length > 0) {
-                data.gallery.forEach(item => {
+                data.gallery.forEach((item, index) => {
                 let icon = item.type === 'video' ? 'fa-play' : 'fa-music';
+                let color = item.type === 'video' ? '#E50914' : '#00d2ff';
         
-                // Thumbnail Youtube
-                let thumb = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=300"; // Default Audio
+                // Thumbnail Default
+                let thumb = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=400"; 
+        
+                // Jika Video YouTube, ambil thumbnail aslinya
                 if (item.type === 'video' && item.url.includes('embed/')) {
-                const vidId = item.url.split('embed/')[1];
+                const vidId = item.url.split('embed/')[1].split('?')[0];
                 thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
                 }
 
-                galleryContainer.innerHTML += `
-                <div class="gallery-item" onclick="playPublicMedia('${item.type}', '${item.url}')">
-                <img src="${thumb}">
-                <div class="gallery-overlay">
-                <i class="fa-solid ${icon}" style="color:white; font-size:3rem; filter:drop-shadow(0 0 5px black);"></i>
-                <span style="position:absolute; bottom:10px; color:white; font-weight:bold; background:rgba(0,0,0,0.7); padding:2px 8px; border-radius:4px;">${item.title}</span>
+        // Kita beri ID unik untuk setiap kotak agar bisa diubah isinya
+        const uniqueId = `media-${index}`;
+
+        galleryContainer.innerHTML += `
+        <div class="gallery-item" id="${uniqueId}">
+            <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
+            
+            <div class="gallery-overlay" onclick="playInside('${uniqueId}', '${item.type}', '${item.url}')" style="cursor:pointer;">
+                <i class="fa-solid ${icon}" style="color:white; font-size:3rem; filter:drop-shadow(0 0 5px black); background:rgba(0,0,0,0.5); padding:15px; border-radius:50%; border:2px solid ${color};"></i>
+                <span style="position:absolute; bottom:10px; left:10px; right:10px; text-align:center; color:white; font-weight:bold; background:rgba(0,0,0,0.7); padding:4px; border-radius:4px; font-size:0.8rem;">${item.title}</span>
             </div>
         </div>`;
     });
@@ -202,22 +214,20 @@
     galleryContainer.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">Mentor belum menambahkan karya.</p>';
 }
 
-// --- FUNGSI PLAYER ---
-window.playPublicMedia = function(type, url) {
-    const modal = document.getElementById('public-player-modal');
-    const content = document.getElementById('public-player-content');
-    modal.style.display = 'flex';
+
+// --- FUNGSI BARU: PLAY DI DALAM KOTAK ---
+window.playInside = function(elementId, type, url) {
+    const box = document.getElementById(elementId);
     
     if(type === 'video') {
-        content.innerHTML = `<iframe width="100%" height="450" src="${url}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+        // Ganti Gambar dengan Iframe YouTube
+        box.innerHTML = `<iframe width="100%" height="100%" src="${url}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
     } else {
-        // Asumsi link MP3 langsung atau player embed
-        content.innerHTML = `
-            <div style="background:#222; padding:40px; border-radius:15px; border:1px solid #444;">
-                <i class="fa-solid fa-music" style="font-size:4rem; color:#00d2ff; margin-bottom:20px;"></i>
-                <br>
-                <audio controls autoplay src="${url}" style="width:100%"></audio>
-                <p style="margin-top:10px; color:#aaa;">Jika tidak berputar, <a href="${url}" target="_blank" style="color:#00d2ff;">Klik Disini</a></p>
+        // Ganti Gambar dengan Audio Player
+        box.innerHTML = `
+            <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#222;">
+                <i class="fa-solid fa-compact-disc fa-spin" style="font-size:2rem; color:#00d2ff; margin-bottom:10px; animation-duration: 3s;"></i>
+                <audio controls autoplay src="${url}" style="width:90%; height:30px;"></audio>
             </div>`;
     }
 }
