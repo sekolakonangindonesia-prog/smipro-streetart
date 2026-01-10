@@ -1,71 +1,69 @@
 import { db } from './firebase-config.js';
 import { 
-    doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, deleteDoc, where 
+    doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Ambil ID
-const MENTOR_ID = localStorage.getItem('mentorId');
-
-// --- 1. INISIALISASI (URUTAN DIPERBAIKI) ---
+// --- 1. INISIALISASI (AUTO RUN SAAT HALAMAN DIBUKA/REFRESH) ---
 window.onload = function() {
-    console.log("Script Mentor Jalan... ID:", MENTOR_ID);
+    // Ambil ID dari LocalStorage (Inilah kunci agar data tidak hilang saat refresh)
+    const MENTOR_ID = localStorage.getItem('mentorId');
+    const IS_ADMIN = localStorage.getItem('adminOrigin') === 'true';
 
-    // A. TAMPILKAN TOMBOL ADMIN DULUAN (Biar gak kejebak)
-    if(localStorage.getItem('adminOrigin') === 'true') {
-        const floatBtn = document.getElementById('admin-floating-btn');
-        if(floatBtn) floatBtn.style.display = 'block';
-        setupAdminHome();
-    }
+    console.log("Start Mentor Dashboard. ID:", MENTOR_ID);
 
-    // B. Cek Login
+    // Cek Login
     if(!localStorage.getItem('userLoggedIn')) {
         window.location.href = 'index.html';
         return;
     }
-    
-    // C. Cek ID Mentor
+
+    // Jika ID Hilang (Biasanya kalau clear cache atau salah login)
     if(!MENTOR_ID) {
-        alert("Error: ID Mentor tidak ditemukan. Kembali ke Admin.");
+        alert("ID Mentor tidak ditemukan. Silakan masuk ulang dari Admin.");
         window.location.href = 'admin-dashboard.html';
         return;
     }
 
-    // D. Render Kotak Kosong Dulu (Biar gak blank)
-    renderInputs(7);
+    // Tampilkan Tombol Admin (Jika Admin)
+    if(IS_ADMIN) {
+        document.getElementById('admin-floating-btn').style.display = 'block';
+        setupAdminHome();
+    }
 
-    // E. Load Data (Realtime)
-    loadMentorData(); 
-    loadStudents();
-    loadShowcase(); // Load Karya
+    // Render Kotak & Load Data
+    renderInputs(7);
+    loadMentorData(MENTOR_ID); // Fungsi ini yang akan mengisi data kembali saat refresh
+    loadStudents(MENTOR_ID); 
 };
 
-// --- 2. LOAD DATA MENTOR ---
-function loadMentorData() {
-    // Pakai onSnapshot biar realtime dan gak ilang pas refresh
-    onSnapshot(doc(db, "mentors", MENTOR_ID), (docSnap) => {
+// --- 2. LOAD DATA MENTOR (HEADER & PROFIL) ---
+async function loadMentorData(id) {
+    try {
+        const docRef = doc(db, "mentors", id);
+        const docSnap = await getDoc(docRef);
+
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
-            // Header
+
+            // Isi Header
             document.getElementById('m-name').innerText = data.name;
             document.getElementById('m-spec').innerText = data.specialist || "MENTOR";
             document.getElementById('m-email').innerText = data.email;
             if(data.img) document.getElementById('header-profile-img').src = data.img;
 
-            // Form
-            document.getElementById('edit-name').value = data.name || "";
-            document.getElementById('edit-spec').value = data.specialist || "";
-            document.getElementById('edit-email').value = data.email || "";
-            document.getElementById('edit-phone').value = data.phone || "";
+            // Isi Form Edit
+            document.getElementById('edit-name').value = data.name;
+            document.getElementById('edit-spec').value = data.specialist;
+            document.getElementById('edit-email').value = data.email;
+            document.getElementById('edit-phone').value = data.phone;
 
-            // Portofolio
+            // Isi Portofolio & Profesi
             if(data.portfolio) {
                 data.portfolio.forEach((txt, i) => {
                     const el = document.getElementById(`porto-${i}`);
                     if(el) el.value = txt;
                 });
             }
-            // Profesi
             if(data.profession) {
                 data.profession.forEach((txt, i) => {
                     const el = document.getElementById(`prof-${i}`);
@@ -73,122 +71,100 @@ function loadMentorData() {
                 });
             }
         }
-    });
+    } catch (e) {
+        console.error("Gagal load mentor:", e);
+    }
 }
 
-// --- 3. LOAD SISWA (BENGKEL) ---
-function loadStudents() {
+// --- 3. LOAD DATA SISWA (BENGKEL) ---
+function loadStudents(mentorId) {
     const container = document.getElementById('student-list-container');
+    
     const q = query(collection(db, "students"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
         container.innerHTML = '';
-        if (snapshot.empty) { container.innerHTML = '<p style="text-align:center; color:#666;">Belum ada siswa.</p>'; return; }
+        
+        if (snapshot.empty) {
+            container.innerHTML = '<p style="text-align:center; color:#666;">Belum ada siswa.</p>';
+            return;
+        }
 
         snapshot.forEach((docSnap) => {
             const s = docSnap.data();
             const sID = docSnap.id;
-            const myScore = (s.scores && s.scores[MENTOR_ID]) ? s.scores[MENTOR_ID] : null;
+            
+            // Cek Nilai Mentor Ini
+            const myScore = (s.scores && s.scores[mentorId]) ? s.scores[mentorId] : null;
 
             let actionHTML = '';
             if (myScore !== null) {
-                actionHTML = `<div style="text-align:right;"><span style="color:#888; font-size:0.8rem;">Nilai:</span><br><b style="color:#00ff00; font-size:1.5rem;">${myScore}</b></div>`;
+                actionHTML = `
+                    <div style="text-align:right;">
+                        <span style="color:#888; font-size:0.8rem;">Nilai Anda:</span><br>
+                        <b style="color:#00ff00; font-size:1.5rem;">${myScore}</b>
+                    </div>`;
             } else {
-                actionHTML = `<div style="display:flex; gap:5px;"><input type="number" id="score-${sID}" placeholder="0-100" style="width:60px; padding:5px; border-radius:5px;"><button onclick="window.submitScore('${sID}')" style="background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;">Kirim</button></div>`;
+                actionHTML = `
+                    <div style="display:flex; gap:5px; align-items:center;">
+                        <input type="number" id="score-${sID}" placeholder="0-100" style="width:70px; padding:8px; background:#111; border:1px solid #444; color:white; border-radius:5px;">
+                        <button onclick="window.submitScore('${sID}')" style="background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; font-weight:bold;">Kirim</button>
+                    </div>`;
             }
+
+            const imgUrl = s.img || "https://via.placeholder.com/150";
 
             container.innerHTML += `
             <div style="background:#222; padding:15px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:15px;">
-                <img src="${s.img || 'https://via.placeholder.com/150'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
-                <div style="flex:1;"><h4 style="margin:0; color:white;">${s.name}</h4><span style="color:var(--accent); font-size:0.8rem;">${s.genre}</span></div>
+                <img src="${imgUrl}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
+                <div style="flex:1;">
+                    <h4 style="margin:0; color:white;">${s.name}</h4>
+                    <span style="color:var(--accent); font-size:0.8rem;">${s.genre}</span>
+                </div>
                 ${actionHTML}
             </div>`;
         });
     });
 }
 
-// --- 4. SHOWCASE KARYA (BARU) ---
-function loadShowcase() {
-    const container = document.getElementById('work-list-container');
-    // Ambil karya milik mentor ini saja
-    const q = query(collection(db, "mentor_works"), where("mentorId", "==", MENTOR_ID));
-    
-    onSnapshot(q, (snapshot) => {
-        container.innerHTML = '';
-        if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; color:#666; grid-column:1/-1;">Belum ada karya diupload.</p>'; return; }
-
-        snapshot.forEach(docSnap => {
-            const d = docSnap.data();
-            container.innerHTML += `
-            <div class="work-card">
-                <img src="${d.thumb || 'https://via.placeholder.com/150'}" class="work-thumb">
-                <span class="work-type">${d.type}</span>
-                <div class="work-info">
-                    <b style="color:white; font-size:0.9rem;">${d.title}</b><br>
-                    <a href="${d.url}" target="_blank" style="color:#00d2ff; font-size:0.8rem;">Lihat</a>
-                    <button class="btn-del-work" onclick="window.deleteWork('${docSnap.id}')">Hapus</button>
-                </div>
-            </div>`;
-        });
-    });
-}
-
-window.openAddWorkModal = function() { document.getElementById('modal-add-work').style.display = 'flex'; }
-
-window.saveWorkItem = async function() {
-    const title = document.getElementById('work-title').value;
-    const type = document.getElementById('work-type').value;
-    let url = document.getElementById('work-url').value;
-    const thumb = document.getElementById('work-thumb').value;
-
-    if(!title || !url) return alert("Judul dan Link wajib!");
-
-    if(type === 'video' && url.includes('watch?v=')) url = url.replace('watch?v=', 'embed/');
-
-    await addDoc(collection(db, "mentor_works"), {
-        mentorId: MENTOR_ID,
-        title, type, url, 
-        thumb: thumb || 'https://via.placeholder.com/150',
-        timestamp: new Date()
-    });
-    alert("Karya Ditambahkan!");
-    document.getElementById('modal-add-work').style.display = 'none';
-}
-
-window.deleteWork = async function(id) {
-    if(confirm("Hapus karya ini?")) await deleteDoc(doc(db, "mentor_works", id));
-}
-
-// --- 5. FUNGSI UMUM ---
+// --- 4. FUNGSI GLOBAL ---
 window.submitScore = async function(studentId) {
+    const mentorId = localStorage.getItem('mentorId');
     const input = document.getElementById(`score-${studentId}`);
     const nilai = parseInt(input.value);
+
     if (!input.value || isNaN(nilai) || nilai < 0 || nilai > 100) return alert("Nilai 0-100!");
+
     if (confirm(`Kirim nilai ${nilai}?`)) {
         const updateData = {};
-        updateData[`scores.${MENTOR_ID}`] = nilai;
+        updateData[`scores.${mentorId}`] = nilai;
         await updateDoc(doc(db, "students", studentId), updateData);
     }
 }
 
 window.saveMentorProfile = async function() {
+    const mentorId = localStorage.getItem('mentorId');
     const name = document.getElementById('edit-name').value;
     const spec = document.getElementById('edit-spec').value;
     const phone = document.getElementById('edit-phone').value;
-    const email = document.getElementById('edit-email').value;
+    
     let newPorto = [], newProf = [];
     for(let i=0; i<7; i++) {
         const p = document.getElementById(`porto-${i}`).value;
         const f = document.getElementById(`prof-${i}`).value;
-        newPorto.push(p); newProf.push(f);
+        if(p) newPorto.push(p); 
+        if(f) newProf.push(f);
     }
-    await updateDoc(doc(db, "mentors", MENTOR_ID), {
-        name, specialist: spec, phone, email, portfolio: newPorto, profession: newProf
+
+    await updateDoc(doc(db, "mentors", mentorId), {
+        name, specialist: spec, phone, portfolio: newPorto, profession: newProf
     });
-    alert("Profil Tersimpan!");
+    alert("Tersimpan!");
+    loadMentorData(mentorId);
 }
 
 window.triggerUpload = function() {
+    const mentorId = localStorage.getItem('mentorId');
     const input = document.createElement('input');
     input.type = 'file'; input.accept = 'image/*';
     input.onchange = e => {
@@ -196,7 +172,8 @@ window.triggerUpload = function() {
             const r = new FileReader();
             r.onload = async (ev) => {
                 if(confirm("Simpan Foto?")) {
-                    await updateDoc(doc(db, "mentors", MENTOR_ID), { img: ev.target.result });
+                    await updateDoc(doc(db, "mentors", mentorId), { img: ev.target.result });
+                    document.getElementById('header-profile-img').src = ev.target.result;
                 }
             };
             r.readAsDataURL(e.target.files[0]);
@@ -224,31 +201,15 @@ window.switchTab = function(t) {
     event.currentTarget.classList.add('active');
 }
 window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
-
 function setupAdminHome() {
     setTimeout(() => {
         const b = document.getElementById('nav-home-btn');
         if(b) {
             const n = b.cloneNode(true);
             n.innerHTML = '<i class="fa-solid fa-house"></i> Home (Super Admin)';
-            n.onclick = e => { 
-                e.preventDefault(); 
-                if(confirm("Ke Home Admin?")) { 
-                    localStorage.setItem('userRole','admin'); 
-                    localStorage.setItem('userName','Super Admin'); 
-                    localStorage.setItem('userLink','admin-dashboard.html'); 
-                    window.location.href='index.html'; 
-                } 
-            };
+            n.onclick = e => { e.preventDefault(); if(confirm("Ke Home Admin?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); window.location.href='index.html'; } };
             b.parentNode.replaceChild(n, b);
         }
     }, 500);
 }
-window.backToAdminDashboard = function() { 
-    if(confirm("Kembali ke Admin?")) { 
-        localStorage.setItem('userRole','admin'); 
-        localStorage.setItem('userName','Super Admin'); 
-        localStorage.setItem('userLink','admin-dashboard.html'); 
-        window.location.href='admin-dashboard.html'; 
-    } 
-}
+window.backToAdminDashboard = function() { if(confirm("Kembali?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); window.location.href='admin-dashboard.html'; } }
