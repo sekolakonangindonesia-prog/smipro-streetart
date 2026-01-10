@@ -1,149 +1,172 @@
-/* DATA SIMULASI */
-let students = [
-    { id: 1, name: "Band Pemula 01", genre: "Rock", score: 70, img: "https://via.placeholder.com/60" },
-    { id: 2, name: "Solo Gitar Adi", genre: "Fingerstyle", score: 0, img: "https://via.placeholder.com/60" },
-    { id: 3, name: "Duo Srikandi", genre: "Pop", score: 85, img: "https://via.placeholder.com/60" }
-];
+import { db } from './firebase-config.js';
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let performers = [
-    { id: 101, name: "The Acoustic Boys", genre: "Pop Jawa", img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" },
-    { id: 102, name: "Rina Violin", genre: "Instrumental", img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" }
-];
+const MENTOR_ID = localStorage.getItem('mentorId');
 
-/* LOGIKA RENDER */
-function renderStudents() {
-    const list = document.getElementById('student-list');
-    list.innerHTML = '';
-    students.forEach(s => {
-        let scoreClass = s.score >= 90 ? 'pass' : '';
-        list.innerHTML += `
-        <div class="student-card">
-            <img src="${s.img}" class="student-img">
-            <div style="flex:1;">
-                <h4 style="margin:0;">${s.name}</h4>
-                <small style="color:#aaa;">${s.genre}</small>
-            </div>
-            <div style="text-align:right;">
-                <div class="score-circle ${scoreClass}">${s.score}</div>
-                <button class="btn-action-mentor" style="margin-top:5px;" onclick="openGrade(${s.id})">Edit Nilai</button>
-            </div>
-        </div>`;
-    });
+// --- INIT ---
+window.onload = function() {
+    if(!MENTOR_ID) {
+        alert("Sesi habis. Silakan login ulang.");
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Cek Admin Impersonate
+    if(localStorage.getItem('adminOrigin') === 'true') {
+        document.getElementById('admin-floating-btn').style.display = 'block';
+        setupAdminHome();
+    }
+
+    loadMentorData();
+    renderInputs(7); // Siapkan 7 kotak kosong
+};
+
+// --- RENDER INPUT 7 SLOT ---
+function renderInputs(n) {
+    const pContainer = document.getElementById('porto-inputs');
+    const fContainer = document.getElementById('prof-inputs');
+    pContainer.innerHTML = ''; fContainer.innerHTML = '';
+
+    for(let i=0; i<n; i++) {
+        pContainer.innerHTML += `<input type="text" id="porto-${i}" class="input-mentor" placeholder="Portofolio ${i+1}">`;
+        fContainer.innerHTML += `<input type="text" id="prof-${i}" class="input-mentor" placeholder="Profesi ${i+1}">`;
+    }
 }
 
-function renderPerformers() {
-    const list = document.getElementById('performer-list');
-    list.innerHTML = '';
-    performers.forEach(p => {
-        list.innerHTML += `
-        <div class="perf-manage-card">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                <img src="${p.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                <h4 style="margin:0;">${p.name}</h4>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-action-mentor" onclick="openUpload('${p.name}')"><i class="fa-solid fa-upload"></i> Upload</button>
-                <button class="btn-action-mentor" onclick="viewProfile()"><i class="fa-solid fa-eye"></i> Intip Profil</button>
-            </div>
-        </div>`;
-    });
+// --- LOAD DATA ---
+async function loadMentorData() {
+    const docRef = doc(db, "mentors", MENTOR_ID);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        // Header
+        document.getElementById('m-name').innerText = data.name;
+        document.getElementById('m-spec').innerText = data.specialist || "MENTOR";
+        document.getElementById('m-email').innerText = data.email;
+        if(data.img) document.getElementById('header-profile-img').src = data.img;
+
+        // Form Profil
+        document.getElementById('edit-name').value = data.name;
+        document.getElementById('edit-spec').value = data.specialist;
+        document.getElementById('edit-email').value = data.email;
+        document.getElementById('edit-phone').value = data.phone;
+
+        // Isi Portofolio
+        if(data.portfolio) {
+            data.portfolio.forEach((txt, i) => {
+                if(i < 7) document.getElementById(`porto-${i}`).value = txt;
+            });
+        }
+        // Isi Profesi
+        if(data.profession) {
+            data.profession.forEach((txt, i) => {
+                if(i < 7) document.getElementById(`prof-${i}`).value = txt;
+            });
+        }
+    }
 }
 
-/* LOGIKA MODAL */
-let currentStudentId = null;
+// --- SAVE DATA ---
+window.saveMentorProfile = async function() {
+    const name = document.getElementById('edit-name').value;
+    const spec = document.getElementById('edit-spec').value;
+    const phone = document.getElementById('edit-phone').value;
+    
+    // Ambil Array 7 Slot
+    let newPorto = [];
+    let newProf = [];
 
-function openGrade(id) {
-    currentStudentId = id;
-    const s = students.find(x => x.id === id);
-    document.getElementById('grade-target-name').innerText = s.name;
-    document.getElementById('input-score').value = s.score;
-    // Gunakan Flex agar tengah
-    document.getElementById('modal-grade').style.display = 'flex'; 
+    for(let i=0; i<7; i++) {
+        const pVal = document.getElementById(`porto-${i}`).value;
+        const fVal = document.getElementById(`prof-${i}`).value;
+        if(pVal) newPorto.push(pVal);
+        if(fVal) newProf.push(fVal);
+    }
+
+    try {
+        await updateDoc(doc(db, "mentors", MENTOR_ID), {
+            name: name,
+            specialist: spec,
+            phone: phone,
+            portfolio: newPorto,
+            profession: newProf
+        });
+        alert("Profil Berhasil Diupdate!");
+        loadMentorData(); // Refresh tampilan
+    } catch(e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
 }
 
-function openUpload(name) {
-    document.getElementById('upload-target-name').innerText = name;
-    document.getElementById('modal-upload').style.display = 'flex';
+// --- FUNGSI ADMIN HOME (SAMA SEPERTI MITRA/PERFORMER) ---
+function setupAdminHome() {
+    setTimeout(() => {
+        const oldBtn = document.getElementById('nav-home-btn');
+        if (oldBtn) {
+            const newBtn = oldBtn.cloneNode(true);
+            newBtn.innerHTML = '<i class="fa-solid fa-house"></i> Home (Super Admin)';
+            newBtn.onclick = function(e) {
+                e.preventDefault();
+                if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
+                    localStorage.setItem('userRole', 'admin');
+                    localStorage.setItem('userName', 'Super Admin');
+                    localStorage.setItem('userLink', 'admin-dashboard.html');
+                    window.location.href = 'index.html';
+                }
+            };
+            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        }
+    }, 500);
 }
 
-function submitScore() {
-    const score = parseInt(document.getElementById('input-score').value);
-    if(isNaN(score) || score < 0 || score > 100) return alert("Nilai harus 0-100!");
-    const s = students.find(x => x.id === currentStudentId);
-    s.score = score;
-    if (score >= 90) alert(`Nilai ${score} tersimpan! Notifikasi dikirim ke Admin.`);
-    else alert(`Nilai ${score} tersimpan.`);
-    closeModal('modal-grade');
-    renderStudents();
+// --- TOMBOL BALIK ADMIN ---
+window.backToAdminDashboard = function() {
+    if(confirm("Kembali ke Admin?")) {
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userName', 'Super Admin');
+        localStorage.setItem('userLink', 'admin-dashboard.html');
+        window.location.href = 'admin-dashboard.html';
+    }
 }
 
-function submitUpload() {
-    alert("File berhasil diunggah ke Galeri Performer!");
-    closeModal('modal-upload');
-}
-
-// LINK KE DASHBOARD PERFORMER ASLI (SESUAI REQUEST)
-function viewProfile() {
-    window.location.href = 'performer-dashboard.html'; 
-}
-
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(e => e.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+// --- FUNGSI TAB ---
+window.switchTab = function(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).style.display = 'block';
     event.currentTarget.classList.add('active');
 }
 
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-// FUNGSI LOGOUT YANG BENAR
-function prosesLogout() {
-    if(confirm("Keluar dari Dashboard Mentor?")) {
-        localStorage.removeItem('userLoggedIn');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userLink');
+// --- FUNGSI LOGOUT ---
+window.prosesLogout = function() {
+    if(confirm("Logout?")) {
+        localStorage.clear();
         window.location.href = 'index.html';
     }
 }
 
-// Init
-renderStudents();
-renderPerformers();
-
-// ... (Kode mentor-script.js sebelumnya) ...
-
-// --- FUNGSI UNTUK MENYIMPAN PROFIL MENTOR ---
-function saveProfile() {
-    // Ambil data dari input
-    const newName = document.getElementById('edit-name').value;
-    const newRole = document.getElementById('edit-role').value; // Asumsi Anda tambahkan ID untuk role
-    const newBio = document.getElementById('edit-bio').value;
-    const newPhone = document.getElementById('edit-phone').value;
-    const newEmail = document.getElementById('edit-email').value;
-    const newPass = document.getElementById('edit-pass').value;
-
-    // Ambil data mentah dari LOCAL STORAGE (atau inisialisasi jika belum ada)
-    let mentorData = JSON.parse(localStorage.getItem('mentorProfile') || '{}');
-
-    // Update data yang diubah
-    mentorData.name = newName;
-    mentorData.role = newRole;
-    mentorData.bio = newBio;
-    mentorData.phone = newPhone;
-    mentorData.email = newEmail;
-    // Password biasanya tidak disimpan plaintext, ini hanya simulasi
-    if (newPass) mentorData.password = newPass; 
-
-    // Simpan kembali ke LOCAL STORAGE
-    localStorage.setItem('mentorProfile', JSON.stringify(mentorData));
-
-    // Update tampilan langsung
-    document.getElementById('shop-name-display').innerText = newName; // Jika ada nama di header dashboard
-    document.getElementById('mentor-badge').innerText = newRole.toUpperCase(); // Update role di header
-    // (Update profil di header belum saya tambahkan, tapi ini dasarnya)
-
-    alert("Profil berhasil disimpan!");
+// --- UPLOAD FOTO ---
+window.triggerUpload = function() {
+    // Buat input file on-the-fly
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = async function(ev) {
+                const base64 = ev.target.result;
+                document.getElementById('header-profile-img').src = base64;
+                if(confirm("Simpan Foto Profil Baru?")) {
+                    await updateDoc(doc(db, "mentors", MENTOR_ID), { img: base64 });
+                    alert("Foto Tersimpan!");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
 }
-
-// --- PILIH FUNGSI YANG SUDAH ADA DI BAWAH ---
-// (Jangan lupa panggil renderStudents() dan renderPerformers() jika perlu update list)
