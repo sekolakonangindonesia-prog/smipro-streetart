@@ -8,15 +8,27 @@ import {
    ========================================= */
 
 window.showView = function(viewId, btn) {
+    // Sembunyikan semua view
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById('view-' + viewId);
-    if(target) target.classList.remove('hidden');
     
-    // Auto Load Data Khusus
+    // Tampilkan view target
+    const target = document.getElementById('view-' + viewId);
+    if(target) {
+        target.classList.remove('hidden');
+    } else {
+        console.error("View tidak ditemukan: view-" + viewId);
+        return;
+    }
+    
+    // Auto Load Data Khusus saat menu diklik
     if(viewId === 'finance') renderFinanceData(); 
     if(viewId === 'cms') loadArtistDropdowns(); 
-    if(viewId === 'students') loadStudentData(); 
+    if(viewId === 'students') loadStudentData();
+    if(viewId === 'mitra') loadMitraData();
+    if(viewId === 'performer') loadPerformerData();
+    if(viewId === 'mentor') loadMentorData();
 
+    // Update kelas active di sidebar
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
@@ -44,20 +56,36 @@ window.adminLogout = function() {
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
     if(!tbody) return;
+    
     const q = query(collection(db, "warungs"));
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada mitra.</td></tr>';
+            return;
+        }
+        
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
             let statusBadge = `<span style="color:#00ff00;">Verified</span>`;
             let actionBtn = '';
+            
             if (data.totalTables > 15 && !data.adminApproved) {
                 statusBadge = `<span style="color:orange;">Butuh Approval</span>`;
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
+            
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
-            tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.owner||'-'}</td><td>${data.totalTables}</td><td>${statusBadge}</td><td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            
+            tbody.innerHTML += `
+            <tr>
+                <td><b>${data.name}</b></td>
+                <td>${data.owner||'-'}</td>
+                <td>${data.totalTables}</td>
+                <td>${statusBadge}</td>
+                <td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>`;
         });
     });
 }
@@ -78,7 +106,7 @@ window.approveTable = async function(id) { if(confirm("Setujui?")) await updateD
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
 /* =========================================
-   2. MANAJEMEN PERFORMER (SUDAH DIPERBAIKI)
+   2. MANAJEMEN PERFORMER
    ========================================= */
 async function loadPerformerData() {
     const tbody = document.getElementById('perf-table-body');
@@ -150,9 +178,11 @@ window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(d
 async function loadMentorData() {
     const tbody = document.getElementById('mentor-table-body');
     if(!tbody) return;
+    
     onSnapshot(collection(db, "mentors"), (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Klik Generate.</td></tr>'; return; }
+        
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsMentor('${docSnap.id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
@@ -499,6 +529,7 @@ window.savePodcast = async function() {
                 timestamp: new Date()
             });
             alert("Podcast Berhasil Dipublish!");
+            // Reset Form
             document.getElementById('pod-title').value = '';
             document.getElementById('pod-link').value = '';
         } catch(e) {
@@ -524,6 +555,9 @@ async function renderFinanceData() {
     const perfContainer = document.getElementById('top-performer-list');
     const songContainer = document.getElementById('top-song-list');
     
+    // Perbaikan: Pastikan elemen ada sebelum diisi
+    if(!tbody || !perfContainer || !songContainer) return;
+
     const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
     if(financeUnsubscribe) financeUnsubscribe();
@@ -578,8 +612,12 @@ async function renderFinanceData() {
             }
         });
 
-        document.getElementById('fin-total-amount').innerText = "Rp " + totalMoney.toLocaleString();
-        document.getElementById('fin-total-req').innerText = totalCount;
+        const totalEl = document.getElementById('fin-total-amount');
+        if(totalEl) totalEl.innerText = "Rp " + totalMoney.toLocaleString();
+        
+        const reqEl = document.getElementById('fin-total-req');
+        if(reqEl) reqEl.innerText = totalCount;
+        
         tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center; color:#555;">Belum ada data arsip.</td></tr>';
 
         const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 5);
@@ -611,6 +649,8 @@ let liveUnsubscribe = null;
 
 async function renderLiveMonitor() {
     const list = document.getElementById('admin-live-list');
+    if(!list) return;
+
     const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
 
     if(liveUnsubscribe) liveUnsubscribe();
@@ -689,22 +729,25 @@ window.seedVenues = async function() {
    8. EKSEKUSI AWAL & AUTO RETURN
    ========================================= */
 // Load data utama saat pertama kali dibuka
-loadMitraData();
-loadPerformerData();
-loadMentorData();
-loadStudentData(); // <-- JANGAN LUPA INI AGAR SISWA MUNCUL
+// Pastikan DOM sudah siap
+window.onload = function() {
+    loadMitraData();
+    loadPerformerData();
+    loadMentorData();
+    loadStudentData(); 
 
-setTimeout(() => {
-    const lastTab = localStorage.getItem('adminReturnTab');
-    if (lastTab) {
-        console.log("Mencoba kembali ke tab:", lastTab);
-        const allMenus = document.querySelectorAll('.menu-item');
-        allMenus.forEach(btn => {
-            const clickAttr = btn.getAttribute('onclick');
-            if (clickAttr && clickAttr.includes(lastTab)) {
-                btn.click();
-            }
-        });
-        localStorage.removeItem('adminReturnTab');
-    }
-}, 500);
+    setTimeout(() => {
+        const lastTab = localStorage.getItem('adminReturnTab');
+        if (lastTab) {
+            console.log("Mencoba kembali ke tab:", lastTab);
+            const allMenus = document.querySelectorAll('.menu-item');
+            allMenus.forEach(btn => {
+                const clickAttr = btn.getAttribute('onclick');
+                if (clickAttr && clickAttr.includes(lastTab)) {
+                    btn.click();
+                }
+            });
+            localStorage.removeItem('adminReturnTab');
+        }
+    }, 500);
+}
