@@ -105,35 +105,60 @@
                 <h2>Login Mentor</h2><p>Akses Panel Penilaian</p>
             </div>
             <div class="form-group"><label>Email Terdaftar</label><input type="email" id="mentor-email-login" class="form-input" placeholder="nama@email.com"></div>
-            <button class="btn-primary" onclick="aksiLoginMentor()" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK PANEL MENTOR</button>
+           <button id="btn-login-mentor" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK PANEL MENTOR</button>
         </div>
-
+        
     </div>
 
-    <script>
-        function pindahKe(tujuan) {
+   <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Fungsi Pindah Tampilan
+        window.pindahKe = function(tujuan) {
             document.querySelectorAll('.section-view').forEach(e => e.style.display = 'none');
             if (tujuan === 'menu') document.getElementById('view-menu').style.display = 'block';
             if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
             if (tujuan === 'login-mentor') document.getElementById('view-login-mentor').style.display = 'block';
         }
 
-        // LOGIKA LOGIN SEDERHANA (Nanti bisa diganti Firebase)
-        function aksiLoginPerformer() {
-            localStorage.setItem('userLoggedIn', 'true');
-            localStorage.setItem('userRole', 'performer');
-            localStorage.setItem('userName', 'The Acoustic Boys');
-            localStorage.setItem('userLink', 'performer-dashboard.html');
-            window.location.href = 'performer-dashboard.html';
-        }
+        // --- LOGIKA LOGIN MENTOR REALTIME ---
+        document.getElementById('btn-login-mentor').addEventListener('click', async () => {
+            const email = document.getElementById('mentor-email-login').value;
+            const btn = document.getElementById('btn-login-mentor');
+            
+            if(!email) return alert("Masukkan Email!");
+            
+            btn.innerHTML = "Memeriksa...";
+            
+            try {
+                // Cari di Firebase: Apakah ada mentor dengan email ini?
+                const q = query(collection(db, "mentors"), where("email", "==", email));
+                const querySnapshot = await getDocs(q);
 
-        function aksiLoginMentor() {
-            localStorage.setItem('userLoggedIn', 'true');
-            localStorage.setItem('userRole', 'mentor');
-            localStorage.setItem('userName', 'Mentor Haryono');
-            localStorage.setItem('userLink', 'mentor-dashboard.html');
-            window.location.href = 'mentor-dashboard.html';
-        }
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    const data = doc.data();
+                    
+                    // LOGIN SUKSES
+                    localStorage.setItem('userLoggedIn', 'true');
+                    localStorage.setItem('userRole', 'mentor');
+                    localStorage.setItem('userName', data.name);
+                    localStorage.setItem('mentorId', doc.id); // INI KUNCINYA!
+                    localStorage.setItem('userLink', 'mentor-dashboard.html');
+                    
+                    alert(`Selamat datang, ${data.name}!`);
+                    window.location.href = 'mentor-dashboard.html';
+                } else {
+                    alert("Email tidak ditemukan di database Mentor.");
+                    btn.innerHTML = "MASUK PANEL MENTOR";
+                }
+            } catch (error) {
+                console.error("Login Error:", error);
+                alert("Terjadi kesalahan koneksi.");
+                btn.innerHTML = "MASUK PANEL MENTOR";
+            }
+        });
     </script>
 </body>
 </html>
