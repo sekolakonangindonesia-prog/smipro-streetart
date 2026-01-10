@@ -56,13 +56,13 @@
     </div>
 </div>
 
-<!-- TABS -->
 <div class="mitra-tabs">
     <button class="tab-btn active" onclick="switchTab('bengkel')">🛠️ Bengkel Siswa</button>
+    <button class="tab-btn" onclick="switchTab('galeri')">🎵 Galeri Karya</button> <!-- BARU -->
     <button class="tab-btn" onclick="switchTab('performer')">🎸 Manaj. Performer</button>
     <button class="tab-btn" onclick="switchTab('profil')">👤 Profil Saya</button>
 </div>
-
+    
 <div class="container">
     <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
 
@@ -82,6 +82,23 @@
     <div id="tab-performer" class="tab-content">
         <div style="padding:20px; text-align:center; color:#888;">Fitur Performer akan muncul di sini.</div>
     </div>
+
+    <!-- TAB BARU: GALERI KARYA -->
+<div id="tab-galeri" class="tab-content">
+    <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; color:white;">Showcase Karya Saya</h3>
+            <button class="btn-primary" onclick="openAddGalleryModal()" style="width:auto; margin:0; padding:8px 15px;">
+                <i class="fa-solid fa-plus"></i> Tambah Karya
+            </button>
+        </div>
+
+        <!-- Grid untuk menampilkan hasil karya -->
+        <div id="mentor-gallery-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;">
+            <p style="color:#666;">Memuat galeri...</p>
+        </div>
+    </div>
+</div>
 
     <!-- TAB 3: PROFIL SAYA (7 SLOT FIX) -->
     <div id="tab-profil" class="tab-content">
@@ -120,6 +137,30 @@
             <button class="btn-primary" onclick="saveMentorProfile()">
                 <i class="fa-solid fa-floppy-disk"></i> SIMPAN SEMUA PERUBAHAN
             </button>
+        </div>
+    </div>
+</div>
+
+    <!-- MODAL TAMBAH KARYA -->
+<div id="modal-add-gallery" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
+        <h3 style="margin-top:0; color:white;">Tambah Karya</h3>
+        
+        <label style="color:#aaa; font-size:0.8rem;">Judul Karya</label>
+        <input type="text" id="gal-title" class="input-mentor" placeholder="Contoh: Video Klip Terbaru">
+
+        <label style="color:#aaa; font-size:0.8rem;">Tipe Konten</label>
+        <select id="gal-type" class="input-mentor">
+            <option value="video">Video (YouTube)</option>
+            <option value="audio">Audio (MP3 Link)</option>
+        </select>
+
+        <label style="color:#aaa; font-size:0.8rem;">Link URL</label>
+        <input type="text" id="gal-url" class="input-mentor" placeholder="Paste Link YouTube / MP3 disini">
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="document.getElementById('modal-add-gallery').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
+            <button onclick="saveGalleryItem()" style="flex:1; padding:10px; background:var(--green); border:none; color:black; font-weight:bold; border-radius:5px; cursor:pointer;">Simpan</button>
         </div>
     </div>
 </div>
