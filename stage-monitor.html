@@ -39,13 +39,20 @@
 </head>
 <body>
 
+  <!-- HEADER STAGE MONITOR DENGAN TOMBOL KEMBALI -->
     <div class="header">
-        <div>
-            <h1>STAGE MONITOR</h1>
-            <small style="color:#888;">Layar Kontrol Request & Saweran</small>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <!-- TOMBOL KEMBALI PINTAR -->
+            <button onclick="goBackDashboard()" style="background:#333; color:white; border:1px solid #555; padding:8px 12px; border-radius:5px; cursor:pointer;">
+                <i class="fa-solid fa-arrow-left"></i> Kembali
+            </button>
+            <div>
+                <h1 style="font-size:1.5rem;">STAGE MONITOR</h1>
+                <small style="color:#888;">Live Control Request</small>
+            </div>
         </div>
         <div style="text-align: right;">
-            <span style="font-size: 3rem; font-weight:bold; font-family: monospace;" id="clock">00:00</span>
+            <span style="font-size: 2rem; font-weight:bold; font-family: monospace;" id="clock">00:00</span>
         </div>
     </div>
 
