@@ -236,6 +236,9 @@ Code
             <a href="#" class="menu-item" onclick="showView('mentor', this)">
                 <i class="fa-solid fa-chalkboard-user"></i> <span>Data Mentor</span>
             </a>
+            <a href="#" class="menu-item" onclick="showView('students', this)">
+                <i class="fa-solid fa-user-graduate"></i> <span>Bengkel Siswa</span>
+            </a>
             <a href="#" class="menu-item" onclick="showView('cms', this)">
                 <i class="fa-solid fa-pen-to-square"></i> <span>Kelola Konten</span>
             </a>
@@ -367,6 +370,44 @@ Code
                 </tbody>
             </table>
         </div>
+
+        <!-- VIEW BARU: MANAJEMEN SISWA (BENGKEL) -->
+            <div id="view-students" class="admin-view hidden">
+                <div class="section-header">
+                    <h2 style="margin:0; color:white;">Bengkel Siswa (Calon Performer)</h2>
+                </div>
+                
+                <!-- VIEW BARU: MANAJEMEN SISWA (BENGKEL) -->
+            <div id="view-students" class="admin-view hidden">
+                <div class="section-header">
+                    <h2 style="margin:0; color:white;">Bengkel Siswa (Calon Performer)</h2>
+                </div>
+                
+                <!-- FORM INPUT SISWA -->
+                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
+                    <h4 style="margin-top:0; color:#FFD700;">Tambah Siswa Baru</h4>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="new-student-name" class="cms-input" placeholder="Nama Siswa / Grup">
+                        <input type="text" id="new-student-genre" class="cms-input" placeholder="Genre Musik">
+                    </div>
+                    <button class="btn-action btn-view" onclick="addStudent()" style="width:100%;">+ Masukkan ke Bengkel</button>
+                </div>
+
+                <!-- TABEL DAFTAR SISWA -->
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Siswa</th>
+                            <th>Genre</th>
+                            <th>Status Nilai</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                        <tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
        <!-- VIEW 4: CMS (UPDATE FINAL) -->
         <div id="view-cms" class="admin-view hidden">
