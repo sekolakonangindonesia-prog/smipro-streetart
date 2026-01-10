@@ -14,7 +14,8 @@ window.showView = function(viewId, btn) {
     
     // Auto Load Data Khusus
     if(viewId === 'finance') renderFinanceData(); 
-    if(viewId === 'cms') loadArtistDropdowns(); // <--- TAMBAHAN: Isi Dropdown Artis
+    if(viewId === 'cms') loadArtistDropdowns(); 
+    if(viewId === 'students') loadStudentData(); // Pastikan siswa dimuat saat menu diklik
 
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
@@ -142,86 +143,37 @@ async function loadMentorData() {
     });
 }
 
-// --- FUNGSI SEED MENTOR (DATA FIX 3 ORANG) ---
 window.seedMentors = async function() {
     const mentorsData = [
         {
-            name: "Andik Laksono",
-            email: "andigomusicpro@gmail.com",
-            phone: "082319867817",
-            specialist: "Musik & Audio Engineering", 
-            img: "https://via.placeholder.com/150", 
-            portfolio: [
-                "Owner AndiGO music Electronik",
-                "SongWriterr & Music Arranger",
-                "Sound & Audio Engineers",
-                "Audio & Music Recording",
-                "Lead & Vocal instructor",
-                "Audio, Sound & Music Conceptor",
-                "" 
-            ],
-            profession: [
-                "Music performer",
-                "Audio engineer",
-                "Store Owner of AndiGO Music Electronik",
-                "", "", "", "" 
-            ]
+            name: "Bpk. Andigo",
+            specialist: "Musik Management",
+            img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200",
+            portfolio: ["Manajer Band Indie 2010-2020", "Promotor Festival Jazz Jatim"],
+            profession: ["Dosen Musik", "Event Organizer"]
         },
         {
-            name: "Ervansyah",
-            email: "yusufkonang33@gmail.com",
-            phone: "085230659995",
+            name: "Bpk. Anton",
+            specialist: "Public Speaking", 
+            img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200",
+            portfolio: ["MC Kondang Jawa Timur", "Trainer Komunikasi"],
+            profession: ["Broadcaster", "MC Professional"]
+        },
+        {
+            name: "Bpk. Ervan",
             specialist: "Visual Management",
-            img: "https://via.placeholder.com/150",
-            portfolio: [
-                "Owner CV. BRIEFCOM",
-                "Fotografer",
-                "Videografer",
-                "Desain dan Percetakan",
-                "", "", ""
-            ],
-            profession: [
-                "Fotografer",
-                "Videografer",
-                "Design grafis",
-                "Produser",
-                "Sutradara",
-                "Content Writer",
-                "Editor"
-            ]
-        },
-        {
-            name: "Antony",
-            email: "gustinara.top@gmail.com",
-            phone: "085859823588",
-            specialist: "Public Relations",
-            img: "https://via.placeholder.com/150",
-            portfolio: [
-                "SongWriterr & Music Arranger",
-                "Broadcasting Journalism",
-                "Public speaking",
-                "Public Relations",
-                "", "", ""
-            ],
-            profession: [
-                "Program Director",
-                "Audio engineer",
-                "Owner Sekola Konang Indonesia",
-                "", "", "", ""
-            ]
+            img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200",
+            portfolio: ["Stage Designer Konser Amal", "Fotografer Event"],
+            profession: ["Desainer Grafis", "Art Director"]
         }
     ];
 
-    if(confirm("Hapus data lama & Generate 3 Mentor FIX?")) {
+    if(confirm("Generate Data Mentor?")) {
         try {
-            // 1. Hapus data lama dulu (biar tidak duplikat)
-            // Note: Idealnya hapus manual di admin, tapi ini menimpa logika tambah
-            
             for (const m of mentorsData) {
-                // Kita gunakan addDoc agar ID dibuat otomatis oleh Firebase
                 await addDoc(collection(db, "mentors"), m);
             }
-            alert("Sukses! 3 Mentor FIX (Andik, Ervan, Antony) telah masuk database.");
+            alert("Sukses! Data Masuk.");
             loadMentorData(); 
         } catch (e) {
             alert("Gagal: " + e.message);
@@ -244,16 +196,100 @@ window.loginAsMentor = function(id, name) {
 window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "mentors", id)); }
 
 /* =========================================
-   4. CMS MODULE (JADWAL, RADIO, BERITA)
+   4. MANAJEMEN SISWA (BENGKEL)
    ========================================= */
 
-// --- BARU: ISI DROPDOWN ARTIS OTOMATIS ---
+let currentStudentBase64 = null; 
+
+window.previewStudentImg = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentStudentBase64 = e.target.result;
+            document.getElementById('student-preview').src = currentStudentBase64;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+window.addStudent = async function() {
+    const name = document.getElementById('new-student-name').value;
+    const genre = document.getElementById('new-student-genre').value;
+    const img = currentStudentBase64 || "https://via.placeholder.com/150"; 
+
+    if(!name || !genre) return alert("Isi Nama dan Genre!");
+
+    if(confirm("Masukkan siswa ini ke Bengkel?")) {
+        await addDoc(collection(db, "students"), {
+            name: name,
+            genre: genre,
+            img: img,
+            scores: {}, 
+            status: "training", 
+            timestamp: new Date()
+        });
+        
+        alert("Siswa berhasil masuk Bengkel!");
+        document.getElementById('new-student-name').value = '';
+        document.getElementById('new-student-genre').value = '';
+        document.getElementById('student-preview').src = "https://via.placeholder.com/100?text=Foto";
+        currentStudentBase64 = null;
+    }
+}
+
+async function loadStudentData() {
+    const tbody = document.getElementById('student-table-body');
+    if(!tbody) return;
+
+    onSnapshot(query(collection(db, "students"), orderBy("timestamp", "desc")), (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada siswa dalam pelatihan.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const scores = Object.values(data.scores || {});
+            let scoreText = `<span style="color:#888;">Belum dinilai</span>`;
+            
+            if(scores.length > 0) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                scoreText = `<b style="color:gold;">Rata-rata: ${avg.toFixed(1)}</b> (${scores.length} Mentor)`;
+                if (scores.length >= 3 && avg >= 90) {
+                    scoreText += `<br><span style="color:#00ff00; font-size:0.8rem;">SIAP LULUS!</span>`;
+                }
+            }
+
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteStudent('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td>${imgHTML}</td>
+                <td><b>${data.name}</b></td>
+                <td>${data.genre}</td>
+                <td>${scoreText}</td>
+                <td>${btnDel}</td>
+            </tr>`;
+        });
+    });
+}
+
+window.deleteStudent = async function(id) {
+    if(confirm("Hapus siswa dari Bengkel?")) await deleteDoc(doc(db, "students", id));
+}
+
+/* =========================================
+   5. CMS MODULE (JADWAL, RADIO, BERITA)
+   ========================================= */
+
+// ISI DROPDOWN ARTIS OTOMATIS
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
     
-    // Simpan opsi HTML dalam variabel
     let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
     
     snapshot.forEach(doc => {
@@ -261,14 +297,12 @@ async function loadArtistDropdowns() {
         optionsHTML += `<option value="${data.name}">${data.name}</option>`;
     });
 
-    // Masukkan ke 3 dropdown
     selects.forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = optionsHTML;
     });
 }
 
-// 1. SAVE SCHEDULE (JADWAL)
 window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
@@ -293,7 +327,7 @@ window.saveSchedule = async function() {
             genre: document.getElementById('p3-genre').value,
             img: "https://via.placeholder.com/100"
         }
-    ].filter(p => p.name !== "" && p.name !== "Lainnya"); // Filter
+    ].filter(p => p.name !== "" && p.name !== "Lainnya"); 
 
     if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
 
@@ -311,7 +345,7 @@ window.saveSchedule = async function() {
     }
 }
 
-// 2. RADIO SYSTEM (LOAD & UPDATE)
+// RADIO
 let currentRadioDocId = null; 
 
 window.loadRadioSessionData = async function() {
@@ -359,7 +393,7 @@ window.saveRadioUpdate = async function() {
     }
 }
 
-// 3. BERITA SYSTEM (HYBRID)
+// BERITA
 window.toggleNewsInput = function() {
     const type = document.getElementById('news-type').value;
     if(type === 'external') {
@@ -404,12 +438,12 @@ window.saveNews = async function() {
 }
 
 /* =========================================
-   5. MODUL KEUANGAN & LIVE COMMAND CENTER
+   6. MODUL KEUANGAN & LIVE COMMAND CENTER
    ========================================= */
 
 window.loadFinanceStats = function() {
-    renderFinanceData(); // Kolom Kanan
-    renderLiveMonitor(); // Kolom Kiri
+    renderFinanceData(); 
+    renderLiveMonitor(); 
 }
 
 let financeUnsubscribe = null;
@@ -502,7 +536,7 @@ async function renderFinanceData() {
     });
 }
 
-// B. LOGIKA KOLOM KIRI (LIVE MONITOR)
+// LOGIKA KOLOM KIRI (LIVE MONITOR)
 let liveUnsubscribe = null;
 
 async function renderLiveMonitor() {
@@ -562,7 +596,7 @@ window.finishReq = async function(id) {
 }
 
 /* =========================================
-   6. SETUP DATA LOKASI (SEEDING)
+   7. SEED VENUES (Hanya Dipanggil Sekali)
    ========================================= */
 window.seedVenues = async function() {
     const venuesData = [
@@ -582,11 +616,13 @@ window.seedVenues = async function() {
 }
 
 /* =========================================
-   7. AUTO-RETURN TAB & INIT
+   8. EKSEKUSI AWAL & AUTO RETURN
    ========================================= */
+// Load data utama saat pertama kali dibuka
 loadMitraData();
 loadPerformerData();
 loadMentorData();
+loadStudentData(); // <-- JANGAN LUPA INI AGAR SISWA MUNCUL
 
 setTimeout(() => {
     const lastTab = localStorage.getItem('adminReturnTab');
@@ -602,101 +638,3 @@ setTimeout(() => {
         localStorage.removeItem('adminReturnTab');
     }
 }, 500);
-/* =========================================
-   MANAJEMEN SISWA (BENGKEL) - DENGAN FOTO
-   ========================================= */
-
-let currentStudentBase64 = null; // Variabel penampung foto sementara
-
-// 1. FUNGSI PREVIEW FOTO (Dipanggil dari HTML)
-window.previewStudentImg = function(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentStudentBase64 = e.target.result; // Simpan data foto
-            document.getElementById('student-preview').src = currentStudentBase64; // Tampilkan
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// 2. TAMBAH SISWA KE DATABASE
-window.addStudent = async function() {
-    const name = document.getElementById('new-student-name').value;
-    const genre = document.getElementById('new-student-genre').value;
-    // Gunakan foto default jika user tidak upload
-    const img = currentStudentBase64 || "https://via.placeholder.com/150"; 
-
-    if(!name || !genre) return alert("Isi Nama dan Genre!");
-
-    if(confirm("Masukkan siswa ini ke Bengkel?")) {
-        await addDoc(collection(db, "students"), {
-            name: name,
-            genre: genre,
-            img: img, // Simpan foto
-            scores: {}, 
-            status: "training", 
-            timestamp: new Date()
-        });
-        
-        alert("Siswa berhasil masuk Bengkel!");
-        // Reset Form
-        document.getElementById('new-student-name').value = '';
-        document.getElementById('new-student-genre').value = '';
-        document.getElementById('student-preview').src = "https://via.placeholder.com/100?text=Foto";
-        currentStudentBase64 = null;
-    }
-}
-
-// 3. LOAD DATA SISWA (TAMPIL DI TABEL)
-async function loadStudentData() {
-    const tbody = document.getElementById('student-table-body');
-    if(!tbody) return;
-
-    onSnapshot(query(collection(db, "students"), orderBy("timestamp", "desc")), (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada siswa dalam pelatihan.</td></tr>';
-            return;
-        }
-
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            
-            // Hitung Rata-Rata Nilai
-            const scores = Object.values(data.scores || {});
-            let scoreText = `<span style="color:#888;">Belum dinilai</span>`;
-            
-            if(scores.length > 0) {
-                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                scoreText = `<b style="color:gold;">Rata-rata: ${avg.toFixed(1)}</b> (${scores.length} Mentor)`;
-                
-                // Cek Kelulusan (Misal: 3 mentor sudah menilai & rata-rata >= 90)
-                if (scores.length >= 3 && avg >= 90) {
-                    scoreText += `<br><span style="color:#00ff00; font-size:0.8rem;">SIAP LULUS!</span>`;
-                }
-            }
-
-            const btnDel = `<button class="btn-action btn-delete" onclick="deleteStudent('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
-            
-            // Foto Bulat Kecil di Tabel
-            const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">`;
-
-            tbody.innerHTML += `
-            <tr>
-                <td>${imgHTML}</td>
-                <td><b>${data.name}</b></td>
-                <td>${data.genre}</td>
-                <td>${scoreText}</td>
-                <td>${btnDel}</td>
-            </tr>`;
-        });
-    });
-}
-
-window.deleteStudent = async function(id) {
-    if(confirm("Hapus siswa dari Bengkel?")) await deleteDoc(doc(db, "students", id));
-}
-
-// JALANKAN FUNGSINYA
-loadStudentData();
