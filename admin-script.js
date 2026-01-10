@@ -493,6 +493,50 @@ window.saveNews = async function() {
     }
 }
 
+// --- FITUR BARU: TOGGLE FORM BERITA vs PODCAST ---
+window.toggleContentForm = function() {
+    const type = document.getElementById('content-category').value;
+    if(type === 'news') {
+        document.getElementById('form-news-container').style.display = 'block';
+        document.getElementById('form-podcast-container').style.display = 'none';
+    } else {
+        document.getElementById('form-news-container').style.display = 'none';
+        document.getElementById('form-podcast-container').style.display = 'block';
+    }
+}
+
+// --- FITUR BARU: SIMPAN PODCAST KE FIREBASE ---
+window.savePodcast = async function() {
+    const title = document.getElementById('pod-title').value;
+    const host = document.getElementById('pod-host').value;
+    const duration = document.getElementById('pod-duration').value;
+    const link = document.getElementById('pod-link').value;
+    const thumb = document.getElementById('pod-thumb').value;
+    const order = parseInt(document.getElementById('pod-order').value) || 1;
+
+    if(!title || !link) return alert("Judul dan Link wajib diisi!");
+
+    if(confirm("Publish Episode Podcast ini?")) {
+        try {
+            await addDoc(collection(db, "podcasts"), {
+                title: title,
+                host: host || "Admin",
+                duration: duration || "Unknown",
+                link: link,
+                thumb: thumb || "https://via.placeholder.com/300x200?text=Podcast",
+                order: order,
+                timestamp: new Date()
+            });
+            alert("Podcast Berhasil Dipublish!");
+            // Reset Form
+            document.getElementById('pod-title').value = '';
+            document.getElementById('pod-link').value = '';
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
+    }
+}
+
 /* =========================================
    6. MODUL KEUANGAN & LIVE COMMAND CENTER
    ========================================= */
