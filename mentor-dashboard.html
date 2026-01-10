@@ -35,33 +35,36 @@
 <body>
 
     <!-- HEADER -->
-    <div class="mitra-header-bg">
+   <div class="mitra-header-bg">
         <div class="mitra-header-overlay"></div>
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
-             style="position:absolute; top:20px; left:20px; width:60px; z-index:10; filter:drop-shadow(0 0 5px rgba(0,0,0,0.5));">
+             style="position:absolute; top:20px; left:20px; width:60px; z-index:10;">
         
         <div style="position:absolute; top:20px; right:20px; display:flex; gap:10px; z-index:10;">
-             <!-- TOMBOL BARU: BUKA MONITOR -->
-            <button onclick="window.open('stage-monitor.html', '_blank')" style="background:#E50914; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold; box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);">
+            <button onclick="window.open('stage-monitor.html', '_blank')" style="background:#E50914; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">
                 <i class="fa-solid fa-desktop"></i> Stage Monitor
             </button>
             
-            <button onclick="location.href='index.html'" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;"><i class="fa-solid fa-house"></i> Home</button>
-            <button onclick="prosesLogout()" style="background:rgba(229, 9, 20, 0.8); color:white; border:none; padding:5px 12px; border-radius:5px; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            <button id="nav-home-btn" onclick="location.href='index.html'" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;">
+                <i class="fa-solid fa-house"></i> Home
+            </button>
+            <button onclick="prosesLogout()" style="background:rgba(229, 9, 20, 0.8); color:white; border:none; padding:5px 12px; border-radius:5px; cursor:pointer;">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
         </div>
 
-        <!-- FOTO PROFIL (BISA DIKLIK) -->
+         <!-- FOTO PROFIL -->
         <div class="profile-pic-container" onclick="triggerUpload()">
-            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200" id="header-profile-img" class="mitra-profile-pic">
+            <img src="" id="header-profile-img" class="mitra-profile-pic" onerror="this.src='https://via.placeholder.com/150'">
             <div class="edit-badge"><i class="fa-solid fa-camera"></i></div>
         </div>
     </div>
 
     <div class="mitra-controls" style="padding-top:60px; padding-bottom:10px;">
         <div>
-            <span class="mentor-badge">MENTOR MUSIK</span>
-            <h2 style="margin:0;">Bpk. Haryono, S.Sn</h2>
-            <small style="color:#aaa;">Spesialis: Aransemen & Vokal</small>
+            <span class="mentor-badge" id="m-spec">MENTOR</span>
+            <h2 style="margin:0;" id="m-name">Memuat Data...</h2>
+            <small style="color:#aaa;" id="m-email">-</small>
         </div>
     </div>
 
@@ -103,41 +106,38 @@
             </ul>
         </div>
 
-        <!-- TAB 4: PROFIL MENTOR (LENGKAP) -->
+        <!-- TAB 4: PROFIL SAYA (DINAMIS 7 SLOT) -->
         <div id="tab-profil" class="tab-content">
             <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
-                <h3>Edit Profil Mentor</h3>
+                <h3>Edit Profil & Portofolio</h3>
                 
-                <!-- PREVIEW FOTO -->
-                <div style="text-align:center; margin-bottom:20px; border:1px dashed #444; padding:15px; border-radius:10px;">
-                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200" id="preview-profile-img" style="width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
-                    <br>
-                    <button class="btn-action-mentor" onclick="triggerUpload()"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</button>
-                </div>
-
                 <label style="color:#aaa; font-size:0.8rem;">Nama Lengkap</label>
-                <input type="text" value="Dito Ariotedjo" class="input-mentor">
+                <input type="text" id="edit-name" class="input-mentor">
                 
                 <label style="color:#aaa; font-size:0.8rem;">Spesialisasi</label>
-                <input type="text" value="Musisi Senior & Vokal Coach" class="input-mentor">
-
-                <label style="color:#aaa; font-size:0.8rem;">Nomor HP / WhatsApp</label>
-                <input type="text" value="08123456789" class="input-mentor">
+                <input type="text" id="edit-spec" class="input-mentor">
 
                 <label style="color:#aaa; font-size:0.8rem;">Email Login</label>
-                <input type="email" value="dito.mentor@smipro.id" class="input-mentor">
+                <input type="email" id="edit-email" class="input-mentor" readonly style="background:#333; color:#888;">
 
-                <label style="color:#aaa; font-size:0.8rem;">Password Baru</label>
-                <input type="password" placeholder="Kosongkan jika tidak diubah" class="input-mentor">
+                <label style="color:#aaa; font-size:0.8rem;">Nomor HP</label>
+                <input type="text" id="edit-phone" class="input-mentor">
 
-                <label style="color:#aaa; font-size:0.8rem;">Pengalaman & Bio</label>
-                <textarea class="input-mentor" style="height:100px;">Berpengalaman 15 tahun di industri musik lokal dan festival nasional.</textarea>
+                <hr style="border-color:#333; margin:20px 0;">
+                
+                <h4 style="color:#FFD700;">Track Record & Portofolio (Max 7)</h4>
+                <div id="porto-inputs">
+                    <!-- Diisi JS -->
+                </div>
 
-                <button class="btn-primary" onclick="alert('Profil Tersimpan!')" style="background:var(--green);">Simpan Perubahan</button>
+                <h4 style="color:#FFD700; margin-top:20px;">Status Profesi (Max 7)</h4>
+                <div id="prof-inputs">
+                    <!-- Diisi JS -->
+                </div>
+
+                <button class="btn-primary" onclick="saveMentorProfile()" style="background:var(--green); margin-top:20px;">Simpan Perubahan</button>
             </div>
         </div>
-
-    </div>
 
     <!-- MODAL POPUPS (SAMA SEPERTI SEBELUMNYA) -->
     <div id="modal-grade" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
@@ -152,7 +152,7 @@
         </div>
     </div>
 
-    <script src="mentor-script.js"></script>
+    <script type="module" src="mentor-script.js"></script>
    
   <!-- === TOMBOL KHUSUS ADMIN (MODAL SUPER USER) === -->
     <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
