@@ -3,9 +3,9 @@ import {
     doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- 1. INISIALISASI ---
+// --- 1. INISIALISASI (AUTO RUN SAAT HALAMAN DIBUKA/REFRESH) ---
 window.onload = function() {
-    // Ambil ID dari LocalStorage (Yang diset oleh Admin tadi)
+    // Ambil ID dari LocalStorage (Inilah kunci agar data tidak hilang saat refresh)
     const MENTOR_ID = localStorage.getItem('mentorId');
     const IS_ADMIN = localStorage.getItem('adminOrigin') === 'true';
 
@@ -17,7 +17,7 @@ window.onload = function() {
         return;
     }
 
-    // Jika ID Hilang, Balik ke Admin (Safety Net)
+    // Jika ID Hilang (Biasanya kalau clear cache atau salah login)
     if(!MENTOR_ID) {
         alert("ID Mentor tidak ditemukan. Silakan masuk ulang dari Admin.");
         window.location.href = 'admin-dashboard.html';
@@ -32,8 +32,8 @@ window.onload = function() {
 
     // Render Kotak & Load Data
     renderInputs(7);
-    loadMentorData(MENTOR_ID);
-    loadStudents(MENTOR_ID); // Load Data Siswa
+    loadMentorData(MENTOR_ID); // Fungsi ini yang akan mengisi data kembali saat refresh
+    loadStudents(MENTOR_ID); 
 };
 
 // --- 2. LOAD DATA MENTOR (HEADER & PROFIL) ---
@@ -80,7 +80,6 @@ async function loadMentorData(id) {
 function loadStudents(mentorId) {
     const container = document.getElementById('student-list-container');
     
-    // Ambil data siswa realtime
     const q = query(collection(db, "students"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
@@ -113,7 +112,6 @@ function loadStudents(mentorId) {
                     </div>`;
             }
 
-            // Gambar Default jika kosong
             const imgUrl = s.img || "https://via.placeholder.com/150";
 
             container.innerHTML += `
@@ -175,7 +173,6 @@ window.triggerUpload = function() {
             r.onload = async (ev) => {
                 if(confirm("Simpan Foto?")) {
                     await updateDoc(doc(db, "mentors", mentorId), { img: ev.target.result });
-                    // Update tampilan langsung tanpa reload
                     document.getElementById('header-profile-img').src = ev.target.result;
                 }
             };
@@ -215,10 +212,4 @@ function setupAdminHome() {
         }
     }, 500);
 }
-window.backToAdminDashboard = function() { 
-    if(confirm("Kembali?")) { 
-        localStorage.setItem('userRole','admin'); 
-        localStorage.setItem('userName','Super Admin'); 
-        window.location.href='admin-dashboard.html'; 
-    } 
-}
+window.backToAdminDashboard = function() { if(confirm("Kembali?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); window.location.href='admin-dashboard.html'; } }
