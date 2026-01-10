@@ -3,43 +3,43 @@ import {
     doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// AMBIL ID DARI PENYIMPANAN
-const MENTOR_ID = localStorage.getItem('mentorId');
-
-// --- 1. INISIALISASI (AUTO RUN) ---
+// --- 1. INISIALISASI ---
 window.onload = function() {
-    console.log("Mentor Dashboard Init. ID:", MENTOR_ID);
+    // Ambil ID dari LocalStorage (Yang diset oleh Admin tadi)
+    const MENTOR_ID = localStorage.getItem('mentorId');
+    const IS_ADMIN = localStorage.getItem('adminOrigin') === 'true';
+
+    console.log("Start Mentor Dashboard. ID:", MENTOR_ID);
 
     // Cek Login
     if(!localStorage.getItem('userLoggedIn')) {
         window.location.href = 'index.html';
         return;
     }
-    
-    // Cek ID Mentor (Penyebab Data Hilang saat Refresh biasanya disini)
+
+    // Jika ID Hilang, Balik ke Admin (Safety Net)
     if(!MENTOR_ID) {
-        alert("Sesi kedaluwarsa. Silakan Login ulang.");
-        window.location.href = 'index.html';
+        alert("ID Mentor tidak ditemukan. Silakan masuk ulang dari Admin.");
+        window.location.href = 'admin-dashboard.html';
         return;
     }
 
-    // Cek Admin Impersonate
-    if(localStorage.getItem('adminOrigin') === 'true') {
-        const floatBtn = document.getElementById('admin-floating-btn');
-        if(floatBtn) floatBtn.style.display = 'block';
+    // Tampilkan Tombol Admin (Jika Admin)
+    if(IS_ADMIN) {
+        document.getElementById('admin-floating-btn').style.display = 'block';
         setupAdminHome();
     }
 
-    // Render Tampilan
-    renderInputs(7);  // Siapkan kotak profil
-    loadMentorData(); // Isi data profil (Fix Refresh Hilang)
-    loadStudents();   // Ambil data siswa dari Admin (Fix Masalah Bengkel)
+    // Render Kotak & Load Data
+    renderInputs(7);
+    loadMentorData(MENTOR_ID);
+    loadStudents(MENTOR_ID); // Load Data Siswa
 };
 
-// --- 2. LOAD DATA MENTOR (PROFIL) ---
-async function loadMentorData() {
+// --- 2. LOAD DATA MENTOR (HEADER & PROFIL) ---
+async function loadMentorData(id) {
     try {
-        const docRef = doc(db, "mentors", MENTOR_ID);
+        const docRef = doc(db, "mentors", id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -57,14 +57,13 @@ async function loadMentorData() {
             document.getElementById('edit-email').value = data.email;
             document.getElementById('edit-phone').value = data.phone;
 
-            // Isi Portofolio
+            // Isi Portofolio & Profesi
             if(data.portfolio) {
                 data.portfolio.forEach((txt, i) => {
                     const el = document.getElementById(`porto-${i}`);
                     if(el) el.value = txt;
                 });
             }
-            // Isi Profesi
             if(data.profession) {
                 data.profession.forEach((txt, i) => {
                     const el = document.getElementById(`prof-${i}`);
@@ -77,18 +76,18 @@ async function loadMentorData() {
     }
 }
 
-// --- 3. LOAD DATA SISWA (DARI ADMIN) ---
-function loadStudents() {
+// --- 3. LOAD DATA SISWA (BENGKEL) ---
+function loadStudents(mentorId) {
     const container = document.getElementById('student-list-container');
     
-    // Ambil data dari koleksi 'students' secara realtime
+    // Ambil data siswa realtime
     const q = query(collection(db, "students"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
         container.innerHTML = '';
         
         if (snapshot.empty) {
-            container.innerHTML = '<p style="text-align:center; color:#666;">Belum ada siswa di Bengkel.</p>';
+            container.innerHTML = '<p style="text-align:center; color:#666;">Belum ada siswa.</p>';
             return;
         }
 
@@ -96,33 +95,30 @@ function loadStudents() {
             const s = docSnap.data();
             const sID = docSnap.id;
             
-            // Cek apakah Mentor INI sudah memberi nilai?
-            // Struktur scores di DB: { "mentorId_A": 90, "mentorId_B": 80 }
-            const myScore = (s.scores && s.scores[MENTOR_ID]) ? s.scores[MENTOR_ID] : null;
+            // Cek Nilai Mentor Ini
+            const myScore = (s.scores && s.scores[mentorId]) ? s.scores[mentorId] : null;
 
-            // Tentukan Tampilan Input atau Hasil Nilai
             let actionHTML = '';
             if (myScore !== null) {
-                // SUDAH DINILAI
                 actionHTML = `
                     <div style="text-align:right;">
                         <span style="color:#888; font-size:0.8rem;">Nilai Anda:</span><br>
                         <b style="color:#00ff00; font-size:1.5rem;">${myScore}</b>
-                        <br><button onclick="editScore('${sID}')" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:0.8rem; text-decoration:underline;">Ubah</button>
                     </div>`;
             } else {
-                // BELUM DINILAI (INPUT FORM)
                 actionHTML = `
                     <div style="display:flex; gap:5px; align-items:center;">
                         <input type="number" id="score-${sID}" placeholder="0-100" style="width:70px; padding:8px; background:#111; border:1px solid #444; color:white; border-radius:5px;">
-                        <button onclick="submitScore('${sID}')" style="background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; font-weight:bold;">Kirim</button>
+                        <button onclick="window.submitScore('${sID}')" style="background:var(--primary); color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; font-weight:bold;">Kirim</button>
                     </div>`;
             }
 
-            // Render Kartu Siswa
+            // Gambar Default jika kosong
+            const imgUrl = s.img || "https://via.placeholder.com/150";
+
             container.innerHTML += `
             <div style="background:#222; padding:15px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:15px;">
-                <img src="${s.img}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
+                <img src="${imgUrl}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
                 <div style="flex:1;">
                     <h4 style="margin:0; color:white;">${s.name}</h4>
                     <span style="color:var(--accent); font-size:0.8rem;">${s.genre}</span>
@@ -133,52 +129,62 @@ function loadStudents() {
     });
 }
 
-// --- 4. FUNGSI KIRIM NILAI ---
+// --- 4. FUNGSI GLOBAL ---
 window.submitScore = async function(studentId) {
+    const mentorId = localStorage.getItem('mentorId');
     const input = document.getElementById(`score-${studentId}`);
     const nilai = parseInt(input.value);
 
-    if (!input.value || isNaN(nilai) || nilai < 0 || nilai > 100) {
-        return alert("Masukkan nilai valid (0-100)!");
+    if (!input.value || isNaN(nilai) || nilai < 0 || nilai > 100) return alert("Nilai 0-100!");
+
+    if (confirm(`Kirim nilai ${nilai}?`)) {
+        const updateData = {};
+        updateData[`scores.${mentorId}`] = nilai;
+        await updateDoc(doc(db, "students", studentId), updateData);
+    }
+}
+
+window.saveMentorProfile = async function() {
+    const mentorId = localStorage.getItem('mentorId');
+    const name = document.getElementById('edit-name').value;
+    const spec = document.getElementById('edit-spec').value;
+    const phone = document.getElementById('edit-phone').value;
+    
+    let newPorto = [], newProf = [];
+    for(let i=0; i<7; i++) {
+        const p = document.getElementById(`porto-${i}`).value;
+        const f = document.getElementById(`prof-${i}`).value;
+        if(p) newPorto.push(p); 
+        if(f) newProf.push(f);
     }
 
-    if (confirm(`Kirim nilai ${nilai} untuk siswa ini?`)) {
-        try {
-            // Update field scores secara spesifik untuk Mentor ID ini
-            // Menggunakan notasi 'scores.MENTOR_ID'
-            const updateData = {};
-            updateData[`scores.${MENTOR_ID}`] = nilai;
+    await updateDoc(doc(db, "mentors", mentorId), {
+        name, specialist: spec, phone, portfolio: newPorto, profession: newProf
+    });
+    alert("Tersimpan!");
+    loadMentorData(mentorId);
+}
 
-            await updateDoc(doc(db, "students", studentId), updateData);
-            // Tidak perlu alert sukses berlebihan, UI akan update otomatis karena onSnapshot
-        } catch (e) {
-            alert("Gagal kirim nilai: " + e.message);
+window.triggerUpload = function() {
+    const mentorId = localStorage.getItem('mentorId');
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = e => {
+        if(e.target.files[0]) {
+            const r = new FileReader();
+            r.onload = async (ev) => {
+                if(confirm("Simpan Foto?")) {
+                    await updateDoc(doc(db, "mentors", mentorId), { img: ev.target.result });
+                    // Update tampilan langsung tanpa reload
+                    document.getElementById('header-profile-img').src = ev.target.result;
+                }
+            };
+            r.readAsDataURL(e.target.files[0]);
         }
-    }
+    };
+    input.click();
 }
 
-// Fitur Edit Nilai (Reset jadi null agar input muncul lagi)
-window.editScore = async function(studentId) {
-    if(confirm("Ubah nilai?")) {
-         // Cara menghapus field di map (sedikit trick, set null atau pakai FieldValue.delete)
-         // Disini kita set 0 atau overwrite nanti. Kita tampilkan input lagi aja.
-         // Tapi karena struktur HTML dirender ulang, kita cukup update UI sementara atau
-         // Hapus field score (Advanced). Untuk simpelnya, kita minta user input ulang/timpa.
-         
-         // Solusi Simpel: Prompt
-         const newVal = prompt("Masukkan Nilai Baru (0-100):");
-         if(newVal) {
-             const n = parseInt(newVal);
-             const updateData = {};
-             updateData[`scores.${MENTOR_ID}`] = n;
-             await updateDoc(doc(db, "students", studentId), updateData);
-         }
-    }
-}
-
-// --- 5. FUNGSI UTILITAS LAINNYA ---
-
-// Render 7 Kotak Input Profil
 function renderInputs(n) {
     const pContainer = document.getElementById('porto-inputs');
     const fContainer = document.getElementById('prof-inputs');
@@ -191,43 +197,6 @@ function renderInputs(n) {
     }
 }
 
-// Simpan Profil
-window.saveMentorProfile = async function() {
-    const name = document.getElementById('edit-name').value;
-    const spec = document.getElementById('edit-spec').value;
-    const phone = document.getElementById('edit-phone').value;
-    let newPorto = [], newProf = [];
-    for(let i=0; i<7; i++) {
-        const p = document.getElementById(`porto-${i}`).value;
-        const f = document.getElementById(`prof-${i}`).value;
-        newPorto.push(p); newProf.push(f);
-    }
-    try {
-        await updateDoc(doc(db, "mentors", MENTOR_ID), {
-            name, specialist: spec, phone, portfolio: newPorto, profession: newProf
-        });
-        alert("Profil Tersimpan!");
-        loadMentorData();
-    } catch(e) { alert("Error: " + e.message); }
-}
-
-window.triggerUpload = function() {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*';
-    input.onchange = e => {
-        if(e.target.files[0]) {
-            const r = new FileReader();
-            r.onload = async (ev) => {
-                if(confirm("Simpan Foto?")) {
-                    await updateDoc(doc(db, "mentors", MENTOR_ID), { img: ev.target.result });
-                }
-            };
-            r.readAsDataURL(e.target.files[0]);
-        }
-    };
-    input.click();
-}
-
 window.switchTab = function(t) {
     document.querySelectorAll('.tab-content').forEach(e => e.style.display='none');
     document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
@@ -235,7 +204,6 @@ window.switchTab = function(t) {
     event.currentTarget.classList.add('active');
 }
 window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
-
 function setupAdminHome() {
     setTimeout(() => {
         const b = document.getElementById('nav-home-btn');
@@ -247,4 +215,10 @@ function setupAdminHome() {
         }
     }, 500);
 }
-window.backToAdminDashboard = function() { if(confirm("Kembali?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); window.location.href='admin-dashboard.html'; } }
+window.backToAdminDashboard = function() { 
+    if(confirm("Kembali?")) { 
+        localStorage.setItem('userRole','admin'); 
+        localStorage.setItem('userName','Super Admin'); 
+        window.location.href='admin-dashboard.html'; 
+    } 
+}
