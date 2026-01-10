@@ -66,19 +66,14 @@
     <div class="container">
         <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
 
-        <!-- TAB 1: BENGKEL SISWA (MODUL PENILAIAN) -->
+        <!-- TAB 1: BENGKEL SISWA -->
         <div id="tab-bengkel" class="tab-content active">
             <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
                 <h3 style="margin-top:0; color:white;">Penilaian Siswa</h3>
-                <p style="color:#aaa; font-size:0.9rem;">
-                    Berikan nilai (0-100). Siswa akan lulus jika rata-rata nilai dari semua mentor mencapai 90.
-                </p>
                 
-                <!-- WADAH DAFTAR SISWA (NANTI DIISI OTOMATIS DARI ADMIN) -->
+                <!-- INI WADAHNYA (ID HARUS SAMA DENGAN SCRIPT) -->
                 <div id="student-list-container" style="display:grid; gap:15px; margin-top:20px;">
-                    <p style="text-align:center; color:#666;">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Memuat data siswa...
-                    </p>
+                    <p style="text-align:center; color:#666;">Memuat data siswa...</p>
                 </div>
             </div>
         </div>
