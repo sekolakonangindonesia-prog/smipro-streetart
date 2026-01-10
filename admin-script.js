@@ -15,7 +15,7 @@ window.showView = function(viewId, btn) {
     // Auto Load Data Khusus
     if(viewId === 'finance') renderFinanceData(); 
     if(viewId === 'cms') loadArtistDropdowns(); 
-    if(viewId === 'students') loadStudentData(); // Pastikan siswa dimuat saat menu diklik
+    if(viewId === 'students') loadStudentData(); 
 
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
@@ -78,7 +78,7 @@ window.approveTable = async function(id) { if(confirm("Setujui?")) await updateD
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
 /* =========================================
-   2. MANAJEMEN PERFORMER
+   2. MANAJEMEN PERFORMER (SUDAH DIPERBAIKI)
    ========================================= */
 async function loadPerformerData() {
     const tbody = document.getElementById('perf-table-body');
@@ -91,23 +91,24 @@ async function loadPerformerData() {
             return;
         }
         
-        // Di dalam loadPerformerData()...
-snapshot.forEach((docSnap) => {
-    const data = docSnap.data();
-    const id = docSnap.id;
-    
-    // LOGIKA TOMBOL VERIFIKASI
-    let statusIcon = data.verified ? 
-        `<span style="color:#00ff00;">✅ Verified</span>` : 
-        `<button class="btn-action btn-edit" onclick="verifyPerformer('${id}')">Verifikasi</button>`;
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            // LOGIKA TOMBOL VERIFIKASI
+            let statusIcon = data.verified ? 
+                `<span style="color:#00ff00;">✅ Verified</span>` : 
+                `<button class="btn-action btn-edit" onclick="verifyPerformer('${id}')">Verifikasi</button>`;
 
-    const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
-    const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
-    
-    tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td>${statusIcon}</td><td>${btnLogin} ${btnDel}</td></tr>`;
-});
+            const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
+            const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
+            
+            tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td>${statusIcon}</td><td>${btnLogin} ${btnDel}</td></tr>`;
+        });
+    });
+}
 
-// --- TAMBAHKAN FUNGSI BARU INI DI BAWAH ---
+// FUNGSI VERIFIKASI PERFORMER
 window.verifyPerformer = async function(id) {
     if(confirm("Luluskan performer ini? Sertifikat & MOU akan aktif.")) {
         await updateDoc(doc(db, "performers", id), { 
@@ -161,7 +162,7 @@ async function loadMentorData() {
     });
 }
 
-// --- FUNGSI SEED MENTOR (DATA REAL SESUAI WHATSAPP) ---
+// --- FUNGSI SEED MENTOR ---
 window.seedMentors = async function() {
     const mentorsData = [
         {
@@ -170,21 +171,8 @@ window.seedMentors = async function() {
             phone: "082319867817",
             specialist: "Musik & Audio Engineering",
             img: "https://via.placeholder.com/150",
-            portfolio: [
-                "Owner AndiGO music Electronik",
-                "SongWriter & Music Arranger",
-                "Sound & Audio Engineers",
-                "Audio & Music Recording",
-                "Lead & Vocal instructor",
-                "Audio, Sound & Music Conceptor",
-                "" // Slot 7 Kosong
-            ],
-            profession: [
-                "Music performer",
-                "Audio engineer",
-                "Store Owner of AndiGO Music Electronik",
-                "", "", "", ""
-            ]
+            portfolio: ["Owner AndiGO music", "SongWriter"],
+            profession: ["Music performer", "Audio engineer"]
         },
         {
             name: "Ervansyah",
@@ -192,22 +180,8 @@ window.seedMentors = async function() {
             phone: "085230659995",
             specialist: "Visual Management",
             img: "https://via.placeholder.com/150",
-            portfolio: [
-                "Owner CV. BRIEFCOM",
-                "Fotografer",
-                "Videografer",
-                "Desain dan Percetakan",
-                "", "", ""
-            ],
-            profession: [
-                "Fotografer",
-                "Videografer",
-                "Design grafis",
-                "Produser",
-                "Sutradara",
-                "Content Writer",
-                "Editor"
-            ]
+            portfolio: ["Owner CV. BRIEFCOM"],
+            profession: ["Fotografer", "Videografer"]
         },
         {
             name: "Antony",
@@ -215,29 +189,17 @@ window.seedMentors = async function() {
             phone: "085859823588",
             specialist: "Public Relations",
             img: "https://via.placeholder.com/150",
-            portfolio: [
-                "SongWriterr & Music Arranger",
-                "Broadcasting Journalism",
-                "Public speaking",
-                "Public Relations",
-                "", "", ""
-            ],
-            profession: [
-                "Program Director",
-                "Audio engineer",
-                "Owner Sekola Konang Indonesia",
-                "", "", "", ""
-            ]
+            portfolio: ["Public speaking"],
+            profession: ["Program Director"]
         }
     ];
 
-    if(confirm("Hapus Data Lama & Masukkan 3 Mentor FIX (Andik, Ervan, Antony)?")) {
+    if(confirm("Hapus Data Lama & Masukkan 3 Mentor FIX?")) {
         try {
-            // Kita loop untuk memasukkan data satu per satu
             for (const m of mentorsData) {
                 await addDoc(collection(db, "mentors"), m);
             }
-            alert("SUKSES! Data Mentor di Database sudah diperbarui sesuai WhatsApp.");
+            alert("SUKSES! Data Mentor diperbarui.");
             loadMentorData(); 
         } catch (e) {
             alert("Gagal: " + e.message);
@@ -245,25 +207,16 @@ window.seedMentors = async function() {
     }
 }
 
-// --- FIX: LOGIN SEBAGAI MENTOR ---
 window.loginAsMentor = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
-        // Hapus sisa-sisa login lama biar bersih
         localStorage.clear(); 
-        
-        // Set Data Baru
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mentor');
         localStorage.setItem('userName', name);
         localStorage.setItem('userLink', 'mentor-dashboard.html'); 
-        
-        // INI KUNCINYA: ID HARUS DISIMPAN SEBAGAI 'mentorId'
         localStorage.setItem('mentorId', id); 
-        
-        // Tanda kalau ini Admin yang nyamar
         localStorage.setItem('adminOrigin', 'true');
         localStorage.setItem('adminReturnTab', 'mentor');
-        
         window.location.href = 'mentor-dashboard.html';
     }
 }
@@ -355,7 +308,7 @@ window.deleteStudent = async function(id) {
 }
 
 /* =========================================
-   5. CMS MODULE (JADWAL, RADIO, BERITA)
+   5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
    ========================================= */
 
 // ISI DROPDOWN ARTIS OTOMATIS
@@ -467,6 +420,18 @@ window.saveRadioUpdate = async function() {
     }
 }
 
+// TOGGLE NEWS VS PODCAST
+window.toggleContentForm = function() {
+    const type = document.getElementById('content-category').value;
+    if(type === 'news') {
+        document.getElementById('form-news-container').style.display = 'block';
+        document.getElementById('form-podcast-container').style.display = 'none';
+    } else {
+        document.getElementById('form-news-container').style.display = 'none';
+        document.getElementById('form-podcast-container').style.display = 'block';
+    }
+}
+
 // BERITA
 window.toggleNewsInput = function() {
     const type = document.getElementById('news-type').value;
@@ -511,19 +476,7 @@ window.saveNews = async function() {
     }
 }
 
-// --- FITUR BARU: TOGGLE FORM BERITA vs PODCAST ---
-window.toggleContentForm = function() {
-    const type = document.getElementById('content-category').value;
-    if(type === 'news') {
-        document.getElementById('form-news-container').style.display = 'block';
-        document.getElementById('form-podcast-container').style.display = 'none';
-    } else {
-        document.getElementById('form-news-container').style.display = 'none';
-        document.getElementById('form-podcast-container').style.display = 'block';
-    }
-}
-
-// --- FITUR BARU: SIMPAN PODCAST KE FIREBASE ---
+// PODCAST
 window.savePodcast = async function() {
     const title = document.getElementById('pod-title').value;
     const host = document.getElementById('pod-host').value;
@@ -546,7 +499,6 @@ window.savePodcast = async function() {
                 timestamp: new Date()
             });
             alert("Podcast Berhasil Dipublish!");
-            // Reset Form
             document.getElementById('pod-title').value = '';
             document.getElementById('pod-link').value = '';
         } catch(e) {
