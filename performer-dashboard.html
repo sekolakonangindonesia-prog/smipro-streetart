@@ -296,6 +296,12 @@
 
         // ID Performer yang sedang login/diedit
         const PERF_ID = localStorage.getItem('performerId');
+        
+        // Cek Hak Akses (Privilege)
+        const userRole = localStorage.getItem('userRole');
+        const isAdmin = localStorage.getItem('adminOrigin') === 'true';
+        // Hanya Admin atau Mentor yang boleh Edit (Tambah/Hapus)
+        const canEdit = isAdmin || userRole === 'mentor';
 
         // --- 1. LOGIKA UTAMA SAAT LOAD ---
         window.onload = function() {
@@ -305,8 +311,6 @@
                 return;
             }
 
-            const role = localStorage.getItem('userRole'); 
-            const isAdmin = localStorage.getItem('adminOrigin') === 'true';
             const navBtn = document.getElementById('nav-home-btn');
 
             // Load Data Profil dari Firebase
@@ -316,23 +320,24 @@
                 alert("Error: ID Performer tidak ditemukan. Silakan login ulang.");
             }
 
-            // A. CEK HAK AKSES TOMBOL UPLOAD
-            if (isAdmin || role === 'mentor') {
+            // A. LOGIKA TAMPILAN SESUAI HAK AKSES
+            if (canEdit) {
+                // Tampilkan Tombol Tambah Galeri HANYA untuk Admin/Mentor
                 document.getElementById('btn-add-gallery').style.display = 'block';
             }
 
-            // B. NAVIGASI MENTOR
-            if(role === 'mentor') {
+            // B. NAVIGASI KHUSUS MENTOR
+            if(userRole === 'mentor') {
                 navBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Kembali ke Mentor';
                 navBtn.onclick = function(e) { e.preventDefault(); window.location.href = 'mentor-dashboard.html'; };
             }
 
-            // C. NAVIGASI ADMIN
+            // C. NAVIGASI KHUSUS ADMIN
             if (isAdmin) {
                 document.getElementById('admin-floating-btn').style.display = 'block';
                 setTimeout(() => {
                     const oldBtn = document.getElementById('nav-home-btn');
-                    if (oldBtn && role !== 'mentor') { 
+                    if (oldBtn && userRole !== 'mentor') { 
                         const newBtn = oldBtn.cloneNode(true);
                         newBtn.innerHTML = '<i class="fa-solid fa-house"></i> Home (Super Admin)';
                         newBtn.onclick = function(e) {
@@ -349,11 +354,11 @@
                 }, 500);
             }
 
-            // D. LOAD GALERI (Sementara masih dummy localStorage)
+            // D. LOAD GALERI
             loadGallery();
         };
 
-        // --- 2. FUNGSI LOAD DATA (FIXED: STATUS BUTTONS) ---
+        // --- 2. FUNGSI LOAD DATA ---
         async function loadProfileData() {
             try {
                 const docRef = doc(db, "performers", PERF_ID);
@@ -362,7 +367,7 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    // HEADER
+                    // Header
                     document.querySelector('.perf-info h1').innerText = data.name;
                     document.querySelector('.perf-info p').innerText = `Genre: ${data.genre} • Rating: ${data.rating || '-'}`;
                     if(data.img) {
@@ -370,35 +375,15 @@
                         document.getElementById('preview-profile-img').src = data.img;
                     }
 
-                    // FORM EDIT
+                    // Form Edit
                     document.getElementById('edit-name').value = data.name;
                     document.getElementById('edit-bio').value = data.bio || "";
                     document.getElementById('edit-ig').value = data.link_ig || "";
                     document.getElementById('edit-tiktok').value = data.link_tiktok || "";
                     document.getElementById('edit-yt').value = data.link_yt || "";
 
-                    // CEK STATUS DOKUMEN & TOMBOL
-                    const btnCert = document.getElementById('btn-dl-cert');
-                    const btnViewCert = document.getElementById('btn-view-cert'); 
-                    const txtCert = document.getElementById('cert-status');
-                    
-                    const btnMou = document.getElementById('btn-dl-mou');
-                    const btnViewMou = document.getElementById('btn-view-mou'); 
-                    const txtMou = document.getElementById('mou-status');
-
-                    if (data.verified) {
-                        // AKTIFKAN SERTIFIKAT
-                        if(btnCert) { btnCert.disabled = false; btnCert.style.opacity = "1"; }
-                        if(btnViewCert) { btnViewCert.disabled = false; btnViewCert.style.opacity = "1"; }
-                        if(txtCert) txtCert.innerHTML = "<span style='color:#00ff00'>Terverifikasi & Lulus</span>";
-                        
-                        // AKTIFKAN MOU
-                        if(btnMou) { btnMou.disabled = false; btnMou.style.opacity = "1"; }
-                        if(btnViewMou) { btnViewMou.disabled = false; btnViewMou.style.opacity = "1"; }
-                        if(txtMou) txtMou.innerHTML = "<span style='color:#00ff00'>Kontrak Aktif</span>";
-                    } else {
-                        if(txtCert) txtCert.innerHTML = "<span style='color:orange'>Belum Verifikasi Admin</span>";
-                    }
+                    // Cek Status Dokumen
+                    checkDocStatus(data);
 
                 } else {
                     console.log("No such document!");
@@ -408,10 +393,123 @@
             }
         }
 
-        // --- 3. FUNGSI SIMPAN PROFIL (FIXED: EDIT NAME) ---
+        function checkDocStatus(data) {
+            const btnCert = document.getElementById('btn-dl-cert');
+            const btnViewCert = document.getElementById('btn-view-cert'); 
+            const txtCert = document.getElementById('cert-status');
+            const btnMou = document.getElementById('btn-dl-mou');
+            const btnViewMou = document.getElementById('btn-view-mou'); 
+            const txtMou = document.getElementById('mou-status');
+
+            if (data.verified) {
+                if(btnCert) { btnCert.disabled = false; btnCert.style.opacity = "1"; }
+                if(btnViewCert) { btnViewCert.disabled = false; btnViewCert.style.opacity = "1"; }
+                if(txtCert) txtCert.innerHTML = "<span style='color:#00ff00'>Terverifikasi & Lulus</span>";
+                if(btnMou) { btnMou.disabled = false; btnMou.style.opacity = "1"; }
+                if(btnViewMou) { btnViewMou.disabled = false; btnViewMou.style.opacity = "1"; }
+                if(txtMou) txtMou.innerHTML = "<span style='color:#00ff00'>Kontrak Aktif</span>";
+            } else {
+                if(txtCert) txtCert.innerHTML = "<span style='color:orange'>Belum Verifikasi Admin</span>";
+            }
+        }
+
+        // --- 3. GALERI (LOGIKA BARU: DELETE HANYA UNTUK ADMIN/MENTOR) ---
+        let galleryData = [];
+
+        function loadGallery() {
+            // Gunakan onSnapshot agar realtime
+            const docRef = doc(db, "performers", PERF_ID);
+            // Kita panggil getDoc atau listener terpisah jika mau realtime update
+            // Untuk simplifikasi, kita pakai getDoc lagi di sini khusus galeri saat load
+            getDoc(docRef).then((snap) => {
+                if(snap.exists()) {
+                    const d = snap.data();
+                    renderGallery(d.gallery || []);
+                }
+            });
+        }
+
+        function renderGallery(data) {
+            galleryData = data;
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+
+            if(galleryData.length === 0) {
+                container.innerHTML = '<p style="color:#666;">Belum ada konten.</p>';
+                return;
+            }
+
+            galleryData.forEach((item, index) => {
+                let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
+                let typeText = item.type === 'video' ? 'Video' : 'Audio';
+                
+                // Thumbnail Youtube
+                let thumb = "https://via.placeholder.com/300x200?text=Audio"; 
+                if (item.type === 'video' && item.url.includes('embed/')) {
+                    const vidId = item.url.split('embed/')[1].split('?')[0];
+                    thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
+                }
+
+                // SIAPKAN TOMBOL HAPUS (Hanya Jika Admin/Mentor)
+                let deleteButtonHTML = '';
+                if (canEdit) {
+                    deleteButtonHTML = `
+                    <button onclick="deleteGalleryItem(${index}); event.stopPropagation();" style="margin-top:5px; background:#b71c1c; color:white; border:none; width:100%; border-radius:3px; cursor:pointer; padding:5px;">
+                        <i class="fa-solid fa-trash"></i> Hapus
+                    </button>`;
+                }
+
+                container.innerHTML += `
+                <div class="track-card" onclick="playMedia('${item.type}', '${item.url}')" style="cursor:pointer;">
+                    <img src="${thumb}" class="track-img">
+                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                    <span class="track-title">${item.title}</span>
+                    <span class="track-type"><i class="fa-solid ${icon}"></i> ${typeText}</span>
+                    ${deleteButtonHTML}
+                </div>`;
+            });
+        }
+
+        window.saveGalleryItem = async function() {
+            // Security Check
+            if(!canEdit) return alert("Akses Ditolak! Hanya Admin/Mentor yang bisa menambah konten.");
+
+            const title = document.getElementById('add-title').value;
+            const type = document.getElementById('add-type').value;
+            let url = document.getElementById('add-url').value;
+            const thumb = document.getElementById('add-thumb').value;
+
+            if(!title || !url) return alert("Isi data!");
+            if(type === 'video' && url.includes('watch?v=')) url = url.replace('watch?v=', 'embed/');
+            if(type === 'video' && url.includes('youtu.be/')) {
+                const id = url.split('youtu.be/')[1];
+                url = `https://www.youtube.com/embed/${id}`;
+            }
+
+            const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300' };
+            const newGallery = [...galleryData, newItem];
+            
+            await updateDoc(doc(db, "performers", PERF_ID), { gallery: newGallery });
+
+            alert("Konten Ditambahkan!");
+            document.getElementById('modal-add-gallery').style.display = 'none';
+            loadGallery(); // Reload
+        }
+
+        window.deleteGalleryItem = async function(index) {
+            // Security Check
+            if(!canEdit) return alert("Akses Ditolak! Hanya Admin/Mentor yang bisa menghapus.");
+
+            if(confirm("Hapus konten ini?")) {
+                const newGallery = galleryData.filter((_, i) => i !== index);
+                await updateDoc(doc(db, "performers", PERF_ID), { gallery: newGallery });
+                loadGallery(); // Reload
+            }
+        }
+
+        // --- FUNGSI LAIN (SAVE PROFIL, PDF, UPLOAD FOTO) ---
         window.saveProfileData = async function() {
             if(!PERF_ID) return;
-            
             const newName = document.getElementById('edit-name').value;
             const bio = document.getElementById('edit-bio').value;
             const ig = document.getElementById('edit-ig').value;
@@ -421,113 +519,24 @@
             if(!newName) return alert("Nama Panggung tidak boleh kosong!");
 
             try {
-                const docRef = doc(db, "performers", PERF_ID);
-                await updateDoc(docRef, {
-                    name: newName,  
-                    bio: bio,
-                    link_ig: ig,
-                    link_tiktok: tiktok,
-                    link_yt: yt
+                await updateDoc(doc(db, "performers", PERF_ID), {
+                    name: newName, bio, link_ig: ig, link_tiktok: tiktok, link_yt: yt
                 });
-
                 document.querySelector('.perf-info h1').innerText = newName;
-                alert("Profil & Nama Panggung Berhasil Diupdate!");
-                
+                alert("Profil Berhasil Diupdate!");
             } catch (e) {
                 alert("Gagal menyimpan: " + e.message);
             }
         }
 
-        // --- 4. FUNGSI GENERATE PDF (VIEW & DOWNLOAD) ---
-        window.generatePDF = async function(type, action) {
-            const name = document.querySelector('.perf-info h1').innerText;
-            const doc = new jsPDF({
-                orientation: "landscape",
-                unit: "px",
-                format: [800, 600]
-            });
-
-            let templateURL = "";
-            let fileName = "";
-            
-            if(type === 'sertifikat') {
-                templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/cert_template_dummy.jpg"; 
-                fileName = "Sertifikat_SMIPRO.pdf";
-            } else {
-                templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/mou_template_dummy.jpg";
-                fileName = "MOU_Kontrak.pdf";
-            }
-
-            try {
-                document.body.style.cursor = 'wait';
-
-                // Load Gambar
-                const imgData = await getBase64ImageFromURL(templateURL);
-                doc.addImage(imgData, 'JPEG', 0, 0, 800, 600);
-
-                // Font & Nama
-                doc.setFontSize(40);
-                doc.setTextColor(0, 0, 0);
-                doc.setFont("helvetica", "bold");
-                doc.text(name, 400, 300, { align: "center" });
-
-                // Tanggal
-                doc.setFontSize(15);
-                doc.text("Probolinggo, " + new Date().toLocaleDateString('id-ID'), 400, 450, { align: "center" });
-
-                if (action === 'download') {
-                    doc.save(fileName);
-                } else {
-                    const pdfBlob = doc.output('bloburl');
-                    document.getElementById('pdf-frame').src = pdfBlob;
-                    document.getElementById('pdf-preview-modal').style.display = 'flex';
-                }
-
-            } catch (error) {
-                alert("Gagal memproses dokumen.");
-                console.error(error);
-            } finally {
-                document.body.style.cursor = 'default';
-            }
-        }
-
-        // Helper Image Loader
-        function getBase64ImageFromURL(url) {
-            return new Promise((resolve, reject) => {
-                var img = new Image();
-                img.setAttribute("crossOrigin", "anonymous");
-                img.onload = () => {
-                    var canvas = document.createElement("canvas");
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    var ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0);
-                    var dataURL = canvas.toDataURL("image/jpeg");
-                    resolve(dataURL);
-                };
-                img.onerror = error => reject(error);
-                img.src = url;
-            });
-        }
-
-        window.closePdfPreview = function() {
-            document.getElementById('pdf-preview-modal').style.display = 'none';
-            document.getElementById('pdf-frame').src = '';
-        }
-
-        // --- 5. FUNGSI UPLOAD FOTO ---
         window.triggerUpload = function() { document.getElementById('file-input').click(); }
-        
         window.previewImage = function(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = async function (e) {
-                    const base64 = e.target.result;
-                    document.getElementById('header-profile-img').src = base64;
-                    document.getElementById('preview-profile-img').src = base64;
-                    
-                    if(confirm("Simpan foto profil baru ini?")) {
-                        await updateDoc(doc(db, "performers", PERF_ID), { img: base64 });
+                    if(confirm("Simpan foto profil baru?")) {
+                        await updateDoc(doc(db, "performers", PERF_ID), { img: e.target.result });
+                        document.getElementById('header-profile-img').src = e.target.result;
                         alert("Foto tersimpan!");
                     }
                 };
@@ -535,70 +544,66 @@
             }
         }
 
-        // --- 6. GALERI (LocalStorage) ---
-        let galleryData = [];
+        // PDF GENERATOR
+        window.generatePDF = async function(type, action) {
+            const name = document.querySelector('.perf-info h1').innerText;
+            const doc = new jsPDF({ orientation: "landscape", unit: "px", format: [800, 600] });
+            let templateURL = type === 'sertifikat' ? "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/cert_template_dummy.jpg" : "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/mou_template_dummy.jpg";
+            let fileName = type === 'sertifikat' ? "Sertifikat_SMIPRO.pdf" : "MOU_Kontrak.pdf";
 
-        function loadGallery() {
-            const container = document.getElementById('gallery-container');
-            container.innerHTML = '';
-            const storedData = localStorage.getItem('perf_gallery_' + PERF_ID); 
-            if(storedData) { galleryData = JSON.parse(storedData); }
+            try {
+                document.body.style.cursor = 'wait';
+                const imgData = await getBase64ImageFromURL(templateURL);
+                doc.addImage(imgData, 'JPEG', 0, 0, 800, 600);
+                doc.setFontSize(40); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+                doc.text(name, 400, 300, { align: "center" });
+                doc.setFontSize(15);
+                doc.text("Probolinggo, " + new Date().toLocaleDateString('id-ID'), 400, 450, { align: "center" });
 
-            if(galleryData.length === 0) container.innerHTML = '<p style="color:#666;">Belum ada konten.</p>';
+                if (action === 'download') { doc.save(fileName); } 
+                else { 
+                    const pdfBlob = doc.output('bloburl');
+                    document.getElementById('pdf-frame').src = pdfBlob;
+                    document.getElementById('pdf-preview-modal').style.display = 'flex';
+                }
+            } catch (e) { console.error(e); alert("Gagal proses PDF"); } 
+            finally { document.body.style.cursor = 'default'; }
+        }
 
-            galleryData.forEach(item => {
-                let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
-                let typeText = item.type === 'video' ? 'Video Full' : 'Audio MP3';
-                container.innerHTML += `
-                <div class="track-card" onclick="playMedia('${item.type}', '${item.url}')">
-                    <img src="${item.thumb || 'https://via.placeholder.com/150'}" class="track-img">
-                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
-                    <span class="track-title">${item.title}</span>
-                    <span class="track-type"><i class="fa-solid ${icon}"></i> ${typeText}</span>
-                </div>`;
+        function getBase64ImageFromURL(url) {
+            return new Promise((resolve, reject) => {
+                var img = new Image();
+                img.setAttribute("crossOrigin", "anonymous");
+                img.onload = () => {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width; canvas.height = img.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL("image/jpeg"));
+                };
+                img.onerror = error => reject(error);
+                img.src = url;
             });
         }
 
-        window.openAddModal = function() { document.getElementById('modal-add-gallery').style.display = 'flex'; }
-
-        window.saveGalleryItem = function() {
-            const title = document.getElementById('add-title').value;
-            const type = document.getElementById('add-type').value;
-            let url = document.getElementById('add-url').value;
-            const thumb = document.getElementById('add-thumb').value;
-
-            if(!title || !url) return alert("Isi data!");
-            if(type === 'video' && url.includes('watch?v=')) url = url.replace('watch?v=', 'embed/');
-
-            const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300' };
-            galleryData.push(newItem);
-            
-            localStorage.setItem('perf_gallery_' + PERF_ID, JSON.stringify(galleryData));
-
-            alert("Konten Ditambahkan!");
-            document.getElementById('modal-add-gallery').style.display = 'none';
-            loadGallery();
-        }
-
+        // PLAYER & UI UTILS
         window.playMedia = function(type, url) {
             const modal = document.getElementById('modal-player');
             const content = document.getElementById('player-content');
             modal.style.display = 'flex';
-            if(type === 'video') content.innerHTML = `<iframe width="100%" height="450" src="${url}" frameborder="0" allowfullscreen></iframe>`;
-            else content.innerHTML = `<div style="background:#222;padding:30px;"><audio controls autoplay src="${url}" style="width:100%"></audio></div>`;
+            if(type === 'video') content.innerHTML = `<iframe width="100%" height="450" src="${url}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+            else content.innerHTML = `<div style="background:#222; padding:30px;"><audio controls autoplay src="${url}" style="width:100%"></audio></div>`;
         }
-
-        window.closePlayer = function() {
-            document.getElementById('modal-player').style.display = 'none';
-            document.getElementById('player-content').innerHTML = '';
-        }
-
-        // --- UTILS UI ---
+        window.closePlayer = function() { document.getElementById('modal-player').style.display = 'none'; document.getElementById('player-content').innerHTML = ''; }
+        window.closePdfPreview = function() { document.getElementById('pdf-preview-modal').style.display = 'none'; document.getElementById('pdf-frame').src = ''; }
+        
+        window.openAddModal = function() { document.getElementById('modal-add-gallery').style.display = 'flex'; }
+        
         window.switchTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tabId).style.display = 'block';
-            event.currentTarget.classList.add('active');
+            if(event) event.currentTarget.classList.add('active');
         }
         window.openModalDoc = function(t) { document.getElementById('doc-title').innerText=t; document.getElementById('modal-doc').style.display='flex'; }
         window.downloadFile = function(f) { alert("Download: "+f); }
