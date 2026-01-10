@@ -132,6 +132,20 @@
                 list.innerHTML += html;
             });
         });
+        
+        // FUNGSI KEMBALI PINTAR
+        window.goBackDashboard = function() {
+            const role = localStorage.getItem('userRole');
+            if(role === 'mentor') {
+                window.location.href = 'mentor-dashboard.html';
+            } else if (role === 'admin') {
+                // Balik ke admin dan buka tab finance
+                localStorage.setItem('adminReturnTab', 'finance');
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                window.history.back(); // Default
+            }
+        }
 
         // FUNGSI WINDOW
         window.approveReq = async (id) => {
