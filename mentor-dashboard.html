@@ -83,6 +83,17 @@
             </div>
         </div>
 
+         <!-- TAB 2: SHOWCASE KARYA (BARU) -->
+        <div id="tab-showcase" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#00d2ff;">Galeri Karya & Portofolio</h3>
+                <button onclick="openAddWorkModal()" style="background:var(--green); color:black; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">+ Tambah</button>
+            </div>
+            <div id="work-list-container" class="showcase-grid">
+                <p style="text-align:center; color:#666; grid-column:1/-1;">Belum ada karya.</p>
+            </div>
+        </div>
+
         <!-- TAB 3: PROFIL SAYA (7 SLOT FIX) -->
         <div id="tab-profil" class="tab-content">
             <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom: 50px;">
@@ -131,6 +142,27 @@
         </button>
     </div>
 
+    <!-- MODAL INPUT KARYA -->
+    <div id="modal-add-work" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
+            <h3 style="margin-top:0; color:white;">Tambah Karya</h3>
+            <label style="color:#aaa; font-size:0.8rem;">Judul Karya</label>
+            <input type="text" id="work-title" class="input-mentor">
+            <label style="color:#aaa; font-size:0.8rem;">Tipe</label>
+            <select id="work-type" class="input-mentor">
+                <option value="video">Video (YouTube)</option>
+                <option value="audio">Audio (MP3 Link)</option>
+            </select>
+            <label style="color:#aaa; font-size:0.8rem;">Link URL</label>
+            <input type="text" id="work-url" class="input-mentor" placeholder="Link...">
+            <label style="color:#aaa; font-size:0.8rem;">Link Thumbnail (Opsional)</label>
+            <input type="text" id="work-thumb" class="input-mentor" placeholder="https://...">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="document.getElementById('modal-add-work').style.display='none'" style="flex:1; padding:10px; border-radius:5px; border:none; background:#444; color:white; cursor:pointer;">Batal</button>
+                <button onclick="saveWorkItem()" style="flex:1; padding:10px; border-radius:5px; border:none; background:var(--green); font-weight:bold; cursor:pointer;">Simpan</button>
+            </div>
+        </div>
+    </div>
     <script type="module" src="mentor-script.js"></script>
 </body>
 </html>
