@@ -377,26 +377,32 @@ Code
                     <h2 style="margin:0; color:white;">Bengkel Siswa (Calon Performer)</h2>
                 </div>
                 
-                <!-- VIEW BARU: MANAJEMEN SISWA (BENGKEL) -->
-            <div id="view-students" class="admin-view hidden">
-                <div class="section-header">
-                    <h2 style="margin:0; color:white;">Bengkel Siswa (Calon Performer)</h2>
-                </div>
-                
                 <!-- FORM INPUT SISWA -->
-                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
-                    <h4 style="margin-top:0; color:#FFD700;">Tambah Siswa Baru</h4>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="new-student-name" class="cms-input" placeholder="Nama Siswa / Grup">
-                        <input type="text" id="new-student-genre" class="cms-input" placeholder="Genre Musik">
+                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px; display:flex; gap:20px; align-items:center;">
+                    
+                    <!-- 1. UPLOAD FOTO BULAT -->
+                    <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('student-file').click()">
+                        <img id="student-preview" src="https://via.placeholder.com/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                        <input type="file" id="student-file" style="display:none;" accept="image/*" onchange="previewStudentImg(this)">
+                        <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Foto</div>
                     </div>
-                    <button class="btn-action btn-view" onclick="addStudent()" style="width:100%;">+ Masukkan ke Bengkel</button>
+
+                    <!-- 2. FORM DATA -->
+                    <div style="flex:1;">
+                        <h4 style="margin-top:0; color:#FFD700; margin-bottom:10px;">Tambah Siswa Baru</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="new-student-name" class="cms-input" placeholder="Nama Siswa / Grup" style="margin:0;">
+                            <input type="text" id="new-student-genre" class="cms-input" placeholder="Genre Musik" style="margin:0;">
+                        </div>
+                        <button class="btn-action btn-view" onclick="addStudent()" style="width:100%;">+ Masukkan ke Bengkel</button>
+                    </div>
                 </div>
 
                 <!-- TABEL DAFTAR SISWA -->
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th style="width:50px;">Foto</th> <!-- Kolom Foto -->
                             <th>Nama Siswa</th>
                             <th>Genre</th>
                             <th>Status Nilai</th>
@@ -404,7 +410,7 @@ Code
                         </tr>
                     </thead>
                     <tbody id="student-table-body">
-                        <tr><td colspan="4" style="text-align:center;">Memuat...</td></tr>
+                        <tr><td colspan="5" style="text-align:center; color:#555;">Memuat data...</td></tr>
                     </tbody>
                 </table>
             </div>
