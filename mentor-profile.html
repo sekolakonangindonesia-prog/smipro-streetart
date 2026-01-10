@@ -110,8 +110,7 @@
         
         <div class="gallery-grid" id="gallery-container">
             <!-- Nanti diisi dinamis, sementara dummy untuk visual -->
-            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=300"><div class="gallery-overlay"><i class="fa-solid fa-play" style="color:white; font-size:2rem;"></i></div></div>
-            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=300"><div class="gallery-overlay"><i class="fa-solid fa-music" style="color:white; font-size:2rem;"></i></div></div>
+            
         </div>
 
         <div style="text-align:center; margin: 50px 0;">
@@ -120,6 +119,12 @@
         </div>
         <br><br>
     </div>
+
+    <!-- MODAL PLAYER UNTUK PENGUNJUNG -->
+<div id="public-player-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:5000; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+    <button onclick="closePublicPlayer()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+    <div id="public-player-content" style="width:100%; max-width:800px; text-align:center;"></div>
+</div>
 
     <!-- SCRIPT FIREBASE CONNECTED -->
     <script type="module">
@@ -169,6 +174,59 @@
                     listProf.innerHTML = "<li>Belum ada data profesi.</li>";
                 }
 
+                // 5. ISI GALERI KARYA (DYNAMIC)
+                const galleryContainer = document.getElementById('gallery-container');
+                galleryContainer.innerHTML = "";
+    
+                if (data.gallery && data.gallery.length > 0) {
+                data.gallery.forEach(item => {
+                let icon = item.type === 'video' ? 'fa-play' : 'fa-music';
+        
+                // Thumbnail Youtube
+                let thumb = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=300"; // Default Audio
+                if (item.type === 'video' && item.url.includes('embed/')) {
+                const vidId = item.url.split('embed/')[1];
+                thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
+                }
+
+                galleryContainer.innerHTML += `
+                <div class="gallery-item" onclick="playPublicMedia('${item.type}', '${item.url}')">
+                <img src="${thumb}">
+                <div class="gallery-overlay">
+                <i class="fa-solid ${icon}" style="color:white; font-size:3rem; filter:drop-shadow(0 0 5px black);"></i>
+                <span style="position:absolute; bottom:10px; color:white; font-weight:bold; background:rgba(0,0,0,0.7); padding:2px 8px; border-radius:4px;">${item.title}</span>
+            </div>
+        </div>`;
+    });
+} else {
+    galleryContainer.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">Mentor belum menambahkan karya.</p>';
+}
+
+// --- FUNGSI PLAYER ---
+window.playPublicMedia = function(type, url) {
+    const modal = document.getElementById('public-player-modal');
+    const content = document.getElementById('public-player-content');
+    modal.style.display = 'flex';
+    
+    if(type === 'video') {
+        content.innerHTML = `<iframe width="100%" height="450" src="${url}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+    } else {
+        // Asumsi link MP3 langsung atau player embed
+        content.innerHTML = `
+            <div style="background:#222; padding:40px; border-radius:15px; border:1px solid #444;">
+                <i class="fa-solid fa-music" style="font-size:4rem; color:#00d2ff; margin-bottom:20px;"></i>
+                <br>
+                <audio controls autoplay src="${url}" style="width:100%"></audio>
+                <p style="margin-top:10px; color:#aaa;">Jika tidak berputar, <a href="${url}" target="_blank" style="color:#00d2ff;">Klik Disini</a></p>
+            </div>`;
+    }
+}
+
+window.closePublicPlayer = function() {
+    document.getElementById('public-player-modal').style.display = 'none';
+    document.getElementById('public-player-content').innerHTML = ''; // Stop video/audio
+}
+
                 // 4. SETUP TOMBOL WA
                 const text = `Halo Admin SMIPRO, saya tertarik dengan profil mentor *${data.name}* (${data.specialist}). Mohon info lebih lanjut.`;
                 document.getElementById('btn-wa').href = `https://wa.me/6281234567890?text=${encodeURIComponent(text)}`;
@@ -181,6 +239,7 @@
         }
 
         loadProfile();
+        
     </script>
 </body>
 </html>
