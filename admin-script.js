@@ -90,14 +90,32 @@ async function loadPerformerData() {
             tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
             return;
         }
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const id = docSnap.id;
-            const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
-            const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
-            tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td><span style="color:#00ff00;">Verified</span></td><td>${btnLogin} ${btnDel}</td></tr>`;
+        
+        // Di dalam loadPerformerData()...
+snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const id = docSnap.id;
+    
+    // LOGIKA TOMBOL VERIFIKASI
+    let statusIcon = data.verified ? 
+        `<span style="color:#00ff00;">✅ Verified</span>` : 
+        `<button class="btn-action btn-edit" onclick="verifyPerformer('${id}')">Verifikasi</button>`;
+
+    const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
+    const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
+    
+    tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td>${statusIcon}</td><td>${btnLogin} ${btnDel}</td></tr>`;
+});
+
+// --- TAMBAHKAN FUNGSI BARU INI DI BAWAH ---
+window.verifyPerformer = async function(id) {
+    if(confirm("Luluskan performer ini? Sertifikat & MOU akan aktif.")) {
+        await updateDoc(doc(db, "performers", id), { 
+            verified: true,
+            certified_date: new Date()
         });
-    });
+        alert("Performer Terverifikasi!");
+    }
 }
 
 window.seedPerformer = async function() {
