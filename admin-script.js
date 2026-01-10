@@ -181,15 +181,25 @@ window.seedMentors = async function() {
     }
 }
 
+// --- FIX: LOGIN SEBAGAI MENTOR ---
 window.loginAsMentor = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
+        // Hapus sisa-sisa login lama biar bersih
+        localStorage.clear(); 
+        
+        // Set Data Baru
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mentor');
         localStorage.setItem('userName', name);
         localStorage.setItem('userLink', 'mentor-dashboard.html'); 
-        localStorage.setItem('mentorId', id);
+        
+        // INI KUNCINYA: ID HARUS DISIMPAN SEBAGAI 'mentorId'
+        localStorage.setItem('mentorId', id); 
+        
+        // Tanda kalau ini Admin yang nyamar
         localStorage.setItem('adminOrigin', 'true');
         localStorage.setItem('adminReturnTab', 'mentor');
+        
         window.location.href = 'mentor-dashboard.html';
     }
 }
