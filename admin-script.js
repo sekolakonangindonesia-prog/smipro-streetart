@@ -602,3 +602,77 @@ setTimeout(() => {
         localStorage.removeItem('adminReturnTab');
     }
 }, 500);
+/* =========================================
+   MANAJEMEN SISWA (BENGKEL)
+   ========================================= */
+
+// 1. TAMBAH SISWA
+window.addStudent = async function() {
+    const name = document.getElementById('new-student-name').value;
+    const genre = document.getElementById('new-student-genre').value;
+
+    if(!name || !genre) return alert("Isi Nama dan Genre!");
+
+    if(confirm("Masukkan siswa ini ke Bengkel?")) {
+        await addDoc(collection(db, "students"), {
+            name: name,
+            genre: genre,
+            scores: {}, // Tempat menampung nilai dari 5 mentor (kosong dulu)
+            status: "training", // Status awal
+            timestamp: new Date()
+        });
+        alert("Siswa berhasil masuk Bengkel!");
+        document.getElementById('new-student-name').value = '';
+        document.getElementById('new-student-genre').value = '';
+    }
+}
+
+// 2. LOAD DATA SISWA
+async function loadStudentData() {
+    const tbody = document.getElementById('student-table-body');
+    if(!tbody) return;
+
+    onSnapshot(query(collection(db, "students"), orderBy("timestamp", "desc")), (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada siswa.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            
+            // Hitung Rata-Rata Nilai (Logika sederhana)
+            // Nanti dikembangkan lebih lanjut saat Mentor memberi nilai
+            const scores = Object.values(data.scores || {});
+            let scoreText = `<span style="color:#888;">Belum dinilai</span>`;
+            
+            if(scores.length > 0) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                scoreText = `<b style="color:gold;">Rata-rata: ${avg.toFixed(1)}</b> (${scores.length} Mentor)`;
+            }
+
+            // Tombol Hapus & Approve Manual
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteStudent('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            
+            // Jika nilai sempurna, muncul tombol Approve jadi Artis
+            let btnApprove = '';
+            // Logika kelulusan bisa ditaruh sini nanti
+
+            tbody.innerHTML += `
+            <tr>
+                <td><b>${data.name}</b></td>
+                <td>${data.genre}</td>
+                <td>${scoreText}</td>
+                <td>${btnDel}</td>
+            </tr>`;
+        });
+    });
+}
+
+window.deleteStudent = async function(id) {
+    if(confirm("Hapus siswa dari Bengkel?")) await deleteDoc(doc(db, "students", id));
+}
+
+// PANGGIL DI INIT
+loadStudentData();
