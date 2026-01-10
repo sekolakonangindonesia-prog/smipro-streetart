@@ -143,37 +143,83 @@ async function loadMentorData() {
     });
 }
 
+// --- FUNGSI SEED MENTOR (DATA REAL SESUAI WHATSAPP) ---
 window.seedMentors = async function() {
     const mentorsData = [
         {
-            name: "Bpk. Andigo",
-            specialist: "Musik Management",
-            img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200",
-            portfolio: ["Manajer Band Indie 2010-2020", "Promotor Festival Jazz Jatim"],
-            profession: ["Dosen Musik", "Event Organizer"]
+            name: "Andik Laksono",
+            email: "andigomusicpro@gmail.com",
+            phone: "082319867817",
+            specialist: "Musik & Audio Engineering",
+            img: "https://via.placeholder.com/150",
+            portfolio: [
+                "Owner AndiGO music Electronik",
+                "SongWriter & Music Arranger",
+                "Sound & Audio Engineers",
+                "Audio & Music Recording",
+                "Lead & Vocal instructor",
+                "Audio, Sound & Music Conceptor",
+                "" // Slot 7 Kosong
+            ],
+            profession: [
+                "Music performer",
+                "Audio engineer",
+                "Store Owner of AndiGO Music Electronik",
+                "", "", "", ""
+            ]
         },
         {
-            name: "Bpk. Anton",
-            specialist: "Public Speaking", 
-            img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200",
-            portfolio: ["MC Kondang Jawa Timur", "Trainer Komunikasi"],
-            profession: ["Broadcaster", "MC Professional"]
-        },
-        {
-            name: "Bpk. Ervan",
+            name: "Ervansyah",
+            email: "yusufkonang33@gmail.com",
+            phone: "085230659995",
             specialist: "Visual Management",
-            img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200",
-            portfolio: ["Stage Designer Konser Amal", "Fotografer Event"],
-            profession: ["Desainer Grafis", "Art Director"]
+            img: "https://via.placeholder.com/150",
+            portfolio: [
+                "Owner CV. BRIEFCOM",
+                "Fotografer",
+                "Videografer",
+                "Desain dan Percetakan",
+                "", "", ""
+            ],
+            profession: [
+                "Fotografer",
+                "Videografer",
+                "Design grafis",
+                "Produser",
+                "Sutradara",
+                "Content Writer",
+                "Editor"
+            ]
+        },
+        {
+            name: "Antony",
+            email: "gustinara.top@gmail.com",
+            phone: "085859823588",
+            specialist: "Public Relations",
+            img: "https://via.placeholder.com/150",
+            portfolio: [
+                "SongWriterr & Music Arranger",
+                "Broadcasting Journalism",
+                "Public speaking",
+                "Public Relations",
+                "", "", ""
+            ],
+            profession: [
+                "Program Director",
+                "Audio engineer",
+                "Owner Sekola Konang Indonesia",
+                "", "", "", ""
+            ]
         }
     ];
 
-    if(confirm("Generate Data Mentor?")) {
+    if(confirm("Hapus Data Lama & Masukkan 3 Mentor FIX (Andik, Ervan, Antony)?")) {
         try {
+            // Kita loop untuk memasukkan data satu per satu
             for (const m of mentorsData) {
                 await addDoc(collection(db, "mentors"), m);
             }
-            alert("Sukses! Data Masuk.");
+            alert("SUKSES! Data Mentor di Database sudah diperbarui sesuai WhatsApp.");
             loadMentorData(); 
         } catch (e) {
             alert("Gagal: " + e.message);
