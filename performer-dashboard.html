@@ -138,30 +138,44 @@
             </div>
         </div>
 
-        <!-- TAB 2: DOKUMEN -->
+        <!-- TAB 2: DOKUMEN (FIXED BUTTONS) -->
         <div id="tab-dokumen" class="tab-content">
             <h3>Dokumen Legalitas</h3>
+            
+            <!-- DOKUMEN 1: SERTIFIKAT -->
             <div class="doc-item">
-    <i class="fa-solid fa-certificate doc-icon"></i>
-    <div style="flex:1;">
-        <b>Sertifikat Kompetensi</b><br>
-        <small id="cert-status" style="color:#aaa;">Menunggu Verifikasi Admin</small>
-    </div>
-    <!-- Tombol ini akan dimatikan jika belum verified -->
-    <button id="btn-dl-cert" class="btn-action-doc" onclick="generatePDF('sertifikat')" disabled style="opacity:0.5;">
-        <i class="fa-solid fa-download"></i> Unduh
-    </button>
-</div>
-           <div class="doc-item" style="border-color:var(--primary);">
-    <i class="fa-solid fa-file-contract doc-icon"></i>
-    <div style="flex:1;">
-        <b>MOU Kontrak Management</b><br>
-        <small id="mou-status" style="color:var(--primary);">Menunggu Tanda Tangan</small>
-    </div>
-    <button id="btn-dl-mou" class="btn-action-doc" onclick="generatePDF('mou')" disabled style="opacity:0.5;">
-        <i class="fa-solid fa-download"></i> Unduh
-    </button>
-</div>
+                <i class="fa-solid fa-certificate doc-icon"></i>
+                <div style="flex:1;">
+                    <b>Sertifikat Kompetensi</b><br>
+                    <small id="cert-status" style="color:#aaa;">Menunggu Verifikasi Admin</small>
+                </div>
+                <!-- Tombol LIHAT (Mata) -->
+                <button id="btn-view-cert" class="btn-action-doc" onclick="generatePDF('sertifikat', 'view')" disabled style="opacity:0.5; margin-right:5px; background:#00d2ff; border-color:#00d2ff; color:black;">
+                    <i class="fa-solid fa-eye"></i> Lihat
+                </button>
+                <!-- Tombol UNDUH (Download) -->
+                <button id="btn-dl-cert" class="btn-action-doc" onclick="generatePDF('sertifikat', 'download')" disabled style="opacity:0.5;">
+                    <i class="fa-solid fa-download"></i> Unduh
+                </button>
+            </div>
+
+            <!-- DOKUMEN 2: MOU -->
+            <div class="doc-item" style="border-color:var(--primary);">
+                <i class="fa-solid fa-file-contract doc-icon"></i>
+                <div style="flex:1;">
+                    <b>MOU Kontrak Management</b><br>
+                    <small id="mou-status" style="color:var(--primary);">Menunggu Tanda Tangan</small>
+                </div>
+                <!-- Tombol LIHAT (Mata) -->
+                <button id="btn-view-mou" class="btn-action-doc" onclick="generatePDF('mou', 'view')" disabled style="opacity:0.5; margin-right:5px; background:#00d2ff; border-color:#00d2ff; color:black;">
+                    <i class="fa-solid fa-eye"></i> Lihat
+                </button>
+                <!-- Tombol UNDUH (Download) -->
+                <button id="btn-dl-mou" class="btn-action-doc" onclick="generatePDF('mou', 'download')" disabled style="opacity:0.5;">
+                    <i class="fa-solid fa-download"></i> Unduh
+                </button>
+            </div>
+        </div>
 
         <!-- TAB 3: ULASAN -->
         <div id="tab-ulasan" class="tab-content">
@@ -177,7 +191,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: PROFIL (UPDATE SOSMED) -->
+        <!-- TAB 4: PROFIL (FIXED EDIT NAME) -->
         <div id="tab-profil" class="tab-content">
             <div style="background:#222; padding:20px; border-radius:10px; border:1px solid #333;">
                 <h3 style="margin-top:0; color:#E50914;">Edit Profil & Sosmed</h3>
@@ -191,7 +205,7 @@
                     </button>
                 </div>
 
-                <!-- INFO DASAR -->
+                <!-- INFO DASAR (SUDAH BISA DIEDIT) -->
                 <label style="color:#aaa; font-size:0.8rem;">Nama Panggung</label>
                 <input type="text" id="edit-name" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;" placeholder="Ganti nama panggung...">
                 
@@ -221,18 +235,15 @@
                 </button>
             </div>
         </div>
+    </div>
 
-    <!-- MODAL VIEW DOKUMEN -->
-    <div id="modal-doc" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; padding:20px;">
-        <div style="background:#fff; width:100%; max-width:500px; height:80vh; padding:20px; border-radius:10px; position:relative; display:flex; flex-direction:column;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <h3 style="margin:0; color:black;" id="doc-title">Preview Dokumen</h3>
-                <button onclick="document.getElementById('modal-doc').style.display='none'" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:black;">&times;</button>
-            </div>
-            <div style="flex:1; background:#eee; display:flex; align-items:center; justify-content:center; border:1px solid #ccc;">
-                <p style="color:#555;">[Simulasi View PDF]</p>
-            </div>
+    <!-- MODAL PREVIEW PDF -->
+    <div id="pdf-preview-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:6000; align-items:center; justify-content:center; flex-direction:column; padding:10px;">
+        <div style="width:100%; max-width:800px; display:flex; justify-content:space-between; margin-bottom:10px;">
+            <h3 style="color:white; margin:0;">Pratinjau Dokumen</h3>
+            <button onclick="closePdfPreview()" style="background:red; color:white; border:none; padding:5px 15px; cursor:pointer; font-weight:bold; border-radius:5px;">TUTUP X</button>
         </div>
+        <iframe id="pdf-frame" style="width:100%; height:80vh; border:none; background:white; border-radius:10px;"></iframe>
     </div>
 
     <!-- === TOMBOL KHUSUS ADMIN === -->
@@ -275,9 +286,13 @@
         <div id="player-content" style="width:100%; max-width:800px; text-align:center;"></div>
     </div>
 
-   <script type="module">
+    <!-- SCRIPT TUNGGAL DAN LENGKAP -->
+    <script type="module">
         import { db } from './firebase-config.js';
         import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        // --- IMPORT JSPDF ---
+        const { jsPDF } = window.jspdf;
 
         // ID Performer yang sedang login/diedit
         const PERF_ID = localStorage.getItem('performerId');
@@ -334,11 +349,11 @@
                 }, 500);
             }
 
-            // D. LOAD GALERI (Sementara masih dummy localStorage, nanti bisa diganti Firebase juga)
+            // D. LOAD GALERI (Sementara masih dummy localStorage)
             loadGallery();
         };
 
-        // --- 2. FUNGSI CRUD FIREBASE (PROFIL) ---
+        // --- 2. FUNGSI LOAD DATA (FIXED: STATUS BUTTONS) ---
         async function loadProfileData() {
             try {
                 const docRef = doc(db, "performers", PERF_ID);
@@ -347,7 +362,7 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    // Isi Header
+                    // HEADER
                     document.querySelector('.perf-info h1').innerText = data.name;
                     document.querySelector('.perf-info p').innerText = `Genre: ${data.genre} • Rating: ${data.rating || '-'}`;
                     if(data.img) {
@@ -355,12 +370,35 @@
                         document.getElementById('preview-profile-img').src = data.img;
                     }
 
-                    // Isi Form
+                    // FORM EDIT
                     document.getElementById('edit-name').value = data.name;
                     document.getElementById('edit-bio').value = data.bio || "";
                     document.getElementById('edit-ig').value = data.link_ig || "";
                     document.getElementById('edit-tiktok').value = data.link_tiktok || "";
                     document.getElementById('edit-yt').value = data.link_yt || "";
+
+                    // CEK STATUS DOKUMEN & TOMBOL
+                    const btnCert = document.getElementById('btn-dl-cert');
+                    const btnViewCert = document.getElementById('btn-view-cert'); 
+                    const txtCert = document.getElementById('cert-status');
+                    
+                    const btnMou = document.getElementById('btn-dl-mou');
+                    const btnViewMou = document.getElementById('btn-view-mou'); 
+                    const txtMou = document.getElementById('mou-status');
+
+                    if (data.verified) {
+                        // AKTIFKAN SERTIFIKAT
+                        if(btnCert) { btnCert.disabled = false; btnCert.style.opacity = "1"; }
+                        if(btnViewCert) { btnViewCert.disabled = false; btnViewCert.style.opacity = "1"; }
+                        if(txtCert) txtCert.innerHTML = "<span style='color:#00ff00'>Terverifikasi & Lulus</span>";
+                        
+                        // AKTIFKAN MOU
+                        if(btnMou) { btnMou.disabled = false; btnMou.style.opacity = "1"; }
+                        if(btnViewMou) { btnViewMou.disabled = false; btnViewMou.style.opacity = "1"; }
+                        if(txtMou) txtMou.innerHTML = "<span style='color:#00ff00'>Kontrak Aktif</span>";
+                    } else {
+                        if(txtCert) txtCert.innerHTML = "<span style='color:orange'>Belum Verifikasi Admin</span>";
+                    }
 
                 } else {
                     console.log("No such document!");
@@ -370,12 +408,11 @@
             }
         }
 
+        // --- 3. FUNGSI SIMPAN PROFIL (FIXED: EDIT NAME) ---
         window.saveProfileData = async function() {
             if(!PERF_ID) return;
-    
-        // 1. Ambil Nama Baru
+            
             const newName = document.getElementById('edit-name').value;
-    
             const bio = document.getElementById('edit-bio').value;
             const ig = document.getElementById('edit-ig').value;
             const tiktok = document.getElementById('edit-tiktok').value;
@@ -384,28 +421,101 @@
             if(!newName) return alert("Nama Panggung tidak boleh kosong!");
 
             try {
-        const docRef = doc(db, "performers", PERF_ID);
-        
-        // 2. Masukkan 'name' ke dalam updateDoc
-        await updateDoc(docRef, {
-            name: newName,  // <--- INI PENTING
-            bio: bio,
-            link_ig: ig,
-            link_tiktok: tiktok,
-            link_yt: yt
-        });
+                const docRef = doc(db, "performers", PERF_ID);
+                await updateDoc(docRef, {
+                    name: newName,  
+                    bio: bio,
+                    link_ig: ig,
+                    link_tiktok: tiktok,
+                    link_yt: yt
+                });
 
-        // 3. Update Tampilan Header Langsung (Tanpa Refresh)
-        document.querySelector('.perf-info h1').innerText = newName;
+                document.querySelector('.perf-info h1').innerText = newName;
+                alert("Profil & Nama Panggung Berhasil Diupdate!");
+                
+            } catch (e) {
+                alert("Gagal menyimpan: " + e.message);
+            }
+        }
 
-        alert("Profil & Nama Panggung Berhasil Diupdate!");
-        
-    } catch (e) {
-        alert("Gagal menyimpan: " + e.message);
-    }
-}
+        // --- 4. FUNGSI GENERATE PDF (VIEW & DOWNLOAD) ---
+        window.generatePDF = async function(type, action) {
+            const name = document.querySelector('.perf-info h1').innerText;
+            const doc = new jsPDF({
+                orientation: "landscape",
+                unit: "px",
+                format: [800, 600]
+            });
 
-        // --- 3. FUNGSI UPLOAD FOTO (BASE64 FIREBASE) ---
+            let templateURL = "";
+            let fileName = "";
+            
+            if(type === 'sertifikat') {
+                templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/cert_template_dummy.jpg"; 
+                fileName = "Sertifikat_SMIPRO.pdf";
+            } else {
+                templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/mou_template_dummy.jpg";
+                fileName = "MOU_Kontrak.pdf";
+            }
+
+            try {
+                document.body.style.cursor = 'wait';
+
+                // Load Gambar
+                const imgData = await getBase64ImageFromURL(templateURL);
+                doc.addImage(imgData, 'JPEG', 0, 0, 800, 600);
+
+                // Font & Nama
+                doc.setFontSize(40);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont("helvetica", "bold");
+                doc.text(name, 400, 300, { align: "center" });
+
+                // Tanggal
+                doc.setFontSize(15);
+                doc.text("Probolinggo, " + new Date().toLocaleDateString('id-ID'), 400, 450, { align: "center" });
+
+                if (action === 'download') {
+                    doc.save(fileName);
+                } else {
+                    const pdfBlob = doc.output('bloburl');
+                    document.getElementById('pdf-frame').src = pdfBlob;
+                    document.getElementById('pdf-preview-modal').style.display = 'flex';
+                }
+
+            } catch (error) {
+                alert("Gagal memproses dokumen.");
+                console.error(error);
+            } finally {
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        // Helper Image Loader
+        function getBase64ImageFromURL(url) {
+            return new Promise((resolve, reject) => {
+                var img = new Image();
+                img.setAttribute("crossOrigin", "anonymous");
+                img.onload = () => {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    var dataURL = canvas.toDataURL("image/jpeg");
+                    resolve(dataURL);
+                };
+                img.onerror = error => reject(error);
+                img.src = url;
+            });
+        }
+
+        window.closePdfPreview = function() {
+            document.getElementById('pdf-preview-modal').style.display = 'none';
+            document.getElementById('pdf-frame').src = '';
+        }
+
+        // --- 5. FUNGSI UPLOAD FOTO ---
         window.triggerUpload = function() { document.getElementById('file-input').click(); }
         
         window.previewImage = function(input) {
@@ -413,11 +523,9 @@
                 const reader = new FileReader();
                 reader.onload = async function (e) {
                     const base64 = e.target.result;
-                    // Tampilkan preview dulu
                     document.getElementById('header-profile-img').src = base64;
                     document.getElementById('preview-profile-img').src = base64;
                     
-                    // Simpan ke Firebase langsung
                     if(confirm("Simpan foto profil baru ini?")) {
                         await updateDoc(doc(db, "performers", PERF_ID), { img: base64 });
                         alert("Foto tersimpan!");
@@ -427,13 +535,13 @@
             }
         }
 
-        // --- 4. FUNGSI GALERI & PLAYER (TETAP SEPERTI SEBELUMNYA) ---
+        // --- 6. GALERI (LocalStorage) ---
         let galleryData = [];
 
         function loadGallery() {
             const container = document.getElementById('gallery-container');
             container.innerHTML = '';
-            const storedData = localStorage.getItem('perf_gallery_' + PERF_ID); // Unik per ID
+            const storedData = localStorage.getItem('perf_gallery_' + PERF_ID); 
             if(storedData) { galleryData = JSON.parse(storedData); }
 
             if(galleryData.length === 0) container.innerHTML = '<p style="color:#666;">Belum ada konten.</p>';
@@ -465,7 +573,6 @@
             const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300' };
             galleryData.push(newItem);
             
-            // Simpan lokal dulu (Nanti bisa diupgrade ke Firebase Subcollection)
             localStorage.setItem('perf_gallery_' + PERF_ID, JSON.stringify(galleryData));
 
             alert("Konten Ditambahkan!");
@@ -486,7 +593,7 @@
             document.getElementById('player-content').innerHTML = '';
         }
 
-        // --- FUNGSI GLOBAL LAINNYA ---
+        // --- UTILS UI ---
         window.switchTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -497,102 +604,6 @@
         window.downloadFile = function(f) { alert("Download: "+f); }
         window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
         window.backToAdminDashboard = function() { if(confirm("Kembali ke Admin?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); localStorage.setItem('userLink','admin-dashboard.html'); window.location.href='admin-dashboard.html'; } }
-
-       // --- IMPORT JSPDF ---
-const { jsPDF } = window.jspdf;
-
-// --- FUNGSI CEK STATUS (Dipanggil saat Load Profile) ---
-// Tambahkan potongan ini ke dalam function loadProfileData() yang sudah ada
-/*
-    // ... kode load profile sebelumnya ...
-    
-    // UPDATE STATUS DOKUMEN
-    const btnCert = document.getElementById('btn-dl-cert');
-    const txtCert = document.getElementById('cert-status');
-    const btnMou = document.getElementById('btn-dl-mou');
-    const txtMou = document.getElementById('mou-status');
-
-    if (data.verified) {
-        btnCert.disabled = false;
-        btnCert.style.opacity = "1";
-        txtCert.innerHTML = "<span style='color:#00ff00'>Terverifikasi & Lulus</span>";
-        
-        btnMou.disabled = false;
-        btnMou.style.opacity = "1";
-        txtMou.innerHTML = "<span style='color:#00ff00'>Kontrak Aktif</span>";
-    } else {
-        txtCert.innerHTML = "<span style='color:orange'>Belum Verifikasi Admin</span>";
-    }
-*/
-
-// --- FUNGSI GENERATE PDF OTOMATIS ---
-window.generatePDF = async function(type) {
-    const name = document.querySelector('.perf-info h1').innerText; // Ambil Nama Langsung dari Layar
-    const doc = new jsPDF({
-        orientation: "landscape",
-        unit: "px",
-        format: [800, 600] // Sesuaikan ukuran template gambar Anda
-    });
-
-    let templateURL = "";
-    let fileName = "";
-    
-    // SETTING TEMPLATE (GANTI URL INI DENGAN GAMBAR SERTIFIKAT KOSONG ANDA)
-    if(type === 'sertifikat') {
-        templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/cert_template_dummy.jpg"; 
-        fileName = "Sertifikat_SMIPRO.pdf";
-    } else {
-        templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/mou_template_dummy.jpg";
-        fileName = "MOU_Kontrak.pdf";
-    }
-
-    try {
-        // 1. Load Gambar Template
-        const imgData = await getBase64ImageFromURL(templateURL);
-        
-        // 2. Masukkan Gambar ke PDF
-        doc.addImage(imgData, 'JPEG', 0, 0, 800, 600);
-
-        // 3. Setting Font & Warna Teks
-        doc.setFontSize(40);
-        doc.setTextColor(0, 0, 0); // Warna Hitam (RGB)
-        doc.setFont("helvetica", "bold");
-
-        // 4. Tulis Nama Performer (Tengah Layar)
-        // Koordinat (400, 300) adalah tengah. Sesuaikan Y (300) dengan posisi garis di template Anda.
-        doc.text(name, 400, 300, { align: "center" });
-
-        // 5. Tambah Tanggal Otomatis
-        doc.setFontSize(15);
-        doc.text("Probolinggo, " + new Date().toLocaleDateString('id-ID'), 400, 450, { align: "center" });
-
-        // 6. Download
-        doc.save(fileName);
-
-    } catch (error) {
-        alert("Gagal membuat PDF. Cek koneksi internet.");
-        console.error(error);
-    }
-}
-
-// Helper untuk load gambar
-function getBase64ImageFromURL(url) {
-    return new Promise((resolve, reject) => {
-        var img = new Image();
-        img.setAttribute("crossOrigin", "anonymous");
-        img.onload = () => {
-            var canvas = document.createElement("canvas");
-            canvas.width = img.width;
-            canvas.height = img.height;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            var dataURL = canvas.toDataURL("image/jpeg");
-            resolve(dataURL);
-        };
-        img.onerror = error => reject(error);
-        img.src = url;
-    });
-}
     </script>
 </body>
 </html>
