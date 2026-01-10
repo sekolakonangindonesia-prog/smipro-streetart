@@ -63,6 +63,12 @@ function listenMentorProfile(id) {
             setValueIfExists('edit-email', data.email);
             setValueIfExists('edit-phone', data.phone);
 
+            if(data.gallery) {
+            window.renderGallery(data.gallery);
+            } else {
+            window.renderGallery([]);
+            }
+
             // Isi Portofolio & Profesi (Looping)
             if(data.portfolio) {
                 data.portfolio.forEach((txt, i) => setValueIfExists(`porto-${i}`, txt));
