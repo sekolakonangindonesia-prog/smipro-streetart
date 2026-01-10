@@ -20,6 +20,15 @@
         .tab-content.active { display: block; }
         .input-mentor { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 5px; }
         .btn-primary { background: var(--green); color: black; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        
+        /* CARD KARYA */
+        .showcase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+        .work-card { background: #222; border-radius: 10px; overflow: hidden; border: 1px solid #333; position: relative; cursor: pointer; }
+        .work-thumb { width: 100%; height: 100px; object-fit: cover; }
+        .work-info { padding: 10px; }
+        .work-type { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
+        .btn-del-work { background: red; color: white; border: none; width: 100%; padding: 5px; cursor: pointer; margin-top: 5px; border-radius: 4px; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -59,31 +68,35 @@
     <!-- TABS -->
     <div class="mitra-tabs">
         <button class="tab-btn active" onclick="switchTab('bengkel')">🛠️ Bengkel Siswa</button>
-        <button class="tab-btn" onclick="switchTab('performer')">🎸 Manaj. Performer</button>
+        <button class="tab-btn" onclick="switchTab('showcase')">🎵 Hasil Karya</button> <!-- NEW -->
         <button class="tab-btn" onclick="switchTab('profil')">👤 Profil Saya</button>
     </div>
 
     <div class="container">
         <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
 
-        <!-- TAB 1: BENGKEL SISWA -->
+        <!-- TAB 1: BENGKEL -->
         <div id="tab-bengkel" class="tab-content active">
             <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
                 <h3 style="margin-top:0; color:white;">Penilaian Siswa</h3>
-                
-                <!-- INI WADAHNYA (ID HARUS SAMA DENGAN SCRIPT) -->
                 <div id="student-list-container" style="display:grid; gap:15px; margin-top:20px;">
                     <p style="text-align:center; color:#666;">Memuat data siswa...</p>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: PERFORMER -->
-        <div id="tab-performer" class="tab-content">
-            <div style="padding:20px; text-align:center; color:#888;">Fitur Performer akan muncul di sini.</div>
+        <!-- TAB 2: SHOWCASE KARYA (BARU) -->
+        <div id="tab-showcase" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#00d2ff;">Galeri Karya & Portofolio</h3>
+                <button onclick="openAddWorkModal()" style="background:var(--green); color:black; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">+ Tambah</button>
+            </div>
+            <div id="work-list-container" class="showcase-grid">
+                <p style="text-align:center; color:#666; grid-column:1/-1;">Belum ada karya.</p>
+            </div>
         </div>
 
-        <!-- TAB 3: PROFIL SAYA (7 SLOT FIX) -->
+        <!-- TAB 3: PROFIL -->
         <div id="tab-profil" class="tab-content">
             <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom: 50px;">
                 <h3>Edit Data Pribadi</h3>
@@ -92,12 +105,10 @@
                     <label style="color:#aaa; font-size:0.8rem;">Nama Lengkap</label>
                     <input type="text" id="edit-name" class="input-mentor">
                 </div>
-
                 <div style="margin-bottom:15px;">
                     <label style="color:#aaa; font-size:0.8rem;">Spesialisasi</label>
                     <input type="text" id="edit-spec" class="input-mentor">
                 </div>
-
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
                     <div>
                         <label style="color:#aaa; font-size:0.8rem;">Email Login</label>
@@ -110,13 +121,10 @@
                 </div>
 
                 <hr style="border-color:#333; margin:20px 0;">
-                
                 <h4 style="color:#FFD700; margin-bottom:10px;">Track Record & Portofolio (Max 7)</h4>
                 <div id="porto-inputs"></div>
-
                 <h4 style="color:#FFD700; margin-top:30px; margin-bottom:10px;">Status Profesi (Max 7)</h4>
                 <div id="prof-inputs"></div>
-
                 <button class="btn-primary" onclick="saveMentorProfile()">
                     <i class="fa-solid fa-floppy-disk"></i> SIMPAN SEMUA PERUBAHAN
                 </button>
@@ -129,6 +137,28 @@
         <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
             <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
         </button>
+    </div>
+
+    <!-- MODAL INPUT KARYA -->
+    <div id="modal-add-work" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
+            <h3 style="margin-top:0; color:white;">Tambah Karya</h3>
+            <label style="color:#aaa; font-size:0.8rem;">Judul Karya</label>
+            <input type="text" id="work-title" class="input-mentor">
+            <label style="color:#aaa; font-size:0.8rem;">Tipe</label>
+            <select id="work-type" class="input-mentor">
+                <option value="video">Video (YouTube)</option>
+                <option value="audio">Audio (MP3 Link)</option>
+            </select>
+            <label style="color:#aaa; font-size:0.8rem;">Link URL</label>
+            <input type="text" id="work-url" class="input-mentor" placeholder="Link...">
+            <label style="color:#aaa; font-size:0.8rem;">Link Thumbnail (Opsional)</label>
+            <input type="text" id="work-thumb" class="input-mentor" placeholder="https://...">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="document.getElementById('modal-add-work').style.display='none'" style="flex:1; padding:10px; border-radius:5px; border:none; background:#444; color:white; cursor:pointer;">Batal</button>
+                <button onclick="saveWorkItem()" style="flex:1; padding:10px; border-radius:5px; border:none; background:var(--green); font-weight:bold; cursor:pointer;">Simpan</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="mentor-script.js"></script>
