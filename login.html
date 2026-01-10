@@ -18,29 +18,21 @@
             width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 40px rgba(229, 9, 20, 0.4);
             max-height: 90vh; overflow-y: auto; position: relative;
         }
-        
         .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .auth-header h2 { color: white; margin: 0; }
         .auth-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
-
         .app-logo { display: block; margin: 0 auto 10px auto; width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
-
         .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .role-btn { background: #333; padding: 15px; border-radius: 10px; cursor: pointer; border: 1px solid #444; transition: 0.3s; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         .role-btn:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-3px); }
         .role-btn i { font-size: 1.5rem; }
-
-        /* Khusus Tombol Admin (Merah) */
         .role-btn.admin-btn:hover { background: #b71c1c; border-color: red; }
-
-        /* FORM STYLES */
         .form-group { text-align: left; margin-bottom: 15px; }
         .form-group label { font-size: 0.8rem; color: #ccc; display: block; margin-bottom: 5px; }
         .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
-        .switch-link { margin-top: 15px; font-size: 0.8rem; color: #aaa; }
-        .switch-link span { color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline; }
         .back-icon { float: left; color: #888; cursor: pointer; background: none; border: none; font-size: 1rem; }
-        .section-view { animation: fadeIn 0.3s; }
+        .section-view { animation: fadeIn 0.3s; display: none; }
+        #view-menu { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -48,69 +40,46 @@
 
     <div class="auth-card">
         
-        <!-- === 1. TAMPILAN MENU PILIHAN ROLE === -->
+        <!-- MENU UTAMA -->
         <div id="view-menu" class="section-view">
             <div class="auth-header">
-                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="app-logo" alt="Logo">
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="app-logo">
                 <h2>Akses Sistem SMIPRO</h2>
                 <p>Silakan pilih peran Anda:</p>
             </div>
             <div class="role-grid">
-                
-                <!-- 1. MITRA (LINK KE FILE BARU: mitra-login.html) -->
-                <div class="role-btn" onclick="location.href='mitra-login.html'">
-                    <i class="fa-solid fa-store"></i>
-                    <span>Mitra Warung</span>
-                </div>
-
-                <!-- 2. PERFORMER (Masih di halaman ini / SPA) -->
-                <div class="role-btn" onclick="pindahKe('login-performer')">
-                    <i class="fa-solid fa-guitar"></i>
-                    <span>Performer</span>
-                </div>
-                
-                <!-- 3. MENTOR (Masih di halaman ini / SPA) -->
-                <div class="role-btn" onclick="pindahKe('login-mentor')">
-                    <i class="fa-solid fa-graduation-cap"></i>
-                    <span>Mentor</span>
-                </div>
-                
-                <!-- 4. ADMIN (LINK KE FILE BARU: admin-login.html) -->
-                <div class="role-btn admin-btn" onclick="location.href='admin-login.html'" style="background:var(--primary); border-color:red;">
-                    <i class="fa-solid fa-user-shield"></i>
-                    <span>Admin</span>
-                </div>
-
+                <div class="role-btn" onclick="location.href='mitra-login.html'"><i class="fa-solid fa-store"></i><span>Mitra Warung</span></div>
+                <div class="role-btn" onclick="pindahKe('login-performer')"><i class="fa-solid fa-guitar"></i><span>Performer</span></div>
+                <div class="role-btn" onclick="pindahKe('login-mentor')"><i class="fa-solid fa-graduation-cap"></i><span>Mentor</span></div>
+                <div class="role-btn admin-btn" onclick="location.href='admin-login.html'"><i class="fa-solid fa-user-shield"></i><span>Admin</span></div>
             </div>
             <br>
             <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
         </div>
 
-        <!-- === LOGIN PERFORMER === -->
-        <div id="view-login-performer" class="section-view" style="display:none;">
+        <!-- LOGIN PERFORMER -->
+        <div id="view-login-performer" class="section-view">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
-                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="app-logo" alt="Logo">
                 <h2>Login Performer</h2><p>Khusus Anggota Terverifikasi</p>
             </div>
-            <div class="form-group"><label>Email / No. ID Performer</label><input type="text" id="perf-id" class="form-input"></div>
-            <button class="btn-primary" onclick="aksiLoginPerformer()" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
+            <div class="form-group"><label>Nama Panggung / ID</label><input type="text" id="perf-id" class="form-input"></div>
+            <button class="btn-primary" onclick="alert('Fitur login performer mandiri akan segera hadir!')" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
         </div>
 
-        <!-- === LOGIN MENTOR === -->
-        <div id="view-login-mentor" class="section-view" style="display:none;">
+        <!-- LOGIN MENTOR (DENGAN FIREBASE) -->
+        <div id="view-login-mentor" class="section-view">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
-                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="app-logo" alt="Logo">
                 <h2>Login Mentor</h2><p>Akses Panel Penilaian</p>
             </div>
-            <div class="form-group"><label>Email Terdaftar</label><input type="email" id="mentor-email-login" class="form-input" placeholder="nama@email.com"></div>
-           <button id="btn-login-mentor" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK PANEL MENTOR</button>
+            <div class="form-group"><label>Email Terdaftar</label><input type="email" id="mentor-email-login" class="form-input" placeholder="contoh: andigomusicpro@gmail.com"></div>
+            <button id="btn-login-mentor" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK PANEL MENTOR</button>
         </div>
-        
+
     </div>
 
-   <script type="module">
+    <script type="module">
         import { db } from './firebase-config.js';
         import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
