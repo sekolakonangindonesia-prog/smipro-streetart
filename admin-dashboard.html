@@ -525,42 +525,78 @@ Code
                 </div>
             </div>
 
-            <!-- SUB TAB: BERITA (KONSEP HYBRID) -->
-            <div id="cms-news" class="cms-content hidden">
-                <div class="cms-form-group">
-                    <h4 style="margin-top:0; color:#E50914;">Publish Berita Baru</h4>
-                    
-                    <label class="cms-label">Judul Berita</label>
-                    <input type="text" id="news-title" class="cms-input" placeholder="Judul Headline">
-                    
-                    <label class="cms-label">Kategori Tag</label>
-                    <input type="text" id="news-tag" class="cms-input" placeholder="Misal: EVENT, INFO, LIPUTAN">
+            <!-- SUB TAB: BERITA & PODCAST (UPDATED) -->
+<div id="cms-news" class="cms-content hidden">
+    <div class="cms-form-group">
+        <h4 style="margin-top:0; color:#E50914;">Publish Konten Baru</h4>
+        
+        <!-- PILIH TIPE KONTEN -->
+        <label class="cms-label">Mau Posting Apa?</label>
+        <select id="content-category" class="cms-input" onchange="toggleContentForm()" style="border:1px solid #FFD700;">
+            <option value="news">📰 Berita / Artikel</option>
+            <option value="podcast">🎙️ Podcast / Video</option>
+        </select>
 
-                    <label class="cms-label">Link Gambar Thumbnail</label>
-                    <input type="text" id="news-thumb" class="cms-input" placeholder="https://...">
+        <!-- === FORM BERITA === -->
+        <div id="form-news-container">
+            <label class="cms-label">Judul Berita</label>
+            <input type="text" id="news-title" class="cms-input" placeholder="Judul Headline">
+            
+            <label class="cms-label">Kategori Tag</label>
+            <input type="text" id="news-tag" class="cms-input" placeholder="Misal: EVENT, INFO">
 
-                    <label class="cms-label">Tipe Berita</label>
-                    <select id="news-type" class="cms-input" onchange="toggleNewsInput()">
-                        <option value="external">Eksternal (Link ke Media Lain)</option>
-                        <option value="internal">Internal (Tulis Sendiri)</option>
-                    </select>
+            <label class="cms-label">Link Gambar Thumbnail</label>
+            <input type="text" id="news-thumb" class="cms-input" placeholder="https://...">
 
-                    <!-- Input Link -->
-                    <div id="news-input-external">
-                        <label class="cms-label">Link URL Berita</label>
-                        <input type="text" id="news-url" class="cms-input" placeholder="https://detik.com/...">
-                    </div>
+            <label class="cms-label">Tipe Berita</label>
+            <select id="news-type" class="cms-input" onchange="toggleNewsInput()">
+                <option value="external">Eksternal (Link Website Lain)</option>
+                <option value="internal">Internal (Tulis Sendiri)</option>
+            </select>
 
-                    <!-- Input Tulis Sendiri -->
-                    <div id="news-input-internal" style="display:none;">
-                        <label class="cms-label">Isi Berita</label>
-                        <textarea id="news-content" class="cms-input" style="height:150px;" placeholder="Tulis narasi berita di sini..."></textarea>
-                    </div>
+            <div id="news-input-external">
+                <label class="cms-label">Link URL Berita</label>
+                <input type="text" id="news-url" class="cms-input" placeholder="https://detik.com/...">
+            </div>
 
-                    <button class="btn-action btn-view" onclick="saveNews()" style="margin-top:15px; width:100%;">PUBLISH BERITA</button>
+            <div id="news-input-internal" style="display:none;">
+                <label class="cms-label">Isi Berita</label>
+                <textarea id="news-content" class="cms-input" style="height:150px;" placeholder="Tulis berita..."></textarea>
+            </div>
+
+            <button class="btn-action btn-view" onclick="saveNews()" style="margin-top:15px; width:100%;">PUBLISH BERITA</button>
+        </div>
+
+        <!-- === FORM PODCAST (BARU) === -->
+        <div id="form-podcast-container" style="display:none;">
+            <label class="cms-label">Judul Episode</label>
+            <input type="text" id="pod-title" class="cms-input" placeholder="Contoh: Eps 1 - Kisah Sukses">
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div>
+                    <label class="cms-label">Nama Host</label>
+                    <input type="text" id="pod-host" class="cms-input" placeholder="Host">
+                </div>
+                <div>
+                    <label class="cms-label">Durasi</label>
+                    <input type="text" id="pod-duration" class="cms-input" placeholder="30 Menit">
                 </div>
             </div>
+
+            <label class="cms-label">Link YouTube / Spotify</label>
+            <input type="text" id="pod-link" class="cms-input" placeholder="https://...">
+
+            <label class="cms-label">Link Thumbnail Cover</label>
+            <input type="text" id="pod-thumb" class="cms-input" placeholder="https://...">
+
+            <label class="cms-label">Urutan Tampil (Order)</label>
+            <input type="number" id="pod-order" class="cms-input" value="1">
+
+            <button class="btn-action btn-edit" onclick="savePodcast()" style="margin-top:15px; width:100%; background:#E50914; color:white;">PUBLISH PODCAST</button>
         </div>
+
+    </div>
+</div>
     
         <!-- VIEW 5: KEUANGAN (SPLIT COMMAND CENTER) -->
         <div id="view-finance" class="admin-view hidden">
