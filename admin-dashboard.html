@@ -537,34 +537,46 @@ Code
             <option value="podcast">🎙️ Podcast / Video</option>
         </select>
 
-        <!-- === FORM BERITA === -->
+        <!-- === FORM BERITA (REVISI) === -->
         <div id="form-news-container">
-            <label class="cms-label">Judul Berita</label>
-            <input type="text" id="news-title" class="cms-input" placeholder="Judul Headline">
+            <div style="background:#222; padding:15px; border-left:4px solid #E50914; margin-bottom:15px;">
+                <label class="cms-label" style="color:#E50914; font-weight:bold;">HEADLINE / JUDUL UTAMA</label>
+                <input type="text" id="news-title" class="cms-input" style="font-size:1.2rem; font-weight:bold;" placeholder="Ketik Judul Berita yang Menarik...">
+            </div>
             
-            <label class="cms-label">Kategori Tag</label>
-            <input type="text" id="news-tag" class="cms-input" placeholder="Misal: EVENT, INFO">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div>
+                    <label class="cms-label">Kategori / Tag</label>
+                    <input type="text" id="news-tag" class="cms-input" placeholder="Contoh: EVENT, KULINER, INFO">
+                </div>
+                <div>
+                    <label class="cms-label">Link Foto Utama</label>
+                    <input type="text" id="news-thumb" class="cms-input" placeholder="https://...">
+                </div>
+            </div>
 
-            <label class="cms-label">Link Gambar Thumbnail</label>
-            <input type="text" id="news-thumb" class="cms-input" placeholder="https://...">
-
-            <label class="cms-label">Tipe Berita</label>
+            <label class="cms-label" style="margin-top:10px;">Sumber Berita</label>
             <select id="news-type" class="cms-input" onchange="toggleNewsInput()">
-                <option value="external">Eksternal (Link Website Lain)</option>
-                <option value="internal">Internal (Tulis Sendiri)</option>
+                <option value="internal">Internal (Tulis Sendiri / Koran SMIPRO)</option>
+                <option value="external">Eksternal (Link ke Media Lain)</option>
             </select>
 
-            <div id="news-input-external">
-                <label class="cms-label">Link URL Berita</label>
+            <!-- Input Tulis Sendiri (Internal) -->
+            <div id="news-input-internal" style="margin-top:15px;">
+                <label class="cms-label">Isi Berita</label>
+                <textarea id="news-content" class="cms-input" style="height:300px; font-family:sans-serif; line-height:1.5;" placeholder="Tulis isi berita lengkap di sini. Tekan Enter untuk paragraf baru..."></textarea>
+                <small style="color:#666;">*Tanggal posting akan otomatis diisi oleh sistem (Hari ini).</small>
+            </div>
+
+            <!-- Input Link (Eksternal) -->
+            <div id="news-input-external" style="display:none; margin-top:15px;">
+                <label class="cms-label">Link URL Sumber Berita</label>
                 <input type="text" id="news-url" class="cms-input" placeholder="https://detik.com/...">
             </div>
 
-            <div id="news-input-internal" style="display:none;">
-                <label class="cms-label">Isi Berita</label>
-                <textarea id="news-content" class="cms-input" style="height:150px;" placeholder="Tulis berita..."></textarea>
-            </div>
-
-            <button class="btn-action btn-view" onclick="saveNews()" style="margin-top:15px; width:100%;">PUBLISH BERITA</button>
+            <button class="btn-action btn-view" onclick="saveNews()" style="margin-top:20px; width:100%; padding:15px; font-size:1rem; font-weight:bold;">
+                <i class="fa-solid fa-paper-plane"></i> TERBITKAN BERITA
+            </button>
         </div>
 
         <!-- === FORM PODCAST (BARU) === -->
