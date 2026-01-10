@@ -304,36 +304,43 @@ function loadGallerySeparate() {
 // 3. FUNGSI RENDER (TAMPILAN)
 window.renderGallery = function(galleryArray) {
     const container = document.getElementById('mentor-gallery-list');
-    if(!container) return; // Mencegah error jika elemen belum ada
+    if(!container) return; 
     
     container.innerHTML = '';
-    mentorGalleryData = galleryArray || []; // Update data lokal
+    mentorGalleryData = galleryArray || []; // Simpan ke variabel global
 
     if (mentorGalleryData.length === 0) {
-        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada karya yang diunggah.</p>';
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada karya. Klik "Tambah Karya" untuk upload.</p>';
         return;
     }
 
     mentorGalleryData.forEach((item, index) => {
-        let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
+        let icon = item.type === 'video' ? 'fa-play' : 'fa-music';
         let color = item.type === 'video' ? '#E50914' : '#00d2ff';
         
         // Thumbnail Youtube Otomatis
-        let thumb = "https://via.placeholder.com/300x169?text=Audio";
+        let thumb = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=400"; // Default Audio
         if (item.type === 'video' && item.url.includes('embed/')) {
-            const vidId = item.url.split('embed/')[1];
+            const vidId = item.url.split('embed/')[1].split('?')[0];
             thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
         }
 
         container.innerHTML += `
         <div style="position:relative; background:#111; border-radius:8px; overflow:hidden; border:1px solid #333;">
-            <img src="${thumb}" style="width:100%; height:120px; object-fit:cover; opacity:0.6;">
-            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
-                <i class="fa-solid ${icon}" style="font-size:2rem; color:${color};"></i>
+            <!-- AREA KLIK UNTUK PLAY -->
+            <div onclick="previewDashboardMedia('${item.type}', '${item.url}')" style="cursor:pointer; position:relative; height:120px;">
+                <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.6;">
+                <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid ${icon}" style="font-size:2rem; color:${color}; text-shadow:0 0 10px black;"></i>
+                </div>
             </div>
-            <div style="padding:10px;">
-                <b style="color:white; font-size:0.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.title}</b>
-                <button onclick="deleteGalleryItem(${index})" style="width:100%; margin-top:5px; background:#b71c1c; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer; font-size:0.8rem;">
+
+            <!-- AREA JUDUL & HAPUS -->
+            <div style="padding:10px; border-top:1px solid #333;">
+                <b style="color:white; font-size:0.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:5px;">${item.title}</b>
+                
+                <!-- TOMBOL HAPUS (FIXED) -->
+                <button onclick="window.deleteGalleryItem(${index})" style="width:100%; background:#b71c1c; color:white; border:none; padding:6px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">
                     <i class="fa-solid fa-trash"></i> Hapus
                 </button>
             </div>
@@ -385,14 +392,51 @@ window.saveGalleryItem = async function() {
 // 6. HAPUS KARYA
 window.deleteGalleryItem = async function(index) {
     const MENTOR_ID = localStorage.getItem('mentorId');
-    if(confirm("Hapus karya ini?")) {
-        const newGallery = mentorGalleryData.filter((_, i) => i !== index);
+    if(!MENTOR_ID) return alert("Sesi error. Silakan refresh.");
+
+    if(confirm("Yakin ingin menghapus karya ini?")) {
+        // Hapus item dari array berdasarkan index
+        mentorGalleryData.splice(index, 1);
+
         try {
+            // Update Array Baru ke Firebase
             await updateDoc(doc(db, "mentors", MENTOR_ID), {
-                gallery: newGallery
+                gallery: mentorGalleryData
             });
+            // Tidak perlu alert, karena onSnapshot akan otomatis merender ulang tampilan
         } catch(e) {
             alert("Gagal menghapus: " + e.message);
+            // Kembalikan tampilan jika gagal (reload data)
+            location.reload(); 
         }
     }
+}
+
+// --- FUNGSI PREVIEW / PLAY DI DASHBOARD (BARU) ---
+window.previewDashboardMedia = function(type, url) {
+    const modal = document.getElementById('dashboard-player-modal');
+    const content = document.getElementById('dashboard-player-content');
+    
+    if(!modal || !content) return; // Jaga-jaga
+
+    modal.style.display = 'flex';
+    
+    if(type === 'video') {
+        content.innerHTML = `<iframe width="100%" height="400" src="${url}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border:none; border-radius:10px;"></iframe>`;
+    } else {
+        content.innerHTML = `
+            <div style="background:#222; padding:40px; border-radius:15px; border:1px solid #444;">
+                <i class="fa-solid fa-music" style="font-size:4rem; color:#00d2ff; margin-bottom:20px;"></i>
+                <h3 style="color:white; margin:0 0 10px 0;">Audio Preview</h3>
+                <audio controls autoplay src="${url}" style="width:100%"></audio>
+            </div>`;
+    }
+}
+
+// --- FUNGSI TUTUP PLAYER ---
+window.closeDashboardPlayer = function() {
+    const modal = document.getElementById('dashboard-player-modal');
+    const content = document.getElementById('dashboard-player-content');
+    modal.style.display = 'none';
+    content.innerHTML = ''; // Hentikan suara/video
 }
