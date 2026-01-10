@@ -171,6 +171,14 @@
         <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
     </button>
 </div>
+    <!-- MODAL PLAYER KHUSUS DASHBOARD MENTOR -->
+<div id="dashboard-player-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:5000; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+    <!-- Tombol Tutup -->
+    <button onclick="closeDashboardPlayer()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+    
+    <!-- Layar Putar -->
+    <div id="dashboard-player-content" style="width:100%; max-width:700px; text-align:center;"></div>
+</div>
 
 <script type="module" src="mentor-script.js"></script>
 </body>
