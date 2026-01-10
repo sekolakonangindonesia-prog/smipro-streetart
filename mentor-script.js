@@ -1,48 +1,48 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Ambil ID dari LocalStorage
 const MENTOR_ID = localStorage.getItem('mentorId');
 
 // --- 1. INISIALISASI ---
 window.onload = function() {
-    // Cek Login
+    // A. Cek Login
     if(!localStorage.getItem('userLoggedIn')) {
         window.location.href = 'index.html';
         return;
     }
     
-    // Cek Admin Impersonate
+    // B. Cek Apakah ID Mentor Ada? (PENTING)
+    if(!MENTOR_ID) {
+        alert("Error: ID Mentor tidak ditemukan. Silakan Login ulang dari Admin atau Halaman Login.");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // C. Cek Admin Impersonate
     if(localStorage.getItem('adminOrigin') === 'true') {
         const floatBtn = document.getElementById('admin-floating-btn');
         if(floatBtn) floatBtn.style.display = 'block';
         setupAdminHome();
     }
 
-    // RENDER KOTAK INPUT DULU (Supaya Form Tidak Kosong)
-    renderInputs(7);
-
-    // BARU LOAD DATA
-    if(MENTOR_ID) {
-        loadMentorData();
-    } else {
-        alert("ID Mentor tidak ditemukan. Kembali ke Admin.");
-        window.history.back();
-    }
+    // D. Jalankan Fungsi
+    renderInputs(7); // Buat kotak kosong dulu
+    loadMentorData(); // Isi datanya
 };
 
-// --- 2. FUNGSI MEMBUAT 7 KOTAK INPUT ---
+// --- 2. RENDER 7 KOTAK INPUT ---
 function renderInputs(n) {
     const pContainer = document.getElementById('porto-inputs');
     const fContainer = document.getElementById('prof-inputs');
     
-    // Pastikan elemen ada sebelum diisi
     if(pContainer && fContainer) {
         pContainer.innerHTML = ''; 
         fContainer.innerHTML = '';
 
         for(let i=0; i<n; i++) {
-            pContainer.innerHTML += `<input type="text" id="porto-${i}" class="input-mentor" placeholder="Portofolio ${i+1}" style="margin-bottom:5px;">`;
-            fContainer.innerHTML += `<input type="text" id="prof-${i}" class="input-mentor" placeholder="Profesi ${i+1}" style="margin-bottom:5px;">`;
+            pContainer.innerHTML += `<input type="text" id="porto-${i}" class="input-mentor" placeholder="Slot ${i+1}" style="margin-bottom:8px;">`;
+            fContainer.innerHTML += `<input type="text" id="prof-${i}" class="input-mentor" placeholder="Slot ${i+1}" style="margin-bottom:8px;">`;
         }
     }
 }
@@ -56,13 +56,13 @@ async function loadMentorData() {
         if (docSnap.exists()) {
             const data = docSnap.data();
 
-            // Isi Header Dashboard
+            // Isi Header
             document.getElementById('m-name').innerText = data.name;
             document.getElementById('m-spec').innerText = data.specialist || "MENTOR";
             document.getElementById('m-email').innerText = data.email;
             if(data.img) document.getElementById('header-profile-img').src = data.img;
 
-            // Isi Form Edit Profil
+            // Isi Form Edit Utama
             document.getElementById('edit-name').value = data.name;
             document.getElementById('edit-spec').value = data.specialist;
             document.getElementById('edit-email').value = data.email;
@@ -82,6 +82,8 @@ async function loadMentorData() {
                     if(el) el.value = txt;
                 });
             }
+        } else {
+            console.log("Dokumen tidak ditemukan!");
         }
     } catch (e) {
         console.error("Gagal load data:", e);
@@ -101,9 +103,10 @@ window.saveMentorProfile = async function() {
     for(let i=0; i<7; i++) {
         const pVal = document.getElementById(`porto-${i}`).value;
         const fVal = document.getElementById(`prof-${i}`).value;
-        // Hanya simpan yang ada isinya
-        if(pVal.trim() !== "") newPorto.push(pVal);
-        if(fVal.trim() !== "") newProf.push(fVal);
+        // Simpan string kosong juga tidak apa-apa, atau filter di sini
+        // Kita simpan apa adanya agar posisi slot tidak bergeser
+        newPorto.push(pVal);
+        newProf.push(fVal);
     }
 
     try {
@@ -153,7 +156,6 @@ window.triggerUpload = function() {
 
 window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; } }
 
-// Setup Tombol Home Admin
 function setupAdminHome() {
     setTimeout(() => {
         const oldBtn = document.getElementById('nav-home-btn');
