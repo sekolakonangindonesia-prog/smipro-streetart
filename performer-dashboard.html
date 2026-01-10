@@ -82,6 +82,8 @@
         .review-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
         .review-text { font-style: italic; color: white; font-size: 0.95rem; }
     </style>
+    <!-- Library untuk Cetak PDF Otomatis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -140,22 +142,26 @@
         <div id="tab-dokumen" class="tab-content">
             <h3>Dokumen Legalitas</h3>
             <div class="doc-item">
-                <i class="fa-solid fa-certificate doc-icon"></i>
-                <div style="flex:1;"><b>Sertifikat Lulus Bengkel</b><br><small style="color:#aaa;">20 Des 2025</small></div>
-                <button class="btn-action-doc" onclick="openModalDoc('Sertifikat')"><i class="fa-regular fa-eye"></i> Lihat</button>
-                <button class="btn-action-doc" onclick="downloadFile('Sertifikat_Lulus_Bengkel.pdf')"><i class="fa-solid fa-download"></i> Unduh</button>
-            </div>
-            <div class="doc-item" style="border-color:var(--primary);">
-                <i class="fa-solid fa-file-contract doc-icon"></i>
-                <div style="flex:1;"><b>MOU Kontrak Management</b><br><small style="color:var(--primary);">AKTIF s/d Des 2026</small></div>
-                <button class="btn-action-doc" onclick="openModalDoc('MOU')"><i class="fa-regular fa-eye"></i> Lihat</button>
-                <button class="btn-action-doc" onclick="downloadFile('MOU_Kontrak_Kerja_Sama.pdf')"><i class="fa-solid fa-download"></i> Unduh</button>
-            </div>
-            <div style="background:#332b00; padding:15px; border-radius:10px; margin-top:20px; color:#ffeb3b; font-size:0.9rem;">
-                <i class="fa-solid fa-triangle-exclamation"></i> <b>PERHATIAN:</b><br>
-                Sesuai MOU Pasal 3, dilarang tampil komersial di luar management tanpa izin.
-            </div>
-        </div>
+    <i class="fa-solid fa-certificate doc-icon"></i>
+    <div style="flex:1;">
+        <b>Sertifikat Kompetensi</b><br>
+        <small id="cert-status" style="color:#aaa;">Menunggu Verifikasi Admin</small>
+    </div>
+    <!-- Tombol ini akan dimatikan jika belum verified -->
+    <button id="btn-dl-cert" class="btn-action-doc" onclick="generatePDF('sertifikat')" disabled style="opacity:0.5;">
+        <i class="fa-solid fa-download"></i> Unduh
+    </button>
+</div>
+           <div class="doc-item" style="border-color:var(--primary);">
+    <i class="fa-solid fa-file-contract doc-icon"></i>
+    <div style="flex:1;">
+        <b>MOU Kontrak Management</b><br>
+        <small id="mou-status" style="color:var(--primary);">Menunggu Tanda Tangan</small>
+    </div>
+    <button id="btn-dl-mou" class="btn-action-doc" onclick="generatePDF('mou')" disabled style="opacity:0.5;">
+        <i class="fa-solid fa-download"></i> Unduh
+    </button>
+</div>
 
         <!-- TAB 3: ULASAN -->
         <div id="tab-ulasan" class="tab-content">
@@ -186,8 +192,8 @@
                 </div>
 
                 <!-- INFO DASAR -->
-                <label style="color:#aaa; font-size:0.8rem;">Nama Panggung (Sesuai Kontrak)</label>
-                <input type="text" id="edit-name" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;" readonly title="Hubungi Admin untuk ubah nama">
+                <label style="color:#aaa; font-size:0.8rem;">Nama Panggung</label>
+                <input type="text" id="edit-name" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;" placeholder="Ganti nama panggung...">
                 
                 <label style="color:#aaa; font-size:0.8rem;">Bio Singkat</label>
                 <textarea id="edit-bio" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px; height:80px;" placeholder="Deskripsikan gaya musikmu..."></textarea>
@@ -366,27 +372,38 @@
 
         window.saveProfileData = async function() {
             if(!PERF_ID) return;
-            
+    
+        // 1. Ambil Nama Baru
+            const newName = document.getElementById('edit-name').value;
+    
             const bio = document.getElementById('edit-bio').value;
             const ig = document.getElementById('edit-ig').value;
             const tiktok = document.getElementById('edit-tiktok').value;
             const yt = document.getElementById('edit-yt').value;
 
+            if(!newName) return alert("Nama Panggung tidak boleh kosong!");
+
             try {
-                const docRef = doc(db, "performers", PERF_ID);
-                await updateDoc(docRef, {
-                    bio: bio,
-                    link_ig: ig,
-                    link_tiktok: tiktok,
-                    link_yt: yt
-                });
-                alert("Profil Berhasil Diupdate!");
-                // Refresh data header
-                loadProfileData(); 
-            } catch (e) {
-                alert("Gagal menyimpan: " + e.message);
-            }
-        }
+        const docRef = doc(db, "performers", PERF_ID);
+        
+        // 2. Masukkan 'name' ke dalam updateDoc
+        await updateDoc(docRef, {
+            name: newName,  // <--- INI PENTING
+            bio: bio,
+            link_ig: ig,
+            link_tiktok: tiktok,
+            link_yt: yt
+        });
+
+        // 3. Update Tampilan Header Langsung (Tanpa Refresh)
+        document.querySelector('.perf-info h1').innerText = newName;
+
+        alert("Profil & Nama Panggung Berhasil Diupdate!");
+        
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
+}
 
         // --- 3. FUNGSI UPLOAD FOTO (BASE64 FIREBASE) ---
         window.triggerUpload = function() { document.getElementById('file-input').click(); }
@@ -480,6 +497,102 @@
         window.downloadFile = function(f) { alert("Download: "+f); }
         window.prosesLogout = function() { if(confirm("Logout?")) { localStorage.clear(); window.location.href='index.html'; } }
         window.backToAdminDashboard = function() { if(confirm("Kembali ke Admin?")) { localStorage.setItem('userRole','admin'); localStorage.setItem('userName','Super Admin'); localStorage.setItem('userLink','admin-dashboard.html'); window.location.href='admin-dashboard.html'; } }
+
+       // --- IMPORT JSPDF ---
+const { jsPDF } = window.jspdf;
+
+// --- FUNGSI CEK STATUS (Dipanggil saat Load Profile) ---
+// Tambahkan potongan ini ke dalam function loadProfileData() yang sudah ada
+/*
+    // ... kode load profile sebelumnya ...
+    
+    // UPDATE STATUS DOKUMEN
+    const btnCert = document.getElementById('btn-dl-cert');
+    const txtCert = document.getElementById('cert-status');
+    const btnMou = document.getElementById('btn-dl-mou');
+    const txtMou = document.getElementById('mou-status');
+
+    if (data.verified) {
+        btnCert.disabled = false;
+        btnCert.style.opacity = "1";
+        txtCert.innerHTML = "<span style='color:#00ff00'>Terverifikasi & Lulus</span>";
+        
+        btnMou.disabled = false;
+        btnMou.style.opacity = "1";
+        txtMou.innerHTML = "<span style='color:#00ff00'>Kontrak Aktif</span>";
+    } else {
+        txtCert.innerHTML = "<span style='color:orange'>Belum Verifikasi Admin</span>";
+    }
+*/
+
+// --- FUNGSI GENERATE PDF OTOMATIS ---
+window.generatePDF = async function(type) {
+    const name = document.querySelector('.perf-info h1').innerText; // Ambil Nama Langsung dari Layar
+    const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [800, 600] // Sesuaikan ukuran template gambar Anda
+    });
+
+    let templateURL = "";
+    let fileName = "";
+    
+    // SETTING TEMPLATE (GANTI URL INI DENGAN GAMBAR SERTIFIKAT KOSONG ANDA)
+    if(type === 'sertifikat') {
+        templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/cert_template_dummy.jpg"; 
+        fileName = "Sertifikat_SMIPRO.pdf";
+    } else {
+        templateURL = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/mou_template_dummy.jpg";
+        fileName = "MOU_Kontrak.pdf";
+    }
+
+    try {
+        // 1. Load Gambar Template
+        const imgData = await getBase64ImageFromURL(templateURL);
+        
+        // 2. Masukkan Gambar ke PDF
+        doc.addImage(imgData, 'JPEG', 0, 0, 800, 600);
+
+        // 3. Setting Font & Warna Teks
+        doc.setFontSize(40);
+        doc.setTextColor(0, 0, 0); // Warna Hitam (RGB)
+        doc.setFont("helvetica", "bold");
+
+        // 4. Tulis Nama Performer (Tengah Layar)
+        // Koordinat (400, 300) adalah tengah. Sesuaikan Y (300) dengan posisi garis di template Anda.
+        doc.text(name, 400, 300, { align: "center" });
+
+        // 5. Tambah Tanggal Otomatis
+        doc.setFontSize(15);
+        doc.text("Probolinggo, " + new Date().toLocaleDateString('id-ID'), 400, 450, { align: "center" });
+
+        // 6. Download
+        doc.save(fileName);
+
+    } catch (error) {
+        alert("Gagal membuat PDF. Cek koneksi internet.");
+        console.error(error);
+    }
+}
+
+// Helper untuk load gambar
+function getBase64ImageFromURL(url) {
+    return new Promise((resolve, reject) => {
+        var img = new Image();
+        img.setAttribute("crossOrigin", "anonymous");
+        img.onload = () => {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            var dataURL = canvas.toDataURL("image/jpeg");
+            resolve(dataURL);
+        };
+        img.onerror = error => reject(error);
+        img.src = url;
+    });
+}
     </script>
 </body>
 </html>
