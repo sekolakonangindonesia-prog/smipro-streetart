@@ -272,3 +272,121 @@ function setupAdminHome() {
 
 // --- JALANKAN SAAT SCRIPT DIMUAT ---
 initMentorDashboard();
+
+/* =========================================
+   FITUR BARU: GALERI KARYA MENTOR
+   ========================================= */
+
+// 1. Variabel Global untuk menyimpan data galeri sementara
+let mentorGalleryData = [];
+
+// 2. Load Galeri (Dipanggil saat loadMentorData)
+// -> Tambahkan baris ini ke dalam fungsi loadMentorData() yang sudah ada:
+//    renderGallery(data.gallery || []);
+//    mentorGalleryData = data.gallery || [];
+
+// Tapi agar mudah, kita buat fungsi terpisah yang dipanggil manual di window.onload
+function loadGallerySeparate() {
+    const MENTOR_ID = localStorage.getItem('mentorId');
+    if(!MENTOR_ID) return;
+
+    // Ambil data langsung dari dokumen mentor yang sudah ada
+    // Kita gunakan onSnapshot yang sudah ada di listenMentorProfile
+    // Jadi kita modifikasi sedikit fungsi listenMentorProfile di bawah
+}
+
+// 3. FUNGSI RENDER (TAMPILAN)
+window.renderGallery = function(galleryArray) {
+    const container = document.getElementById('mentor-gallery-list');
+    if(!container) return; // Mencegah error jika elemen belum ada
+    
+    container.innerHTML = '';
+    mentorGalleryData = galleryArray || []; // Update data lokal
+
+    if (mentorGalleryData.length === 0) {
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada karya yang diunggah.</p>';
+        return;
+    }
+
+    mentorGalleryData.forEach((item, index) => {
+        let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
+        let color = item.type === 'video' ? '#E50914' : '#00d2ff';
+        
+        // Thumbnail Youtube Otomatis
+        let thumb = "https://via.placeholder.com/300x169?text=Audio";
+        if (item.type === 'video' && item.url.includes('embed/')) {
+            const vidId = item.url.split('embed/')[1];
+            thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
+        }
+
+        container.innerHTML += `
+        <div style="position:relative; background:#111; border-radius:8px; overflow:hidden; border:1px solid #333;">
+            <img src="${thumb}" style="width:100%; height:120px; object-fit:cover; opacity:0.6;">
+            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+                <i class="fa-solid ${icon}" style="font-size:2rem; color:${color};"></i>
+            </div>
+            <div style="padding:10px;">
+                <b style="color:white; font-size:0.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.title}</b>
+                <button onclick="deleteGalleryItem(${index})" style="width:100%; margin-top:5px; background:#b71c1c; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer; font-size:0.8rem;">
+                    <i class="fa-solid fa-trash"></i> Hapus
+                </button>
+            </div>
+        </div>`;
+    });
+}
+
+// 4. BUKA MODAL
+window.openAddGalleryModal = function() {
+    document.getElementById('modal-add-gallery').style.display = 'flex';
+}
+
+// 5. SIMPAN KARYA BARU
+window.saveGalleryItem = async function() {
+    const MENTOR_ID = localStorage.getItem('mentorId');
+    const title = document.getElementById('gal-title').value;
+    const type = document.getElementById('gal-type').value;
+    let url = document.getElementById('gal-url').value;
+
+    if(!title || !url) return alert("Mohon isi judul dan link!");
+
+    // Konversi Link YouTube Biasa ke Embed agar bisa diplay
+    if(type === 'video') {
+        if(url.includes('watch?v=')) {
+            const videoId = url.split('watch?v=')[1].split('&')[0];
+            url = `https://www.youtube.com/embed/${videoId}`;
+        } else if (url.includes('youtu.be/')) {
+            const videoId = url.split('youtu.be/')[1];
+            url = `https://www.youtube.com/embed/${videoId}`;
+        }
+    }
+
+    const newItem = { title, type, url };
+    const newGallery = [...mentorGalleryData, newItem]; // Tambahkan ke array lama
+
+    try {
+        await updateDoc(doc(db, "mentors", MENTOR_ID), {
+            gallery: newGallery
+        });
+        alert("Karya Berhasil Ditambahkan!");
+        document.getElementById('modal-add-gallery').style.display = 'none';
+        document.getElementById('gal-title').value = '';
+        document.getElementById('gal-url').value = '';
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
+}
+
+// 6. HAPUS KARYA
+window.deleteGalleryItem = async function(index) {
+    const MENTOR_ID = localStorage.getItem('mentorId');
+    if(confirm("Hapus karya ini?")) {
+        const newGallery = mentorGalleryData.filter((_, i) => i !== index);
+        try {
+            await updateDoc(doc(db, "mentors", MENTOR_ID), {
+                gallery: newGallery
+            });
+        } catch(e) {
+            alert("Gagal menghapus: " + e.message);
+        }
+    }
+}
