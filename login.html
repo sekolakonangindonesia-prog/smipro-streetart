@@ -57,14 +57,17 @@
             <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
         </div>
 
-        <!-- LOGIN PERFORMER -->
+        <!-- LOGIN PERFORMER (FIXED) -->
         <div id="view-login-performer" class="section-view">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
                 <h2>Login Performer</h2><p>Khusus Anggota Terverifikasi</p>
             </div>
-            <div class="form-group"><label>Nama Panggung / ID</label><input type="text" id="perf-id" class="form-input"></div>
-            <button class="btn-primary" onclick="alert('Fitur login performer mandiri akan segera hadir!')" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
+            <div class="form-group">
+                <label>Nama Panggung (Sesuai Data Admin)</label>
+                <input type="text" id="perf-name-login" class="form-input" placeholder="Contoh: The Acoustic Boys">
+            </div>
+            <button id="btn-login-perf" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
         </div>
 
         <!-- LOGIN MENTOR (DENGAN FIREBASE) -->
@@ -126,6 +129,43 @@
                 console.error("Login Error:", error);
                 alert("Terjadi kesalahan koneksi.");
                 btn.innerHTML = "MASUK PANEL MENTOR";
+            }
+        });
+        // --- LOGIKA LOGIN PERFORMER REALTIME ---
+        document.getElementById('btn-login-perf').addEventListener('click', async () => {
+            const name = document.getElementById('perf-name-login').value;
+            const btn = document.getElementById('btn-login-perf');
+            
+            if(!name) return alert("Masukkan Nama Panggung!");
+            
+            btn.innerHTML = "Memeriksa...";
+            
+            try {
+                // Cari di Firebase: Apakah ada performer dengan nama ini?
+                const q = query(collection(db, "performers"), where("name", "==", name));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    const data = doc.data();
+                    
+                    // LOGIN SUKSES
+                    localStorage.setItem('userLoggedIn', 'true');
+                    localStorage.setItem('userRole', 'performer');
+                    localStorage.setItem('userName', data.name);
+                    localStorage.setItem('performerId', doc.id); // PENTING!
+                    localStorage.setItem('userLink', 'performer-dashboard.html');
+                    
+                    alert(`Selamat datang, ${data.name}!`);
+                    window.location.href = 'performer-dashboard.html';
+                } else {
+                    alert("Nama Performer tidak ditemukan. Hubungi Admin.");
+                    btn.innerHTML = "MASUK STUDIO";
+                }
+            } catch (error) {
+                console.error("Login Error:", error);
+                alert("Terjadi kesalahan koneksi.");
+                btn.innerHTML = "MASUK STUDIO";
             }
         });
     </script>
