@@ -602,77 +602,46 @@ setTimeout(() => {
         localStorage.removeItem('adminReturnTab');
     }
 }, 500);
-/* =========================================
-   MANAJEMEN SISWA (BENGKEL)
-   ========================================= */
+<!-- VIEW BARU: MANAJEMEN SISWA (BENGKEL) -->
+            <div id="view-students" class="admin-view hidden">
+                <div class="section-header">
+                    <h2 style="margin:0; color:white;">Bengkel Siswa (Calon Performer)</h2>
+                </div>
+                
+                <!-- FORM INPUT SISWA -->
+                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px; display:flex; gap:20px; align-items:center;">
+                    
+                    <!-- 1. UPLOAD FOTO BULAT -->
+                    <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('student-file').click()">
+                        <img id="student-preview" src="https://via.placeholder.com/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                        <input type="file" id="student-file" style="display:none;" accept="image/*" onchange="previewStudentImg(this)">
+                        <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Foto</div>
+                    </div>
 
-// 1. TAMBAH SISWA
-window.addStudent = async function() {
-    const name = document.getElementById('new-student-name').value;
-    const genre = document.getElementById('new-student-genre').value;
+                    <!-- 2. FORM DATA -->
+                    <div style="flex:1;">
+                        <h4 style="margin-top:0; color:#FFD700; margin-bottom:10px;">Tambah Siswa Baru</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="new-student-name" class="cms-input" placeholder="Nama Siswa / Grup" style="margin:0;">
+                            <input type="text" id="new-student-genre" class="cms-input" placeholder="Genre Musik" style="margin:0;">
+                        </div>
+                        <button class="btn-action btn-view" onclick="addStudent()" style="width:100%;">+ Masukkan ke Bengkel</button>
+                    </div>
+                </div>
 
-    if(!name || !genre) return alert("Isi Nama dan Genre!");
-
-    if(confirm("Masukkan siswa ini ke Bengkel?")) {
-        await addDoc(collection(db, "students"), {
-            name: name,
-            genre: genre,
-            scores: {}, // Tempat menampung nilai dari 5 mentor (kosong dulu)
-            status: "training", // Status awal
-            timestamp: new Date()
-        });
-        alert("Siswa berhasil masuk Bengkel!");
-        document.getElementById('new-student-name').value = '';
-        document.getElementById('new-student-genre').value = '';
-    }
-}
-
-// 2. LOAD DATA SISWA
-async function loadStudentData() {
-    const tbody = document.getElementById('student-table-body');
-    if(!tbody) return;
-
-    onSnapshot(query(collection(db, "students"), orderBy("timestamp", "desc")), (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada siswa.</td></tr>';
-            return;
-        }
-
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            
-            // Hitung Rata-Rata Nilai (Logika sederhana)
-            // Nanti dikembangkan lebih lanjut saat Mentor memberi nilai
-            const scores = Object.values(data.scores || {});
-            let scoreText = `<span style="color:#888;">Belum dinilai</span>`;
-            
-            if(scores.length > 0) {
-                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                scoreText = `<b style="color:gold;">Rata-rata: ${avg.toFixed(1)}</b> (${scores.length} Mentor)`;
-            }
-
-            // Tombol Hapus & Approve Manual
-            const btnDel = `<button class="btn-action btn-delete" onclick="deleteStudent('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
-            
-            // Jika nilai sempurna, muncul tombol Approve jadi Artis
-            let btnApprove = '';
-            // Logika kelulusan bisa ditaruh sini nanti
-
-            tbody.innerHTML += `
-            <tr>
-                <td><b>${data.name}</b></td>
-                <td>${data.genre}</td>
-                <td>${scoreText}</td>
-                <td>${btnDel}</td>
-            </tr>`;
-        });
-    });
-}
-
-window.deleteStudent = async function(id) {
-    if(confirm("Hapus siswa dari Bengkel?")) await deleteDoc(doc(db, "students", id));
-}
-
-// PANGGIL DI INIT
-loadStudentData();
+                <!-- TABEL DAFTAR SISWA -->
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">Foto</th> <!-- Kolom Foto -->
+                            <th>Nama Siswa</th>
+                            <th>Genre</th>
+                            <th>Status Nilai</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                        <tr><td colspan="5" style="text-align:center; color:#555;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
