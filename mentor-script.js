@@ -127,6 +127,32 @@ function loadStudents(mentorId) {
     });
 }
 
+// --- 4. SHOWCASE KARYA (BARU) ---
+function loadShowcase() {
+    const container = document.getElementById('work-list-container');
+    // Ambil karya milik mentor ini saja
+    const q = query(collection(db, "mentor_works"), where("mentorId", "==", MENTOR_ID));
+    
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = '';
+        if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; color:#666; grid-column:1/-1;">Belum ada karya diupload.</p>'; return; }
+
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            container.innerHTML += `
+            <div class="work-card">
+                <img src="${d.thumb || 'https://via.placeholder.com/150'}" class="work-thumb">
+                <span class="work-type">${d.type}</span>
+                <div class="work-info">
+                    <b style="color:white; font-size:0.9rem;">${d.title}</b><br>
+                    <a href="${d.url}" target="_blank" style="color:#00d2ff; font-size:0.8rem;">Lihat</a>
+                    <button class="btn-del-work" onclick="window.deleteWork('${docSnap.id}')">Hapus</button>
+                </div>
+            </div>`;
+        });
+    });
+}
+
 // --- 4. FUNGSI GLOBAL ---
 window.submitScore = async function(studentId) {
     const mentorId = localStorage.getItem('mentorId');
