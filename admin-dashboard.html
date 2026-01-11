@@ -157,6 +157,7 @@
             <a href="#" class="menu-item" onclick="showView('mitra', this)"><i class="fa-solid fa-store"></i> <span>Data Mitra</span></a>
             <a href="#" class="menu-item" onclick="showView('performer', this)"><i class="fa-solid fa-guitar"></i> <span>Data Performer</span></a>               
             <a href="#" class="menu-item" onclick="showView('mentor', this)"><i class="fa-solid fa-chalkboard-user"></i> <span>Data Mentor</span></a>
+             <a href="#" class="menu-item" onclick="showView('cafe', this)"><i class="fa-solid fa-mug-hot"></i> <span>Data Cafe & Tour</span></a>
             <a href="#" class="menu-item" onclick="showView('students', this)"><i class="fa-solid fa-user-graduate"></i> <span>Bengkel Siswa</span></a>
             <a href="#" class="menu-item" onclick="showView('cms', this)"><i class="fa-solid fa-pen-to-square"></i> <span>Kelola Konten</span></a>
             <a href="#" class="menu-item" onclick="showView('finance', this)"><i class="fa-solid fa-money-bill-wave"></i> <span>Keuangan & Request</span></a>
@@ -312,6 +313,107 @@
                 <thead><tr><th>Nama Mentor</th><th>Spesialisasi</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody id="mentor-table-body"><tr><td colspan="4" style="text-align:center;">Memuat...</td></tr></tbody>
             </table>
+        </div>
+
+        <!-- VIEW BARU: MANAJEMEN CAFE & LAPORAN TOUR -->
+        <div id="view-cafe" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">SMIPRO On Tour (Cafe Partner)</h2>
+            </div>
+
+            <!-- SUB TABS -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchCafeTab('cafe-data', this)">Data Cafe</button>
+                <button class="sub-tab-btn" onclick="switchCafeTab('cafe-report', this)">Pusat Kontrol (Laporan)</button>
+            </div>
+
+            <!-- TAB 1: DATA CAFE -->
+            <div id="cafe-data" class="cafe-content">
+                <div class="cms-form-group">
+                    <h4 style="margin-top:0; color:#E50914;">Tambah Partner Baru</h4>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="new-cafe-name" class="cms-input" placeholder="Nama Cafe (Misal: Kopi Kenangan)" style="margin:0;">
+                        <input type="text" id="new-cafe-address" class="cms-input" placeholder="Alamat Singkat" style="margin:0;">
+                        <button class="btn-action btn-view" onclick="addCafe()">Simpan</button>
+                    </div>
+                </div>
+
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Cafe</th>
+                            <th>Alamat</th>
+                            <th>Link QR Sawer</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cafe-table-body">
+                        <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 2: PUSAT KONTROL (LAPORAN KHUSUS TOUR) -->
+            <div id="cafe-report" class="cafe-content hidden">
+                <div class="cms-form-group" style="background:#111; border:1px solid #444;">
+                    <h4 style="margin-top:0; color:#00d2ff;">Filter Laporan Tour</h4>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
+                        <div>
+                            <label class="cms-label">Pilih Lokasi</label>
+                            <select id="rep-loc" class="cms-input">
+                                <option value="all">Semua Lokasi (Stadion & Cafe)</option>
+                                <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
+                                <!-- Nanti nama cafe masuk sini otomatis -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="cms-label">Pilih Periode</label>
+                            <select id="rep-time" class="cms-input">
+                                <option value="today">Hari Ini</option>
+                                <option value="week">Minggu Ini</option>
+                                <option value="month">Bulan Ini</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="cms-label">Pilih Artis</label>
+                            <select id="rep-art" class="cms-input">
+                                <option value="all">Semua Artis</option>
+                                <!-- Nanti nama artis masuk sini otomatis -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-action btn-edit" style="width:100%; font-weight:bold; padding:10px;" onclick="loadCafeReport()">
+                        <i class="fa-solid fa-filter"></i> TAMPILKAN DATA
+                    </button>
+                </div>
+
+                <!-- HASIL LAPORAN -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div><h3 style="margin:0; color:white;" id="rep-total-money">Rp 0</h3><small style="color:#888;">Total Saweran</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#FFD700; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-music"></i></div>
+                        <div><h3 style="margin:0; color:white;" id="rep-total-song">0</h3><small style="color:#888;">Lagu Direquest</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-users"></i></div>
+                        <div><h3 style="margin:0; color:white;" id="rep-total-pax">-</h3><small style="color:#888;">Pengunjung (Khusus Stadion)</small></div>
+                    </div>
+                </div>
+
+                <!-- TABEL DETAIL -->
+                <h4 style="margin-top:20px; color:#aaa;">Rincian Transaksi</h4>
+                <table class="admin-table">
+                    <thead><tr><th>Waktu</th><th>Lokasi</th><th>Artis</th><th>Lagu</th><th>Sawer</th></tr></thead>
+                    <tbody id="rep-detail-body">
+                        <tr><td colspan="5" style="text-align:center;">Silakan filter data dulu.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- 5. BENGKEL SISWA -->
