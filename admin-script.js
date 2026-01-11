@@ -222,24 +222,80 @@ window.addStudent = async function() {
 async function loadStudentData() {
     const tbody = document.getElementById('student-table-body');
     if(!tbody) return;
-    onSnapshot(query(collection(db, "students"), orderBy("timestamp", "desc")), (snapshot) => {
+
+    // 1. Cek dulu: Ada berapa Total Mentor di sistem?
+    const mentorSnap = await getDocs(collection(db, "mentors"));
+    const totalMentors = mentorSnap.size; 
+
+    // 2. Ambil data Siswa
+    const q = query(collection(db, "students"), orderBy("timestamp", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
-        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada siswa.</td></tr>'; return; }
+        
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666;">Belum ada siswa di bengkel.</td></tr>';
+            return;
+        }
+
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            const scores = Object.values(data.scores || {});
-            let scoreText = `<span style="color:#888;">Belum dinilai</span>`;
-            if(scores.length > 0) {
-                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                scoreText = `<b style="color:gold;">Rata-rata: ${avg.toFixed(1)}</b>`;
+            const id = docSnap.id;
+            
+            // Hitung berapa mentor yang sudah nilai
+            // data.scores bentuknya object: { "id_mentor_A": 90, "id_mentor_B": 80 }
+            const scores = data.scores || {};
+            const jumlahDinilai = Object.keys(scores).length;
+            
+            // Status Progress
+            let statusHTML = '';
+            if (jumlahDinilai === 0) {
+                statusHTML = `<span style="color:#888;">Belum ada nilai</span>`;
+            } else if (jumlahDinilai < totalMentors) {
+                statusHTML = `<span style="color:orange;">Proses: ${jumlahDinilai} / ${totalMentors} Mentor</span>`;
+            } else {
+                statusHTML = `<span style="color:#00ff00; font-weight:bold;">Selesai (${jumlahDinilai}/${totalMentors})</span>`;
             }
-            const btnDel = `<button class="btn-action btn-delete" onclick="deleteStudent('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
-            const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">`;
-            tbody.innerHTML += `<tr><td>${imgHTML}</td><td><b>${data.name}</b></td><td>${data.genre}</td><td>${scoreText}</td><td>${btnDel}</td></tr>`;
+
+            // Tombol Aksi (Lihat Raport & Hapus)
+            // Tombol 'Lihat Raport' saya siapkan kerangkanya dulu (onclick dummy)
+            const actionBtns = `
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-action btn-view" onclick="alert('Fitur Raport Detail akan kita bahas selanjutnya!')" title="Lihat Raport">
+                        <i class="fa-solid fa-list-check"></i>
+                    </button>
+                    
+                    <button class="btn-action btn-delete" onclick="deleteStudent('${id}', '${data.name}')" title="Hapus Siswa">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+
+            const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td>${imgHTML}</td>
+                <td><b>${data.name}</b></td>
+                <td>${data.genre}</td>
+                <td>${statusHTML}</td>
+                <td>${actionBtns}</td>
+            </tr>`;
         });
     });
 }
-window.deleteStudent = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "students", id)); }
+
+window.deleteStudent = async function(id, name) {
+    // Konfirmasi ganda biar aman
+    if(confirm(`YAKIN MENGHAPUS SISWA: ${name}?\n\nData nilai dan foto akan hilang permanen.`)) {
+        try {
+            await deleteDoc(doc(db, "students", id));
+            // Tidak perlu alert sukses, karena tabel otomatis update (realtime)
+        } catch (e) {
+            alert("Gagal menghapus: " + e.message);
+        }
+    }
+}
 
 /* =========================================
    5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
