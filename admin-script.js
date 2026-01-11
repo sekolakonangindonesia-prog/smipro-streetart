@@ -539,168 +539,191 @@ window.savePodcast = async function() {
 }
 
 /* =========================================
-   6. MODUL KEUANGAN & LIVE COMMAND CENTER
+   6. COMMAND CENTER (LIVE MONITOR & STATISTIK)
    ========================================= */
 
+// Init Load
 window.loadFinanceStats = function() {
-    renderFinanceData(); 
-    renderLiveMonitor(); 
+    listenCommandCenter(); // Realtime Monitor (Kiri Kanan)
+    listenStatistics();    // Realtime Statistik (Bawah)
 }
 
-let financeUnsubscribe = null;
+// A. LISTENER UTAMA (MONITOR & VALIDASI)
+let monitorUnsubscribe = null;
 
-async function renderFinanceData() {
-    const filterType = document.getElementById('finance-filter').value; 
-    const tbody = document.getElementById('finance-history-body');
-    const perfContainer = document.getElementById('top-performer-list');
-    const songContainer = document.getElementById('top-song-list');
-    
-    // Perbaikan: Pastikan elemen ada sebelum diisi
-    if(!tbody || !perfContainer || !songContainer) return;
+function listenCommandCenter() {
+    const pendingContainer = document.getElementById('list-pending');
+    const liveContainer = document.getElementById('list-approved');
+    if(!pendingContainer || !liveContainer) return;
 
+    // Ambil data yang statusnya BUKAN 'finished' (artinya pending & approved)
+    const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
+
+    if(monitorUnsubscribe) monitorUnsubscribe();
+
+    monitorUnsubscribe = onSnapshot(q, (snapshot) => {
+        // Reset HTML
+        pendingContainer.innerHTML = '';
+        liveContainer.innerHTML = '';
+        
+        let hasPending = false;
+        let hasLive = false;
+
+        // Kita sort manual karena 'in' query punya keterbatasan sorting di Firestore
+        let requests = [];
+        snapshot.forEach(doc => requests.push({id: doc.id, ...doc.data()}));
+        
+        // Urutkan berdasarkan waktu (Lama diatas)
+        requests.sort((a,b) => a.timestamp - b.timestamp);
+
+        requests.forEach(d => {
+            const time = d.timestamp ? d.timestamp.toDate().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            
+            // HTML ITEM
+            const htmlItem = `
+            <div class="req-item ${d.status === 'approved' ? 'live' : 'pending'}">
+                <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
+                <small style="color:#888;">${time} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
+                <h4 style="margin:5px 0; color:white;">${d.song}</h4>
+                <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message}"</p>
+                <small style="color:#aaa;">Untuk: ${d.performer}</small>
+                
+                ${d.status === 'pending' ? 
+                    `<button class="btn-control btn-approve" onclick="approveReq('${d.id}')">
+                        <i class="fa-solid fa-check"></i> UANG MASUK (APPROVE)
+                    </button>` : 
+                    `<button class="btn-control btn-finish" onclick="finishReq('${d.id}')">
+                        <i class="fa-solid fa-flag-checkered"></i> SELESAI (ARSIP)
+                    </button>`
+                }
+            </div>`;
+
+            // MASUKKAN KE KONTAINER YANG SESUAI
+            if(d.status === 'pending') {
+                pendingContainer.innerHTML += htmlItem;
+                hasPending = true;
+            } else {
+                liveContainer.innerHTML += htmlItem;
+                hasLive = true;
+            }
+        });
+
+        if(!hasPending) pendingContainer.innerHTML = '<p class="empty-state">Tidak ada request baru.</p>';
+        if(!hasLive) liveContainer.innerHTML = '<p class="empty-state">Panggung sepi.</p>';
+    });
+}
+
+// B. LISTENER STATISTIK (DATA HISTORI ABADI)
+let statsUnsubscribe = null;
+
+function listenStatistics() {
+    const filter = document.getElementById('stats-filter').value;
+    // Ambil data yang sudah 'finished'
     const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
-    if(financeUnsubscribe) financeUnsubscribe();
+    if(statsUnsubscribe) statsUnsubscribe();
 
-    financeUnsubscribe = onSnapshot(q, (snapshot) => {
+    statsUnsubscribe = onSnapshot(q, (snapshot) => {
         let totalMoney = 0;
-        let totalCount = 0;
-        let perfStats = {}; 
-        let songStats = {}; 
+        let totalReq = 0;
+        let perfStats = {};
+        let songStats = {};
         let historyHTML = '';
 
         const now = new Date();
-        now.setHours(0,0,0,0); 
+        now.setHours(0,0,0,0);
 
         snapshot.forEach(doc => {
             const d = doc.data();
-            const date = d.timestamp.toDate(); 
+            const date = d.timestamp.toDate();
             let include = false;
 
-            if (filterType === 'all') include = true;
-            else if (filterType === 'today') { if (date >= now) include = true; }
-            else if (filterType === 'week') {
+            // LOGIKA FILTER WAKTU
+            if (filter === 'all') include = true;
+            else if (filter === 'today') {
+                if (date >= now) include = true;
+            }
+            else if (filter === 'week') {
                 const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
                 if (date >= weekAgo) include = true;
             }
-            else if (filterType === 'month') {
+            else if (filter === 'month') {
                 const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 1);
                 if (date >= monthAgo) include = true;
             }
+            else if (filter === 'year') {
+                const yearAgo = new Date(now); yearAgo.setFullYear(now.getFullYear() - 1);
+                if (date >= yearAgo) include = true;
+            }
 
             if (include) {
+                // HITUNG TOTAL
                 totalMoney += parseInt(d.amount);
-                totalCount++;
+                totalReq++;
 
-                const pName = d.performer ? d.performer.trim() : "Unknown";
-                if (!perfStats[pName]) perfStats[pName] = 0;
-                perfStats[pName] += parseInt(d.amount);
+                // HITUNG PERFORMER
+                const pName = d.performer || "Unknown";
+                if(!perfStats[pName]) perfStats[pName] = 0;
+                perfStats[pName] += parseInt(d.amount); // Hitung berdasarkan duit
 
-                const displaySong = d.song; 
-                if (!songStats[displaySong]) songStats[displaySong] = 0;
-                songStats[displaySong] += 1;
+                // HITUNG LAGU
+                const sTitle = d.song.trim().toLowerCase(); // Normalisasi huruf kecil
+                if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+                songStats[sTitle].count++;
 
-                const dateStr = date.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                // ISI TABEL LOG
                 historyHTML += `
                 <tr>
-                    <td>${dateStr}</td>
-                    <td>${d.sender}</td>
-                    <td>${d.song}</td>
-                    <td>${d.performer}</td>
+                    <td>${date.toLocaleDateString()}</td>
+                    <td><b>${d.song}</b><br><small>${d.performer}</small></td>
                     <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
                 </tr>`;
             }
         });
 
-        const totalEl = document.getElementById('fin-total-amount');
-        if(totalEl) totalEl.innerText = "Rp " + totalMoney.toLocaleString();
-        
-        const reqEl = document.getElementById('fin-total-req');
-        if(reqEl) reqEl.innerText = totalCount;
-        
-        tbody.innerHTML = historyHTML || '<tr><td colspan="5" style="text-align:center; color:#555;">Belum ada data arsip.</td></tr>';
+        // UPDATE UI STATISTIK
+        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('stat-total-req').innerText = totalReq;
+        document.getElementById('table-history-body').innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center; color:#555;">Data kosong.</td></tr>';
 
-        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a).slice(0, 5);
-        perfContainer.innerHTML = '';
-        sortedPerf.forEach(([name, amount], index) => {
-            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? 'silver' : '#cd7f32');
-            const borderStyle = index < 3 ? `border-left: 3px solid ${rankColor};` : '';
-            perfContainer.innerHTML += `
-            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px; ${borderStyle}">
-                <span><b>#${index+1}</b> ${name}</span>
-                <span style="color:#00ff00;">Rp ${amount.toLocaleString()}</span>
-            </div>`;
-        });
-
-        const sortedSong = Object.entries(songStats).sort(([,a], [,b]) => b - a).slice(0, 5);
-        songContainer.innerHTML = '';
-        sortedSong.forEach(([name, count], index) => {
-            songContainer.innerHTML += `
-            <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:5px;">
-                <span>${name}</span>
-                <span style="background:#333; padding:2px 8px; border-radius:10px; font-size:0.8rem;">${count} x</span>
-            </div>`;
-        });
-    });
-}
-
-// LOGIKA KOLOM KIRI (LIVE MONITOR)
-let liveUnsubscribe = null;
-
-async function renderLiveMonitor() {
-    const list = document.getElementById('admin-live-list');
-    if(!list) return;
-
-    const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
-
-    if(liveUnsubscribe) liveUnsubscribe();
-
-    liveUnsubscribe = onSnapshot(q, (snapshot) => {
-        list.innerHTML = '';
-        if(snapshot.empty) {
-            list.innerHTML = '<p style="text-align:center; color:#444; margin-top:50px;">Tidak ada antrian.</p>';
-            return;
+        // CARI TOP PERFORMER
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
+        if(sortedPerf.length > 0) {
+            document.getElementById('stat-top-perf').innerText = sortedPerf[0][0];
+        } else {
+            document.getElementById('stat-top-perf').innerText = "-";
         }
 
-        let requests = [];
-        snapshot.forEach(doc => requests.push({id: doc.id, ...doc.data()}));
-        requests.sort((a,b) => {
-            if(a.status === b.status) return a.timestamp - b.timestamp;
-            return a.status === 'approved' ? -1 : 1;
-        });
-
-        requests.forEach(d => {
-            let btnAction = '';
-            let statusText = '';
-
-            if(d.status === 'pending') {
-                statusText = '<span style="color:#ffeb3b; font-size:0.8rem;">⏳ MENUNGGU DANA</span>';
-                btnAction = `<button class="btn-mini-action btn-acc" onclick="approveReq('${d.id}')">TERIMA DANA</button>`;
-            } else {
-                statusText = '<span style="color:#00ff00; font-size:0.8rem;">✅ LUNAS (ON AIR)</span>';
-                btnAction = `<button class="btn-mini-action btn-finish" onclick="finishReq('${d.id}')">SELESAI / ARSIP</button>`;
-            }
-
-            list.innerHTML += `
-            <div class="req-card-mini ${d.status}">
-                <div class="mini-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
-                <div>${statusText}</div>
-                <h4 style="margin:5px 0; color:white;">${d.song}</h4>
-                <small style="color:#aaa;">Dari: ${d.sender} • Untuk: ${d.performer}</small>
-                ${btnAction}
+        // RENDER CHART LAGU (Top 5)
+        const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+        const chartContainer = document.getElementById('chart-top-songs');
+        chartContainer.innerHTML = '';
+        
+        sortedSongs.forEach((item, index) => {
+            const widthPct = Math.min(100, (item.count / sortedSongs[0].count) * 100);
+            chartContainer.innerHTML += `
+            <div style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:2px;">
+                    <span style="color:white;">${index+1}. ${item.title}</span>
+                    <span style="color:gold;">${item.count} x</span>
+                </div>
+                <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                    <div style="background:#E50914; height:100%; width:${widthPct}%;"></div>
+                </div>
             </div>`;
         });
     });
 }
 
+// C. ACTION BUTTONS
 window.approveReq = async function(id) {
-    if(confirm("Pastikan dana sudah masuk mutasi?")) {
+    if(confirm("Uang sudah masuk? Approve request ini ke layar panggung?")) {
         await updateDoc(doc(db, "requests", id), { status: 'approved' });
     }
 }
 
 window.finishReq = async function(id) {
-    if(confirm("Arsipkan request ini ke Laporan?")) {
+    if(confirm("Selesai? Pindahkan ke Arsip Sejarah?")) {
         await updateDoc(doc(db, "requests", id), { status: 'finished' });
     }
 }
