@@ -375,68 +375,92 @@ function listenCommandCenter() {
     });
 }
 
-// B. LISTENER STATISTIK (DATA HISTORI ABADI)
-let statsUnsubscribe = null;
+// A. LISTENER UTAMA (MONITOR & VALIDASI)
+let monitorUnsubscribe = null;
 
-function renderFinanceData() {
-    const filter = document.getElementById('stats-filter').value;
-    const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
+function listenCommandCenter() {
+    const pendingContainer = document.getElementById('list-pending');
+    const liveContainer = document.getElementById('list-approved');
+    
+    // Safety Check: Pastikan elemen ada sebelum diisi
+    if(!pendingContainer || !liveContainer) return;
 
-    if(statsUnsubscribe) statsUnsubscribe();
+    // QUERY: Ambil semua request yang BELUM selesai (pending & approved)
+    const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
 
-    statsUnsubscribe = onSnapshot(q, (snapshot) => {
-        let totalMoney = 0;
-        let totalReq = 0;
-        let perfStats = {};
-        let songStats = {};
-        let historyHTML = '';
+    if(monitorUnsubscribe) monitorUnsubscribe();
 
-        const now = new Date();
-        now.setHours(0,0,0,0);
+    monitorUnsubscribe = onSnapshot(q, (snapshot) => {
+        // 1. Bersihkan Tampilan
+        pendingContainer.innerHTML = '';
+        liveContainer.innerHTML = '';
+        
+        let countPending = 0;
+        let countLive = 0;
 
+        // 2. Ambil Data & Urutkan Manual (Timestamp Ascending)
+        let requests = [];
         snapshot.forEach(doc => {
             const d = doc.data();
-            const date = d.timestamp.toDate();
-            let include = false;
+            requests.push({ id: doc.id, ...d });
+        });
+        
+        // Urutkan: Yang lama di atas (antrian)
+        requests.sort((a,b) => {
+            const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+            const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+            return timeA - timeB;
+        });
 
-            if (filter === 'all') include = true;
-            else if (filter === 'today' && date >= now) include = true;
-            else if (filter === 'week') { const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7); if (date >= weekAgo) include = true; }
-            else if (filter === 'month') { const monthAgo = new Date(now); monthAgo.setMonth(now.getMonth() - 1); if (date >= monthAgo) include = true; }
+        // 3. Render ke Kolom Kiri/Kanan
+        requests.forEach(d => {
+            const timeStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            
+            // HTML ITEM (SAMA UNTUK KEDUA KOLOM, BEDA TOMBOL)
+            let htmlItem = `
+            <div class="req-item ${d.status}">
+                <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
+                <small style="color:#888;">${timeStr} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
+                <h4 style="margin:5px 0; color:white;">${d.song}</h4>
+                <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message}"</p>
+                <small style="color:#aaa;">Untuk: ${d.performer}</small>
+                <div style="margin-top:10px;">`;
 
-            if (include) {
-                totalMoney += parseInt(d.amount);
-                totalReq++;
+            if(d.status === 'pending') {
+                // KOLOM KIRI: TOMBOL APPROVE
+                htmlItem += `
+                    <button class="btn-control btn-approve" onclick="approveReq('${d.id}')">
+                        <i class="fa-solid fa-check"></i> TERIMA DANA
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteReq('${d.id}')" style="margin-top:5px; width:100%;">
+                        <i class="fa-solid fa-trash"></i> Tolak
+                    </button>`;
                 
-                const pName = d.performer || "Unknown";
-                if(!perfStats[pName]) perfStats[pName] = 0;
-                perfStats[pName] += parseInt(d.amount);
-
-                const sTitle = d.song.trim().toLowerCase();
-                if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
-                songStats[sTitle].count++;
-
-                historyHTML += `<tr><td>${date.toLocaleDateString()}</td><td><b>${d.song}</b><br><small>${d.performer}</small></td><td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td></tr>`;
+                pendingContainer.innerHTML += htmlItem + `</div></div>`;
+                countPending++;
+            } else {
+                // KOLOM KANAN: TOMBOL SELESAI
+                htmlItem += `
+                    <button class="btn-control btn-finish" onclick="finishReq('${d.id}')">
+                        <i class="fa-solid fa-flag-checkered"></i> SELESAI (ARSIP)
+                    </button>`;
+                
+                liveContainer.innerHTML += htmlItem + `</div></div>`;
+                countLive++;
             }
         });
 
-        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-        document.getElementById('stat-total-req').innerText = totalReq;
-        document.getElementById('table-history-body').innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center; color:#555;">Data kosong.</td></tr>';
-
-        // CARI TOP PERFORMER
-        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
-        document.getElementById('stat-top-perf').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
-
-        // RENDER CHART LAGU
-        const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
-        const chartContainer = document.getElementById('chart-top-songs');
-        chartContainer.innerHTML = '';
-        sortedSongs.forEach((item, index) => {
-            const widthPct = Math.min(100, (item.count / sortedSongs[0].count) * 100);
-            chartContainer.innerHTML += `<div style="margin-bottom:10px;"><div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:2px;"><span style="color:white;">${index+1}. ${item.title}</span><span style="color:gold;">${item.count} x</span></div><div style="background:#333; height:8px; border-radius:4px; overflow:hidden;"><div style="background:#E50914; height:100%; width:${widthPct}%;"></div></div></div>`;
-        });
+        // 4. Tampilkan Pesan Kosong Jika Tidak Ada Data
+        if(countPending === 0) pendingContainer.innerHTML = '<p class="empty-state">Tidak ada request baru.</p>';
+        if(countLive === 0) liveContainer.innerHTML = '<p class="empty-state">Panggung sepi.</p>';
     });
+}
+
+// TAMBAHAN FUNGSI DELETE (TOLAK)
+window.deleteReq = async function(id) {
+    if(confirm("Tolak request ini? Data akan dihapus permanen.")) {
+        await deleteDoc(doc(db, "requests", id));
+    }
 }
 
 // C. ACTION BUTTONS
