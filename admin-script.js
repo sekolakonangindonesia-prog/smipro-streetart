@@ -240,15 +240,26 @@ async function loadStudentData() {
 window.deleteStudent = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "students", id)); }
 
 /* =========================================
-   5. CMS MODULE
+   5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
    ========================================= */
+
+// ISI DROPDOWN ARTIS OTOMATIS
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
+    
     let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
-    snapshot.forEach(doc => { optionsHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
-    selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
+    
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        optionsHTML += `<option value="${data.name}">${data.name}</option>`;
+    });
+
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.innerHTML = optionsHTML;
+    });
 }
 
 window.saveSchedule = async function() {
@@ -256,21 +267,92 @@ window.saveSchedule = async function() {
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
     
-    // Simplifikasi performer
-    const performers = [1,2,3].map(i => ({
-        name: document.getElementById(`p${i}-name`).value,
-        time: document.getElementById(`p${i}-time`).value,
-        genre: "Live Music"
-    })).filter(p => p.name);
+    const performers = [
+        {
+            name: document.getElementById('p1-name').value,
+            time: document.getElementById('p1-time').value,
+            genre: document.getElementById('p1-genre').value,
+            img: "https://via.placeholder.com/100" 
+        },
+        {
+            name: document.getElementById('p2-name').value,
+            time: document.getElementById('p2-time').value,
+            genre: document.getElementById('p2-genre').value,
+            img: "https://via.placeholder.com/100"
+        },
+        {
+            name: document.getElementById('p3-name').value,
+            time: document.getElementById('p3-time').value,
+            genre: document.getElementById('p3-genre').value,
+            img: "https://via.placeholder.com/100"
+        }
+    ].filter(p => p.name !== "" && p.name !== "Lainnya"); 
 
-    if(confirm("Publish Jadwal?")) {
+    if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
+
+    if(confirm("Publish Jadwal Baru?")) {
         await addDoc(collection(db, "events"), {
-            type: "main", displayDate, date: realDate, location, performers
+            type: "main",
+            displayDate: displayDate,
+            date: realDate,
+            location: location,
+            statusText: "ON SCHEDULE",
+            performers: performers,
+            timestamp: new Date()
         });
-        alert("Jadwal Dipublish!");
+        alert("Jadwal Berhasil Dipublish!");
     }
 }
 
+// RADIO
+let currentRadioDocId = null; 
+
+window.loadRadioSessionData = async function() {
+    const sessionName = document.getElementById('radio-session-select').value;
+    const editArea = document.getElementById('radio-edit-area');
+    
+    if(!sessionName) {
+        editArea.style.display = 'none';
+        return;
+    }
+
+    const q = query(collection(db, "broadcasts"), where("sessionName", "==", sessionName), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if(!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+        currentRadioDocId = docSnap.id; 
+
+        document.getElementById('radio-title').value = data.title;
+        document.getElementById('radio-host').value = data.host;
+        document.getElementById('radio-topic').value = data.topic;
+        document.getElementById('radio-link').value = data.link;
+        document.getElementById('radio-live-toggle').checked = data.isLive;
+
+        editArea.style.display = 'block';
+    } else {
+        alert("Data Sesi belum ada. Harap hubungi developer untuk 'Seed Radio'.");
+        editArea.style.display = 'none';
+    }
+}
+
+window.saveRadioUpdate = async function() {
+    if(!currentRadioDocId) return;
+
+    if(confirm("Simpan perubahan jadwal siaran?")) {
+        await updateDoc(doc(db, "broadcasts", currentRadioDocId), {
+            title: document.getElementById('radio-title').value,
+            host: document.getElementById('radio-host').value,
+            topic: document.getElementById('radio-topic').value,
+            link: document.getElementById('radio-link').value,
+            isLive: document.getElementById('radio-live-toggle').checked
+        });
+        alert("Jadwal Radio Diupdate!");
+    }
+}
+
+// TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
     const type = document.getElementById('content-category').value;
     if(type === 'news') {
@@ -282,6 +364,7 @@ window.toggleContentForm = function() {
     }
 }
 
+// BERITA
 window.toggleNewsInput = function() {
     const type = document.getElementById('news-type').value;
     if(type === 'external') {
@@ -294,33 +377,66 @@ window.toggleNewsInput = function() {
 }
 
 window.saveNews = async function() {
-    if(confirm("Publish Berita?")) {
-        await addDoc(collection(db, "news"), {
-            title: document.getElementById('news-title').value,
-            tag: document.getElementById('news-tag').value,
-            thumb: document.getElementById('news-thumb').value,
-            type: document.getElementById('news-type').value,
-            url: document.getElementById('news-url').value,
-            content: document.getElementById('news-content').value,
-            date: new Date().toLocaleDateString('id-ID'),
-            timestamp: new Date()
-        });
-        alert("Berita Terbit!");
+    const title = document.getElementById('news-title').value;
+    const tag = document.getElementById('news-tag').value;
+    const thumb = document.getElementById('news-thumb').value;
+    const type = document.getElementById('news-type').value;
+    
+    let newsData = {
+        title: title,
+        tag: tag,
+        thumb: thumb || "https://via.placeholder.com/150",
+        type: type,
+        date: new Date().toLocaleDateString('id-ID'), 
+        timestamp: new Date() 
+    };
+
+    if (type === 'external') {
+        newsData.url = document.getElementById('news-url').value;
+        if(!newsData.url) return alert("Link Berita wajib diisi!");
+    } else {
+        newsData.content = document.getElementById('news-content').value;
+        if(!newsData.content) return alert("Isi Berita wajib diisi!");
+    }
+
+    if(!title) return alert("Judul wajib diisi!");
+
+    if(confirm("Publish Berita ini?")) {
+        await addDoc(collection(db, "news"), newsData);
+        alert("Berita Berhasil Dipublish!");
+        document.getElementById('news-title').value = '';
     }
 }
 
+// PODCAST
 window.savePodcast = async function() {
-    if(confirm("Publish Podcast?")) {
-        await addDoc(collection(db, "podcasts"), {
-            title: document.getElementById('pod-title').value,
-            host: document.getElementById('pod-host').value,
-            duration: document.getElementById('pod-duration').value,
-            link: document.getElementById('pod-link').value,
-            thumb: document.getElementById('pod-thumb').value,
-            order: parseInt(document.getElementById('pod-order').value),
-            timestamp: new Date()
-        });
-        alert("Podcast Terbit!");
+    const title = document.getElementById('pod-title').value;
+    const host = document.getElementById('pod-host').value;
+    const duration = document.getElementById('pod-duration').value;
+    const link = document.getElementById('pod-link').value;
+    const thumb = document.getElementById('pod-thumb').value;
+    const order = parseInt(document.getElementById('pod-order').value) || 1;
+
+    if(!title || !link) return alert("Judul dan Link wajib diisi!");
+
+    if(confirm("Publish Episode Podcast ini?")) {
+        try {
+            await addDoc(collection(db, "podcasts"), {
+                title: title,
+                host: host || "Admin",
+                duration: duration || "Unknown",
+                link: link,
+                thumb: thumb || "https://via.placeholder.com/300x200?text=Podcast",
+                order: order,
+                timestamp: new Date()
+            });
+            alert("Podcast Berhasil Dipublish!");
+            // Reset Form
+            document.getElementById('pod-title').value = '';
+            document.getElementById('pod-link').value = '';
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
     }
 }
 
