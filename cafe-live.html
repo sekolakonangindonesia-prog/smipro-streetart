@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMIPRO ON TOUR - Cafe Live</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* HEADER KHUSUS CAFE GIGS (Updated) */
+        .tour-header {
+            height: 320px;
+            /* GANTI GAMBAR BACKGROUND CAFE DI SINI */
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4), #121212), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .header-logo-center {
+            width: 80px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.8));
+            animation: fadeInDown 1s;
+        }
+
+        .venue-badge {
+            background: #E50914; color: white; padding: 5px 20px; 
+            border-radius: 20px; font-weight: bold; margin-bottom: 10px;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
+            font-size: 0.8rem; letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .live-title { font-size: 2.2rem; margin: 0; text-shadow: 0 5px 10px black; font-weight: 900; letter-spacing: 1px; }
+        .live-subtitle { color: #ccc; margin-top: 5px; font-size: 1rem; font-style: italic; }
+
+        /* PERFORMER CARD (Lingkaran Besar) */
+        .perf-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px; margin-top: 20px;
+        }
+        .perf-card-simple {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 15px;
+            padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .perf-card-simple:hover { border-color: var(--accent); transform: translateY(-5px); background: #252525; }
+        
+        /* Foto Bulat Artis */
+        .perf-img { 
+            width: 90px; height: 90px; 
+            border-radius: 50%; /* Lingkaran Penuh */
+            object-fit: cover; 
+            border: 3px solid var(--accent); 
+            margin-bottom: 10px; 
+            background: #000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .perf-name { font-weight: bold; font-size: 1rem; color: white; margin: 0; display: block; }
+        .perf-genre { font-size: 0.75rem; color: #888; display: block; margin-top: 2px; }
+
+        /* ACTION BUTTONS */
+        .btn-sawer-big {
+            background: linear-gradient(45deg, #FFD700, #ffb700);
+            color: black; border: none; width: 100%; padding: 15px;
+            font-weight: 800; font-size: 1.1rem; border-radius: 30px;
+            margin-top: 30px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* MODAL (Style Lama) */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-box { background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative; }
+        .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-small { width: 100%; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="tour-header">
+        <!-- LOGO UTAMA -->
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="header-logo-center">
+        
+        <div class="venue-badge" id="venue-name-badge">SMIPRO ON TOUR</div>
+        <h1 class="live-title">LIVE MUSIC</h1>
+        <p class="live-subtitle">Nikmati suasana, dukung musisi lokal!</p>
+    </div>
+
+    <div class="container">
+        
+        <!-- 1. TOMBOL SAWER BESAR -->
+        <button class="btn-sawer-big" onclick="openRequestModal()">
+            <i class="fa-solid fa-music"></i> REQUEST & SAWER
+        </button>
+
+        <!-- 2. DAFTAR PERFORMER (Bulat) -->
+        <div class="section-title" style="margin-top:40px; text-align:center; border:none; color:#888;">
+            <i class="fa-solid fa-microphone-lines"></i> Performing Artists
+        </div>
+        
+        <div id="perf-list" class="perf-grid">
+            <p style="text-align:center; color:#666; grid-column:1/-1;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat artis...
+            </p>
+        </div>
+
+        <!-- 3. ULASAN TEMPAT -->
+        <div class="section-title" style="margin-top:40px; text-align:center; border:none; color:#888;">Review Lokasi</div>
+        <div style="background:#1a1a1a; padding:20px; border-radius:15px; text-align:center; border:1px solid #333;">
+            <p style="color:#white; font-size:0.9rem; margin-top:0;">Bagaimana serunya nongkrong di <b id="venue-name-review" style="color:var(--primary);">sini</b>?</p>
+            <div id="venue-stars" style="font-size:1.8rem; color:#444; margin-bottom:15px; cursor:pointer;">
+                <i class="fa-solid fa-star" onclick="rateStar(1)"></i>
+                <i class="fa-solid fa-star" onclick="rateStar(2)"></i>
+                <i class="fa-solid fa-star" onclick="rateStar(3)"></i>
+                <i class="fa-solid fa-star" onclick="rateStar(4)"></i>
+                <i class="fa-solid fa-star" onclick="rateStar(5)"></i>
+            </div>
+            <textarea id="venue-comment" class="input-request" placeholder="Tulis pengalamanmu disini..." style="background:#222; border-color:#444;"></textarea>
+            <button class="btn-small" style="background:#333; color:white; border:1px solid #555; width:auto; padding:8px 25px;" onclick="submitReview()">Kirim Ulasan</button>
+        </div>
+
+        <br><br>
+        <center><small style="color:#444;">&copy; SMIPRO Street Art</small></center>
+    </div>
+
+    <!-- MODAL REQUEST -->
+    <div id="request-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color:#E50914; text-align:center;">Request Lagu</h3>
+            <p style="text-align:center; color:#888; font-size:0.8rem; margin-bottom:15px;">
+                Lokasi: <b id="modal-loc-display" style="color:white;">-</b>
+            </p>
+            
+            <input type="text" id="req-song" class="input-request" placeholder="Judul Lagu">
+            <input type="text" id="req-msg" class="input-request" placeholder="Pesan / Salam">
+            
+            <!-- Dropdown Artis (Diisi otomatis) -->
+            <select id="req-target" class="input-request">
+                <option value="Band Lokal">-- Pilih Artis --</option>
+            </select>
+
+            <input type="number" id="req-amount" class="input-request" placeholder="Nominal Sawer (Rp)">
+            <input type="text" id="req-sender" class="input-request" placeholder="Nama Kamu (Pengirim)" style="border-color:gold;">
+
+            <div style="background:#333; padding:10px; border-radius:5px; margin-bottom:15px; text-align:center;">
+                <small style="color:#ccc;">Silakan transfer ke QRIS Kasir/Admin</small>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-small" style="background:#444; color:white;" onclick="document.getElementById('request-modal').style.display='none'">Batal</button>
+                <button class="btn-small" style="background:#E50914; color:white;" onclick="sendRequest()">KIRIM</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. AMBIL NAMA LOKASI DARI URL
+        const params = new URLSearchParams(window.location.search);
+        const currentLocation = params.get('loc') || "Cafe Partner";
+
+        // Set Tampilan
+        document.getElementById('venue-name-badge').innerText = currentLocation.toUpperCase();
+        document.getElementById('venue-name-review').innerText = currentLocation;
+        document.getElementById('modal-loc-display').innerText = currentLocation;
+
+        // 2. LOAD ARTIS (Card Bulat)
+        async function loadPerformers() {
+            const container = document.getElementById('perf-list');
+            const select = document.getElementById('req-target');
+            
+            const snapshot = await getDocs(collection(db, "performers"));
+            
+            if(snapshot.empty) {
+                container.innerHTML = '<p style="text-align:center; color:#666; grid-column:1/-1;">Belum ada artis terdaftar.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                
+                // Tambah ke Grid (Tampilan Baru)
+                container.innerHTML += `
+                <div class="perf-card-simple" onclick="selectArtist('${data.name}')">
+                    <img src="${data.img || 'https://via.placeholder.com/100'}" class="perf-img">
+                    <span class="perf-name">${data.name}</span>
+                    <span class="perf-genre">${data.genre}</span>
+                </div>`;
+
+                // Tambah ke Dropdown Modal
+                const opt = document.createElement('option');
+                opt.value = data.name;
+                opt.innerText = data.name;
+                select.appendChild(opt);
+            });
+        }
+
+        // 3. FUNGSI REQUEST
+        window.sendRequest = async function() {
+            const song = document.getElementById('req-song').value;
+            const msg = document.getElementById('req-msg').value;
+            const target = document.getElementById('req-target').value;
+            const amount = document.getElementById('req-amount').value;
+            const sender = document.getElementById('req-sender').value;
+
+            if(!song || !amount || !sender) return alert("Mohon lengkapi data!");
+
+            await addDoc(collection(db, "requests"), {
+                song, message: msg, performer: target, amount: parseInt(amount),
+                sender, 
+                location: currentLocation, 
+                status: 'pending', 
+                timestamp: new Date()
+            });
+
+            alert("Request Terkirim! Menunggu konfirmasi Admin.");
+            document.getElementById('request-modal').style.display='none';
+            document.getElementById('req-song').value = "";
+            document.getElementById('req-msg').value = "";
+            document.getElementById('req-amount').value = "";
+        }
+
+        // 4. FUNGSI ULASAN
+        let currentRating = 0;
+        window.rateStar = function(n) {
+            currentRating = n;
+            document.querySelectorAll('#venue-stars i').forEach((s, i) => {
+                s.style.color = i < n ? 'gold' : '#444';
+            });
+        }
+
+        window.submitReview = async function() {
+            const comment = document.getElementById('venue-comment').value;
+            if(currentRating === 0) return alert("Beri bintang dulu!");
+            
+            await addDoc(collection(db, "venue_reviews"), {
+                venueName: currentLocation, 
+                rating: currentRating,
+                comment: comment,
+                timestamp: new Date()
+            });
+            
+            alert("Terima kasih atas ulasannya!");
+            document.getElementById('venue-comment').value = "";
+            rateStar(0);
+        }
+
+        // Utils
+        window.openRequestModal = function() { document.getElementById('request-modal').style.display = 'flex'; }
+        window.selectArtist = function(name) {
+            document.getElementById('req-target').value = name;
+            openRequestModal();
+        }
+
+        loadPerformers();
+    </script>
+</body>
+</html>
