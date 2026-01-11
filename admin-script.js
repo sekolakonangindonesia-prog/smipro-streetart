@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { 
-    collection, getDocs, query, orderBy, doc, updateDoc, addDoc, deleteDoc, onSnapshot, where, limit, setDoc 
+    collection, getDocs, query, orderBy, doc, updateDoc, addDoc, deleteDoc, onSnapshot, where, limit, setDoc, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* =========================================
@@ -348,6 +348,76 @@ window.deleteStudent = async function(id, name) {
         } catch (e) {
             alert("Gagal menghapus: " + e.message);
         }
+    }
+}
+
+// --- FUNGSI LIHAT RAPORT DETAIL (POP-UP) ---
+window.openRaport = async function(studentId) {
+    const modal = document.getElementById('modal-raport');
+    const tbody = document.getElementById('raport-list-body');
+    
+    // Cek apakah Modal HTML sudah ada?
+    if(!modal) {
+        alert("Error: Kode HTML Modal Raport belum dipasang di admin-dashboard.html");
+        return;
+    }
+
+    // 1. Tampilkan Modal & Loading
+    modal.style.display = 'flex';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Memuat Data...</td></tr>';
+
+    try {
+        // 2. Ambil Data Siswa
+        const studentSnap = await getDoc(doc(db, "students", studentId));
+        if(!studentSnap.exists()) {
+            alert("Data siswa tidak ditemukan!");
+            modal.style.display = 'none';
+            return;
+        }
+        const sData = studentSnap.data();
+        const sScores = sData.scores || {};
+
+        // Isi Header Modal
+        document.getElementById('rap-name').innerText = sData.name;
+        document.getElementById('rap-genre').innerText = sData.genre;
+        document.getElementById('rap-img').src = sData.img || "https://via.placeholder.com/150";
+
+        // 3. Ambil Semua Data Mentor untuk dibandingkan
+        const mentorSnap = await getDocs(collection(db, "mentors"));
+        tbody.innerHTML = ''; // Bersihkan loading
+
+        // 4. Loop Mentor & Cek Nilai
+        mentorSnap.forEach(mDoc => {
+            const mData = mDoc.data();
+            const mID = mDoc.id;
+            
+            // Cek apakah mentor ini ada di daftar nilai siswa?
+            const nilai = sScores[mID]; 
+            
+            let statusNilai = '';
+            
+            if (nilai !== undefined) {
+                // Mentor SUDAH Menilai
+                if(nilai >= 75) {
+                    statusNilai = `<b style="color:#00ff00;">${nilai} (Lulus)</b>`;
+                } else {
+                    statusNilai = `<b style="color:red;">${nilai} (Remidi)</b>`;
+                }
+            } else {
+                // Mentor BELUM Menilai
+                statusNilai = `<span style="color:#ffeb3b; font-style:italic;">⏳ Belum Menilai</span>`;
+            }
+
+            tbody.innerHTML += `
+            <tr>
+                <td>${mData.name}</td>
+                <td><small style="color:#aaa;">${mData.specialist}</small></td>
+                <td>${statusNilai}</td>
+            </tr>`;
+        });
+    } catch (e) {
+        console.error(e);
+        alert("Gagal memuat raport: " + e.message);
     }
 }
 
