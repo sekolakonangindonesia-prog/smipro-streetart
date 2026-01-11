@@ -382,24 +382,7 @@
     </main>
 </div>
 
-<!-- LOAD SCRIPT -->
-<script type="module" src="admin-script.js"></script>
-
-<script>
-    // Logic UI Sederhana (Non-Module)
-    if(localStorage.getItem('userRole') !== 'admin') {
-        alert("Akses Ditolak!"); window.location.href = 'admin-login.html';
-    }
-    document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
-    function goToHomeAsAdmin() {
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('userName', 'Super Admin');
-        window.location.href = 'index.html';
-    }
-</script>
-
-    <!-- MODAL RAPORT SISWA -->
+     <!-- MODAL RAPORT SISWA -->
 <div id="modal-raport" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
     <div style="background:#1e1e1e; width:100%; max-width:500px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
         
@@ -436,5 +419,22 @@
         </div>
     </div>
 </div>
+
+<!-- LOAD SCRIPT -->
+<script type="module" src="admin-script.js"></script>
+
+<script>
+    // Logic UI Sederhana (Non-Module)
+    if(localStorage.getItem('userRole') !== 'admin') {
+        alert("Akses Ditolak!"); window.location.href = 'admin-login.html';
+    }
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    function goToHomeAsAdmin() {
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userName', 'Super Admin');
+        window.location.href = 'index.html';
+    }
+</script>   
 </body>
 </html>
