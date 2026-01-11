@@ -7,34 +7,24 @@ import {
    0. LOGIKA NAVIGASI (SIDEBAR & TABS)
    ========================================= */
 
-// Fungsi Utama Pindah Halaman
 window.showView = function(viewId, btn) {
-    // 1. Sembunyikan Semua View
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    
-    // 2. Tampilkan View Target
     const target = document.getElementById('view-' + viewId);
-    if(target) {
-        target.classList.remove('hidden');
-    } else {
-        console.error("View tidak ditemukan: view-" + viewId);
-        return;
-    }
+    if(target) target.classList.remove('hidden');
+    else console.error("View tidak ditemukan: " + viewId);
     
-    // 3. Auto Load Data Berdasarkan Halaman
-    if(viewId === 'finance') renderFinanceData(); 
+    // Auto Load Data Khusus
+    if(viewId === 'finance') loadFinanceStats(); 
     if(viewId === 'cms') loadArtistDropdowns(); 
     if(viewId === 'students') loadStudentData();
     if(viewId === 'mitra') loadMitraData();
     if(viewId === 'performer') loadPerformerData();
     if(viewId === 'mentor') loadMentorData();
 
-    // 4. Update Warna Tombol Sidebar
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
 
-// Fungsi Pindah Tab CMS
 window.switchCmsTab = function(tabId, btn) {
     document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
@@ -42,10 +32,9 @@ window.switchCmsTab = function(tabId, btn) {
     btn.classList.add('active');
 }
 
-// Fungsi Logout
 window.adminLogout = function() {
     if(confirm("Keluar dari Panel Admin?")) {
-        localStorage.clear(); // Bersihkan semua sesi
+        localStorage.clear();
         window.location.href = 'index.html';
     }
 }
@@ -56,7 +45,6 @@ window.adminLogout = function() {
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
     if(!tbody) return;
-    
     const q = query(collection(db, "warungs"));
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
@@ -64,28 +52,17 @@ async function loadMitraData() {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada mitra.</td></tr>';
             return;
         }
-        
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
             let statusBadge = `<span style="color:#00ff00;">Verified</span>`;
             let actionBtn = '';
-            
             if (data.totalTables > 15 && !data.adminApproved) {
                 statusBadge = `<span style="color:orange;">Butuh Approval</span>`;
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
-            
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
-            
-            tbody.innerHTML += `
-            <tr>
-                <td><b>${data.name}</b></td>
-                <td>${data.owner||'-'}</td>
-                <td>${data.totalTables}</td>
-                <td>${statusBadge}</td>
-                <td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td>
-            </tr>`;
+            tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.owner||'-'}</td><td>${data.totalTables}</td><td>${statusBadge}</td><td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
         });
     });
 }
@@ -115,14 +92,13 @@ async function loadPerformerData() {
     onSnapshot(collection(db, "performers"), (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
             return;
         }
         
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-            
             let statusIcon = data.verified ? 
                 `<span style="color:#00ff00;">✅ Verified</span>` : 
                 `<button class="btn-action btn-edit" onclick="verifyPerformer('${id}')">Verifikasi</button>`;
@@ -136,7 +112,7 @@ async function loadPerformerData() {
 }
 
 window.verifyPerformer = async function(id) {
-    if(confirm("Luluskan performer ini? Sertifikat & MOU akan aktif.")) {
+    if(confirm("Luluskan performer ini?")) {
         await updateDoc(doc(db, "performers", id), { verified: true, certified_date: new Date() });
         alert("Performer Terverifikasi!");
     }
@@ -264,7 +240,7 @@ async function loadStudentData() {
 window.deleteStudent = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "students", id)); }
 
 /* =========================================
-   5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
+   5. CMS MODULE
    ========================================= */
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name'];
@@ -276,14 +252,25 @@ async function loadArtistDropdowns() {
 }
 
 window.saveSchedule = async function() {
-    // Logika simpan jadwal (disingkat, sama seperti sebelumnya)
-    if(confirm("Publish Jadwal Baru?")) {
-        // ... (Kode simpan jadwal, ambil dari previous chat jika perlu)
-        alert("Jadwal Berhasil Dipublish! (Mode Demo)");
+    const displayDate = document.getElementById('sched-display-date').value;
+    const realDate = document.getElementById('sched-real-date').value;
+    const location = document.getElementById('sched-location').value;
+    
+    // Simplifikasi performer
+    const performers = [1,2,3].map(i => ({
+        name: document.getElementById(`p${i}-name`).value,
+        time: document.getElementById(`p${i}-time`).value,
+        genre: "Live Music"
+    })).filter(p => p.name);
+
+    if(confirm("Publish Jadwal?")) {
+        await addDoc(collection(db, "events"), {
+            type: "main", displayDate, date: realDate, location, performers
+        });
+        alert("Jadwal Dipublish!");
     }
 }
 
-// TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
     const type = document.getElementById('content-category').value;
     if(type === 'news') {
@@ -307,23 +294,43 @@ window.toggleNewsInput = function() {
 }
 
 window.saveNews = async function() {
-    // Logika simpan berita (disingkat)
-    alert("Berita Dipublish! (Mode Demo)");
+    if(confirm("Publish Berita?")) {
+        await addDoc(collection(db, "news"), {
+            title: document.getElementById('news-title').value,
+            tag: document.getElementById('news-tag').value,
+            thumb: document.getElementById('news-thumb').value,
+            type: document.getElementById('news-type').value,
+            url: document.getElementById('news-url').value,
+            content: document.getElementById('news-content').value,
+            date: new Date().toLocaleDateString('id-ID'),
+            timestamp: new Date()
+        });
+        alert("Berita Terbit!");
+    }
 }
 
 window.savePodcast = async function() {
-    // Logika simpan podcast (disingkat)
-    alert("Podcast Dipublish! (Mode Demo)");
+    if(confirm("Publish Podcast?")) {
+        await addDoc(collection(db, "podcasts"), {
+            title: document.getElementById('pod-title').value,
+            host: document.getElementById('pod-host').value,
+            duration: document.getElementById('pod-duration').value,
+            link: document.getElementById('pod-link').value,
+            thumb: document.getElementById('pod-thumb').value,
+            order: parseInt(document.getElementById('pod-order').value),
+            timestamp: new Date()
+        });
+        alert("Podcast Terbit!");
+    }
 }
 
 /* =========================================
    6. COMMAND CENTER (LIVE MONITOR & STATISTIK)
    ========================================= */
 
-// Init Load
 window.loadFinanceStats = function() {
-    renderFinanceData(); // Render Statistik
-    listenCommandCenter(); // Render Live Monitor (Kiri Kanan)
+    renderFinanceData(); 
+    listenCommandCenter(); 
 }
 
 // A. LISTENER UTAMA (MONITOR & VALIDASI)
@@ -334,13 +341,11 @@ function listenCommandCenter() {
     const liveContainer = document.getElementById('list-approved');
     if(!pendingContainer || !liveContainer) return;
 
-    // Ambil data yang statusnya BUKAN 'finished' (artinya pending & approved)
     const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
 
     if(monitorUnsubscribe) monitorUnsubscribe();
 
     monitorUnsubscribe = onSnapshot(q, (snapshot) => {
-        // Reset HTML
         pendingContainer.innerHTML = '';
         liveContainer.innerHTML = '';
         
@@ -352,18 +357,21 @@ function listenCommandCenter() {
         requests.sort((a,b) => a.timestamp - b.timestamp);
 
         requests.forEach(d => {
-            const time = d.timestamp ? d.timestamp.toDate().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            const time = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
             const htmlItem = `
-            <div class="req-item ${d.status === 'approved' ? 'live' : 'pending'}">
+            <div class="req-item ${d.status}">
                 <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
                 <small style="color:#888;">${time} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
                 <h4 style="margin:5px 0; color:white;">${d.song}</h4>
                 <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message}"</p>
                 <small style="color:#aaa;">Untuk: ${d.performer}</small>
+                <div style="margin-top:10px;">
                 ${d.status === 'pending' ? 
-                    `<button class="btn-control btn-approve" onclick="approveReq('${d.id}')"><i class="fa-solid fa-check"></i> UANG MASUK (APPROVE)</button>` : 
+                    `<button class="btn-control btn-approve" onclick="approveReq('${d.id}')"><i class="fa-solid fa-check"></i> TERIMA DANA</button>
+                     <button class="btn-action btn-delete" onclick="deleteReq('${d.id}')" style="margin-top:5px; width:100%;"><i class="fa-solid fa-trash"></i> Tolak</button>` : 
                     `<button class="btn-control btn-finish" onclick="finishReq('${d.id}')"><i class="fa-solid fa-flag-checkered"></i> SELESAI (ARSIP)</button>`
                 }
+                </div>
             </div>`;
 
             if(d.status === 'pending') { pendingContainer.innerHTML += htmlItem; hasPending = true; } 
@@ -375,105 +383,43 @@ function listenCommandCenter() {
     });
 }
 
-// A. LISTENER UTAMA (MONITOR & VALIDASI)
-let monitorUnsubscribe = null;
+// B. STATISTIK
+let statsUnsubscribe = null;
 
-function listenCommandCenter() {
-    const pendingContainer = document.getElementById('list-pending');
-    const liveContainer = document.getElementById('list-approved');
-    
-    // Safety Check: Pastikan elemen ada sebelum diisi
-    if(!pendingContainer || !liveContainer) return;
+function renderFinanceData() {
+    const filter = document.getElementById('stats-filter').value;
+    const tbody = document.getElementById('table-history-body');
+    const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
-    // QUERY: Ambil semua request yang BELUM selesai (pending & approved)
-    const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
+    if(statsUnsubscribe) statsUnsubscribe();
 
-    if(monitorUnsubscribe) monitorUnsubscribe();
+    statsUnsubscribe = onSnapshot(q, (snapshot) => {
+        let totalMoney = 0;
+        let totalReq = 0;
+        let historyHTML = '';
 
-    monitorUnsubscribe = onSnapshot(q, (snapshot) => {
-        // 1. Bersihkan Tampilan
-        pendingContainer.innerHTML = '';
-        liveContainer.innerHTML = '';
-        
-        let countPending = 0;
-        let countLive = 0;
-
-        // 2. Ambil Data & Urutkan Manual (Timestamp Ascending)
-        let requests = [];
         snapshot.forEach(doc => {
             const d = doc.data();
-            requests.push({ id: doc.id, ...d });
-        });
-        
-        // Urutkan: Yang lama di atas (antrian)
-        requests.sort((a,b) => {
-            const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
-            const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
-            return timeA - timeB;
+            totalMoney += parseInt(d.amount);
+            totalReq++;
+            historyHTML += `<tr><td>-</td><td><b>${d.song}</b></td><td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td></tr>`;
         });
 
-        // 3. Render ke Kolom Kiri/Kanan
-        requests.forEach(d => {
-            const timeStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
-            
-            // HTML ITEM (SAMA UNTUK KEDUA KOLOM, BEDA TOMBOL)
-            let htmlItem = `
-            <div class="req-item ${d.status}">
-                <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
-                <small style="color:#888;">${timeStr} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
-                <h4 style="margin:5px 0; color:white;">${d.song}</h4>
-                <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message}"</p>
-                <small style="color:#aaa;">Untuk: ${d.performer}</small>
-                <div style="margin-top:10px;">`;
-
-            if(d.status === 'pending') {
-                // KOLOM KIRI: TOMBOL APPROVE
-                htmlItem += `
-                    <button class="btn-control btn-approve" onclick="approveReq('${d.id}')">
-                        <i class="fa-solid fa-check"></i> TERIMA DANA
-                    </button>
-                    <button class="btn-action btn-delete" onclick="deleteReq('${d.id}')" style="margin-top:5px; width:100%;">
-                        <i class="fa-solid fa-trash"></i> Tolak
-                    </button>`;
-                
-                pendingContainer.innerHTML += htmlItem + `</div></div>`;
-                countPending++;
-            } else {
-                // KOLOM KANAN: TOMBOL SELESAI
-                htmlItem += `
-                    <button class="btn-control btn-finish" onclick="finishReq('${d.id}')">
-                        <i class="fa-solid fa-flag-checkered"></i> SELESAI (ARSIP)
-                    </button>`;
-                
-                liveContainer.innerHTML += htmlItem + `</div></div>`;
-                countLive++;
-            }
-        });
-
-        // 4. Tampilkan Pesan Kosong Jika Tidak Ada Data
-        if(countPending === 0) pendingContainer.innerHTML = '<p class="empty-state">Tidak ada request baru.</p>';
-        if(countLive === 0) liveContainer.innerHTML = '<p class="empty-state">Panggung sepi.</p>';
+        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('stat-total-req').innerText = totalReq;
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3">Kosong.</td></tr>';
     });
-}
-
-// TAMBAHAN FUNGSI DELETE (TOLAK)
-window.deleteReq = async function(id) {
-    if(confirm("Tolak request ini? Data akan dihapus permanen.")) {
-        await deleteDoc(doc(db, "requests", id));
-    }
 }
 
 // C. ACTION BUTTONS
 window.approveReq = async function(id) {
-    if(confirm("Uang sudah masuk? Approve request ini ke layar panggung?")) {
-        await updateDoc(doc(db, "requests", id), { status: 'approved' });
-    }
+    if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
 }
-
 window.finishReq = async function(id) {
-    if(confirm("Selesai? Pindahkan ke Arsip Sejarah?")) {
-        await updateDoc(doc(db, "requests", id), { status: 'finished' });
-    }
+    if(confirm("Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' });
+}
+window.deleteReq = async function(id) {
+    if(confirm("Tolak?")) await deleteDoc(doc(db, "requests", id));
 }
 
 /* =========================================
