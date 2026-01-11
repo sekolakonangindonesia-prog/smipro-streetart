@@ -261,7 +261,7 @@ async function loadStudentData() {
             // Tombol 'Lihat Raport' saya siapkan kerangkanya dulu (onclick dummy)
             const actionBtns = `
                 <div style="display:flex; gap:5px;">
-                    <button class="btn-action btn-view" onclick="alert('Fitur Raport Detail akan kita bahas selanjutnya!')" title="Lihat Raport">
+                    <button class="btn-action btn-view" onclick="openRaport('${id}')" title="Lihat Raport Detail">
                         <i class="fa-solid fa-list-check"></i>
                     </button>
                     
@@ -282,6 +282,60 @@ async function loadStudentData() {
                 <td>${actionBtns}</td>
             </tr>`;
         });
+    });
+}
+
+// --- FUNGSI LIHAT RAPORT DETAIL ---
+window.openRaport = async function(studentId) {
+    const modal = document.getElementById('modal-raport');
+    const tbody = document.getElementById('raport-list-body');
+    
+    // 1. Ambil Data Siswa
+    const studentSnap = await getDoc(doc(db, "students", studentId));
+    if(!studentSnap.exists()) return alert("Data siswa tidak ditemukan!");
+    const sData = studentSnap.data();
+    const sScores = sData.scores || {};
+
+    // Isi Header Modal
+    document.getElementById('rap-name').innerText = sData.name;
+    document.getElementById('rap-genre').innerText = sData.genre;
+    document.getElementById('rap-img').src = sData.img;
+
+    // 2. Ambil Semua Data Mentor
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Memuat Data Mentor...</td></tr>';
+    modal.style.display = 'flex'; // Tampilkan modal dulu
+
+    const mentorSnap = await getDocs(collection(db, "mentors"));
+    tbody.innerHTML = ''; // Bersihkan loading
+
+    // 3. Loop Mentor & Cek Nilai
+    mentorSnap.forEach(mDoc => {
+        const mData = mDoc.data();
+        const mID = mDoc.id;
+        
+        // Cek apakah mentor ini ada di daftar nilai siswa?
+        const nilai = sScores[mID]; 
+        
+        let statusNilai = '';
+        
+        if (nilai !== undefined) {
+            // Mentor SUDAH Menilai
+            if(nilai >= 75) {
+                statusNilai = `<b style="color:#00ff00;">${nilai} (Lulus)</b>`;
+            } else {
+                statusNilai = `<b style="color:red;">${nilai} (Remidi)</b>`;
+            }
+        } else {
+            // Mentor BELUM Menilai
+            statusNilai = `<span style="color:#ffeb3b; font-style:italic;">⏳ Belum Menilai</span>`;
+        }
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${mData.name}</td>
+            <td><small style="color:#aaa;">${mData.specialist}</small></td>
+            <td>${statusNilai}</td>
+        </tr>`;
     });
 }
 
