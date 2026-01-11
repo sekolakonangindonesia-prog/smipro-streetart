@@ -198,8 +198,8 @@ function renderBookings(bookings) {
                 <small><i class="fa-solid fa-hourglass-half"></i> Hangus Pukul: <b style="color:#ff4444;">${displayExpired}</b></small><br>
                 <small>Kode: <b style="color:white; letter-spacing:1px;">${b.bookingCode}</b></small>
                 <div class="waiting-text">Menunggu Tamu Check-In...</div>
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <button class="btn-delete" onclick="finishBooking('${b.id}')" style="width:100%;">Batalkan</button>
+                 <div style="display:flex; gap:5px; margin-top:10px;">
+                    <button class="btn-delete" onclick="cancelBooking('${b.id}', ${qty})" style="width:100%;">Batalkan</button>
                 </div>
             </div>`;
         } else if (b.status === 'active') {
@@ -381,6 +381,28 @@ window.submitTransaction = async function() {
     } catch (e) {
         console.error(e);
         alert("Gagal memproses: " + e.message);
+    }
+}
+
+// --- FUNGSI BATALKAN PESANAN (Tanpa Input Uang) ---
+window.cancelBooking = async function(docId, tableQty) {
+    if(!confirm("Yakin ingin membatalkan pesanan ini? Stok meja akan dikembalikan.")) return;
+
+    try {
+        const tableCount = parseInt(tableQty) || 1;
+        
+        // 1. Hapus Dokumen Booking
+        await deleteDoc(doc(db, "bookings", docId));
+
+        // 2. Kembalikan Stok Meja
+        await updateDoc(doc(db, "warungs", WARUNG_ID), {
+            bookedCount: increment(-tableCount)
+        });
+
+        alert("Pesanan Dibatalkan!");
+    } catch (e) {
+        console.error(e);
+        alert("Gagal membatalkan: " + e.message);
     }
 }
 initDatabase();
