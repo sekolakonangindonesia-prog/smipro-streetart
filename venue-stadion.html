@@ -409,15 +409,15 @@
             document.getElementById('book-qty').value = '0 Meja';
 
             // === PESAN WA BARU (SESUAI REQUEST) ===
-            const pesan = `Hallo ${name} 👋,\n` +
+            const pesan = `Halo ${name},\n\n` +
                           `Terima kasih sudah memesan tempat di *${warungName}* pada jam ${jamBooking}\n` +
                           `Berikut detail pesanan Anda:\n` +
-                          ` Tanggal: ${dateVal}\n` +
-                          ` Jumlah: ${pax} Orang\n` +
-                          ` Kode Tiket: *${kode}*\n` +
-                          ` *MEJA RESERVASI: No. ${mejaString}*\n` +
+                          `Tanggal: ${dateVal}\n` +
+                          `Jumlah: ${pax} Orang\n` +
+                          `Kode Tiket: *${kode}*\n` +
+                          `MEJA RESERVASI: No. ${mejaString}\n` +
                           `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
-                          ` *PENTING:* Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
+                          `PENTING: Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
                           `Lewat dari jam tersebut, harap hubungi *${warungName}*`;
             
             if(confirm(`Booking Sukses!\nMeja Anda: ${mejaString}\n\nKirim tiket ke WA?`)) {
