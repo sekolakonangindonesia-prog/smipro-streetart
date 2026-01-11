@@ -399,5 +399,42 @@
     }
 </script>
 
+    <!-- MODAL RAPORT SISWA -->
+<div id="modal-raport" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e1e1e; width:100%; max-width:500px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
+        
+        <button onclick="document.getElementById('modal-raport').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        
+        <h3 style="margin-top:0; color:#FFD700; border-bottom:1px solid #333; padding-bottom:10px;">
+            <i class="fa-solid fa-list-check"></i> Raport Detail
+        </h3>
+
+        <div style="display:flex; gap:15px; align-items:center; margin-bottom:20px;">
+            <img id="rap-img" src="" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
+            <div>
+                <h4 id="rap-name" style="margin:0; color:white; font-size:1.2rem;">-</h4>
+                <span id="rap-genre" style="color:#888; font-size:0.9rem;">-</span>
+            </div>
+        </div>
+
+        <!-- TABEL NILAI PER MENTOR -->
+        <table class="admin-table" style="font-size:0.9rem;">
+            <thead>
+                <tr>
+                    <th>Nama Mentor</th>
+                    <th>Spesialisasi</th>
+                    <th>Nilai</th>
+                </tr>
+            </thead>
+            <tbody id="raport-list-body">
+                <!-- Data akan masuk sini lewat JS -->
+            </tbody>
+        </table>
+
+        <div style="margin-top:20px; text-align:center; font-size:0.8rem; color:#666;">
+            *Siswa dinyatakan LULUS jika semua Mentor memberi nilai dan tidak ada yang dibawah 75.
+        </div>
+    </div>
+</div>
 </body>
 </html>
