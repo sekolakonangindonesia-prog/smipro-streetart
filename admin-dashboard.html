@@ -75,6 +75,67 @@
             .main-content { margin-left: 60px; padding: 15px; }
             .monitor-split-wrapper { grid-template-columns: 1fr; }
         }
+
+        /* CSS KHUSUS NOTIFIKASI DASHBOARD */
+.notif-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Kartu Notifikasi */
+.notif-card {
+    background: #151515;
+    border: 1px solid #333;
+    border-left: 5px solid #888; /* Default abu-abu */
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.3s;
+    animation: fadeIn 0.5s;
+}
+
+/* Warna Warni Berdasarkan Tipe Notif */
+.notif-card.urgent { border-left-color: #E50914; background: #1a0505; } /* Merah (Penting) */
+.notif-card.warning { border-left-color: #ffeb3b; background: #1a1a00; } /* Kuning (Perlu Cek) */
+.notif-card.success { border-left-color: #00ff00; background: #051a05; } /* Hijau (Info) */
+
+/* Teks di dalam notif */
+.notif-content h4 { margin: 0 0 5px 0; color: white; font-size: 1rem; }
+.notif-content p { margin: 0; color: #aaa; font-size: 0.85rem; }
+
+/* Tombol Aksi di Kanan */
+.notif-action {
+    display: flex;
+    gap: 5px;
+}
+
+.empty-state-box {
+    text-align: center;
+    padding: 40px;
+    color: #444;
+    border: 1px dashed #333;
+    border-radius: 10px;
+}
+
+/* RESPONSIF HP: Tombol turun ke bawah jika layar sempit */
+@media (max-width: 600px) {
+    .notif-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .notif-action {
+        width: 100%;
+    }
+    .notif-action button {
+        flex: 1; /* Tombol jadi lebar penuh */
+        padding: 10px;
+    }
+}
     </style>
 </head>
 <body>
@@ -121,6 +182,21 @@
                 <div class="stat-card"><div class="stat-icon" style="color:#00d2ff; background:rgba(0, 210, 255, 0.1);"><i class="fa-solid fa-money-bill"></i></div><div><h3 style="margin:0; color:white;" id="total-revenue">Rp 0</h3><small style="color:#888;">Total Saweran (Pending)</small></div></div>
             </div>
         </div>
+        <!-- JUDUL SECTION -->
+    <div class="section-header" style="margin-top: 40px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+        <h3 style="margin:0; color:#E50914; display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-bell"></i> PUSAT NOTIFIKASI & APPROVAL
+        </h3>
+    </div>
+
+    <!-- WADAH LIST NOTIFIKASI (Responsive) -->
+    <div id="admin-notification-area" class="notif-grid">
+        <!-- Nanti Javascript akan mengisi ini secara otomatis -->
+        <div class="empty-state-box">
+            <i class="fa-solid fa-check-circle"></i>
+            <p>Tidak ada notifikasi baru saat ini.</p>
+        </div>
+    </div>
 
         <!-- 2. MITRA -->
         <div id="view-mitra" class="admin-view hidden">
