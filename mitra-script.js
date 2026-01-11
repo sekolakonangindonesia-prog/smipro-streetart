@@ -211,7 +211,11 @@ function renderBookings(bookings) {
                 </div>
                 <b>${b.customerName}</b>
                 <br><small>Sedang Makan</small>
-                <button class="btn-primary" style="margin-top:10px; background:white; color:red; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;" onclick="finishBooking('${b.id}')">Selesai / Kosongkan</button>
+                 <button class="btn-primary" 
+                style="margin-top:10px; background:white; color:red; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;" 
+                onclick="finishBooking('${b.id}', ${qty})"> <!-- PERHATIKAN PARAMETER INI -->
+                Selesai / Bayar
+            </button>
             </div>`;
         }
         container.innerHTML += cardHtml;
@@ -267,7 +271,6 @@ window.addMenu = async function() {
     document.getElementById('preview-menu-img').src = "https://via.placeholder.com/100?text=Foto";
     alert("Menu Ditambah!");
 }
-window.finishBooking = async function(docId) { if (confirm("Kosongkan meja/Batalkan pesanan?")) await deleteDoc(doc(db, "bookings", docId)); }
 window.deleteMenu = async function(docId) { if(confirm("Hapus menu?")) await deleteDoc(doc(db, "menus", docId)); }
 window.saveProfile = async function() {
     await updateDoc(doc(db, "warungs", WARUNG_ID), {
@@ -323,4 +326,61 @@ window.renderQRCodes = function() {
     }
 }
 
+// --- VARIABEL GLOBAL BARU ---
+let selectedBookingId = null;
+let selectedTableCount = 0; // Untuk mengembalikan stok meja
+
+// 1. FUNGSI DIPANGGIL SAAT TOMBOL SELESAI DIKLIK
+window.finishBooking = function(docId, tableQty) {
+    // Simpan ID dan Jumlah Meja ke variabel global sementara
+    selectedBookingId = docId;
+    selectedTableCount = parseInt(tableQty) || 1; // Default 1 kalau error
+    
+    // Buka Modal
+    document.getElementById('trx-amount').value = ''; // Reset input
+    document.getElementById('modal-finish-transaction').style.display = 'flex';
+}
+
+// 2. TUTUP MODAL
+window.closeFinishModal = function() {
+    document.getElementById('modal-finish-transaction').style.display = 'none';
+    selectedBookingId = null;
+}
+
+// 3. EKSEKUSI SIMPAN (ARSIP DATA)
+window.submitTransaction = async function() {
+    const amount = document.getElementById('trx-amount').value;
+    
+    if(!amount || amount <= 0) return alert("Masukkan nominal transaksi yang valid!");
+
+    // Konfirmasi terakhir
+    if(!confirm(`Simpan transaksi Rp ${parseInt(amount).toLocaleString()} dan kosongkan meja?`)) return;
+
+    try {
+        const bookingRef = doc(db, "bookings", selectedBookingId);
+        const warungRef = doc(db, "warungs", WARUNG_ID);
+
+        // A. UPDATE STATUS BOOKING JADI 'finished' & SIMPAN NOMINAL
+        // Data ini TIDAK DIHAPUS, tapi disimpan untuk statistik Admin
+        await updateDoc(bookingRef, {
+            status: 'finished',
+            revenue: parseInt(amount),
+            finishedAt: new Date()
+        });
+
+        // B. KEMBALIKAN STOK MEJA WARUNG
+        // Kita kurangi 'bookedCount' sebanyak meja yang dipakai
+        // Menggunakan 'increment(-value)' adalah cara aman mengurangi angka di Firebase
+        await updateDoc(warungRef, {
+            bookedCount: increment(-selectedTableCount) 
+        });
+
+        alert("Transaksi Berhasil Disimpan!");
+        closeFinishModal();
+
+    } catch (e) {
+        console.error(e);
+        alert("Gagal memproses: " + e.message);
+    }
+}
 initDatabase();
