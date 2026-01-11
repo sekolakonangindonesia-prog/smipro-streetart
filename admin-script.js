@@ -851,3 +851,129 @@ window.luluskanSiswa = async function(id, name, genre) {
         loadDashboardOverview(); 
     }
 }
+
+/* =========================================
+   9. MODUL LAPORAN STATISTIK WARUNG
+   ========================================= */
+
+// Fungsi Pindah Tab Mitra
+window.switchMitraTab = function(tabId, btn) {
+    document.querySelectorAll('.mitra-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    // Reset active class tombol (manual selector karena class sama)
+    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Jika buka tab statistik, load datanya
+    if(tabId === 'mitra-stats') loadWarungStatistics();
+}
+
+async function loadWarungStatistics() {
+    const filter = document.getElementById('report-filter').value;
+    const tbody = document.getElementById('warung-ranking-body');
+    
+    // Ambil SEMUA data booking yang sudah selesai (finished)
+    const q = query(collection(db, "bookings"), where("status", "==", "finished"));
+    const snapshot = await getDocs(q);
+
+    let totalVisitor = 0;
+    let totalTrx = 0;
+    let totalOmzet = 0;
+    let warungStats = {}; // Object untuk menampung data per warung
+
+    const now = new Date();
+    
+    snapshot.forEach(doc => {
+        const d = doc.data();
+        const date = d.finishedAt ? d.finishedAt.toDate() : new Date(); // Fallback date
+        
+        // Filter Waktu
+        let include = false;
+        if(filter === 'all') include = true;
+        else if (filter === 'month') {
+            if(date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) include = true;
+        } 
+        else if (filter === 'week') {
+            const oneWeekAgo = new Date(); 
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            if(date >= oneWeekAgo) include = true;
+        }
+
+        if(include) {
+            // Hitung Global
+            totalVisitor += parseInt(d.pax || 0);
+            totalTrx++;
+            totalOmzet += parseInt(d.revenue || 0);
+
+            // Hitung Per Warung
+            const wName = d.warungName || "Unknown";
+            if(!warungStats[wName]) {
+                warungStats[wName] = { name: wName, trx: 0, pax: 0, omzet: 0 };
+            }
+            warungStats[wName].trx++;
+            warungStats[wName].pax += parseInt(d.pax || 0);
+            warungStats[wName].omzet += parseInt(d.revenue || 0);
+        }
+    });
+
+    // Update Angka Atas
+    document.getElementById('stat-total-visitor').innerText = totalVisitor;
+    document.getElementById('stat-total-trx').innerText = totalTrx;
+    document.getElementById('stat-total-omzet').innerText = "Rp " + totalOmzet.toLocaleString();
+
+    // Render Tabel Ranking
+    tbody.innerHTML = '';
+    
+    // Convert Object to Array & Sort by Omzet (Tertinggi)
+    const sortedWarung = Object.values(warungStats).sort((a,b) => b.omzet - a.omzet);
+
+    if(sortedWarung.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data transaksi.</td></tr>';
+        return;
+    }
+
+    sortedWarung.forEach((w, index) => {
+        let rankBadge = index + 1;
+        if(index === 0) rankBadge = '🥇';
+        if(index === 1) rankBadge = '🥈';
+        if(index === 2) rankBadge = '🥉';
+
+        tbody.innerHTML += `
+        <tr>
+            <td style="font-size:1.2rem; text-align:center;">${rankBadge}</td>
+            <td><b>${w.name}</b></td>
+            <td>${w.trx}</td>
+            <td>${w.pax} Orang</td>
+            <td style="color:#00ff00;">Rp ${w.omzet.toLocaleString()}</td>
+        </tr>`;
+    });
+}
+
+// Fungsi Cetak PDF (Menggunakan jsPDF)
+window.generateReportPDF = function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text("LAPORAN STATISTIK UMKM SMIPRO", 105, 20, null, null, "center");
+    
+    doc.setFontSize(12);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 30, null, null, "center");
+
+    // Ambil data dari HTML Tabel (Sederhana)
+    let y = 50;
+    doc.text("Peringkat  |  Nama Warung  |  Transaksi  |  Omzet", 20, y);
+    doc.line(20, y+2, 190, y+2);
+    
+    const rows = document.querySelectorAll('#warung-ranking-body tr');
+    rows.forEach(row => {
+        y += 10;
+        const cols = row.querySelectorAll('td');
+        if(cols.length > 1) { // Hindari baris "kosong"
+            const txt = `${cols[0].innerText}   ${cols[1].innerText}   (${cols[2].innerText})   ${cols[4].innerText}`;
+            doc.text(txt, 20, y);
+        }
+    });
+
+    doc.save("Laporan_UMKM_SMIPRO.pdf");
+}
