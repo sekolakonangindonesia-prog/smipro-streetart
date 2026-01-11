@@ -198,13 +198,99 @@
     </div>
 </div>
 
-        <!-- 2. MITRA -->
+        <!-- VIEW 2: MANAJEMEN MITRA & STATISTIK (UPDATED) -->
         <div id="view-mitra" class="admin-view hidden">
-            <div class="section-header"><h2 style="margin:0; color:white;">Data Mitra Warung</h2></div>
-            <table class="admin-table">
-                <thead><tr><th>Nama Warung</th><th>Pemilik</th><th>Meja</th><th>Status</th><th>Aksi</th></tr></thead>
-                <tbody id="mitra-table-body"><tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr></tbody>
-            </table>
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Data Mitra & Laporan</h2>
+            </div>
+
+            <!-- SUB TABS -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchMitraTab('mitra-list', this)">Daftar Warung</button>
+                <button class="sub-tab-btn" onclick="switchMitraTab('mitra-stats', this)">Laporan Statistik</button>
+            </div>
+            
+            <!-- TAB 1: TABEL DAFTAR WARUNG -->
+            <div id="mitra-list" class="mitra-content">
+                <div style="text-align:right; margin-bottom:10px;">
+                    <button class="btn-action btn-view" onclick="alert('Fitur Tambah Mitra Manual')">+ Tambah</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Warung</th>
+                            <th>Pemilik</th>
+                            <th>Meja</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mitra-table-body">
+                        <!-- Data Mitra akan di-render di sini oleh JS -->
+                        <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 2: STATISTIK & LAPORAN -->
+            <div id="mitra-stats" class="mitra-content hidden">
+                <div class="section-header" style="border:none;">
+                    <h3 style="margin:0; color:#E50914;">Analisa Performa UMKM</h3>
+                    
+                    <div style="display:flex; gap:10px;">
+                        <select id="report-filter" class="cms-input" style="width:auto; padding:5px; margin:0;">
+                            <option value="all">Semua Waktu</option>
+                            <option value="month">Bulan Ini</option>
+                            <option value="week">Minggu Ini</option>
+                        </select>
+                        <button class="btn-action btn-view" onclick="generateReportPDF()"><i class="fa-solid fa-print"></i> Cetak Laporan PDF</button>
+                    </div>
+                </div>
+
+                <!-- RINGKASAN -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-users"></i></div>
+                        <div>
+                            <h3 style="margin:0; color:white;" id="stat-total-visitor">0</h3>
+                            <small style="color:#888;">Total Pengunjung (Pax)</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:gold; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-utensils"></i></div>
+                        <div>
+                            <h3 style="margin:0; color:white;" id="stat-total-trx">0</h3>
+                            <small style="color:#888;">Total Transaksi Meja</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                        <div>
+                            <h3 style="margin:0; color:white;" id="stat-total-omzet">Rp 0</h3>
+                            <small style="color:#888;">Estimasi Omzet Total</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RANKING WARUNG -->
+                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333;">
+                    <h4 style="margin-top:0; color:#FFD700;">🏆 Top Warung Terlaris</h4>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Peringkat</th>
+                                <th>Nama Warung</th>
+                                <th>Jml Transaksi</th>
+                                <th>Total Pengunjung</th>
+                                <th>Total Omzet</th>
+                            </tr>
+                        </thead>
+                        <tbody id="warung-ranking-body">
+                            <tr><td colspan="5" style="text-align:center;">Menghitung data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- 3. PERFORMER -->
