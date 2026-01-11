@@ -13,8 +13,10 @@ window.showView = function(viewId, btn) {
     if(target) target.classList.remove('hidden');
     else console.error("View tidak ditemukan: " + viewId);
     
-    // Auto Load Data Khusus
-    if(viewId === 'finance') loadFinanceStats(); 
+    // --- UPDATED: Panggil Overview saat dashboard diklik ---
+    if(viewId === 'dashboard') loadDashboardOverview(); 
+    
+    if(viewId === 'finance') { renderFinanceData(); listenCommandCenter(); }
     if(viewId === 'cms') loadArtistDropdowns(); 
     if(viewId === 'students') loadStudentData();
     if(viewId === 'mitra') loadMitraData();
@@ -542,6 +544,10 @@ window.deleteReq = async function(id) {
    7. EKSEKUSI AWAL
    ========================================= */
 window.onload = function() {
+    // Load Data Awal
+    loadDashboardOverview(); // <-- PENTING: Agar angka tidak 0 saat pertama buka
+    
+    // Load data lain di background agar cepat saat pindah tab
     loadMitraData();
     loadPerformerData();
     loadMentorData();
@@ -561,4 +567,107 @@ window.onload = function() {
             localStorage.removeItem('adminReturnTab');
         }
     }, 500);
+}
+
+/* =========================================
+   8. LOGIC OVERVIEW & NOTIFIKASI (BARU)
+   ========================================= */
+
+async function loadDashboardOverview() {
+    console.log("Memuat Data Overview...");
+
+    // 1. HITUNG DATA STATISTIK (Mitra & Performer)
+    const mitraSnap = await getDocs(collection(db, "warungs"));
+    const perfSnap = await getDocs(collection(db, "performers"));
+    
+    // Update Angka di Kotak Atas
+    const elMitra = document.getElementById('count-mitra');
+    const elPerf = document.getElementById('count-perf');
+    const elRev = document.getElementById('total-revenue');
+
+    if(elMitra) elMitra.innerText = mitraSnap.size;
+    if(elPerf) elPerf.innerText = perfSnap.size;
+
+    // 2. HITUNG TOTAL SAWERAN (Hanya untuk Angka di Kotak Atas)
+    const moneySnap = await getDocs(collection(db, "requests"));
+    let totalPending = 0;
+    moneySnap.forEach(doc => {
+        if(doc.data().status === 'pending') {
+            totalPending += parseInt(doc.data().amount);
+        }
+    });
+    if(elRev) elRev.innerText = "Rp " + totalPending.toLocaleString();
+
+
+    // 3. GENERATE NOTIFIKASI OTOMATIS (Tanpa Saweran)
+    const notifArea = document.getElementById('admin-notification-area');
+    if(!notifArea) return; // Jaga-jaga error
+
+    notifArea.innerHTML = ''; // Bersihkan dulu
+    let adaNotif = false;
+
+    // A. CEK MITRA (Meja > 15 & Belum Approved)
+    mitraSnap.forEach(doc => {
+        const d = doc.data();
+        if(d.totalTables > 15 && !d.adminApproved) {
+            adaNotif = true;
+            notifArea.innerHTML += `
+            <div class="notif-card urgent">
+                <div class="notif-content">
+                    <h4><i class="fa-solid fa-store"></i> Approval Mitra Besar</h4>
+                    <p><b>${d.name}</b> mendaftarkan ${d.totalTables} meja. Perlu persetujuan Admin.</p>
+                </div>
+                <div class="notif-action">
+                    <button class="btn-action btn-view" onclick="showView('mitra')">Lihat Detail</button>
+                </div>
+            </div>`;
+        }
+    });
+
+    // B. CEK SISWA BENGKEL (Nilai Rata-rata >= 90 & Belum Lulus)
+    const siswaSnap = await getDocs(collection(db, "students"));
+    siswaSnap.forEach(doc => {
+        const d = doc.data();
+        const scores = Object.values(d.scores || {});
+        if(scores.length > 0) {
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            
+            if(avg >= 90 && d.status === 'training') {
+                adaNotif = true;
+                notifArea.innerHTML += `
+                <div class="notif-card success">
+                    <div class="notif-content">
+                        <h4><i class="fa-solid fa-graduation-cap"></i> Siswa Siap Lulus</h4>
+                        <p><b>${d.name}</b> nilai rata-rata <b>${avg.toFixed(1)}</b>. Terbitkan Sertifikat?</p>
+                    </div>
+                    <div class="notif-action">
+                        <button class="btn-action btn-edit" onclick="luluskanSiswa('${doc.id}', '${d.name}', '${d.genre}')">Terbitkan</button>
+                    </div>
+                </div>`;
+            }
+        }
+    });
+
+    // Jika Tidak Ada Notif
+    if(!adaNotif) {
+        notifArea.innerHTML = `
+        <div class="empty-state-box">
+            <i class="fa-solid fa-check-circle" style="font-size:2rem; color:#333; margin-bottom:10px;"></i>
+            <p>Semua aman. Tidak ada notifikasi baru.</p>
+        </div>`;
+    }
+}
+
+// Fungsi Helper untuk Luluskan Siswa
+window.luluskanSiswa = async function(id, name, genre) {
+    if(confirm(`Luluskan ${name} dan jadikan Performer Resmi?`)) {
+        await addDoc(collection(db, "performers"), {
+            name: name, genre: genre, verified: true, 
+            img: "https://via.placeholder.com/150", rating: 5.0, 
+            gallery: [], certified_date: new Date()
+        });
+        await updateDoc(doc(db, "students", id), { status: 'graduated' });
+        alert("Berhasil! Siswa kini menjadi Performer Resmi.");
+        loadDashboardOverview(); 
+    }
 }
