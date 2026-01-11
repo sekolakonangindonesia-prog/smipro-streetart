@@ -276,12 +276,12 @@
             }
         }
 
-        // VENUES (DENGAN PENGECEKAN ADMIN YANG KETAT)
+        // VENUES (DENGAN PERBAIKAN ADMIN AKSES)
         async function loadVenues() {
             const container = document.getElementById('venue-list-container');
             const userRole = localStorage.getItem('userRole');
             
-            // HANYA Admin Murni yang bisa lihat tombol saklar
+            // Cek apakah Admin
             const isAdmin = userRole === 'admin';
 
             const q = query(collection(db, "venues"), orderBy("order", "asc"));
@@ -306,25 +306,36 @@
                     const data = docSnap.data();
                     const isOpen = data.status === 'open';
                     const badgeClass = isOpen ? 'active' : 'soon';
-                    const badgeText = isOpen ? 'BUKA' : 'SOON';
+                    const badgeText = isOpen ? 'BUKA' : 'TUTUP';
                     
-                    let cardAction = isOpen ? `location.href='venue-stadion.html'` : `alert('${data.name} Segera Hadir!')`;
-                    if(isAdmin) cardAction = ""; 
+                    // --- PERBAIKAN DI SINI ---
+                    // 1. Tentukan Aksi Klik Kartu
+                    // Admin SELALU bisa masuk (walau tutup). User biasa hanya bisa masuk jika BUKA.
+                    let cardAction = "";
+                    if (isAdmin) {
+                        cardAction = `location.href='venue-stadion.html'`; 
+                    } else {
+                        cardAction = isOpen ? `location.href='venue-stadion.html'` : `alert('Maaf, lokasi ini sedang tutup/belum beroperasi.')`;
+                    }
 
+                    // 2. Tombol Saklar Admin (PENTING: Tambah event.stopPropagation)
                     let adminSwitchHTML = "";
                     if (isAdmin) {
                         const toggleColor = isOpen ? '#00ff00' : '#333';
                         const toggleIcon = isOpen ? 'fa-toggle-on' : 'fa-toggle-off';
                         
+                        // Perhatikan: onclick="event.stopPropagation(); window.toggleVenueStatus..."
+                        // Ini mencegah agar saat klik saklar, tidak ikut masuk ke halaman venue.
                         adminSwitchHTML = `
-                        <div style="margin-left:10px; text-align:center; z-index:100;" onclick="window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
-                            <i class="fa-solid ${toggleIcon}" style="color:${toggleColor}; font-size:2rem; cursor:pointer; transition:0.3s;"></i>
+                        <div style="margin-left:10px; text-align:center; z-index:100; cursor:pointer;" 
+                             onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
+                            <i class="fa-solid ${toggleIcon}" style="color:${toggleColor}; font-size:2rem; transition:0.3s;"></i>
                             <div style="font-size:0.6rem; color:#888;">ADMIN</div>
                         </div>`;
                     }
 
                     container.innerHTML += `
-                    <div class="venue-card ${isOpen ? '' : 'disabled'}" onclick="${cardAction}" style="display:flex; align-items:center;">
+                    <div class="venue-card ${isOpen ? '' : 'disabled'}" onclick="${cardAction}" style="display:flex; align-items:center; cursor:pointer;">
                         <div class="icon-box"><i class="fa-solid ${data.icon}"></i></div>
                         <div style="flex:1;">
                             <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span></h3>
