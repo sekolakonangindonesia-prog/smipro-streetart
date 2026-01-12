@@ -425,7 +425,7 @@ window.openRaport = async function(studentId) {
    5. CMS MODULE
    ========================================= */
 
-// 1. DROPDOWN ARTIS (Dipakai di kedua tab)
+// 1. DROPDOWN ARTIS
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
@@ -435,13 +435,12 @@ async function loadArtistDropdowns() {
     selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
 }
 
-// 2. SIMPAN JADWAL UTAMA (STADION)
+// 2. SIMPAN JADWAL UTAMA
 window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
     
-    // Ambil 3 artis dari form jadwal utama
     const performers = [1,2,3].map(i => ({
         name: document.getElementById(`p${i}-name`).value,
         time: document.getElementById(`p${i}-time`).value,
@@ -458,7 +457,30 @@ window.saveSchedule = async function() {
     }
 }
 
-// 4. LOAD DATA PENDUKUNG TOUR
+// 3. SIMPAN JADWAL TOUR
+window.saveTourSchedule = async function() {
+    const displayDate = document.getElementById('tour-display-date').value;
+    const realDate = document.getElementById('tour-real-date').value;
+    const location = document.getElementById('tour-location').value;
+    const perfName = document.getElementById('tour-perf-name').value;
+    const perfTime = document.getElementById('tour-perf-time').value;
+
+    if(!displayDate || !realDate || !location || !perfName) return alert("Data Tour belum lengkap!");
+
+    if(confirm("Publish Jadwal Tour?")) {
+        await addDoc(collection(db, "events"), {
+            type: "tour", 
+            displayDate: displayDate,
+            date: realDate,
+            location: location,
+            statusText: "ON TOUR",
+            performers: [{ name: perfName, time: perfTime }] 
+        });
+        alert("Jadwal Tour Berhasil Dipublish!");
+    }
+}
+
+// 4. LOAD CAFE DROPDOWN
 async function loadCafeDropdownForSchedule() {
     const select = document.getElementById('tour-location');
     if(!select) return; 
@@ -469,6 +491,7 @@ async function loadCafeDropdownForSchedule() {
     snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
 }
 
+// 5. LOAD ACTIVE TOUR
 async function loadActiveTourSchedules() {
     const tbody = document.getElementById('cms-tour-list-body');
     if(!tbody) return;
@@ -491,9 +514,26 @@ async function loadActiveTourSchedules() {
     });
 }
 
+// 6. LOAD ACTIVE SCHEDULE MAIN
+async function loadActiveSchedules() {
+    const tbody = document.getElementById('cms-schedule-list-body');
+    if(!tbody) return;
+
+    const q = query(collection(db, "events"), orderBy("date", "asc"));
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        let hasData = false;
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.type === 'main' || !data.type) { 
+                hasData = true;
+                tbody.innerHTML += `<tr><td><b>${data.displayDate}</b><br><small>${data.date}</small></td><td>${data.location}</td><td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td></tr>`;
+            }
+        });
         if(!hasData) tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal utama.</td></tr>';
     });
 }
+window.deleteSchedule = async function(id) { if(confirm("Hapus Jadwal?")) await deleteDoc(doc(db,"events",id)); }
     
 // TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
