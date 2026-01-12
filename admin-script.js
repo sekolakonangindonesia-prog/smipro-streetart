@@ -458,29 +458,6 @@ window.saveSchedule = async function() {
     }
 }
 
-// 3. SIMPAN JADWAL TOUR (CAFE) - INI YANG TADI ANDA GABUNG
-window.saveTourSchedule = async function() {
-    const displayDate = document.getElementById('tour-display-date').value;
-    const realDate = document.getElementById('tour-real-date').value;
-    const location = document.getElementById('tour-location').value;
-    const perfName = document.getElementById('tour-perf-name').value;
-    const perfTime = document.getElementById('tour-perf-time').value;
-
-    if(!displayDate || !realDate || !location || !perfName) return alert("Data Tour belum lengkap!");
-
-    if(confirm("Publish Jadwal Tour?")) {
-        await addDoc(collection(db, "events"), {
-            type: "tour", 
-            displayDate: displayDate,
-            date: realDate,
-            location: location,
-            statusText: "ON TOUR",
-            performers: [{ name: perfName, time: perfTime }] 
-        });
-        alert("Jadwal Tour Berhasil Dipublish!");
-    }
-}
-
 // 4. LOAD DATA PENDUKUNG TOUR
 async function loadCafeDropdownForSchedule() {
     const select = document.getElementById('tour-location');
