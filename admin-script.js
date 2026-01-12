@@ -32,15 +32,18 @@ window.showView = function(viewId, btn) {
 window.switchCmsTab = function(tabId, btn) {
     document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
-    document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
-    btn.classList.add('active');
-    if(tabId === 'cms-schedule') loadActiveSchedules();
+    
+    if(btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    }
+    if(btn) btn.classList.add('active');
 
-     if(tabId === 'cms-schedule') loadActiveSchedules();
+    // LOGIKA LOAD DATA (PENTING!)
+    if(tabId === 'cms-schedule') loadActiveSchedules(); // Muat List Jadwal Utama
     if(tabId === 'cms-tour') {
-        loadCafeDropdownForSchedule(); // Muat nama cafe
-        loadActiveTourSchedules();     // Muat tabel hapus
-         }
+        loadCafeDropdownForSchedule(); // Muat Dropdown Cafe
+        loadActiveTourSchedules();     // Muat List Jadwal Tour
+    }
 }
 
 window.adminLogout = function() {
@@ -421,10 +424,10 @@ window.openRaport = async function(studentId) {
 
 
 /* =========================================
-   5. CMS MODULE
+   5. CMS MODULE (LENGKAP)
    ========================================= */
 
-// 1. DROPDOWN ARTIS (Dipakai di kedua tab)
+// 1. DROPDOWN ARTIS
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
@@ -440,7 +443,6 @@ window.saveSchedule = async function() {
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
     
-    // Ambil 3 artis dari form jadwal utama
     const performers = [1,2,3].map(i => ({
         name: document.getElementById(`p${i}-name`).value,
         time: document.getElementById(`p${i}-time`).value,
@@ -455,6 +457,96 @@ window.saveSchedule = async function() {
         });
         alert("Jadwal Utama Dipublish!");
     }
+}
+
+// 3. SIMPAN JADWAL TOUR (CAFE)
+window.saveTourSchedule = async function() {
+    const displayDate = document.getElementById('tour-display-date').value;
+    const realDate = document.getElementById('tour-real-date').value;
+    const location = document.getElementById('tour-location').value;
+    const perfName = document.getElementById('tour-perf-name').value;
+    const perfTime = document.getElementById('tour-perf-time').value;
+
+    if(!displayDate || !realDate || !location || !perfName) return alert("Data Tour belum lengkap!");
+
+    if(confirm("Publish Jadwal Tour?")) {
+        await addDoc(collection(db, "events"), {
+            type: "tour", 
+            displayDate: displayDate,
+            date: realDate,
+            location: location,
+            statusText: "ON TOUR",
+            performers: [{ name: perfName, time: perfTime }] 
+        });
+        alert("Jadwal Tour Berhasil Dipublish!");
+    }
+}
+
+// 4. LOAD DATA PENDUKUNG TOUR (Dropdown Cafe)
+async function loadCafeDropdownForSchedule() {
+    const select = document.getElementById('tour-location');
+    if(!select) return; 
+
+    select.innerHTML = '<option value="">-- Pilih Lokasi Cafe --</option>';
+    const q = query(collection(db, "venues_partner"), orderBy("name", "asc"));
+    const snap = await getDocs(q);
+    snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
+}
+
+// 5. LOAD LIST JADWAL UTAMA (Agar muncul kembali)
+async function loadActiveSchedules() {
+    const tbody = document.getElementById('cms-schedule-list-body');
+    if(!tbody) return;
+
+    // Filter type != 'tour' (agar yang tour tidak muncul disini) atau tampilkan semua lalu user pilah
+    // Disini kita tampilkan semua event yg BUKAN tour, atau Main event
+    const q = query(collection(db, "events"), orderBy("date", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal aktif.</td></tr>'; return; }
+
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            // Hanya tampilkan di tabel ini jika TIPE-nya MAIN (Bukan Tour)
+            if(d.type === 'main' || !d.type) { 
+                tbody.innerHTML += `
+                <tr>
+                    <td>${d.displayDate}</td>
+                    <td>${d.location}</td>
+                    <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
+                </tr>`;
+            }
+        });
+    });
+}
+
+// 6. LOAD LIST JADWAL TOUR
+async function loadActiveTourSchedules() {
+    const tbody = document.getElementById('cms-tour-list-body');
+    if(!tbody) return;
+
+    const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal tour.</td></tr>'; return; }
+        
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            tbody.innerHTML += `
+            <tr>
+                <td>${d.displayDate}</td>
+                <td>${d.location}<br><small style="color:#ff9800;">${d.performers[0].name}</small></td>
+                <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
+            </tr>`;
+        });
+    });
+}
+
+// 7. FUNGSI HAPUS UMUM (Dipakai kedua tabel)
+window.deleteSchedule = async function(id) { 
+    if(confirm("Hapus Jadwal ini?")) await deleteDoc(doc(db,"events",id)); 
 }
 
 // 3. SIMPAN JADWAL TOUR (CAFE) - INI YANG TADI ANDA GABUNG
