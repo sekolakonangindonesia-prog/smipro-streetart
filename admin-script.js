@@ -35,6 +35,12 @@ window.switchCmsTab = function(tabId, btn) {
     document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
     btn.classList.add('active');
     if(tabId === 'cms-schedule') loadActiveSchedules();
+
+     if(tabId === 'cms-schedule') loadActiveSchedules();
+    if(tabId === 'cms-tour') {
+        loadCafeDropdownForSchedule(); // Muat nama cafe
+        loadActiveTourSchedules();     // Muat tabel hapus
+         }
 }
 
 window.adminLogout = function() {
@@ -418,7 +424,7 @@ window.openRaport = async function(studentId) {
    5. CMS MODULE
    ========================================= */
 async function loadArtistDropdowns() {
-    const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host'];
+    const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
     let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
@@ -430,6 +436,8 @@ window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
+    const perfName = document.getElementById('tour-perf-name').value;
+    const perfTime = document.getElementById('tour-perf-time').value;
     
     const performers = [1,2,3].map(i => ({
         name: document.getElementById(`p${i}-name`).value,
@@ -442,9 +450,63 @@ window.saveSchedule = async function() {
             type: "main", displayDate, date: realDate, location, performers
         });
         alert("Jadwal Dipublish!");
+
+        if(!displayDate || !realDate || !location || !perfName) return alert("Data belum lengkap!");
+
+    if(confirm("Publish Jadwal Tour ini?")) {
+        await addDoc(collection(db, "events"), {
+            type: "tour", // INI KUNCINYA (Supaya muncul di section Tour Home)
+            displayDate: displayDate,
+            date: realDate,
+            location: location,
+            statusText: "ON TOUR",
+            performers: [{ name: perfName, time: perfTime }] // Format Array biar sama dengan event biasa
+        });
+        alert("Jadwal Tour Berhasil Dipublish!");
+        // Bersihkan form (Opsional)
     }
 }
 
+async function loadCafeDropdownForSchedule() {
+    const select = document.getElementById('tour-location');
+    if(!select) return; // Jaga-jaga
+
+    select.innerHTML = '<option value="">-- Pilih Lokasi Cafe --</option>';
+    
+    // Ambil data dari koleksi 'venues_partner' (Data Cafe)
+    const q = query(collection(db, "venues_partner"), orderBy("name", "asc"));
+    const snap = await getDocs(q);
+    
+    snap.forEach(doc => {
+        const d = doc.data();
+        select.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+    });
+}
+
+    async function loadActiveTourSchedules() {
+    const tbody = document.getElementById('cms-tour-list-body');
+    if(!tbody) return;
+
+    // Ambil hanya yang tipe 'tour'
+    const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal tour.</td></tr>'; return; }
+        
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            // Tombol Hapus memanggil fungsi deleteSchedule yang sama (karena satu database)
+            tbody.innerHTML += `
+            <tr>
+                <td>${d.displayDate}</td>
+                <td>${d.location}<br><small style="color:#ff9800;">${d.performers[0].name}</small></td>
+                <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
+            </tr>`;
+        });
+    });
+}
+    
 // TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
     const type = document.getElementById('content-category').value;
