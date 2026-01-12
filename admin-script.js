@@ -1115,11 +1115,8 @@ async function loadCafeData() {
             const d = doc.data();
             const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
             
-            // --- PERBAIKAN DISINI ---
-            // Tombol Edit memanggil editCafe
+            // PERBAIKAN: Tombol Edit & Hapus yang Benar
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
-            
-            // Tombol Hapus SEKARANG MEMANGGIL deleteCafe (Bukan deleteDocItem lagi)
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
             tbody.innerHTML += `
@@ -1134,7 +1131,7 @@ async function loadCafeData() {
     });
 }
 
-// FUNGSI EDIT (Mengisi Form kembali)
+// FUNGSI EDIT
 window.editCafe = function(id, name, addr, img) {
     document.getElementById('cafe-edit-id').value = id; 
     document.getElementById('new-cafe-name').value = name;
@@ -1143,7 +1140,6 @@ window.editCafe = function(id, name, addr, img) {
     document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
     currentCafeBase64 = null; 
 
-    // Ubah Tombol jadi Edit
     const btnSave = document.getElementById('btn-save-cafe');
     btnSave.innerText = "Simpan Perubahan";
     btnSave.style.background = "#FFD700"; 
@@ -1151,7 +1147,7 @@ window.editCafe = function(id, name, addr, img) {
     document.getElementById('btn-cancel-cafe').style.display = "inline-block"; 
 }
 
-// FUNGSI RESET FORM (Balik ke Mode Tambah)
+// FUNGSI RESET
 window.resetCafeForm = function() {
     document.getElementById('cafe-edit-id').value = ""; 
     document.getElementById('new-cafe-name').value = "";
@@ -1166,13 +1162,110 @@ window.resetCafeForm = function() {
     document.getElementById('btn-cancel-cafe').style.display = "none";
 }
 
-// Hapus Cafe
+// FUNGSI HAPUS (Ini yang kemarin tidak jalan karena typo/salah panggil)
 window.deleteCafe = async (id) => { 
     if(confirm("Hapus Cafe ini?")) {
         await deleteDoc(doc(db,"venues_partner",id)); 
     }
 }
 
+
+// --- B. PUSAT KONTROL (LAPORAN STATISTIK) ---
+
+// 1. Siapkan Dropdown
+async function prepareReportFilters() {
+    const locSelect = document.getElementById('rep-loc');
+    locSelect.innerHTML = `
+        <option value="all">Semua Lokasi (Stadion & Cafe)</option>
+        <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
+    `;
+    
+    const cafes = await getDocs(collection(db, "venues_partner"));
+    cafes.forEach(doc => {
+        const name = doc.data().name;
+        locSelect.innerHTML += `<option value="${name}">${name}</option>`;
+    });
+
+    const artSelect = document.getElementById('rep-art');
+    artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
+    
+    const perfs = await getDocs(collection(db, "performers"));
+    perfs.forEach(doc => {
+        const name = doc.data().name;
+        artSelect.innerHTML += `<option value="${name}">${name}</option>`;
+    });
+}
+
+// 2. Logic Filter & Statistik
+window.loadCafeReport = async function() {
+    const loc = document.getElementById('rep-loc').value;
+    const time = document.getElementById('rep-time').value;
+    const art = document.getElementById('rep-art').value;
+    const tbody = document.getElementById('rep-detail-body');
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sedang menghitung data...</td></tr>';
+
+    const reqSnap = await getDocs(query(collection(db, "requests"), where("status", "==", "finished")));
+    
+    let totalMoney = 0;
+    let totalSongs = 0;
+    let detailHTML = '';
+
+    const now = new Date();
+
+    reqSnap.forEach(doc => {
+        const d = doc.data();
+        const date = d.timestamp.toDate();
+        let isValid = true;
+
+        // Filter Lokasi
+        const dataLoc = d.location || "Stadion Bayuangga Zone"; 
+        if(loc !== 'all' && dataLoc !== loc) isValid = false;
+
+        // Filter Waktu
+        if(time === 'today' && date.getDate() !== now.getDate()) isValid = false;
+        if(time === 'month' && date.getMonth() !== now.getMonth()) isValid = false;
+        
+        // Filter Artis
+        if(art !== 'all' && d.performer !== art) isValid = false;
+
+        if(isValid) {
+            totalMoney += parseInt(d.amount);
+            totalSongs++;
+            detailHTML += `
+            <tr>
+                <td>${date.toLocaleDateString()}</td>
+                <td>${dataLoc}</td>
+                <td>${d.performer}</td>
+                <td>${d.song}</td>
+                <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
+            </tr>`;
+        }
+    });
+
+    // Statistik Pax (Khusus Stadion)
+    let totalPax = 0;
+    if(loc === 'all' || loc === 'Stadion Bayuangga Zone') {
+        const bookSnap = await getDocs(query(collection(db, "bookings"), where("status", "==", "finished")));
+        bookSnap.forEach(doc => {
+            const d = doc.data();
+            const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
+            let isTimeValid = true;
+            if(time === 'today' && date.getDate() !== now.getDate()) isTimeValid = false;
+            
+            if(isTimeValid) {
+                totalPax += parseInt(d.pax || 0);
+            }
+        });
+    }
+    
+    // Tampilkan Data
+    document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+    document.getElementById('rep-total-song').innerText = totalSongs;
+    document.getElementById('rep-total-pax').innerText = (loc === 'all' || loc === 'Stadion Bayuangga Zone') ? totalPax : "-";
+    
+    tbody.innerHTML = detailHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter.</td></tr>';
+}
 
 // --- B. PUSAT KONTROL (LAPORAN) ---
 
