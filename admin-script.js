@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { 
-    collection, getDocs, query, orderBy, doc, updateDoc, addDoc, deleteDoc, onSnapshot, where, limit, setDoc 
+    collection, getDocs, query, orderBy, doc, updateDoc, addDoc, deleteDoc, onSnapshot, where, limit, setDoc, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* =========================================
@@ -8,39 +8,48 @@ import {
    ========================================= */
 
 window.showView = function(viewId, btn) {
+    // Sembunyikan semua halaman
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById('view-' + viewId);
-    if(target) target.classList.remove('hidden');
     
-    // Auto Load Data Khusus
+    // Tampilkan halaman yang dipilih
+    const target = document.getElementById('view-' + viewId);
+    if(target) {
+        target.classList.remove('hidden');
+    } else {
+        console.error("View tidak ditemukan: view-" + viewId);
+        return;
+    }
+    
+    // Auto Load Data sesuai halaman
     if(viewId === 'dashboard') loadDashboardOverview();
     if(viewId === 'finance') { renderFinanceData(); listenCommandCenter(); }
-    if(viewId === 'cms') loadArtistDropdowns(); 
+    if(viewId === 'cms') { loadArtistDropdowns(); loadActiveSchedules(); }
     if(viewId === 'students') loadStudentData();
     if(viewId === 'mitra') loadMitraData();
     if(viewId === 'performer') loadPerformerData();
     if(viewId === 'mentor') loadMentorData();
     if(viewId === 'cafe') { 
         loadCafeData();
+        // Reset ke tab data saat dibuka
         switchCafeTab('cafe-data', document.querySelector('.sub-tab-btn')); 
     }
 
+    // Update warna tombol sidebar
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
 
-// Cek fungsi ini di bagian atas file admin-script.js
 window.switchCmsTab = function(tabId, btn) {
     document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
     document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
     btn.classList.add('active');
-
-    // --- PERBAIKAN DI SINI ---
+    
+    // Load data khusus per tab
     if(tabId === 'cms-schedule') loadActiveSchedules();
     if(tabId === 'cms-tour') {
         loadCafeDropdownForSchedule();
-        loadActiveTourSchedules(); // Pastikan ini dipanggil!
+        loadActiveTourSchedules();
     }
 }
 
@@ -93,114 +102,6 @@ window.loginAsMitra = function(id, name) {
 
 window.approveTable = async function(id) { if(confirm("Setujui?")) await updateDoc(doc(db, "warungs", id), { adminApproved: true }); }
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
-
-// --- MITRA REPORT ---
-window.switchMitraTab = function(tabId, btn) {
-    document.querySelectorAll('.mitra-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-    // Reset active class tombol (manual selector karena class sama)
-    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // Jika buka tab statistik, load datanya
-    if(tabId === 'mitra-stats') loadWarungStatistics();
-}
-
-async function loadWarungStatistics() {
-    const filter = document.getElementById('report-filter').value;
-    const tbody = document.getElementById('warung-ranking-body');
-    
-    // Ambil SEMUA data booking yang sudah selesai (finished)
-    const q = query(collection(db, "bookings"), where("status", "==", "finished"));
-    const snapshot = await getDocs(q);
-
-    let totalVisitor = 0;
-    let totalTrx = 0;
-    let totalOmzet = 0;
-    let warungStats = {}; 
-
-    const now = new Date();
-    
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        const date = d.finishedAt ? d.finishedAt.toDate() : new Date(); 
-        
-        let include = false;
-        if(filter === 'all') include = true;
-        else if (filter === 'month') {
-            if(date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) include = true;
-        } 
-        else if (filter === 'week') {
-            const oneWeekAgo = new Date(); 
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            if(date >= oneWeekAgo) include = true;
-        }
-
-        if(include) {
-            totalVisitor += parseInt(d.pax || 0);
-            totalTrx++;
-            totalOmzet += parseInt(d.revenue || 0);
-
-            const wName = d.warungName || "Unknown";
-            if(!warungStats[wName]) {
-                warungStats[wName] = { name: wName, trx: 0, pax: 0, omzet: 0 };
-            }
-            warungStats[wName].trx++;
-            warungStats[wName].pax += parseInt(d.pax || 0);
-            warungStats[wName].omzet += parseInt(d.revenue || 0);
-        }
-    });
-
-    document.getElementById('stat-total-visitor').innerText = totalVisitor;
-    document.getElementById('stat-total-trx').innerText = totalTrx;
-    document.getElementById('stat-total-omzet').innerText = "Rp " + totalOmzet.toLocaleString();
-
-    tbody.innerHTML = '';
-    const sortedWarung = Object.values(warungStats).sort((a,b) => b.omzet - a.omzet);
-
-    if(sortedWarung.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data transaksi.</td></tr>';
-        return;
-    }
-
-    sortedWarung.forEach((w, index) => {
-        let rankBadge = index + 1;
-        if(index === 0) rankBadge = '🥇';
-        if(index === 1) rankBadge = '🥈';
-        if(index === 2) rankBadge = '🥉';
-
-        tbody.innerHTML += `
-        <tr>
-            <td style="font-size:1.2rem; text-align:center;">${rankBadge}</td>
-            <td><b>${w.name}</b></td>
-            <td>${w.trx}</td>
-            <td>${w.pax} Orang</td>
-            <td style="color:#00ff00;">Rp ${w.omzet.toLocaleString()}</td>
-        </tr>`;
-    });
-}
-
-window.generateReportPDF = function() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("LAPORAN STATISTIK UMKM SMIPRO", 105, 20, null, null, "center");
-    doc.setFontSize(12);
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 30, null, null, "center");
-    let y = 50;
-    doc.text("Peringkat  |  Nama Warung  |  Transaksi  |  Omzet", 20, y);
-    doc.line(20, y+2, 190, y+2);
-    const rows = document.querySelectorAll('#warung-ranking-body tr');
-    rows.forEach(row => {
-        y += 10;
-        const cols = row.querySelectorAll('td');
-        if(cols.length > 1) { 
-            const txt = `${cols[0].innerText}   ${cols[1].innerText}   (${cols[2].innerText})   ${cols[4].innerText}`;
-            doc.text(txt, 20, y);
-        }
-    });
-    doc.save("Laporan_UMKM_SMIPRO.pdf");
-}
 
 /* =========================================
    2. MANAJEMEN PERFORMER
@@ -341,7 +242,6 @@ async function loadStudentData() {
     const tbody = document.getElementById('student-table-body');
     if(!tbody) return;
 
-    // 1. Cek dulu: Ada berapa Total Mentor di sistem?
     const mentorSnap = await getDocs(collection(db, "mentors"));
     const totalMentors = mentorSnap.size; 
 
@@ -422,7 +322,7 @@ window.openRaport = async function(studentId) {
 
 
 /* =========================================
-   5. CMS MODULE
+   5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
    ========================================= */
 
 // 1. DROPDOWN ARTIS
@@ -585,11 +485,7 @@ let currentRadioDocId = null;
 window.loadRadioSessionData = async function() {
     const sessionName = document.getElementById('radio-session-select').value;
     const editArea = document.getElementById('radio-edit-area');
-    
-    if(!sessionName) {
-        editArea.style.display = 'none';
-        return;
-    }
+    if(!sessionName) { editArea.style.display = 'none'; return; }
     editArea.style.display = 'block';
 
     const q = query(collection(db, "broadcasts"), where("sessionName", "==", sessionName), limit(1));
@@ -599,7 +495,6 @@ window.loadRadioSessionData = async function() {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
         currentRadioDocId = docSnap.id; 
-
         document.getElementById('radio-title').value = data.title;
         document.getElementById('radio-host').value = data.host;
         document.getElementById('radio-topic').value = data.topic;
@@ -622,36 +517,16 @@ window.saveRadioUpdate = async function() {
         isLive: document.getElementById('radio-live-toggle').checked
     };
 
-    if(confirm("Simpan perubahan jadwal siaran?")) {
+    if(confirm("Simpan perubahan?")) {
         if(currentRadioDocId) await updateDoc(doc(db, "broadcasts", currentRadioDocId), dataPayload);
         else await addDoc(collection(db, "broadcasts"), dataPayload);
         alert("Jadwal Radio Berhasil Disimpan!");
     }
 }
 
-// MEMUAT LIST JADWAL AGAR BISA DIHAPUS (Hanya tampil di tab jadwal)
-async function loadActiveSchedules() {
-    const tbody = document.getElementById('cms-schedule-list-body');
-    if(!tbody) return; // Jika elemen belum ada di HTML, abaikan
-
-    const q = query(collection(db, "events"), orderBy("date", "asc"));
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3">Tidak ada jadwal.</td></tr>'; return; }
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            tbody.innerHTML += `<tr><td>${d.displayDate}</td><td>${d.location}</td><td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td></tr>`;
-        });
-    });
-}
-window.deleteSchedule = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db,"events",id)); }
-
-
 /* =========================================
-   6. COMMAND CENTER (LIVE MONITOR & STATISTIK)
+   6. COMMAND CENTER (LIVE MONITOR)
    ========================================= */
-
-// A. LISTENER UTAMA (MONITOR & VALIDASI)
 let monitorUnsubscribe = null;
 
 function listenCommandCenter() {
@@ -701,7 +576,7 @@ function listenCommandCenter() {
     });
 }
 
-// B. STATISTIK
+// STATISTIK
 let statsUnsubscribe = null;
 
 function renderFinanceData() {
@@ -714,8 +589,6 @@ function renderFinanceData() {
     statsUnsubscribe = onSnapshot(q, (snapshot) => {
         let totalMoney = 0;
         let totalReq = 0;
-        let perfStats = {};
-        let songStats = {};
         let historyHTML = '';
 
         const now = new Date();
@@ -724,23 +597,12 @@ function renderFinanceData() {
             const date = d.timestamp.toDate();
             let include = false;
 
-            // Logic Filter Sederhana
             if(filter === 'all') include = true;
             else if(filter === 'today' && date.getDate() === now.getDate()) include = true;
-            // ... (bisa ditambah logika week/month disini)
 
             if(include) {
                 totalMoney += parseInt(d.amount);
                 totalReq++;
-                
-                const pName = d.performer || "Unknown";
-                if(!perfStats[pName]) perfStats[pName] = 0;
-                perfStats[pName] += parseInt(d.amount);
-
-                const sTitle = d.song.trim().toLowerCase();
-                if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
-                songStats[sTitle].count++;
-
                 historyHTML += `<tr><td>${date.toLocaleTimeString()}</td><td><b>${d.song}</b></td><td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td></tr>`;
             }
         });
@@ -748,35 +610,25 @@ function renderFinanceData() {
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
         tbody.innerHTML = historyHTML || '<tr><td colspan="3">Kosong.</td></tr>';
-        
-        // Update Chart (Top Song & Top Perf) bisa ditambahkan di sini
     });
 }
 
-// C. ACTION BUTTONS
-window.approveReq = async function(id) {
-    if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
-}
-window.finishReq = async function(id) {
-    if(confirm("Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' });
-}
-window.deleteReq = async function(id) {
-    if(confirm("Tolak?")) await deleteDoc(doc(db, "requests", id));
-}
+window.approveReq = async function(id) { if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' }); }
+window.finishReq = async function(id) { if(confirm("Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' }); }
+window.deleteReq = async function(id) { if(confirm("Tolak?")) await deleteDoc(doc(db, "requests", id)); }
 
 /* =========================================
-   8. LOGIC OVERVIEW & NOTIFIKASI
+   8. DASHBOARD OVERVIEW & NOTIFIKASI
    ========================================= */
 
 async function loadDashboardOverview() {
-    // 1. HITUNG DATA STATISTIK
+    // 1. STATISTIK DATA
     const mitraSnap = await getDocs(collection(db, "warungs"));
     const perfSnap = await getDocs(collection(db, "performers"));
-    
     document.getElementById('count-mitra').innerText = mitraSnap.size;
     document.getElementById('count-perf').innerText = perfSnap.size;
 
-    // 2. HITUNG TOTAL PENDING (POTENSI OMZET)
+    // 2. STATISTIK UANG (PENDING)
     const moneySnap = await getDocs(collection(db, "requests"));
     let totalPending = 0;
     moneySnap.forEach(doc => {
@@ -787,44 +639,36 @@ async function loadDashboardOverview() {
     // 3. NOTIFIKASI
     const notifArea = document.getElementById('admin-notification-area');
     if(!notifArea) return; 
-
     notifArea.innerHTML = ''; 
     let adaNotif = false;
 
-    // A. CEK MITRA
+    // A. MITRA
     mitraSnap.forEach(doc => {
         const d = doc.data();
         if(d.totalTables > 15 && !d.adminApproved) {
             adaNotif = true;
-            notifArea.innerHTML += `
-            <div class="notif-card urgent">
-                <div class="notif-content"><h4>Approval Mitra Besar</h4><p>${d.name} (${d.totalTables} meja)</p></div>
-                <div class="notif-action"><button class="btn-action btn-view" onclick="showView('mitra')">Lihat</button></div>
-            </div>`;
+            notifArea.innerHTML += `<div class="notif-card urgent"><div class="notif-content"><h4>Approval Mitra Besar</h4><p>${d.name}</p></div><div class="notif-action"><button class="btn-action btn-view" onclick="showView('mitra')">Lihat</button></div></div>`;
         }
     });
 
-    // B. CEK SISWA
+    // B. SISWA
     const siswaSnap = await getDocs(collection(db, "students"));
     siswaSnap.forEach(doc => {
         const d = doc.data();
         const scores = Object.values(d.scores || {});
-        if(scores.length > 0) {
-            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-            if(avg >= 90 && d.status === 'training') {
+        
+        // Logika Baru: Min 3 Mentor & Nilai Min 75
+        const totalMentors = 3; // (Idealnya ambil dari db mentors.size)
+        if(scores.length >= totalMentors && d.status === 'training') {
+            const minScore = Math.min(...scores);
+            if(minScore >= 75) {
                 adaNotif = true;
-                notifArea.innerHTML += `
-                <div class="notif-card success">
-                    <div class="notif-content"><h4>Siswa Siap Lulus</h4><p>${d.name} (Rata-rata: ${avg.toFixed(1)})</p></div>
-                    <div class="notif-action"><button class="btn-action btn-edit" onclick="luluskanSiswa('${doc.id}', '${d.name}', '${d.genre}')">Terbitkan</button></div>
-                </div>`;
+                notifArea.innerHTML += `<div class="notif-card success"><div class="notif-content"><h4>Siswa Siap Lulus</h4><p>${d.name}</p></div><div class="notif-action"><button class="btn-action btn-edit" onclick="luluskanSiswa('${doc.id}', '${d.name}', '${d.genre}')">Terbitkan</button></div></div>`;
             }
         }
     });
 
-    if(!adaNotif) {
-        notifArea.innerHTML = `<div class="empty-state-box"><p>Tidak ada notifikasi baru.</p></div>`;
-    }
+    if(!adaNotif) notifArea.innerHTML = `<div class="empty-state-box"><p>Tidak ada notifikasi baru.</p></div>`;
 }
 
 window.luluskanSiswa = async function(id, name, genre) {
@@ -841,23 +685,24 @@ window.luluskanSiswa = async function(id, name, genre) {
 }
 
 /* =========================================
-   10. MODUL CAFE & PUSAT KONTROL TOUR
+   9. MODUL CAFE & TOUR (DATA & LAPORAN)
    ========================================= */
 
-// Navigasi Tab Cafe
 window.switchCafeTab = function(tabId, btn) {
     document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
-    // Reset active class tombol (manual selector karena class sama)
-    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    if(tabId === 'cafe-report') prepareReportFilters(); 
+    if(tabId === 'cafe-report') prepareReportFilters();
+    if(tabId === 'cafe-schedule') {
+        loadCafeDropdownForSchedule();
+        loadActiveTourSchedules();
+    }
 }
 
-// --- A. MANAJEMEN CAFE ---
+// A. CRUD CAFE
 let currentCafeBase64 = null;
-
 window.previewCafeImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -875,29 +720,22 @@ window.saveCafe = async function() {
     const addr = document.getElementById('new-cafe-address').value;
     const img = currentCafeBase64; 
 
-    if(!name) return alert("Nama Cafe wajib diisi!");
+    if(!name) return alert("Isi Nama Cafe!");
 
     if(id) {
-        // --- MODE EDIT (UPDATE) ---
-        if(confirm("Simpan perubahan data cafe ini?")) {
+        if(confirm("Simpan perubahan?")) {
             const updateData = { name: name, address: addr };
             if(img) updateData.img = img; 
-            
             await updateDoc(doc(db, "venues_partner", id), updateData);
-            alert("Data Cafe Diperbarui!");
+            alert("Data Diperbarui!");
             resetCafeForm();
         }
     } else {
-        // --- MODE BARU (ADD) ---
-        if(confirm("Tambah Cafe Partner Baru?")) {
+        if(confirm("Tambah Partner?")) {
             await addDoc(collection(db, "venues_partner"), {
-                name: name,
-                address: addr,
-                img: img || "https://via.placeholder.com/100?text=Cafe", 
-                type: 'cafe',
-                joinedAt: new Date()
+                name: name, address: addr, img: img || "https://via.placeholder.com/100", type: 'cafe', joinedAt: new Date()
             });
-            alert("Cafe Partner Ditambahkan!");
+            alert("Berhasil Ditambahkan!");
             resetCafeForm();
         }
     }
@@ -906,110 +744,68 @@ window.saveCafe = async function() {
 async function loadCafeData() {
     const tbody = document.getElementById('cafe-table-body');
     if(!tbody) return;
-
     onSnapshot(collection(db, "venues_partner"), (snap) => {
-        tbody.innerHTML = '';
-        if(snap.empty) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada partner.</td></tr>';
-            return;
-        }
-
+        tbody.innerHTML = snap.empty ? '<tr><td colspan="5">Kosong</td></tr>' : '';
         snap.forEach(doc => {
             const d = doc.data();
             const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
-            
-            // Perhatikan Tombol Edit memanggil fungsi editCafe
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
-            tbody.innerHTML += `
-            <tr>
-                <td><img src="${d.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"></td>
-                <td><b>${d.name}</b></td>
-                <td>${d.address}</td>
-                <td><a href="${linkSawer}" target="_blank" style="color:#00d2ff;">Link Live</a></td>
-                <td>${btnEdit} ${btnDel}</td>
-            </tr>`;
+            tbody.innerHTML += `<tr><td><img src="${d.img||''}" width="40"></td><td><b>${d.name}</b></td><td>${d.address}</td><td><a href="${linkSawer}" target="_blank" style="color:cyan">Link</a></td><td>${btnEdit} ${btnDel}</td></tr>`;
         });
     });
 }
 
-// FUNGSI EDIT (Mengisi Form kembali)
 window.editCafe = function(id, name, addr, img) {
     document.getElementById('cafe-edit-id').value = id; 
     document.getElementById('new-cafe-name').value = name;
     document.getElementById('new-cafe-address').value = addr;
-    
-    document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
+    document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100";
     currentCafeBase64 = null; 
-
-    // Ubah Tombol jadi Edit
     const btnSave = document.getElementById('btn-save-cafe');
     btnSave.innerText = "Simpan Perubahan";
-    btnSave.style.background = "#FFD700"; 
-    btnSave.style.color = "black";
+    btnSave.style.background = "#FFD700"; btnSave.style.color = "black";
     document.getElementById('btn-cancel-cafe').style.display = "inline-block"; 
 }
 
-// FUNGSI RESET FORM (Balik ke Mode Tambah)
 window.resetCafeForm = function() {
     document.getElementById('cafe-edit-id').value = ""; 
     document.getElementById('new-cafe-name').value = "";
     document.getElementById('new-cafe-address').value = "";
-    document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Foto";
+    document.getElementById('cafe-preview').src = "https://via.placeholder.com/100";
     currentCafeBase64 = null;
-    
     const btnSave = document.getElementById('btn-save-cafe');
     btnSave.innerText = "+ Simpan Partner";
-    btnSave.style.background = ""; 
-    btnSave.style.color = "white";
+    btnSave.style.background = ""; btnSave.style.color = "white";
     document.getElementById('btn-cancel-cafe').style.display = "none";
 }
 
-// Hapus Cafe
-window.deleteCafe = async (id) => { if(confirm("Hapus Cafe ini?")) await deleteDoc(doc(db,"venues_partner",id)); }
+window.deleteCafe = async (id) => { if(confirm("Hapus?")) await deleteDoc(doc(db,"venues_partner",id)); }
 
-// --- B. PUSAT KONTROL (LAPORAN STATISTIK) ---
 
-// 1. Siapkan Dropdown
+// --- B. LAPORAN & FILTER ---
 async function prepareReportFilters() {
     const locSelect = document.getElementById('rep-loc');
-    locSelect.innerHTML = `
-        <option value="all">Semua Lokasi (Stadion & Cafe)</option>
-        <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
-    `;
-    
+    locSelect.innerHTML = `<option value="all">Semua Lokasi</option><option value="Stadion Bayuangga Zone">Stadion Pusat</option>`;
     const cafes = await getDocs(collection(db, "venues_partner"));
-    cafes.forEach(doc => {
-        const name = doc.data().name;
-        locSelect.innerHTML += `<option value="${name}">${name}</option>`;
-    });
+    cafes.forEach(doc => locSelect.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`);
 
     const artSelect = document.getElementById('rep-art');
     artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
-    
     const perfs = await getDocs(collection(db, "performers"));
-    perfs.forEach(doc => {
-        const name = doc.data().name;
-        artSelect.innerHTML += `<option value="${name}">${name}</option>`;
-    });
+    perfs.forEach(doc => artSelect.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`);
 }
 
-// 2. Logic Filter & Statistik
 window.loadCafeReport = async function() {
     const loc = document.getElementById('rep-loc').value;
     const time = document.getElementById('rep-time').value;
     const art = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
-
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sedang menghitung data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5">Menghitung...</td></tr>';
 
     const reqSnap = await getDocs(query(collection(db, "requests"), where("status", "==", "finished")));
-    
-    let totalMoney = 0;
-    let totalSongs = 0;
-    let detailHTML = '';
-
+    let totalMoney = 0, totalSongs = 0, detailHTML = '';
     const now = new Date();
 
     reqSnap.forEach(doc => {
@@ -1017,82 +813,111 @@ window.loadCafeReport = async function() {
         const date = d.timestamp.toDate();
         let isValid = true;
 
-        // Filter Lokasi
         const dataLoc = d.location || "Stadion Bayuangga Zone"; 
         if(loc !== 'all' && dataLoc !== loc) isValid = false;
-
-        // Filter Waktu
         if(time === 'today' && date.getDate() !== now.getDate()) isValid = false;
-        if(time === 'month' && date.getMonth() !== now.getMonth()) isValid = false;
-        
-        // Filter Artis
         if(art !== 'all' && d.performer !== art) isValid = false;
 
         if(isValid) {
-            totalMoney += parseInt(d.amount);
-            totalSongs++;
-            detailHTML += `
-            <tr>
-                <td>${date.toLocaleDateString()}</td>
-                <td>${dataLoc}</td>
-                <td>${d.performer}</td>
-                <td>${d.song}</td>
-                <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
-            </tr>`;
+            totalMoney += parseInt(d.amount); totalSongs++;
+            detailHTML += `<tr><td>${date.toLocaleDateString()}</td><td>${dataLoc}</td><td>${d.performer}</td><td>${d.song}</td><td style="color:#00ff00;">Rp ${d.amount}</td></tr>`;
         }
     });
 
-    // Statistik Pax (Khusus Stadion)
+    // Pax Stadion
     let totalPax = 0;
     if(loc === 'all' || loc === 'Stadion Bayuangga Zone') {
         const bookSnap = await getDocs(query(collection(db, "bookings"), where("status", "==", "finished")));
         bookSnap.forEach(doc => {
             const d = doc.data();
-            const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
-            let isTimeValid = true;
-            if(time === 'today' && date.getDate() !== now.getDate()) isTimeValid = false;
-            
-            if(isTimeValid) {
-                totalPax += parseInt(d.pax || 0);
-            }
+            const date = d.finishedAt.toDate();
+            if(time === 'today' && date.getDate() !== now.getDate()) return;
+            totalPax += parseInt(d.pax || 0);
         });
     }
-    
-    // Tampilkan Data
+
     document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
     document.getElementById('rep-total-song').innerText = totalSongs;
-    document.getElementById('rep-total-pax').innerText = (loc === 'all' || loc === 'Stadion Bayuangga Zone') ? totalPax : "-";
-    
-    tbody.innerHTML = detailHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter.</td></tr>';
+    document.getElementById('rep-total-pax').innerText = (loc==='all'||loc==='Stadion Bayuangga Zone') ? totalPax : "-";
+    tbody.innerHTML = detailHTML || '<tr><td colspan="5">Tidak ada data.</td></tr>';
 }
 
 /* =========================================
-   7. EKSEKUSI AWAL
+   11. MITRA REPORT (OMZET WARUNG)
+   ========================================= */
+window.switchMitraTab = function(tabId, btn) {
+    document.querySelectorAll('.mitra-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if(tabId === 'mitra-stats') loadWarungStatistics();
+}
+
+async function loadWarungStatistics() {
+    const filter = document.getElementById('report-filter').value;
+    const tbody = document.getElementById('warung-ranking-body');
+    const q = query(collection(db, "bookings"), where("status", "==", "finished"));
+    const snapshot = await getDocs(q);
+
+    let totalVisitor=0, totalTrx=0, totalOmzet=0, warungStats={};
+    const now = new Date();
+
+    snapshot.forEach(doc => {
+        const d = doc.data();
+        const date = d.finishedAt.toDate();
+        let include = false;
+        if(filter === 'all') include = true;
+        else if (filter === 'month' && date.getMonth() === now.getMonth()) include = true;
+        else if (filter === 'week' && date >= new Date(now.setDate(now.getDate()-7))) include = true;
+
+        if(include) {
+            totalVisitor += parseInt(d.pax || 0); totalTrx++; totalOmzet += parseInt(d.revenue || 0);
+            const wName = d.warungName || "Unknown";
+            if(!warungStats[wName]) warungStats[wName] = { name: wName, trx: 0, pax: 0, omzet: 0 };
+            warungStats[wName].trx++; warungStats[wName].pax += parseInt(d.pax || 0); warungStats[wName].omzet += parseInt(d.revenue || 0);
+        }
+    });
+
+    document.getElementById('stat-total-visitor').innerText = totalVisitor;
+    document.getElementById('stat-total-trx').innerText = totalTrx;
+    document.getElementById('stat-total-omzet').innerText = "Rp " + totalOmzet.toLocaleString();
+
+    tbody.innerHTML = '';
+    const sortedWarung = Object.values(warungStats).sort((a,b) => b.omzet - a.omzet);
+    sortedWarung.forEach((w, index) => {
+        let badge = index===0?'🥇':(index===1?'🥈':'🥉');
+        tbody.innerHTML += `<tr><td style="font-size:1.2rem;text-align:center;">${badge}</td><td><b>${w.name}</b></td><td>${w.trx}</td><td>${w.pax} Orang</td><td style="color:#00ff00;">Rp ${w.omzet.toLocaleString()}</td></tr>`;
+    });
+}
+// Generate PDF
+window.generateReportPDF = function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("LAPORAN UMKM", 105, 20, null, null, "center");
+    // (Kode PDF sederhana, bisa dikembangkan)
+    doc.save("Laporan.pdf");
+}
+
+/* =========================================
+   12. STARTUP
    ========================================= */
 window.onload = function() {
-    // Load Data Awal
-    loadDashboardOverview(); // <-- PENTING: Agar angka tidak 0 saat pertama buka
-    
-    // Load data lain di background agar cepat saat pindah tab
+    loadDashboardOverview();
     loadMitraData();
     loadPerformerData();
     loadMentorData();
     loadStudentData(); 
     loadCafeData();
 
-    // Auto return tab
     setTimeout(() => {
         const lastTab = localStorage.getItem('adminReturnTab');
         if (lastTab) {
             const allMenus = document.querySelectorAll('.menu-item');
             allMenus.forEach(btn => {
                 const clickAttr = btn.getAttribute('onclick');
-                if (clickAttr && clickAttr.includes(lastTab)) {
-                    btn.click();
-                }
+                if (clickAttr && clickAttr.includes(lastTab)) btn.click();
             });
             localStorage.removeItem('adminReturnTab');
         }
     }, 500);
 }
-
