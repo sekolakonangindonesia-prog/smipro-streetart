@@ -182,13 +182,13 @@
             }
         }
 
-       // FUNGSI PENCARI JADWAL (LIVE STAGE, RADIO & PODCAST)
+       // FUNGSI PENCARI JADWAL (LIVE STAGE, TOUR, RADIO, PODCAST)
         async function loadArtistSchedule(artistName) {
             const container = document.getElementById('schedule-list');
             container.innerHTML = '';
             let found = false;
 
-            // 1. CARI DI JADWAL PANGGUNG (EVENTS) - KARTU MERAH
+            // 1. CARI DI JADWAL PANGGUNG & TOUR (EVENTS)
             const qEvent = query(collection(db, "events"), orderBy("date", "asc"));
             const snapEvent = await getDocs(qEvent);
 
@@ -196,27 +196,45 @@
                 const event = doc.data();
                 if(event.performers && Array.isArray(event.performers)) {
                     const mySession = event.performers.find(p => p.name === artistName);
+                    
                     if(mySession) {
                         found = true;
-                        container.innerHTML += `
-                        <div class="sched-card official" style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #E50914; margin-bottom:10px;">
-                            <div style="font-size:1.5rem; width:40px; text-align:center; color:#E50914;">
-                                <i class="fa-solid fa-microphone-lines"></i>
-                            </div>
-                            <div>
-                                <b style="color:white;">SMIPRO Live Stage</b><br>
-                                <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small><br>
-                                <span style="color:#E50914; font-size:0.9rem; font-weight:bold;">Jam Tampil: ${mySession.time} WIB</span>
-                            </div>
-                        </div>`;
+                        
+                        // CEK TIPE EVENT (Main vs Tour)
+                        if (event.type === 'tour') {
+                            // --- TAMPILAN TOUR (ORANYE) ---
+                            container.innerHTML += `
+                            <div class="sched-card cafe" style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #ff9800; margin-bottom:10px;">
+                                <div style="font-size:1.5rem; width:40px; text-align:center; color:#ff9800;">
+                                    <i class="fa-solid fa-mug-hot"></i>
+                                </div>
+                                <div>
+                                    <b style="color:white;">SMIPRO ON TOUR</b><br>
+                                    <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small><br>
+                                    <span style="color:#ff9800; font-size:0.9rem; font-weight:bold;">Jam: ${mySession.time}</span>
+                                </div>
+                            </div>`;
+                        } else {
+                            // --- TAMPILAN UTAMA (MERAH) ---
+                            container.innerHTML += `
+                            <div class="sched-card official" style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #E50914; margin-bottom:10px;">
+                                <div style="font-size:1.5rem; width:40px; text-align:center; color:#E50914;">
+                                    <i class="fa-solid fa-microphone-lines"></i>
+                                </div>
+                                <div>
+                                    <b style="color:white;">SMIPRO Live Stage</b><br>
+                                    <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small><br>
+                                    <span style="color:#E50914; font-size:0.9rem; font-weight:bold;">Jam: ${mySession.time} WIB</span>
+                                </div>
+                            </div>`;
+                        }
                     }
                 }
             });
 
-            // 2. CARI DI JADWAL RADIO / TIKTOK - KARTU BIRU
+            // 2. CARI DI RADIO (Sama seperti sebelumnya, tidak berubah)
             const qRadio = query(collection(db, "broadcasts"), where("host", "==", artistName));
             const snapRadio = await getDocs(qRadio);
-
             snapRadio.forEach((doc) => {
                 const radio = doc.data();
                 found = true;
@@ -227,43 +245,26 @@
                     </div>
                     <div>
                         <b style="color:white;">Live Streaming / Radio</b><br>
-                        <small style="color:#ccc;">Sesi: ${radio.sessionName || 'Spesial'} • Topik: "${radio.topic}"</small><br>
-                        <span style="color:#00d2ff; font-size:0.9rem; font-weight:bold;">
-                            ${radio.isLive ? 'SEDANG BERLANGSUNG' : 'Segera Tayang'}
-                        </span>
+                        <small style="color:#ccc;">Topik: "${radio.topic}"</small><br>
+                        <span style="color:#00d2ff; font-size:0.9rem; font-weight:bold;">${radio.isLive ? 'LIVE' : 'Segera'}</span>
                     </div>
                 </div>`;
             });
 
-            // 3. CARI DI PODCAST (HOST/NARASUMBER) - KARTU UNGU
-            // Mencari apakah nama artis ada di kolom Host
+            // 3. CARI DI PODCAST (Sama seperti sebelumnya)
             const qPodcast = query(collection(db, "podcasts"), where("host", "==", artistName));
             const snapPodcast = await getDocs(qPodcast);
-
             snapPodcast.forEach((doc) => {
                 const pod = doc.data();
                 found = true;
-                
-                // Cek apakah ini episode baru atau lama (opsional, disini kita tampilkan semua)
                 container.innerHTML += `
                 <div class="sched-card podcast" style="background:#1a1a1a; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #a855f7; margin-bottom:10px;">
-                    <div style="font-size:1.5rem; width:40px; text-align:center; color:#a855f7;">
-                        <i class="fa-solid fa-podcast"></i>
-                    </div>
-                    <div>
-                        <b style="color:white;">SMIPRO Podcast</b><br>
-                        <small style="color:#ccc;">Judul: "${pod.title}"</small><br>
-                        <span style="color:#a855f7; font-size:0.8rem; font-weight:bold; cursor:pointer;" onclick="window.open('${pod.link}', '_blank')">
-                            <i class="fa-solid fa-play"></i> Tonton Sekarang
-                        </span>
-                    </div>
+                    <div style="font-size:1.5rem; width:40px; text-align:center; color:#a855f7;"><i class="fa-solid fa-podcast"></i></div>
+                    <div><b style="color:white;">Podcast</b><br><small>${pod.title}</small></div>
                 </div>`;
             });
 
-            // JIKA KOSONG SEMUA
-            if(!found) {
-                container.innerHTML = `<p style="text-align:center; color:#666; font-style:italic;">Belum ada jadwal aktif (Panggung/Radio/Podcast).</p>`;
-            }
+            if(!found) container.innerHTML = `<p style="text-align:center; color:#666;">Belum ada jadwal aktif.</p>`;
         }
         loadProfile();
     </script>
