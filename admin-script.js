@@ -548,62 +548,6 @@ async function loadActiveTourSchedules() {
 window.deleteSchedule = async function(id) { 
     if(confirm("Hapus Jadwal ini?")) await deleteDoc(doc(db,"events",id)); 
 }
-
-// 3. SIMPAN JADWAL TOUR (CAFE) - INI YANG TADI ANDA GABUNG
-window.saveTourSchedule = async function() {
-    const displayDate = document.getElementById('tour-display-date').value;
-    const realDate = document.getElementById('tour-real-date').value;
-    const location = document.getElementById('tour-location').value;
-    const perfName = document.getElementById('tour-perf-name').value;
-    const perfTime = document.getElementById('tour-perf-time').value;
-
-    if(!displayDate || !realDate || !location || !perfName) return alert("Data Tour belum lengkap!");
-
-    if(confirm("Publish Jadwal Tour?")) {
-        await addDoc(collection(db, "events"), {
-            type: "tour", 
-            displayDate: displayDate,
-            date: realDate,
-            location: location,
-            statusText: "ON TOUR",
-            performers: [{ name: perfName, time: perfTime }] 
-        });
-        alert("Jadwal Tour Berhasil Dipublish!");
-    }
-}
-
-// 4. LOAD DATA PENDUKUNG TOUR
-async function loadCafeDropdownForSchedule() {
-    const select = document.getElementById('tour-location');
-    if(!select) return; 
-
-    select.innerHTML = '<option value="">-- Pilih Lokasi Cafe --</option>';
-    const q = query(collection(db, "venues_partner"), orderBy("name", "asc"));
-    const snap = await getDocs(q);
-    snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
-}
-
-async function loadActiveTourSchedules() {
-    const tbody = document.getElementById('cms-tour-list-body');
-    if(!tbody) return;
-
-    const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"));
-    
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal tour.</td></tr>'; return; }
-        
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            tbody.innerHTML += `
-            <tr>
-                <td>${d.displayDate}</td>
-                <td>${d.location}<br><small style="color:#ff9800;">${d.performers[0].name}</small></td>
-                <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
-            </tr>`;
-        });
-    });
-}
     
 // TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
