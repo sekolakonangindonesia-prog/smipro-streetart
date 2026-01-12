@@ -329,15 +329,33 @@
 
             <!-- TAB 1: DATA CAFE -->
             <div id="cafe-data" class="cafe-content">
-                <div class="cms-form-group">
-                    <h4 style="margin-top:0; color:#E50914;">Tambah Partner Baru</h4>
+                <div class="cms-form-group" style="display:flex; gap:20px; align-items:center;">
+
+                    !-- 1. Upload Foto -->
+                    <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('cafe-file').click()">
+                        <img id="cafe-preview" src="https://via.placeholder.com/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                        <input type="file" id="cafe-file" style="display:none;" accept="image/*" onchange="previewCafeImg(this)">
+                        <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Logo</div>
+                    </div>
+
+                    <div style="flex:1;">
+                        <h4 style="margin-top:0; color:#E50914; margin-bottom:10px;">Kelola Data Partner</h4>
+                        
+                        <!-- Input ID Tersembunyi (Untuk Mode Edit) -->
+                        <input type="hidden" id="cafe-edit-id">
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="new-cafe-name" class="cms-input" placeholder="Nama Cafe" style="margin:0;">
+                            <input type="text" id="new-cafe-address" class="cms-input" placeholder="Alamat Singkat" style="margin:0;">
+                        </div>
+                                           
                     <div style="display:flex; gap:10px;">
-                        <input type="text" id="new-cafe-name" class="cms-input" placeholder="Nama Cafe (Misal: Kopi Kenangan)" style="margin:0;">
-                        <input type="text" id="new-cafe-address" class="cms-input" placeholder="Alamat Singkat" style="margin:0;">
-                        <button class="btn-action btn-view" onclick="addCafe()">Simpan</button>
+                        <button id="btn-save-cafe" class="btn-action btn-view" onclick="saveCafe()" style="width:100%;">+ Simpan Partner</button>
+                         <button id="btn-cancel-cafe" class="btn-action btn-delete" onclick="resetCafeForm()" style="width:auto; display:none;">Batal</button>
+                        </div>
                     </div>
                 </div>
-
+                       
                 <table class="admin-table">
                     <thead>
                         <tr>
