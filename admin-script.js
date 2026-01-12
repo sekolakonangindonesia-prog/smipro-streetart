@@ -514,39 +514,6 @@ async function loadActiveTourSchedules() {
     });
 }
 
-// 5. LOAD LIST JADWAL UTAMA (Agar muncul di Tab Jadwal Event)
-async function loadActiveSchedules() {
-    const tbody = document.getElementById('cms-schedule-list-body');
-    if(!tbody) return;
-
-    // Ambil semua event urut tanggal
-    const q = query(collection(db, "events"), orderBy("date", "asc"));
-    
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        let hasData = false;
-
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            
-            // FILTER PENTING: Hanya tampilkan jika TIPE-nya 'main' (atau kosong/jadwal lama)
-            // Ini supaya Jadwal Tour tidak muncul di sini
-            if (data.type === 'main' || !data.type) { 
-                hasData = true;
-                tbody.innerHTML += `
-                <tr>
-                    <td>
-                        <b>${data.displayDate}</b><br>
-                        <small style="color:#888;">${data.date}</small>
-                    </td>
-                    <td>${data.location}</td>
-                    <td>
-                        <button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button>
-                    </td>
-                </tr>`;
-            }
-        });
-
         if(!hasData) tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal utama.</td></tr>';
     });
 }
