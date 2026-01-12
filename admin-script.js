@@ -29,20 +29,16 @@ window.showView = function(viewId, btn) {
     if(btn) btn.classList.add('active');
 }
 
+// Cek fungsi ini di bagian atas file admin-script.js
 window.switchCmsTab = function(tabId, btn) {
-    document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-    
-    if(btn && btn.parentElement) {
-        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-    }
-    if(btn) btn.classList.add('active');
+    // ... (kode hide/show element) ...
 
-    // LOGIKA LOAD DATA (PENTING!)
-    if(tabId === 'cms-schedule') loadActiveSchedules(); // Muat List Jadwal Utama
+    // PASTIKAN BARIS INI ADA:
+    if(tabId === 'cms-schedule') loadActiveSchedules(); // <--- Panggil fungsi yang baru kita tambah
+    
     if(tabId === 'cms-tour') {
-        loadCafeDropdownForSchedule(); // Muat Dropdown Cafe
-        loadActiveTourSchedules();     // Muat List Jadwal Tour
+        loadCafeDropdownForSchedule();
+        loadActiveTourSchedules();
     }
 }
 
@@ -513,6 +509,43 @@ async function loadActiveTourSchedules() {
                 <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
             </tr>`;
         });
+    });
+}
+
+// 5. LOAD LIST JADWAL UTAMA (Agar muncul di Tab Jadwal Event)
+async function loadActiveSchedules() {
+    const tbody = document.getElementById('cms-schedule-list-body');
+    if(!tbody) return;
+
+    // Ambil semua event urut tanggal
+    const q = query(collection(db, "events"), orderBy("date", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        let hasData = false;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // FILTER PENTING: Hanya tampilkan jika TIPE-nya 'main' (atau kosong/jadwal lama)
+            // Ini supaya Jadwal Tour tidak muncul di sini
+            if (data.type === 'main' || !data.type) { 
+                hasData = true;
+                tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <b>${data.displayDate}</b><br>
+                        <small style="color:#888;">${data.date}</small>
+                    </td>
+                    <td>${data.location}</td>
+                    <td>
+                        <button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button>
+                    </td>
+                </tr>`;
+            }
+        });
+
+        if(!hasData) tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal utama.</td></tr>';
     });
 }
     
