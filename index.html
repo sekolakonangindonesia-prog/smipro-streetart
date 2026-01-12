@@ -195,10 +195,18 @@
             const querySnapshot = await getDocs(q);
 
             let foundMain = false;
+
+            // Bersihkan dulu
+            container.innerHTML = '';
+            
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 if (data.type === 'main' && !foundMain) { 
                     foundMain = true;
+
+                    // MUNCULKAN KOTAKNYA
+                    container.style.display = 'block';
+                    
                     let artistNames = data.performers ? data.performers.map(p => p.name).join(", ") : "Artis Pilihan";
                     const dateParts = data.displayDate.split(' '); 
                     const hari = dateParts[0].replace(',','').toUpperCase();
@@ -234,37 +242,48 @@
             const container = document.getElementById('home-radio-container');
             const q = query(collection(db, "broadcasts"), orderBy("order", "desc"));
             const querySnapshot = await getDocs(q);
-            
+                        
             let dataToShow = null;
+            
+             // Cari yang LIVE dulu
             querySnapshot.forEach(doc => {
                 const d = doc.data();
                 if(d.isLive) dataToShow = d; 
             });
-            if(!dataToShow && !querySnapshot.empty) dataToShow = querySnapshot.docs[0].data();
 
-            if(dataToShow) {
-                const liveBadge = dataToShow.isLive ? 'border:1px solid #00d2ff; background:#00d2ff; color:black;' : 'border:1px solid #00d2ff; background:transparent; color:#00d2ff;';
-                const liveText = dataToShow.isLive ? 'LIVE SEKARANG' : 'SEGERA TAYANG';
-                
-                container.innerHTML = `
-                <div class="main-schedule-card cyan-theme" onclick="location.href='radio.html'">
-                    <div class="msc-date cyan-bg">
-                        <span style="font-size:0.8rem; letter-spacing:2px;">${dataToShow.sessionName || 'RADIO'}</span>
-                        <span style="font-size:2.5rem; font-weight:800; line-height:1;">${dataToShow.time.split(':')[0]}</span>
-                        <span style="font-size:0.9rem; font-weight:bold;">WIB</span>
-                    </div>
-                    <div class="msc-info">
-                        <div class="msc-badge cyan-theme" style="${liveBadge}">${liveText}</div>
-                        <h3 style="margin:5px 0 5px 0; color:white;">${dataToShow.title}</h3>
-                        <p style="color:#ccc; font-size:0.9rem; margin:0;">
-                            <i class="fa-brands fa-tiktok cyan-text"></i> Topik: "${dataToShow.topic}"
-                        </p>
-                        <small style="color:#888; margin-top:5px; display:block;">
-                            <i class="fa-solid fa-paper-plane cyan-text"></i> Klik untuk Titip Salam & Request Lagu
-                        </small>
-                    </div>
-                </div>`;
-            }
+            // Jika tidak ada yang LIVE, dan user ingin HILANGKAN jika offline,
+            // Maka kita cek: apakah kita mau menampilkan jadwal yang akan datang?
+            // Sesuai permintaan Anda: "Kalau tidak ada jadwal/offline, hilang".
+            
+            // Logika: Hanya muncul jika isLive = true ATAU (opsional) ada data tapi belum live
+            // Jika Anda ingin BENAR-BENAR HILANG jika tidak Live:
+            if(!dataToShow) return; // Keluar, biarkan display:none
+
+             // Jika ada data (Live), munculkan
+            container.style.display = 'block';
+            container.innerHTML = '';
+           
+            const liveBadge = dataToShow.isLive ? 'border:1px solid #00d2ff; background:#00d2ff; color:black;' : 'border:1px solid #00d2ff; background:transparent; color:#00d2ff;';
+            const liveText = dataToShow.isLive ? 'LIVE SEKARANG' : 'SEGERA TAYANG';
+            
+            container.innerHTML = `
+            <div class="main-schedule-card cyan-theme" onclick="location.href='radio.html'">
+                <div class="msc-date cyan-bg">
+                    <span style="font-size:0.8rem; letter-spacing:2px;">${dataToShow.sessionName || 'RADIO'}</span>
+                    <span style="font-size:2.5rem; font-weight:800; line-height:1;">${dataToShow.time ? dataToShow.time.split(':')[0] : 'NOW'}</span>
+                    <span style="font-size:0.9rem; font-weight:bold;">WIB</span>
+                </div>
+                <div class="msc-info">
+                    <div class="msc-badge cyan-theme" style="${liveBadge}">${liveText}</div>
+                    <h3 style="margin:5px 0 5px 0; color:white;">${dataToShow.title}</h3>
+                    <p style="color:#ccc; font-size:0.9rem; margin:0;">
+                        <i class="fa-brands fa-tiktok cyan-text"></i> Topik: "${dataToShow.topic}"
+                    </p>
+                    <small style="color:#888; margin-top:5px; display:block;">
+                        <i class="fa-solid fa-paper-plane cyan-text"></i> Klik untuk Gabung Live
+                    </small>
+                </div>
+            </div>`;
         }
 
         // JADWAL TOUR (CAFE)
@@ -278,7 +297,10 @@
                 // Jika tidak ada jadwal tour, container kita kosongkan atau sembunyikan
                 container.innerHTML = ''; 
                 return;
-            }
+                
+             // Jika ada data
+            container.style.display = 'block';
+            container.innerHTML = '';
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
