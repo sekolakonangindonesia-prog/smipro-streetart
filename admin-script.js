@@ -1046,21 +1046,28 @@ window.generateReportPDF = function() {
 window.switchCafeTab = function(tabId, btn) {
     document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
-    document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
-    btn.classList.add('active');
+    // Reset active class tombol (manual selector)
+    if(btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    }
+    if(btn) btn.classList.add('active');
 
     if(tabId === 'cafe-report') prepareReportFilters(); 
 }
 
 // --- A. MANAJEMEN CAFE ---
-let currentCafeBase64 = null;
+
+// Cek apakah variabel sudah ada, jika belum definisikan (untuk mencegah error duplikat)
+if (typeof window.currentCafeBase64 === 'undefined') {
+    window.currentCafeBase64 = null;
+}
 
 window.previewCafeImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            currentCafeBase64 = e.target.result;
-            document.getElementById('cafe-preview').src = currentCafeBase64;
+            window.currentCafeBase64 = e.target.result;
+            document.getElementById('cafe-preview').src = window.currentCafeBase64;
         }
         reader.readAsDataURL(input.files[0]);
     }
@@ -1070,7 +1077,7 @@ window.saveCafe = async function() {
     const id = document.getElementById('cafe-edit-id').value; 
     const name = document.getElementById('new-cafe-name').value;
     const addr = document.getElementById('new-cafe-address').value;
-    const img = currentCafeBase64; 
+    const img = window.currentCafeBase64; 
 
     if(!name) return alert("Nama Cafe wajib diisi!");
 
@@ -1115,7 +1122,7 @@ async function loadCafeData() {
             const d = doc.data();
             const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
             
-            // PERBAIKAN: Tombol Edit & Hapus yang Benar
+            // Tombol Edit & Hapus
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
@@ -1138,7 +1145,7 @@ window.editCafe = function(id, name, addr, img) {
     document.getElementById('new-cafe-address').value = addr;
     
     document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
-    currentCafeBase64 = null; 
+    window.currentCafeBase64 = null; 
 
     const btnSave = document.getElementById('btn-save-cafe');
     btnSave.innerText = "Simpan Perubahan";
@@ -1153,7 +1160,7 @@ window.resetCafeForm = function() {
     document.getElementById('new-cafe-name').value = "";
     document.getElementById('new-cafe-address').value = "";
     document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Foto";
-    currentCafeBase64 = null;
+    window.currentCafeBase64 = null;
     
     const btnSave = document.getElementById('btn-save-cafe');
     btnSave.innerText = "+ Simpan Partner";
@@ -1162,13 +1169,112 @@ window.resetCafeForm = function() {
     document.getElementById('btn-cancel-cafe').style.display = "none";
 }
 
-// FUNGSI HAPUS (Ini yang kemarin tidak jalan karena typo/salah panggil)
-window.deleteCafe = async (id) => { 
+// FUNGSI HAPUS
+window.deleteCafe = async function(id) { 
     if(confirm("Hapus Cafe ini?")) {
         await deleteDoc(doc(db,"venues_partner",id)); 
     }
 }
 
+
+// --- B. PUSAT KONTROL (LAPORAN STATISTIK) ---
+
+// 1. Siapkan Dropdown
+async function prepareReportFilters() {
+    const locSelect = document.getElementById('rep-loc');
+    if(!locSelect) return;
+    
+    locSelect.innerHTML = `
+        <option value="all">Semua Lokasi (Stadion & Cafe)</option>
+        <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
+    `;
+    
+    const cafes = await getDocs(collection(db, "venues_partner"));
+    cafes.forEach(doc => {
+        const name = doc.data().name;
+        locSelect.innerHTML += `<option value="${name}">${name}</option>`;
+    });
+
+    const artSelect = document.getElementById('rep-art');
+    artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
+    
+    const perfs = await getDocs(collection(db, "performers"));
+    perfs.forEach(doc => {
+        const name = doc.data().name;
+        artSelect.innerHTML += `<option value="${name}">${name}</option>`;
+    });
+}
+
+// 2. Logic Filter & Statistik
+window.loadCafeReport = async function() {
+    const loc = document.getElementById('rep-loc').value;
+    const time = document.getElementById('rep-time').value;
+    const art = document.getElementById('rep-art').value;
+    const tbody = document.getElementById('rep-detail-body');
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sedang menghitung data...</td></tr>';
+
+    const reqSnap = await getDocs(query(collection(db, "requests"), where("status", "==", "finished")));
+    
+    let totalMoney = 0;
+    let totalSongs = 0;
+    let detailHTML = '';
+
+    const now = new Date();
+
+    reqSnap.forEach(doc => {
+        const d = doc.data();
+        const date = d.timestamp.toDate();
+        let isValid = true;
+
+        // Filter Lokasi
+        const dataLoc = d.location || "Stadion Bayuangga Zone"; 
+        if(loc !== 'all' && dataLoc !== loc) isValid = false;
+
+        // Filter Waktu
+        if(time === 'today' && date.getDate() !== now.getDate()) isValid = false;
+        if(time === 'month' && date.getMonth() !== now.getMonth()) isValid = false;
+        
+        // Filter Artis
+        if(art !== 'all' && d.performer !== art) isValid = false;
+
+        if(isValid) {
+            totalMoney += parseInt(d.amount);
+            totalSongs++;
+            detailHTML += `
+            <tr>
+                <td>${date.toLocaleDateString()}</td>
+                <td>${dataLoc}</td>
+                <td>${d.performer}</td>
+                <td>${d.song}</td>
+                <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
+            </tr>`;
+        }
+    });
+
+    // Statistik Pax (Khusus Stadion)
+    let totalPax = 0;
+    if(loc === 'all' || loc === 'Stadion Bayuangga Zone') {
+        const bookSnap = await getDocs(query(collection(db, "bookings"), where("status", "==", "finished")));
+        bookSnap.forEach(doc => {
+            const d = doc.data();
+            const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
+            let isTimeValid = true;
+            if(time === 'today' && date.getDate() !== now.getDate()) isTimeValid = false;
+            
+            if(isTimeValid) {
+                totalPax += parseInt(d.pax || 0);
+            }
+        });
+    }
+    
+    // Tampilkan Data
+    document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+    document.getElementById('rep-total-song').innerText = totalSongs;
+    document.getElementById('rep-total-pax').innerText = (loc === 'all' || loc === 'Stadion Bayuangga Zone') ? totalPax : "-";
+    
+    tbody.innerHTML = detailHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter.</td></tr>';
+}
 
 // --- B. PUSAT KONTROL (LAPORAN STATISTIK) ---
 
