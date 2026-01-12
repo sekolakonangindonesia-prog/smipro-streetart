@@ -31,14 +31,16 @@ window.showView = function(viewId, btn) {
 
 // Cek fungsi ini di bagian atas file admin-script.js
 window.switchCmsTab = function(tabId, btn) {
-    // ... (kode hide/show element) ...
+    document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
 
-    // PASTIKAN BARIS INI ADA:
-    if(tabId === 'cms-schedule') loadActiveSchedules(); // <--- Panggil fungsi yang baru kita tambah
-    
+    // --- PERBAIKAN DI SINI ---
+    if(tabId === 'cms-schedule') loadActiveSchedules();
     if(tabId === 'cms-tour') {
         loadCafeDropdownForSchedule();
-        loadActiveTourSchedules();
+        loadActiveTourSchedules(); // Pastikan ini dipanggil!
     }
 }
 
