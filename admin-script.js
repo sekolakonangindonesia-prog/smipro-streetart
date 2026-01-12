@@ -1115,9 +1115,12 @@ async function loadCafeData() {
             const d = doc.data();
             const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
             
-            // Perhatikan Tombol Edit memanggil fungsi editCafe
+            // --- PERBAIKAN DISINI ---
+            // Tombol Edit memanggil editCafe
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
-            const btnDel = `<button class="btn-action btn-delete" onclick="deleteDocItem('venues_partner', '${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            
+            // Tombol Hapus SEKARANG MEMANGGIL deleteCafe (Bukan deleteDocItem lagi)
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
             tbody.innerHTML += `
             <tr>
