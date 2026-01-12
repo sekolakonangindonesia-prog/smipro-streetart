@@ -429,22 +429,33 @@ window.openRaport = async function(studentId) {
    5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
    ========================================= */
 
-// ISI DROPDOWN ARTIS OTOMATIS
+// ISI DROPDOWN ARTIS OTOMATIS (Jadwal Utama & Radio)
 async function loadArtistDropdowns() {
-    const selects = ['p1-name', 'p2-name', 'p3-name'];
+    console.log("Mengambil data artis dari database...");
+    
+    // Ambil data dari Firebase
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
     
-    let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
+    // Buat HTML Option
+    let optionsHTML = '<option value="">-- Pilih Artis / Host --</option>';
     
     snapshot.forEach(doc => {
         const data = doc.data();
         optionsHTML += `<option value="${data.name}">${data.name}</option>`;
     });
 
-    selects.forEach(id => {
+    // Tambahan Opsi Manual (jika hostnya bukan artis terdaftar)
+    optionsHTML += '<option value="Admin / DJ Tamu">Admin / DJ Tamu</option>';
+
+    // --- BAGIAN PENTING: Masukkan opsi ke ID-ID dropdown ini ---
+    const targetDropdowns = ['p1-name', 'p2-name', 'p3-name', 'radio-host']; // 'radio-host' ditambahkan disini
+    
+    targetDropdowns.forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.innerHTML = optionsHTML;
+        if(el) {
+            el.innerHTML = optionsHTML;
+        }
     });
 }
 
