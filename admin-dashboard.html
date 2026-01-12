@@ -465,6 +465,7 @@
                 <button class="sub-tab-btn active" onclick="switchCmsTab('cms-schedule', this)">Jadwal Event</button>
                 <button class="sub-tab-btn" onclick="switchCmsTab('cms-radio', this)">Radio/TikTok</button>
                 <button class="sub-tab-btn" onclick="switchCmsTab('cms-news', this)">Berita & Podcast</button>
+                <button class="sub-tab-btn" onclick="switchCmsTab('cms-tour', this)">Jadwal Tour (Cafe)</button>
             </div>
 
             <!-- JADWAL -->
@@ -499,6 +500,46 @@
                         </tbody>
                     </table>
                 </div>
+            <!-- FORM JADWAL TOUR / CAFE -->
+            <div id="cms-tour" class="cms-content hidden">
+                <div class="cms-form-group" style="border-left:5px solid #ff9800;">
+                    <h4 style="margin-top:0; color:#ff9800;">Atur Jadwal Cafe / Tour</h4>
+                    
+                    <label class="cms-label">Tampilan Tanggal (Text):</label>
+                    <input type="text" id="tour-display-date" class="cms-input" placeholder="Contoh: SABTU, 17 JAN">
+                    
+                    <label class="cms-label">Tanggal Asli (Untuk Urutan):</label>
+                    <input type="date" id="tour-real-date" class="cms-input" style="color-scheme:dark;">
+                    
+                    <label class="cms-label">Pilih Lokasi Cafe:</label>
+                    <select id="tour-location" class="cms-input">
+                        <option value="">-- Memuat Data Cafe... --</option>
+                    </select>
+
+                    <hr style="border-color:#333; margin:15px 0;">
+                    
+                    <label class="cms-label">Artis / Performer:</label>
+                    <select id="tour-perf-name" class="cms-input">
+                        <!-- Nanti diisi otomatis oleh JS -->
+                    </select>
+                    
+                    <label class="cms-label">Jam Tampil:</label>
+                    <input type="text" id="tour-perf-time" class="cms-input" placeholder="Contoh: 19.00 - 21.00 WIB">
+
+                    <button class="btn-action btn-edit" style="width:100%; padding:15px; background:#ff9800; color:black; font-weight:bold;" onclick="saveTourSchedule()">
+                        PUBLISH TOUR
+                    </button>
+                </div>
+
+                <!-- List Jadwal Tour Aktif (Untuk Hapus) -->
+                <div style="margin-top:20px;">
+                    <h4 style="color:#aaa;">Daftar Tour Aktif</h4>
+                    <table class="admin-table">
+                        <thead><tr><th>Tanggal</th><th>Lokasi</th><th>Aksi</th></tr></thead>
+                        <tbody id="cms-tour-list-body"><tr><td colspan="3">Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
 
             <!-- RADIO -->
             <div id="cms-radio" class="cms-content hidden">
