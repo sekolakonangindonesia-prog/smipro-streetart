@@ -423,6 +423,8 @@ window.openRaport = async function(studentId) {
 /* =========================================
    5. CMS MODULE
    ========================================= */
+
+// 1. DROPDOWN ARTIS (Dipakai di kedua tab)
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
@@ -432,62 +434,67 @@ async function loadArtistDropdowns() {
     selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
 }
 
+// 2. SIMPAN JADWAL UTAMA (STADION)
 window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
-    const perfName = document.getElementById('tour-perf-name').value;
-    const perfTime = document.getElementById('tour-perf-time').value;
     
+    // Ambil 3 artis dari form jadwal utama
     const performers = [1,2,3].map(i => ({
         name: document.getElementById(`p${i}-name`).value,
         time: document.getElementById(`p${i}-time`).value,
         genre: "Live"
     })).filter(p => p.name);
 
-    if(confirm("Publish Jadwal?")) {
+    if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
+
+    if(confirm("Publish Jadwal Utama?")) {
         await addDoc(collection(db, "events"), {
             type: "main", displayDate, date: realDate, location, performers
         });
-        alert("Jadwal Dipublish!");
+        alert("Jadwal Utama Dipublish!");
+    }
+}
 
-        if(!displayDate || !realDate || !location || !perfName) return alert("Data belum lengkap!");
+// 3. SIMPAN JADWAL TOUR (CAFE) - INI YANG TADI ANDA GABUNG
+window.saveTourSchedule = async function() {
+    const displayDate = document.getElementById('tour-display-date').value;
+    const realDate = document.getElementById('tour-real-date').value;
+    const location = document.getElementById('tour-location').value;
+    const perfName = document.getElementById('tour-perf-name').value;
+    const perfTime = document.getElementById('tour-perf-time').value;
 
-    if(confirm("Publish Jadwal Tour ini?")) {
+    if(!displayDate || !realDate || !location || !perfName) return alert("Data Tour belum lengkap!");
+
+    if(confirm("Publish Jadwal Tour?")) {
         await addDoc(collection(db, "events"), {
-            type: "tour", // INI KUNCINYA (Supaya muncul di section Tour Home)
+            type: "tour", 
             displayDate: displayDate,
             date: realDate,
             location: location,
             statusText: "ON TOUR",
-            performers: [{ name: perfName, time: perfTime }] // Format Array biar sama dengan event biasa
+            performers: [{ name: perfName, time: perfTime }] 
         });
         alert("Jadwal Tour Berhasil Dipublish!");
-        // Bersihkan form (Opsional)
     }
 }
 
+// 4. LOAD DATA PENDUKUNG TOUR
 async function loadCafeDropdownForSchedule() {
     const select = document.getElementById('tour-location');
-    if(!select) return; // Jaga-jaga
+    if(!select) return; 
 
     select.innerHTML = '<option value="">-- Pilih Lokasi Cafe --</option>';
-    
-    // Ambil data dari koleksi 'venues_partner' (Data Cafe)
     const q = query(collection(db, "venues_partner"), orderBy("name", "asc"));
     const snap = await getDocs(q);
-    
-    snap.forEach(doc => {
-        const d = doc.data();
-        select.innerHTML += `<option value="${d.name}">${d.name}</option>`;
-    });
+    snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
 }
 
-    async function loadActiveTourSchedules() {
+async function loadActiveTourSchedules() {
     const tbody = document.getElementById('cms-tour-list-body');
     if(!tbody) return;
 
-    // Ambil hanya yang tipe 'tour'
     const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"));
     
     onSnapshot(q, (snapshot) => {
@@ -496,7 +503,6 @@ async function loadCafeDropdownForSchedule() {
         
         snapshot.forEach(doc => {
             const d = doc.data();
-            // Tombol Hapus memanggil fungsi deleteSchedule yang sama (karena satu database)
             tbody.innerHTML += `
             <tr>
                 <td>${d.displayDate}</td>
