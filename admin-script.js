@@ -2053,243 +2053,132 @@ rows.forEach(row => {
 doc.save("Laporan_UMKM_SMIPRO.pdf");
 }
 /* =========================================
-10. MODUL CAFE & PUSAT KONTROL TOUR
-========================================= */
+   10. MODUL CAFE & PUSAT KONTROL TOUR
+   ========================================= */
+
 // Navigasi Tab Cafe
 window.switchCafeTab = function(tabId, btn) {
-document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
-document.getElementById(tabId).classList.remove('hidden');
-document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
-btn.classList.add('active');
-code
-Code
-if(tabId === 'cafe-report') prepareReportFilters(); // Siapkan dropdown
+    document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+
+    if(tabId === 'cafe-report') prepareReportFilters(); 
 }
+
 // --- A. MANAJEMEN CAFE ---
 let currentCafeBase64 = null;
+
 window.previewCafeImg = function(input) {
-if (input.files && input.files[0]) {
-const reader = new FileReader();
-reader.onload = function(e) {
-currentCafeBase64 = e.target.result;
-document.getElementById('cafe-preview').src = currentCafeBase64;
-}
-reader.readAsDataURL(input.files[0]);
-}
-}
-window.saveCafe = async function() {
-const id = document.getElementById('cafe-edit-id').value; // Cek ID
-const name = document.getElementById('new-cafe-name').value;
-const addr = document.getElementById('new-cafe-address').value;
-const img = currentCafeBase64; // Ambil foto dari variabel
-code
-Code
-if(!name) return alert("Nama Cafe wajib diisi!");
-
-if(id) {
-    // --- MODE EDIT (UPDATE) ---
-    if(confirm("Simpan perubahan data cafe ini?")) {
-        const updateData = { name: name, address: addr };
-        if(img) updateData.img = img; // Hanya update foto jika user upload baru
-        
-        await updateDoc(doc(db, "venues_partner", id), updateData);
-        alert("Data Cafe Diperbarui!");
-        resetCafeForm();
-    }
-} else {
-    // --- MODE BARU (ADD) ---
-    if(confirm("Tambah Cafe Partner Baru?")) {
-        await addDoc(collection(db, "venues_partner"), {
-            name: name,
-            address: addr,
-            img: img || "https://via.placeholder.com/100?text=Cafe", // Default jika kosong
-            type: 'cafe',
-            joinedAt: new Date()
-        });
-        alert("Cafe Partner Ditambahkan!");
-        resetCafeForm();
-    }
-}
-}
-async function loadCafeData() {
-const tbody = document.getElementById('cafe-table-body');
-if(!tbody) return;
-code
-Code
-onSnapshot(collection(db, "venues_partner"), (snap) => {
-    tbody.innerHTML = '';
-    if(snap.empty) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada partner.</td></tr>';
-        return;
-    }
-
-    snap.forEach(doc => {
-        const d = doc.data();
-        const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
-        
-        // Tombol Edit (Kuning) & Hapus (Merah)
-        const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
-        const btnDel = `<button class="btn-action btn-delete" onclick="deleteDocItem('venues_partner', '${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
-
-        tbody.innerHTML += `
-        <tr>
-            <td><img src="${d.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"></td>
-            <td><b>${d.name}</b></td>
-            <td>${d.address}</td>
-            <td><a href="${linkSawer}" target="_blank" style="color:#00d2ff;">Link Live</a></td>
-            <td>${btnEdit} ${btnDel}</td>
-        </tr>`;
-    });
-});
-}
-// Dipanggil saat tombol pensil diklik
-window.editCafe = function(id, name, addr, img) {
-document.getElementById('cafe-edit-id').value = id; // Isi ID tersembunyi
-document.getElementById('new-cafe-name').value = name;
-document.getElementById('new-cafe-address').value = addr;
-code
-Code
-// Tampilkan foto lama di preview
-document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
-currentCafeBase64 = null; // Reset upload baru agar tidak menimpa jika user tidak ganti foto
-
-// Ubah Tampilan Tombol
-document.getElementById('btn-save-cafe').innerText = "Simpan Perubahan";
-document.getElementById('btn-save-cafe').style.background = "#FFD700"; // Kuning
-document.getElementById('btn-save-cafe').style.color = "black";
-document.getElementById('btn-cancel-cafe').style.display = "inline-block"; // Munculkan tombol batal
-}
-// Dipanggil saat selesai simpan atau batal
-window.resetCafeForm = function() {
-document.getElementById('cafe-edit-id').value = ""; // Kosongkan ID
-document.getElementById('new-cafe-name').value = "";
-document.getElementById('new-cafe-address').value = "";
-document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Foto";
-currentCafeBase64 = null;
-code
-Code
-// Kembalikan Tombol ke Mode Tambah
-document.getElementById('btn-save-cafe').innerText = "+ Simpan Partner";
-document.getElementById('btn-save-cafe').style.background = ""; // Balik ke default class
-document.getElementById('btn-save-cafe').style.color = "white";
-document.getElementById('btn-cancel-cafe').style.display = "none";
-}
-code
-Code
-snap.forEach(doc => {
-        const d = doc.data();
-        // Link ke halaman sawer khusus cafe
-        const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
-        
-        tbody.innerHTML += `
-        <tr>
-            <td><b>${d.name}</b></td>
-            <td>${d.address}</td>
-            <td><a href="${linkSawer}" target="_blank" style="color:#00d2ff;">${linkSawer}</a></td>
-            <td><button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')">Hapus</button></td>
-        </tr>`;
-    });
-});
-}
-window.deleteCafe = async (id) => { if(confirm("Hapus Cafe ini?")) await deleteDoc(doc(db,"venues_partner",id)); }
-// --- B. PUSAT KONTROL (LAPORAN STATISTIK) ---
-
-// 1. Siapkan Dropdown
-async function prepareReportFilters() {
-    const locSelect = document.getElementById('rep-loc');
-    if(!locSelect) return;
-    
-    locSelect.innerHTML = `
-        <option value="all">Semua Lokasi (Stadion & Cafe)</option>
-        <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
-    `;
-    
-    const cafes = await getDocs(collection(db, "venues_partner"));
-    cafes.forEach(doc => {
-        const name = doc.data().name;
-        locSelect.innerHTML += `<option value="${name}">${name}</option>`;
-    });
-
-    const artSelect = document.getElementById('rep-art');
-    artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
-    
-    const perfs = await getDocs(collection(db, "performers"));
-    perfs.forEach(doc => {
-        const name = doc.data().name;
-        artSelect.innerHTML += `<option value="${name}">${name}</option>`;
-    });
-}
-
-// 2. Logic Filter & Statistik
-window.loadCafeReport = async function() {
-    const loc = document.getElementById('rep-loc').value;
-    const time = document.getElementById('rep-time').value;
-    const art = document.getElementById('rep-art').value;
-    const tbody = document.getElementById('rep-detail-body');
-
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sedang menghitung data...</td></tr>';
-
-    const reqSnap = await getDocs(query(collection(db, "requests"), where("status", "==", "finished")));
-    
-    let totalMoney = 0;
-    let totalSongs = 0;
-    let detailHTML = '';
-
-    const now = new Date();
-
-    reqSnap.forEach(doc => {
-        const d = doc.data();
-        const date = d.timestamp.toDate();
-        let isValid = true;
-
-        // Filter Lokasi
-        const dataLoc = d.location || "Stadion Bayuangga Zone"; 
-        if(loc !== 'all' && dataLoc !== loc) isValid = false;
-
-        // Filter Waktu
-        if(time === 'today' && date.getDate() !== now.getDate()) isValid = false;
-        if(time === 'month' && date.getMonth() !== now.getMonth()) isValid = false;
-        
-        // Filter Artis
-        if(art !== 'all' && d.performer !== art) isValid = false;
-
-        if(isValid) {
-            totalMoney += parseInt(d.amount);
-            totalSongs++;
-            detailHTML += `
-            <tr>
-                <td>${date.toLocaleDateString()}</td>
-                <td>${dataLoc}</td>
-                <td>${d.performer}</td>
-                <td>${d.song}</td>
-                <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
-            </tr>`;
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentCafeBase64 = e.target.result;
+            document.getElementById('cafe-preview').src = currentCafeBase64;
         }
-    });
-
-    // Statistik Pax (Khusus Stadion)
-    let totalPax = 0;
-    if(loc === 'all' || loc === 'Stadion Bayuangga Zone') {
-        const bookSnap = await getDocs(query(collection(db, "bookings"), where("status", "==", "finished")));
-        bookSnap.forEach(doc => {
-            const d = doc.data();
-            const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
-            let isTimeValid = true;
-            if(time === 'today' && date.getDate() !== now.getDate()) isTimeValid = false;
-            
-            if(isTimeValid) {
-                totalPax += parseInt(d.pax || 0);
-            }
-        });
+        reader.readAsDataURL(input.files[0]);
     }
-    
-    // Tampilkan Data
-    document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-    document.getElementById('rep-total-song').innerText = totalSongs;
-    document.getElementById('rep-total-pax').innerText = (loc === 'all' || loc === 'Stadion Bayuangga Zone') ? totalPax : "-";
-    
-    tbody.innerHTML = detailHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter.</td></tr>';
 }
+
+window.saveCafe = async function() {
+    const id = document.getElementById('cafe-edit-id').value; 
+    const name = document.getElementById('new-cafe-name').value;
+    const addr = document.getElementById('new-cafe-address').value;
+    const img = currentCafeBase64; 
+
+    if(!name) return alert("Nama Cafe wajib diisi!");
+
+    if(id) {
+        // --- MODE EDIT (UPDATE) ---
+        if(confirm("Simpan perubahan data cafe ini?")) {
+            const updateData = { name: name, address: addr };
+            if(img) updateData.img = img; 
+            
+            await updateDoc(doc(db, "venues_partner", id), updateData);
+            alert("Data Cafe Diperbarui!");
+            resetCafeForm();
+        }
+    } else {
+        // --- MODE BARU (ADD) ---
+        if(confirm("Tambah Cafe Partner Baru?")) {
+            await addDoc(collection(db, "venues_partner"), {
+                name: name,
+                address: addr,
+                img: img || "https://via.placeholder.com/100?text=Cafe", 
+                type: 'cafe',
+                joinedAt: new Date()
+            });
+            alert("Cafe Partner Ditambahkan!");
+            resetCafeForm();
+        }
+    }
+}
+
+async function loadCafeData() {
+    const tbody = document.getElementById('cafe-table-body');
+    if(!tbody) return;
+
+    onSnapshot(collection(db, "venues_partner"), (snap) => {
+        tbody.innerHTML = '';
+        if(snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada partner.</td></tr>';
+            return;
+        }
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
+            
+            // Perhatikan Tombol Edit memanggil fungsi editCafe
+            const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteDocItem('venues_partner', '${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td><img src="${d.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"></td>
+                <td><b>${d.name}</b></td>
+                <td>${d.address}</td>
+                <td><a href="${linkSawer}" target="_blank" style="color:#00d2ff;">Link Live</a></td>
+                <td>${btnEdit} ${btnDel}</td>
+            </tr>`;
+        });
+    });
+}
+
+// FUNGSI EDIT (Mengisi Form kembali)
+window.editCafe = function(id, name, addr, img) {
+    document.getElementById('cafe-edit-id').value = id; 
+    document.getElementById('new-cafe-name').value = name;
+    document.getElementById('new-cafe-address').value = addr;
+    
+    document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
+    currentCafeBase64 = null; 
+
+    // Ubah Tombol jadi Edit
+    const btnSave = document.getElementById('btn-save-cafe');
+    btnSave.innerText = "Simpan Perubahan";
+    btnSave.style.background = "#FFD700"; 
+    btnSave.style.color = "black";
+    document.getElementById('btn-cancel-cafe').style.display = "inline-block"; 
+}
+
+// FUNGSI RESET FORM (Balik ke Mode Tambah)
+window.resetCafeForm = function() {
+    document.getElementById('cafe-edit-id').value = ""; 
+    document.getElementById('new-cafe-name').value = "";
+    document.getElementById('new-cafe-address').value = "";
+    document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Foto";
+    currentCafeBase64 = null;
+    
+    const btnSave = document.getElementById('btn-save-cafe');
+    btnSave.innerText = "+ Simpan Partner";
+    btnSave.style.background = ""; 
+    btnSave.style.color = "white";
+    document.getElementById('btn-cancel-cafe').style.display = "none";
+}
+
+// Hapus Cafe
+window.deleteCafe = async (id) => { if(confirm("Hapus Cafe ini?")) await deleteDoc(doc(db,"venues_partner",id)); }
 
 // --- B. PUSAT KONTROL (LAPORAN STATISTIK) ---
 
