@@ -286,42 +286,51 @@
             </div>`;
         }
 
-        // JADWAL TOUR (CAFE)
+       // JADWAL TOUR (CAFE)
         async function loadTourSchedule() {
             const container = document.getElementById('home-tour-container');
-            // Ambil event dengan tipe 'tour', urutkan tanggal, ambil 1 saja
+            
+            // Query khsusus: Cari events yang type-nya 'tour'
             const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"), limit(1));
+            
             const querySnapshot = await getDocs(q);
 
+            // JIKA KOSONG: Sembunyikan & Keluar
             if (querySnapshot.empty) {
-                // Jika tidak ada jadwal tour, container kita kosongkan atau sembunyikan
-                container.innerHTML = ''; 
+                container.style.display = 'none'; 
                 return;
-                }
-                
-             // Jika ada data
+            }
+
+            // JIKA ADA DATA: Munculkan
             container.style.display = 'block';
             container.innerHTML = '';
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                // Pecah format tanggal (Contoh: "SABTU, 12 JAN")
+                
+                // Format Tanggal
                 const dateParts = data.displayDate.split(' '); 
                 const hari = dateParts[0].replace(',','').toUpperCase();
-                const tgl = dateParts[1];
+                const tgl = dateParts[1] || '';
 
-                // Render Kartu (Tema Oranye #ff9800)
+                // Ambil Nama Artis
+                let artistName = "Special Guest";
+                if(data.performers && data.performers.length > 0) {
+                    artistName = data.performers[0].name;
+                }
+
+                // Render Kartu (Warna Oranye)
                 container.innerHTML = `
                 <div class="main-schedule-card" onclick="location.href='cafe-live.html?loc=${encodeURIComponent(data.location)}'" style="cursor:pointer; border-left: 1px solid #ff9800;">
                     <div class="msc-date" style="background:#ff9800; color:black;">
-                        <span style="font-size:0.8rem; letter-spacing:2px;">${hari}</span>
+                        <span style="font-size:0.8rem; letter-spacing:2px;">TOUR</span>
                         <span style="font-size:2.5rem; font-weight:800; line-height:1;">${tgl}</span>
                     </div>
                     <div class="msc-info">
                         <div class="msc-badge" style="background:#ff9800; color:black; border:none;">ON TOUR</div>
                         <h3 style="margin:5px 0 5px 0; color:white;">${data.location}</h3>
                         <p style="color:#ccc; font-size:0.9rem; margin:0;">
-                            <i class="fa-solid fa-music" style="color:#ff9800;"></i> ${data.performers ? data.performers[0].name : 'Special Guest'}
+                            <i class="fa-solid fa-music" style="color:#ff9800;"></i> ${artistName}
                         </p>
                         <small style="color:#888; margin-top:5px; display:block;">
                             <i class="fa-solid fa-arrow-right"></i> Klik untuk Request & Sawer
