@@ -830,7 +830,7 @@ async function loadCafeData() {
             
             // Perhatikan Tombol Edit memanggil fungsi editCafe
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
-            const btnDel = `<button class="btn-action btn-delete" onclick="deleteDocItem('venues_partner', '${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
             tbody.innerHTML += `
             <tr>
