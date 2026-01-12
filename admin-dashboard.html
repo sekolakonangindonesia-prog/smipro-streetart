@@ -468,17 +468,37 @@
             <div id="cms-radio" class="cms-content hidden">
                 <div class="cms-form-group">
                     <h4 style="margin-top:0; color:#00d2ff;">Jadwal Radio</h4>
+                    <label class="cms-label">Pilih Sesi Siaran:</label>
                     <select id="radio-session-select" class="cms-input" onchange="loadRadioSessionData()">
                         <option value="">-- Pilih Sesi --</option>
                         <option value="PAGI">PAGI</option><option value="SIANG">SIANG</option><option value="MALAM">MALAM</option>
                     </select>
-                    <div id="radio-edit-area" style="display:none;">
-                        <input type="text" id="radio-title" class="cms-input" placeholder="Judul">
-                        <input type="text" id="radio-host" class="cms-input" placeholder="Host">
-                        <input type="text" id="radio-topic" class="cms-input" placeholder="Topik">
-                        <label><input type="checkbox" id="radio-live-toggle"> LIVE SEKARANG</label>
-                        <button class="btn-action btn-view" style="width:100%; margin-top:10px;" onclick="saveRadioUpdate()">SIMPAN</button>
+                    
+                    <div id="radio-edit-area" style="display:none; margin-top:15px; border-top:1px dashed #333; padding-top:15px;">
+                        <label class="cms-label">Judul Acara:</label>
+                        <input type="text" id="radio-title" class="cms-input" placeholder="Contoh: Request Lagu Santuy">
+                        
+                        <label class="cms-label">Nama Host:</label>
+                        <input type="text" id="radio-host" class="cms-input" placeholder="Nama Host">
+                        
+                        <label class="cms-label">Topik Obrolan:</label>
+                        <input type="text" id="radio-topic" class="cms-input" placeholder="Topik hari ini...">
+                        
+                        <label class="cms-label">Link Streaming (TikTok/YouTube):</label>
+                        <input type="text" id="radio-link" class="cms-input" placeholder="https://...">
+
+                        <div style="background:#222; padding:10px; border-radius:5px; margin:10px 0;">
+                            <label style="color:#00d2ff; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:10px;">
+                                <input type="checkbox" id="radio-live-toggle" style="transform:scale(1.5);"> 
+                                STATUS: SEDANG LIVE SEKARANG
+                            </label>
+                        </div>
+
+                        <button class="btn-action btn-view" style="width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="saveRadioUpdate()">
+                            <i class="fa-solid fa-floppy-disk"></i> SIMPAN PERUBAHAN
+                        </button>
                     </div>
+
                 </div>
             </div>
 
