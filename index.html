@@ -148,8 +148,8 @@
     <script type="module">
         import { db } from './firebase-config.js';
         import { 
-            collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, onSnapshot 
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, onSnapshot, where 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ==========================================
         // 1. CEK STATUS LOGIN (INIT PERTAMA KALI)
@@ -283,6 +283,47 @@
                     </div>
                 </div>`;
             }
+        }
+
+        // JADWAL TOUR (CAFE)
+        async function loadTourSchedule() {
+            const container = document.getElementById('home-tour-container');
+            // Ambil event dengan tipe 'tour', urutkan tanggal, ambil 1 saja
+            const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"), limit(1));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                // Jika tidak ada jadwal tour, container kita kosongkan atau sembunyikan
+                container.innerHTML = ''; 
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Pecah format tanggal (Contoh: "SABTU, 12 JAN")
+                const dateParts = data.displayDate.split(' '); 
+                const hari = dateParts[0].replace(',','').toUpperCase();
+                const tgl = dateParts[1];
+
+                // Render Kartu (Tema Oranye #ff9800)
+                container.innerHTML = `
+                <div class="main-schedule-card" onclick="location.href='cafe-live.html?loc=${encodeURIComponent(data.location)}'" style="cursor:pointer; border-left: 1px solid #ff9800;">
+                    <div class="msc-date" style="background:#ff9800; color:black;">
+                        <span style="font-size:0.8rem; letter-spacing:2px;">${hari}</span>
+                        <span style="font-size:2.5rem; font-weight:800; line-height:1;">${tgl}</span>
+                    </div>
+                    <div class="msc-info">
+                        <div class="msc-badge" style="background:#ff9800; color:black; border:none;">ON TOUR</div>
+                        <h3 style="margin:5px 0 5px 0; color:white;">${data.location}</h3>
+                        <p style="color:#ccc; font-size:0.9rem; margin:0;">
+                            <i class="fa-solid fa-music" style="color:#ff9800;"></i> ${data.performers ? data.performers[0].name : 'Special Guest'}
+                        </p>
+                        <small style="color:#888; margin-top:5px; display:block;">
+                            <i class="fa-solid fa-arrow-right"></i> Klik untuk Request & Sawer
+                        </small>
+                    </div>
+                </div>`;
+            });
         }
 
         // VENUES (DENGAN PERBAIKAN ADMIN AKSES)
@@ -435,6 +476,7 @@
         // ==========================================
         checkAuthStatus(); // Cek Login Dulu
         loadMainSchedule();
+        loadTourSchedule();
         loadMainRadio();
         loadVenues();
         loadTopPerformers();
