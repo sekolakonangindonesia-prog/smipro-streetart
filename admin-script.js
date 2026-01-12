@@ -36,6 +36,7 @@ window.switchCmsTab = function(tabId, btn) {
     document.getElementById(tabId).classList.remove('hidden');
     document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
     btn.classList.add('active');
+    if(tabId === 'cms-schedule') loadActiveSchedules();
 }
 
 window.adminLogout = function() {
@@ -498,6 +499,50 @@ window.saveSchedule = async function() {
             timestamp: new Date()
         });
         alert("Jadwal Berhasil Dipublish!");
+    }
+}
+// MEMUAT LIST JADWAL AGAR BISA DIHAPUS
+async function loadActiveSchedules() {
+    const tbody = document.getElementById('cms-schedule-list-body');
+    if(!tbody) return;
+
+    // Ambil data events, urutkan dari tanggal terdekat
+    const q = query(collection(db, "events"), orderBy("date", "asc"));
+    
+    // Gunakan onSnapshot agar kalau dihapus langsung hilang dari tabel tanpa refresh
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal aktif.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // Tombol Hapus Merah
+            const btnDelete = `
+            <button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')" title="Batalkan Jadwal">
+                <i class="fa-solid fa-trash"></i> Hapus
+            </button>`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td>
+                    <b>${data.displayDate}</b><br>
+                    <small style="color:#888;">${data.date}</small>
+                </td>
+                <td>${data.location}</td>
+                <td>${btnDelete}</td>
+            </tr>`;
+        });
+    });
+}
+
+// FUNGSI HAPUS JADWAL
+window.deleteSchedule = async function(id) {
+    if(confirm("Yakin ingin MEMBATALKAN/MENGHAPUS jadwal ini? Data akan hilang dari website utama.")) {
+        await deleteDoc(doc(db, "events", id));
+        // Tidak perlu alert, karena onSnapshot akan otomatis update tabel
     }
 }
 
