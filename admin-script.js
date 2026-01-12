@@ -1167,7 +1167,11 @@ window.resetCafeForm = function() {
 }
 
 // Hapus Cafe
-window.deleteCafe = async (id) => { if(confirm("Hapus Cafe ini?")) await deleteDoc(doc(db,"venues_partner",id)); }
+window.deleteCafe = async (id) => { 
+    if(confirm("Hapus Cafe ini?")) {
+        await deleteDoc(doc(db,"venues_partner",id)); 
+    }
+}
 
 
 // --- B. PUSAT KONTROL (LAPORAN) ---
