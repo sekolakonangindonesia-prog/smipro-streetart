@@ -136,13 +136,13 @@
         }
 
         // 2. FUNGSI LOAD JADWAL (DENGAN FILTER)
-        async function loadSchedule(filterLoc = 'all') {
+       async function loadSchedule(filterLoc = 'all') {
             const mainContainer = document.getElementById('main-event-container');
             const upcomingContainer = document.getElementById('upcoming-event-list');
             
-            mainContainer.innerHTML = '<p style="text-align:center; color:#888;"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</p>';
+            mainContainer.innerHTML = '<p style="text-align:center; color:#888;">Memuat...</p>';
             
-            // Ambil semua event urut tanggal
+            // Ambil semua event (Main & Tour) urut tanggal
             const q = query(collection(db, "events"), orderBy("date", "asc"));
             const querySnapshot = await getDocs(q);
 
@@ -154,31 +154,23 @@
                 return;
             }
 
-            let foundAny = false;
-
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
 
-                // === LOGIKA FILTER ===
-                // Jika filter bukan 'all', DAN lokasi event TIDAK SAMA dengan filter -> SKIP
-                if (filterLoc !== 'all' && data.location !== filterLoc) {
-                    return; 
-                }
-
-                foundAny = true;
-
-                // TAMPILKAN MAIN EVENT
+                // LOGIKA 1: TAMPILKAN JADWAL UTAMA (Tipe 'main')
                 if (data.type === 'main') {
+                    
+                    // Loop Artis (Karena sekarang datanya Array)
                     let performersHtml = '';
-                    if (data.performers && data.performers.length > 0) {
+                    if (data.performers && Array.isArray(data.performers)) {
                         data.performers.forEach(p => {
                             performersHtml += `
                             <div class="performer-list-item">
-                                <img src="${p.img}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                                <img src="https://via.placeholder.com/50" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
                                 <div>
                                     <h4 style="margin:0;">${p.name}</h4>
-                                    <span style="color:var(--accent); font-size:0.9rem;">${p.time}</span>
-                                    <p style="margin:0; font-size:0.8rem; color:#aaa;">${p.genre}</p>
+                                    <span style="color:var(--accent); font-size:0.9rem;">${p.time || 'TBA'}</span>
+                                    <p style="margin:0; font-size:0.8rem; color:#aaa;">${p.genre || 'Live Performance'}</p>
                                 </div>
                             </div>`;
                         });
@@ -189,15 +181,16 @@
                         <div style="display:flex; justify-content:space-between; align-items:start;">
                             <div>
                                 <h2>${data.displayDate}</h2>
-                                <p style="color:#ccc; margin-top:-10px;"><i class="fa-solid fa-location-dot"></i> Lokasi: <b>${data.location}</b></p>
+                                <p style="color:#ccc; margin-top:-10px;">
+                                    <i class="fa-solid fa-location-dot"></i> ${data.location}
+                                </p>
                             </div>
-                            <span class="badge active" style="font-size:0.9rem; padding:5px 10px;">${data.statusText}</span>
+                            <span class="badge active" style="font-size:0.9rem; padding:5px 10px;">ON SCHEDULE</span>
                         </div>
                         <hr style="border:0; border-top:1px solid #444; margin:20px 0;">
                         ${performersHtml}
                     </div>`;
-                } 
-                
+                }                 
                 // TAMPILKAN UPCOMING EVENT (Jika lokasi sesuai filter juga)
                 else if (data.type === 'upcoming') {
                     upcomingContainer.innerHTML += `
