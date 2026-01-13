@@ -43,6 +43,7 @@ window.showView = function(viewId, btn) {
     }
 }
 
+// --- UPDATE NAVIGASI TAB CMS ---
 window.switchCmsTab = function(tabId, btn) {
     document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
@@ -52,19 +53,18 @@ window.switchCmsTab = function(tabId, btn) {
     }
     if(btn) btn.classList.add('active');
 
-    // --- LOGIKA LOAD DATA PER TAB ---
-    if(tabId === 'cms-schedule') {
-        loadActiveSchedules();
-    }
+    // Load data khusus per tab
+    if(tabId === 'cms-schedule') loadActiveSchedules();
     
     if(tabId === 'cms-radio') {
-        loadRadioSessionData();  // Load Form Input
-        loadAllRadioSchedules(); // Load Tabel List
+        loadRadioSessionData(); 
+        loadAllRadioSchedules();
     }
     
     if(tabId === 'cms-tour') {
-        loadCafeDropdownForSchedule();
-        loadActiveTourSchedules();
+        loadCafeDropdownForSchedule(); // Load Dropdown Cafe
+        loadActiveTourSchedules();     // Load Tabel Tour Aktif
+        loadArtistDropdowns();         // <--- TAMBAHAN PENTING (Load Dropdown Artis)
     }
 }
 
