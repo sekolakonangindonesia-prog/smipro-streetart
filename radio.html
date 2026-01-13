@@ -122,8 +122,8 @@
         async function loadRadioSchedule() {
             const container = document.getElementById('radio-container');
             
-            // Ambil data dari koleksi 'broadcasts', urutkan berdasarkan 'order' (1, 2, 3)
-            const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
+           // GANTI QUERY INI AGAR MENGAMBIL YANG LIVE DULUAN
+            const q = query(collection(db, "broadcasts"), orderBy("isLive", "desc"), orderBy("order", "asc"));
             const querySnapshot = await getDocs(q);
 
             // SEEDING DATA DUMMY (Jika Database Kosong)
