@@ -23,7 +23,6 @@ window.showView = function(viewId, btn) {
     if(viewId === 'mentor') loadMentorData();
     if(viewId === 'cafe') { 
         loadCafeData();
-        // Reset sub tab ke data
         const tabBtn = document.querySelector('.sub-tab-btn');
         if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
     }
@@ -41,7 +40,6 @@ window.switchCmsTab = function(tabId, btn) {
     }
     if(btn) btn.classList.add('active');
 
-    // Load data khusus per tab
     if(tabId === 'cms-schedule') loadActiveSchedules();
     
     if(tabId === 'cms-radio') {
@@ -50,9 +48,9 @@ window.switchCmsTab = function(tabId, btn) {
     }
     
     if(tabId === 'cms-tour') {
-        loadCafeDropdownForSchedule(); // Load Dropdown Cafe
-        loadActiveTourSchedules();     // Load Tabel Tour Aktif
-        loadArtistDropdowns();         // Load Dropdown Artis
+        loadCafeDropdownForSchedule(); 
+        loadActiveTourSchedules();    
+        loadArtistDropdowns();
     }
 }
 
@@ -86,6 +84,7 @@ async function loadMitraData() {
                 actionBtn = `<button class="btn-action btn-edit" onclick="approveTable('${id}')">Approve</button>`;
             }
             const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
+            
             tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.owner||'-'}</td><td>${data.totalTables}</td><td>${statusBadge}</td><td>${impersonateBtn} ${actionBtn} <button class="btn-action btn-delete" onclick="deleteMitra('${id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
         });
     });
@@ -106,113 +105,6 @@ window.loginAsMitra = function(id, name) {
 window.approveTable = async function(id) { if(confirm("Setujui?")) await updateDoc(doc(db, "warungs", id), { adminApproved: true }); }
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
-// --- MITRA REPORT ---
-window.switchMitraTab = function(tabId, btn) {
-    document.querySelectorAll('.mitra-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-    
-    if(btn && btn.parentElement) {
-        btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    }
-    if(btn) btn.classList.add('active');
-
-    if(tabId === 'mitra-stats') loadWarungStatistics();
-}
-
-async function loadWarungStatistics() {
-    const filter = document.getElementById('report-filter').value;
-    const tbody = document.getElementById('warung-ranking-body');
-    
-    const q = query(collection(db, "bookings"), where("status", "==", "finished"));
-    const snapshot = await getDocs(q);
-
-    let totalVisitor = 0;
-    let totalTrx = 0;
-    let totalOmzet = 0;
-    let warungStats = {}; 
-
-    const now = new Date();
-    
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        const date = d.finishedAt ? d.finishedAt.toDate() : new Date(); 
-        
-        let include = false;
-        if(filter === 'all') include = true;
-        else if (filter === 'month') {
-            if(date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) include = true;
-        } 
-        else if (filter === 'week') {
-            const oneWeekAgo = new Date(); 
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            if(date >= oneWeekAgo) include = true;
-        }
-
-        if(include) {
-            totalVisitor += parseInt(d.pax || 0);
-            totalTrx++;
-            totalOmzet += parseInt(d.revenue || 0);
-
-            const wName = d.warungName || "Unknown";
-            if(!warungStats[wName]) {
-                warungStats[wName] = { name: wName, trx: 0, pax: 0, omzet: 0 };
-            }
-            warungStats[wName].trx++;
-            warungStats[wName].pax += parseInt(d.pax || 0);
-            warungStats[wName].omzet += parseInt(d.revenue || 0);
-        }
-    });
-
-    document.getElementById('stat-total-visitor').innerText = totalVisitor;
-    document.getElementById('stat-total-trx').innerText = totalTrx;
-    document.getElementById('stat-total-omzet').innerText = "Rp " + totalOmzet.toLocaleString();
-
-    tbody.innerHTML = '';
-    const sortedWarung = Object.values(warungStats).sort((a,b) => b.omzet - a.omzet);
-
-    if(sortedWarung.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data transaksi.</td></tr>';
-        return;
-    }
-
-    sortedWarung.forEach((w, index) => {
-        let rankBadge = index + 1;
-        if(index === 0) rankBadge = '🥇';
-        if(index === 1) rankBadge = '🥈';
-        if(index === 2) rankBadge = '🥉';
-
-        tbody.innerHTML += `
-        <tr>
-            <td style="font-size:1.2rem; text-align:center;">${rankBadge}</td>
-            <td><b>${w.name}</b></td>
-            <td>${w.trx}</td>
-            <td>${w.pax} Orang</td>
-            <td style="color:#00ff00;">Rp ${w.omzet.toLocaleString()}</td>
-        </tr>`;
-    });
-}
-
-window.generateReportPDF = function() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("LAPORAN STATISTIK UMKM SMIPRO", 105, 20, null, null, "center");
-    doc.setFontSize(12);
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 30, null, null, "center");
-    let y = 50;
-    doc.text("Peringkat  |  Nama Warung  |  Transaksi  |  Omzet", 20, y);
-    doc.line(20, y+2, 190, y+2);
-    const rows = document.querySelectorAll('#warung-ranking-body tr');
-    rows.forEach(row => {
-        y += 10;
-        const cols = row.querySelectorAll('td');
-        if(cols.length > 1) { 
-            const txt = `${cols[0].innerText}   ${cols[1].innerText}   (${cols[2].innerText})   ${cols[4].innerText}`;
-            doc.text(txt, 20, y);
-        }
-    });
-    doc.save("Laporan_UMKM_SMIPRO.pdf");
-}
 
 /* =========================================
    2. MANAJEMEN PERFORMER
@@ -275,6 +167,7 @@ window.loginAsPerf = function(id, name) {
 }
 window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "performers", id)); }
 
+
 /* =========================================
    3. MANAJEMEN MENTOR
    ========================================= */
@@ -320,10 +213,10 @@ window.loginAsMentor = function(id, name) {
 }
 window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "mentors", id)); }
 
+
 /* =========================================
    4. MANAJEMEN SISWA
    ========================================= */
-let currentStudentBase64 = null; 
 window.previewStudentImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -353,7 +246,6 @@ async function loadStudentData() {
     const tbody = document.getElementById('student-table-body');
     if(!tbody) return;
 
-    // 1. Cek dulu: Ada berapa Total Mentor di sistem?
     const mentorSnap = await getDocs(collection(db, "mentors"));
     const totalMentors = mentorSnap.size; 
 
@@ -388,6 +280,7 @@ async function loadStudentData() {
                 </div>`;
 
             const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">`;
+            
             tbody.innerHTML += `<tr><td>${imgHTML}</td><td><b>${data.name}</b></td><td>${data.genre}</td><td>${statusHTML}</td><td>${actionBtns}</td></tr>`;
         });
     });
@@ -396,7 +289,7 @@ window.deleteStudent = async function(id, name) {
     if(confirm(`YAKIN MENGHAPUS SISWA: ${name}?`)) await deleteDoc(doc(db, "students", id));
 }
 
-// --- FUNGSI LIHAT RAPORT DETAIL (POP-UP) ---
+// --- FUNGSI LIHAT RAPORT DETAIL ---
 window.openRaport = async function(studentId) {
     const modal = document.getElementById('modal-raport');
     const tbody = document.getElementById('raport-list-body');
@@ -432,8 +325,9 @@ window.openRaport = async function(studentId) {
     } catch (e) { console.error(e); }
 }
 
+
 /* =========================================
-   5. CMS MODULE (JADWAL, RADIO, BERITA, PODCAST)
+   5. CMS MODULE
    ========================================= */
 
 // 1. DROPDOWN ARTIS
@@ -442,11 +336,12 @@ async function loadArtistDropdowns() {
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
     let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
+    
     snapshot.forEach(doc => { optionsHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
     selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
 }
 
-// 2. SIMPAN JADWAL UTAMA (STADION)
+// 2. SIMPAN JADWAL UTAMA
 window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
@@ -468,7 +363,7 @@ window.saveSchedule = async function() {
     }
 }
 
-// 3. SIMPAN JADWAL TOUR (CAFE)
+// 3. SIMPAN JADWAL TOUR
 window.saveTourSchedule = async function() {
     const displayDate = document.getElementById('tour-display-date').value;
     const realDate = document.getElementById('tour-real-date').value;
@@ -488,11 +383,10 @@ window.saveTourSchedule = async function() {
             performers: [{ name: perfName, time: perfTime }] 
         });
         alert("Jadwal Tour Berhasil Dipublish!");
-        loadActiveTourSchedules();
     }
 }
 
-// 4. LOAD DATA PENDUKUNG TOUR
+// 4. LOAD DROPDOWN CAFE
 async function loadCafeDropdownForSchedule() {
     const select = document.getElementById('tour-location');
     if(!select) return; 
@@ -503,6 +397,7 @@ async function loadCafeDropdownForSchedule() {
     snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
 }
 
+// 5. LOAD ACTIVE TOUR
 async function loadActiveTourSchedules() {
     const tbody = document.getElementById('cms-tour-list-body');
     if(!tbody) return;
@@ -517,23 +412,15 @@ async function loadActiveTourSchedules() {
             const d = doc.data();
             tbody.innerHTML += `
             <tr>
-                <td>
-                    <b>${d.displayDate}</b><br>
-                    <small style="color:#888;">${d.date}</small>
-                </td>
-                <td>
-                    ${d.location}<br>
-                    <small style="color:#ff9800;">Feat: ${d.performers[0].name}</small>
-                </td>
-                <td>
-                    <button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button>
-                </td>
+                <td><b>${d.displayDate}</b><br><small style="color:#888;">${d.date}</small></td>
+                <td>${d.location}<br><small style="color:#ff9800;">${d.performers[0].name}</small></td>
+                <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
             </tr>`;
         });
     });
 }
 
-// 5. LOAD LIST JADWAL UTAMA
+// 6. LOAD ACTIVE SCHEDULE MAIN
 async function loadActiveSchedules() {
     const tbody = document.getElementById('cms-schedule-list-body');
     if(!tbody) return;
@@ -546,19 +433,13 @@ async function loadActiveSchedules() {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            
             if (data.type === 'main' || !data.type) { 
                 hasData = true;
                 tbody.innerHTML += `
                 <tr>
-                    <td>
-                        <b>${data.displayDate}</b><br>
-                        <small style="color:#888;">${data.date}</small>
-                    </td>
+                    <td><b>${data.displayDate}</b><br><small>${data.date}</small></td>
                     <td>${data.location}</td>
-                    <td>
-                        <button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button>
-                    </td>
+                    <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
                 </tr>`;
             }
         });
@@ -663,7 +544,6 @@ window.saveRadioUpdate = async function() {
     }
 }
 
-// FUNGSI LOAD LIST RADIO
 async function loadAllRadioSchedules() {
     const tbody = document.getElementById('radio-list-body');
     if(!tbody) return; 
@@ -671,27 +551,25 @@ async function loadAllRadioSchedules() {
     const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
-        if(snapshot.empty) { 
-            tbody.innerHTML = '<tr><td colspan="4" align="center">Belum ada jadwal radio.</td></tr>'; 
-            return; 
-        }
-
+        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" align="center">Belum ada jadwal radio.</td></tr>'; return; }
         snapshot.forEach(doc => {
             const d = doc.data();
             const status = d.isLive ? '<span style="color:#00ff00; font-weight:bold;">LIVE</span>' : '<span style="color:#888;">Offline</span>';
-            tbody.innerHTML += `<tr><td><b>${d.sessionName}</b></td><td>${d.title}<br><small style="color:#00d2ff;">${d.host}</small></td><td>${status}</td><td><button class="btn-action btn-delete" onclick="deleteRadio('${doc.id}')">Hapus</button></td></tr>`;
+            tbody.innerHTML += `
+            <tr>
+                <td><b>${d.sessionName}</b></td>
+                <td>${d.title}<br><small style="color:#00d2ff;">${d.host}</small></td>
+                <td>${status}</td>
+                <td><button class="btn-action btn-delete" onclick="deleteRadio('${doc.id}')">Hapus</button></td>
+            </tr>`;
         });
     });
 }
-window.deleteRadio = async function(id) { 
-    if(confirm("Hapus jadwal siaran ini?")) {
-        await deleteDoc(doc(db, "broadcasts", id));
-    }
-}
+window.deleteRadio = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "broadcasts", id)); }
 
 
 /* =========================================
-   6. COMMAND CENTER (LIVE MONITOR)
+   8. COMMAND CENTER (LIVE MONITOR)
    ========================================= */
 
 let monitorUnsubscribe = null;
@@ -718,6 +596,7 @@ function listenCommandCenter() {
 
         requests.forEach(d => {
             const time = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            
             const htmlItem = `
             <div class="req-item ${d.status}">
                 <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
@@ -789,18 +668,19 @@ window.deleteReq = async function(id) {
 }
 
 /* =========================================
-   8. LOGIC OVERVIEW & NOTIFIKASI
+   8. DASHBOARD OVERVIEW (NOTIFIKASI)
    ========================================= */
 
 async function loadDashboardOverview() {
-    // 1. HITUNG DATA STATISTIK
+    console.log("Memuat Data Overview...");
+
+    // 1. STATISTIK
     const mitraSnap = await getDocs(collection(db, "warungs"));
     const perfSnap = await getDocs(collection(db, "performers"));
     
     document.getElementById('count-mitra').innerText = mitraSnap.size;
     document.getElementById('count-perf').innerText = perfSnap.size;
 
-    // 2. HITUNG TOTAL PENDING
     const moneySnap = await getDocs(collection(db, "requests"));
     let totalPending = 0;
     moneySnap.forEach(doc => {
@@ -811,6 +691,7 @@ async function loadDashboardOverview() {
     // 3. NOTIFIKASI
     const notifArea = document.getElementById('admin-notification-area');
     if(!notifArea) return; 
+
     notifArea.innerHTML = ''; 
     let adaNotif = false;
 
@@ -819,7 +700,11 @@ async function loadDashboardOverview() {
         const d = doc.data();
         if(d.totalTables > 15 && !d.adminApproved) {
             adaNotif = true;
-            notifArea.innerHTML += `<div class="notif-card urgent"><div class="notif-content"><h4>Approval Mitra Besar</h4><p>${d.name}</p></div><div class="notif-action"><button class="btn-action btn-view" onclick="showView('mitra')">Lihat</button></div></div>`;
+            notifArea.innerHTML += `
+            <div class="notif-card urgent">
+                <div class="notif-content"><h4>Approval Mitra Besar</h4><p>${d.name}</p></div>
+                <div class="notif-action"><button class="btn-action btn-view" onclick="showView('mitra')">Lihat</button></div>
+            </div>`;
         }
     });
 
@@ -860,21 +745,23 @@ window.luluskanSiswa = async function(id, name, genre) {
 }
 
 /* =========================================
-   10. MODUL CAFE & PUSAT KONTROL TOUR
+   10. MODUL CAFE (MANAJEMEN & LAPORAN)
    ========================================= */
 
 // Navigasi Tab Cafe
 window.switchCafeTab = function(tabId, btn) {
     document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
-    // Reset active class tombol (manual selector karena class sama)
-    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    
+    if(btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    }
+    if(btn) btn.classList.add('active');
 
     if(tabId === 'cafe-report') prepareReportFilters(); 
 }
 
-// --- A. MANAJEMEN CAFE ---
+// A. MANAJEMEN CAFE
 let currentCafeBase64 = null;
 
 window.previewCafeImg = function(input) {
@@ -920,13 +807,13 @@ async function loadCafeData() {
     if(!tbody) return;
 
     onSnapshot(collection(db, "venues_partner"), (snap) => {
-        tbody.innerHTML = snap.empty ? '<tr><td colspan="5" style="text-align:center;">Belum ada partner.</td></tr>' : '';
+        tbody.innerHTML = '';
+        if(snap.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada partner.</td></tr>'; return; }
 
         snap.forEach(doc => {
             const d = doc.data();
             const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
             
-            // FIX: Tambahkan Backtick (`) dan window.deleteCafe
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="window.deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
@@ -946,7 +833,6 @@ window.editCafe = function(id, name, addr, img) {
     document.getElementById('cafe-edit-id').value = id; 
     document.getElementById('new-cafe-name').value = name;
     document.getElementById('new-cafe-address').value = addr;
-    
     document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
     currentCafeBase64 = null; 
 
@@ -975,7 +861,7 @@ window.deleteCafe = async function(id) {
     if(confirm("Hapus Cafe ini?")) await deleteDoc(doc(db,"venues_partner",id)); 
 }
 
-// LAPORAN CAFE
+// B. LAPORAN CAFE
 async function prepareReportFilters() {
     const locSelect = document.getElementById('rep-loc');
     locSelect.innerHTML = `<option value="all">Semua Lokasi</option><option value="Stadion Bayuangga Zone">Stadion Pusat</option>`;
