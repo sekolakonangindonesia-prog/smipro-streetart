@@ -52,7 +52,13 @@ window.switchCmsTab = function(tabId, btn) {
     }
     if(btn) btn.classList.add('active');
 
+     // --- TAMBAHKAN/PASTIKAN BARIS INI ADA ---
     if(tabId === 'cms-schedule') loadActiveSchedules();
+    if(tabId === 'cms-radio') loadAllRadioSchedules(); // <--- INI YANG PENTING
+    if(tabId === 'cms-tour') {
+        loadCafeDropdownForSchedule();
+        loadActiveTourSchedules();
+    }
 }
 
 window.adminLogout = function() {
@@ -538,6 +544,44 @@ window.saveSchedule = async function() {
             type: "main", displayDate, date: realDate, location, performers
         });
         alert("Jadwal Dipublish!");
+    }
+}
+// --- FUNGSI LOAD LIST RADIO (Supaya muncul di tabel) ---
+async function loadAllRadioSchedules() {
+    const tbody = document.getElementById('radio-list-body');
+    if(!tbody) return; 
+
+    // Ambil data broadcast, urutkan
+    const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) { 
+            tbody.innerHTML = '<tr><td colspan="4" align="center">Belum ada jadwal radio.</td></tr>'; 
+            return; 
+        }
+
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const status = d.isLive ? '<span style="color:#00ff00; font-weight:bold;">LIVE</span>' : '<span style="color:#888;">Offline</span>';
+            
+            tbody.innerHTML += `
+            <tr>
+                <td><b>${d.sessionName}</b></td>
+                <td>${d.title}<br><small style="color:#00d2ff;">${d.host}</small></td>
+                <td>${status}</td>
+                <td>
+                    <button class="btn-action btn-delete" onclick="deleteRadio('${doc.id}')">Hapus</button>
+                </td>
+            </tr>`;
+        });
+    });
+}
+
+// --- FUNGSI HAPUS RADIO ---
+window.deleteRadio = async function(id) {
+    if(confirm("Hapus jadwal siaran ini?")) {
+        await deleteDoc(doc(db, "broadcasts", id));
     }
 }
 
