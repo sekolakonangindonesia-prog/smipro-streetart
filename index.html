@@ -287,53 +287,67 @@
         }
 
        // JADWAL TOUR (CAFE)
+        // 3. LOAD JADWAL TOUR (CAFE) - VERSI ANTI ERROR
         async function loadTourSchedule() {
             const container = document.getElementById('home-tour-container');
             
-            // Query: Cari tipe 'tour', urutkan tanggal terdekat, ambil 1 saja
-            const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"), limit(1));
-            const querySnapshot = await getDocs(q);
+            // PERBAIKAN: Hapus 'orderBy' sementara agar tidak kena error Index Firebase
+            // Kita ambil data tour apa saja yang ada
+            const q = query(collection(db, "events"), where("type", "==", "tour"), limit(1));
+            
+            try {
+                const querySnapshot = await getDocs(q);
 
-            // JIKA KOSONG: Sembunyikan
-            if (querySnapshot.empty) {
-                container.style.display = 'none'; // <--- PASTIKAN INI
-                return;
-            }
-
-            // JIKA ADA DATA: Munculkan
-            container.style.display = 'block'; // <--- INI KUNCINYA. HARUS ADA.
-            container.innerHTML = '';
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                
-                // Ambil tanggal (misal: "SABTU, 03 JAN") -> Ambil "03"
-                const dateParts = data.displayDate.split(' '); 
-                const tgl = dateParts[1] || '00'; 
-
-                let artistName = "Guest Star";
-                if(data.performers && data.performers.length > 0) {
-                    artistName = data.performers[0].name;
+                // JIKA KOSONG DI DATABASE: Tampilkan Dummy Biar Kelihatan Dulu
+                if (querySnapshot.empty) {
+                    console.log("Data Tour Kosong. Memeriksa...");
+                    // Opsional: uncomment baris bawah ini jika ingin paksa muncul dummy
+                    // await seedTourData(); return loadTourSchedule(); 
+                    container.style.display = 'none';
+                    return;
                 }
 
-                container.innerHTML = `
-                <div class="main-schedule-card" onclick="location.href='cafe-live.html?loc=${encodeURIComponent(data.location)}'" style="cursor:pointer; border-left: 5px solid #ff9800;">
-                    <div class="msc-date" style="background:#ff9800; color:black;">
-                        <span style="font-size:0.8rem; letter-spacing:2px;">TOUR</span>
-                        <span style="font-size:2.5rem; font-weight:800; line-height:1;">${tgl}</span>
-                    </div>
-                    <div class="msc-info">
-                        <div class="msc-badge" style="background:#ff9800; color:black; border:none; font-weight:bold;">SMIPRO ON TOUR</div>
-                        <h3 style="margin:5px 0 5px 0; color:white;">${data.location}</h3>
-                        <p style="color:#ccc; font-size:0.9rem; margin:0;">
-                            <i class="fa-solid fa-guitar" style="color:#ff9800;"></i> ${artistName}
-                        </p>
-                        <small style="color:#888; margin-top:5px; display:block;">
-                            <i class="fa-solid fa-arrow-right"></i> Klik untuk Sawer & Request
-                        </small>
-                    </div>
-                </div>`;
-            });
+                // JIKA ADA DATA
+                container.style.display = 'block';
+                container.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    
+                    // Format Tanggal (Fallback jika kosong)
+                    const displayDate = data.displayDate || "COMING SOON";
+                    const dateParts = displayDate.split(' '); 
+                    // Ambil angka tanggal (misal bagian kedua: "03" dari "SABTU 03 JAN")
+                    const tgl = dateParts.length > 1 ? dateParts[1] : 'New';
+
+                    // Ambil Nama Artis
+                    let artistName = "Guest Star";
+                    if(data.performers && data.performers.length > 0) {
+                        artistName = data.performers[0].name;
+                    }
+
+                    // TAMPILKAN KARTU
+                    container.innerHTML = `
+                    <div class="main-schedule-card" onclick="location.href='cafe-live.html?loc=${encodeURIComponent(data.location)}'" style="cursor:pointer; border-left: 5px solid #ff9800; margin-bottom: 20px;">
+                        <div class="msc-date" style="background:#ff9800; color:black;">
+                            <span style="font-size:0.8rem; letter-spacing:2px;">TOUR</span>
+                            <span style="font-size:2.5rem; font-weight:800; line-height:1;">${tgl}</span>
+                        </div>
+                        <div class="msc-info">
+                            <div class="msc-badge" style="background:#ff9800; color:black; border:none; font-weight:bold;">SMIPRO ON TOUR</div>
+                            <h3 style="margin:5px 0 5px 0; color:white;">${data.location}</h3>
+                            <p style="color:#ccc; font-size:0.9rem; margin:0;">
+                                <i class="fa-solid fa-guitar" style="color:#ff9800;"></i> ${artistName}
+                            </p>
+                            <small style="color:#888; margin-top:5px; display:block;">
+                                <i class="fa-solid fa-arrow-right"></i> Klik untuk Request & Sawer
+                            </small>
+                        </div>
+                    </div>`;
+                });
+            } catch (error) {
+                console.error("Error loading tour:", error);
+            }
         }
 
         // VENUES (DENGAN PERBAIKAN ADMIN AKSES)
