@@ -54,7 +54,10 @@ window.switchCmsTab = function(tabId, btn) {
 
      // --- TAMBAHKAN/PASTIKAN BARIS INI ADA ---
     if(tabId === 'cms-schedule') loadActiveSchedules();
-    if(tabId === 'cms-radio') loadAllRadioSchedules(); // <--- INI YANG PENTING
+    if(tabId === 'cms-radio') loadAllRadioSchedules(); {
+        loadRadioSessionData(); // Load form
+        loadAllRadioSchedules(); // Load tabel list
+    }
     if(tabId === 'cms-tour') {
         loadCafeDropdownForSchedule();
         loadActiveTourSchedules();
