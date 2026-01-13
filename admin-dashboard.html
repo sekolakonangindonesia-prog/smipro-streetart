@@ -541,8 +541,10 @@
                 </div>
             </div>
 
-            <!-- RADIO -->
+           <!-- 3. RADIO -->
             <div id="cms-radio" class="cms-content hidden">
+                
+                <!-- BAGIAN ATAS: FORMULIR -->
                 <div class="cms-form-group">
                     <h4 style="margin-top:0; color:#00d2ff;">Jadwal Radio</h4>
                     <label class="cms-label">Pilih Sesi Siaran:</label>
@@ -551,14 +553,15 @@
                         <option value="PAGI">PAGI</option><option value="SIANG">SIANG</option><option value="MALAM">MALAM</option>
                     </select>
                     
+                    <!-- Area ini sembunyi sampai sesi dipilih -->
                     <div id="radio-edit-area" style="display:none; margin-top:15px; border-top:1px dashed #333; padding-top:15px;">
                         <label class="cms-label">Judul Acara:</label>
                         <input type="text" id="radio-title" class="cms-input" placeholder="Contoh: Request Lagu Santuy">
                         
                         <label class="cms-label">Nama Host (Ambil dari Performer):</label>
-                            <select id="radio-host" class="cms-input">
+                        <select id="radio-host" class="cms-input">
                             <option value="">-- Sedang Memuat Artis... --</option>
-                            </select>
+                        </select>
                         
                         <label class="cms-label">Topik Obrolan:</label>
                         <input type="text" id="radio-topic" class="cms-input" placeholder="Topik hari ini...">
@@ -577,8 +580,26 @@
                             <i class="fa-solid fa-floppy-disk"></i> SIMPAN PERUBAHAN
                         </button>
                     </div>
-
                 </div>
+
+                <!-- BAGIAN BAWAH: LIST DAFTAR (DI LUAR FORM GROUP) -->
+                <div style="margin-top:30px; border-top:1px dashed #444; padding-top:20px;">
+                    <h4 style="margin:0 0 10px 0; color:#aaa;">Daftar Siaran Radio/TikTok</h4>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Sesi</th>
+                                <th>Judul & Host</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="radio-list-body">
+                            <tr><td colspan="4" align="center">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
 
             <!-- BERITA & PODCAST -->
