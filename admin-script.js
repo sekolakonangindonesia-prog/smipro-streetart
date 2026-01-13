@@ -527,7 +527,7 @@ window.openRaport = async function(studentId) {
    7. CMS MODULE
    ========================================= */
 async function loadArtistDropdowns() {
-    const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host'];
+    const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
     let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
