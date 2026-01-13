@@ -534,6 +534,8 @@ window.openRaport = async function(studentId) {
         snapshot.forEach(doc => { optionsHTML += <option value="${doc.data().name}">${doc.data().name}</option>; });
         selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
         }
+         }
+
 window.saveSchedule = async function() {
 const displayDate = document.getElementById('sched-display-date').value;
 const realDate = document.getElementById('sched-real-date').value;
@@ -552,7 +554,7 @@ if(confirm("Publish Jadwal?")) {
     alert("Jadwal Dipublish!");
     }
         }
-        }
+        
 
 // --- FUNGSI LOAD LIST RADIO (Supaya muncul di tabel) ---
 async function loadAllRadioSchedules() {
@@ -660,11 +662,10 @@ if(!querySnapshot.empty) {
     document.getElementById('radio-host').value = data.host;
     document.getElementById('radio-topic').value = data.topic;
     document.getElementById('radio-link').value = data.link;
-    document.getElementById('radio-live-toggle').checked = data.isLive;
-} else {
-    currentRadioDocId = null;
+    document.getElementById('radio-live-toggle').checked = data.isLive;} else 
+    {currentRadioDocId = null;
     document.getElementById('radio-title').value = "";
-}
+    }
 }
 
 window.saveRadioUpdate = async function() {
