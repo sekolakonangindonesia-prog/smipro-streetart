@@ -567,64 +567,106 @@ async function loadAllRadioSchedules() {
 }
 window.deleteRadio = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "broadcasts", id)); }
 
-
 /* =========================================
-   8. COMMAND CENTER (LIVE MONITOR)
+   6. COMMAND CENTER (LIVE MONITOR & STATISTIK)
    ========================================= */
 
+// Variable Global untuk Listener
 let monitorUnsubscribe = null;
+let statsUnsubscribe = null;
 
+// Fungsi ini dipanggil saat tab Finance dibuka
 function listenCommandCenter() {
     const pendingContainer = document.getElementById('list-pending');
     const liveContainer = document.getElementById('list-approved');
-    if(!pendingContainer || !liveContainer) return;
 
+    // Cek apakah elemen HTML ada?
+    if(!pendingContainer || !liveContainer) {
+        console.error("Error: Wadah Monitor tidak ditemukan di HTML.");
+        return;
+    }
+
+    // Query: Ambil data 'requests' yang statusnya pending ATAU approved
     const q = query(collection(db, "requests"), where("status", "in", ["pending", "approved"]));
 
+    // Matikan listener lama jika ada (biar gak dobel)
     if(monitorUnsubscribe) monitorUnsubscribe();
 
+    // Jalankan Listener Realtime
     monitorUnsubscribe = onSnapshot(q, (snapshot) => {
+        // 1. Bersihkan Tampilan Lama
         pendingContainer.innerHTML = '';
         liveContainer.innerHTML = '';
         
         let hasPending = false;
         let hasLive = false;
 
+        // 2. Ambil Data & Urutkan Manual (Biar gak kena error Index Firebase)
         let requests = [];
-        snapshot.forEach(doc => requests.push({id: doc.id, ...doc.data()}));
-        requests.sort((a,b) => a.timestamp - b.timestamp);
+        snapshot.forEach(doc => {
+            requests.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Urutkan berdasarkan waktu (Yang lama di atas/antrian)
+        requests.sort((a,b) => {
+            const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+            const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+            return timeA - timeB;
+        });
 
+        // 3. Render ke Kolom
         requests.forEach(d => {
-            const time = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            // Format Jam
+            const timeStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
             
+            // Template HTML Kartu
             const htmlItem = `
             <div class="req-item ${d.status}">
                 <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
-                <small style="color:#888;">${time} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
+                <small style="color:#888;">${timeStr} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
                 <h4 style="margin:5px 0; color:white;">${d.song}</h4>
                 <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message}"</p>
                 <small style="color:#aaa;">Untuk: ${d.performer}</small>
+                
                 <div style="margin-top:10px;">
-                ${d.status === 'pending' ? 
-                    `<button class="btn-control btn-approve" onclick="approveReq('${d.id}')"><i class="fa-solid fa-check"></i> TERIMA DANA</button>
-                     <button class="btn-action btn-delete" onclick="deleteReq('${d.id}')" style="margin-top:5px; width:100%;"><i class="fa-solid fa-trash"></i> Tolak</button>` : 
-                    `<button class="btn-control btn-finish" onclick="finishReq('${d.id}')"><i class="fa-solid fa-flag-checkered"></i> SELESAI (ARSIP)</button>`
-                }
+                    ${d.status === 'pending' ? 
+                        // TOMBOL UNTUK STATUS PENDING (KOLOM KIRI)
+                        `<button class="btn-control btn-approve" onclick="approveReq('${d.id}')">
+                            <i class="fa-solid fa-check"></i> TERIMA DANA
+                        </button>
+                        <button class="btn-action btn-delete" onclick="deleteReq('${d.id}')" style="margin-top:5px; width:100%;">
+                            <i class="fa-solid fa-trash"></i> Tolak
+                        </button>` 
+                        : 
+                        // TOMBOL UNTUK STATUS APPROVED (KOLOM KANAN)
+                        `<button class="btn-control btn-finish" onclick="finishReq('${d.id}')">
+                            <i class="fa-solid fa-flag-checkered"></i> SELESAI (ARSIP)
+                        </button>`
+                    }
                 </div>
             </div>`;
 
-            if(d.status === 'pending') { pendingContainer.innerHTML += htmlItem; hasPending = true; } 
-            else { liveContainer.innerHTML += htmlItem; hasLive = true; }
+            // Pisahkan ke Kiri atau Kanan
+            if(d.status === 'pending') {
+                pendingContainer.innerHTML += htmlItem;
+                hasPending = true;
+            } else {
+                liveContainer.innerHTML += htmlItem;
+                hasLive = true;
+            }
         });
 
+        // 4. Pesan Kosong
         if(!hasPending) pendingContainer.innerHTML = '<p class="empty-state">Tidak ada request baru.</p>';
         if(!hasLive) liveContainer.innerHTML = '<p class="empty-state">Panggung sepi.</p>';
     });
 }
 
 function renderFinanceData() {
-    const filter = document.getElementById('stats-filter').value;
     const tbody = document.getElementById('table-history-body');
+    if(!tbody) return;
+
+    // Ambil data yang sudah SELESAI (finished)
     const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
 
     if(statsUnsubscribe) statsUnsubscribe();
@@ -634,28 +676,41 @@ function renderFinanceData() {
         let totalReq = 0;
         let historyHTML = '';
 
-        const now = new Date();
         snapshot.forEach(doc => {
             const d = doc.data();
-            const date = d.timestamp.toDate();
-            let include = false;
-
-            if(filter === 'all') include = true;
-            else if(filter === 'today' && date.getDate() === now.getDate()) include = true;
-
-            if(include) {
-                totalMoney += parseInt(d.amount);
-                totalReq++;
-                historyHTML += `<tr><td>${date.toLocaleTimeString()}</td><td><b>${d.song}</b></td><td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td></tr>`;
-            }
+            totalMoney += parseInt(d.amount);
+            totalReq++;
+            
+            // Render Tabel Riwayat
+            const dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString() : '-';
+            historyHTML += `
+            <tr>
+                <td>${dateStr}</td>
+                <td><b>${d.song}</b><br><small>${d.performer}</small></td>
+                <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
+            </tr>`;
         });
 
-        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-        document.getElementById('stat-total-req').innerText = totalReq;
-        tbody.innerHTML = historyHTML || '<tr><td colspan="3">Kosong.</td></tr>';
+        // Update Angka Statistik
+        const elMoney = document.getElementById('stat-total-money');
+        const elReq = document.getElementById('stat-total-req');
+        if(elMoney) elMoney.innerText = "Rp " + totalMoney.toLocaleString();
+        if(elReq) elReq.innerText = totalReq;
+        
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong.</td></tr>';
     });
 }
 
+// C. ACTION BUTTONS (Fungsi Tombol)
+window.approveReq = async function(id) {
+    if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
+}
+window.finishReq = async function(id) {
+    if(confirm("Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' });
+}
+window.deleteReq = async function(id) {
+    if(confirm("Tolak?")) await deleteDoc(doc(db, "requests", id));
+}
 // C. ACTION BUTTONS
 window.approveReq = async function(id) {
     if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
