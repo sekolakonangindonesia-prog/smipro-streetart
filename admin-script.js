@@ -690,8 +690,6 @@ window.savePodcast = async function() {
     }
 }
 
-
-
 /* =========================================
    8. COMMAND CENTER (LIVE MONITOR)
    ========================================= */
@@ -790,7 +788,6 @@ window.deleteReq = async function(id) {
 /* =========================================
    10. MODUL CAFE & PUSAT KONTROL TOUR
    ========================================= */
-
 // Navigasi Tab Cafe
 window.switchCafeTab = function(tabId, btn) {
     document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
@@ -855,7 +852,7 @@ async function loadCafeData() {
             const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
             
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
-            const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
+           const btnDel = `<button class="btn-action btn-delete" onclick="window.deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
             tbody.innerHTML += `
             <tr>
