@@ -526,140 +526,147 @@ window.openRaport = async function(studentId) {
 /* =========================================
 7. CMS MODULE
 ========================================= */
+// 1. DROPDOWN ARTIS
 async function loadArtistDropdowns() {
     const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
     const q = query(collection(db, "performers"), orderBy("name", "asc"));
     const snapshot = await getDocs(q);
     let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
+    
+    // FIX: Tambahkan Backtick (`)
     snapshot.forEach(doc => { optionsHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
     selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
 }
 
+// 2. SIMPAN JADWAL UTAMA (STADION)
 window.saveSchedule = async function() {
     const displayDate = document.getElementById('sched-display-date').value;
     const realDate = document.getElementById('sched-real-date').value;
     const location = document.getElementById('sched-location').value;
-    const performers = [1,2,3].map(i => ({ name: document.getElementById(`p${i}-name`).value, time: document.getElementById(`p${i}-time`).value, genre: "Live" })).filter(p => p.name);
+    
+    const performers = [1,2,3].map(i => ({
+        name: document.getElementById(`p${i}-name`).value,
+        time: document.getElementById(`p${i}-time`).value,
+        genre: "Live"
+    })).filter(p => p.name);
+
     if(!displayDate || !realDate) return alert("Tanggal wajib diisi!");
+
     if(confirm("Publish Jadwal Utama?")) {
-        await addDoc(collection(db, "events"), { type: "main", displayDate, date: realDate, location, performers });
+        await addDoc(collection(db, "events"), {
+            type: "main", displayDate, date: realDate, location, performers
+        });
         alert("Jadwal Utama Dipublish!");
     }
 }
 
-// --- FUNGSI LOAD LIST JADWAL UTAMA ---
-async function loadActiveSchedules() {
-    const tbody = document.getElementById('cms-schedule-list-body');
-    if(!tbody) return;
-    const q = query(collection(db, "events"), orderBy("date", "asc"));
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        let hasData = false;
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.type === 'main' || !data.type) { 
-                hasData = true;
-                tbody.innerHTML += `<tr><td><b>${data.displayDate}</b><br><small>${data.date}</small></td><td>${data.location}</td><td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td></tr>`;
-            }
-        });
-        if(!hasData) tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal utama.</td></tr>';
-    });
-}
-window.deleteSchedule = async function(id) { if(confirm("Hapus Jadwal?")) await deleteDoc(doc(db,"events",id)); }
-
-// --- FUNGSI LOAD LIST RADIO ---
-async function loadAllRadioSchedules() {
-    const tbody = document.getElementById('radio-list-body');
-    if(!tbody) return; 
-    const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" align="center">Belum ada jadwal radio.</td></tr>'; return; }
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            const status = d.isLive ? '<span style="color:#00ff00; font-weight:bold;">LIVE</span>' : '<span style="color:#888;">Offline</span>';
-            tbody.innerHTML += `<tr><td><b>${d.sessionName}</b></td><td>${d.title}<br><small style="color:#00d2ff;">${d.host}</small></td><td>${status}</td><td><button class="btn-action btn-delete" onclick="deleteRadio('${doc.id}')">Hapus</button></td></tr>`;
-        });
-    });
-}
-window.deleteRadio = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "broadcasts", id)); }
-
-// --- TOUR CAFE (YANG SEBELUMNYA HILANG) ---
+// 3. SIMPAN JADWAL TOUR (CAFE)
 window.saveTourSchedule = async function() {
     const displayDate = document.getElementById('tour-display-date').value;
     const realDate = document.getElementById('tour-real-date').value;
     const location = document.getElementById('tour-location').value;
     const perfName = document.getElementById('tour-perf-name').value;
     const perfTime = document.getElementById('tour-perf-time').value;
+
     if(!displayDate || !realDate || !location || !perfName) return alert("Data Tour belum lengkap!");
+
     if(confirm("Publish Jadwal Tour?")) {
-        await addDoc(collection(db, "events"), { type: "tour", displayDate, date: realDate, location, statusText: "ON TOUR", performers: [{ name: perfName, time: perfTime }] });
-        alert("Tour Dipublish!");
+        await addDoc(collection(db, "events"), {
+            type: "tour", 
+            displayDate: displayDate,
+            date: realDate,
+            location: location,
+            statusText: "ON TOUR",
+            performers: [{ name: perfName, time: perfTime }] 
+        });
+        alert("Jadwal Tour Berhasil Dipublish!");
     }
 }
+
+// 4. LOAD DATA PENDUKUNG TOUR
 async function loadCafeDropdownForSchedule() {
     const select = document.getElementById('tour-location');
     if(!select) return; 
+
     select.innerHTML = '<option value="">-- Pilih Lokasi Cafe --</option>';
     const q = query(collection(db, "venues_partner"), orderBy("name", "asc"));
     const snap = await getDocs(q);
+    // FIX: Tambahkan Backtick (`)
     snap.forEach(doc => { select.innerHTML += `<option value="${doc.data().name}">${doc.data().name}</option>`; });
 }
+
 async function loadActiveTourSchedules() {
     const tbody = document.getElementById('cms-tour-list-body');
     if(!tbody) return;
+
     const q = query(collection(db, "events"), where("type", "==", "tour"), orderBy("date", "asc"));
+    
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal tour.</td></tr>'; return; }
+        
         snapshot.forEach(doc => {
             const d = doc.data();
-            tbody.innerHTML += `<tr><td>${d.displayDate}</td><td>${d.location}<br><small style="color:#ff9800;">${d.performers[0].name}</small></td><td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td></tr>`;
+            // FIX: Tambahkan Backtick (`)
+            tbody.innerHTML += `
+            <tr>
+                <td>${d.displayDate}</td>
+                <td>${d.location}<br><small style="color:#ff9800;">${d.performers[0].name}</small></td>
+                <td><button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button></td>
+            </tr>`;
         });
     });
 }
 
-// RADIO
-let currentRadioDocId = null; 
-window.loadRadioSessionData = async function() {
-    const sessionName = document.getElementById('radio-session-select').value;
-    const editArea = document.getElementById('radio-edit-area');
-    if(!sessionName) { editArea.style.display = 'none'; return; }
-    editArea.style.display = 'block';
-    const q = query(collection(db, "broadcasts"), where("sessionName", "==", sessionName), limit(1));
-    const querySnapshot = await getDocs(q);
-    if(!querySnapshot.empty) {
-        const docSnap = querySnapshot.docs[0]; const data = docSnap.data(); currentRadioDocId = docSnap.id; 
-        document.getElementById('radio-title').value = data.title;
-        document.getElementById('radio-host').value = data.host;
-        document.getElementById('radio-topic').value = data.topic;
-        document.getElementById('radio-link').value = data.link;
-        document.getElementById('radio-live-toggle').checked = data.isLive;
-    } else {
-        currentRadioDocId = null; document.getElementById('radio-title').value = "";
-    }
-}
-window.saveRadioUpdate = async function() {
-    const sessionName = document.getElementById('radio-session-select').value;
-    const dataPayload = { sessionName, title: document.getElementById('radio-title').value, host: document.getElementById('radio-host').value, topic: document.getElementById('radio-topic').value, link: document.getElementById('radio-link').value, isLive: document.getElementById('radio-live-toggle').checked };
-    if(confirm("Simpan?")) {
-        if(currentRadioDocId) await updateDoc(doc(db, "broadcasts", currentRadioDocId), dataPayload);
-        else await addDoc(collection(db, "broadcasts"), dataPayload);
-        alert("Tersimpan!");
-    }
-}
+// 5. LOAD LIST JADWAL UTAMA
+async function loadActiveSchedules() {
+    const tbody = document.getElementById('cms-schedule-list-body');
+    if(!tbody) return;
 
-// NEWS & PODCAST
+    const q = query(collection(db, "events"), orderBy("date", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        let hasData = false;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            if (data.type === 'main' || !data.type) { 
+                hasData = true;
+                // FIX: Tambahkan Backtick (`)
+                tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <b>${data.displayDate}</b><br>
+                        <small style="color:#888;">${data.date}</small>
+                    </td>
+                    <td>${data.location}</td>
+                    <td>
+                        <button class="btn-action btn-delete" onclick="deleteSchedule('${doc.id}')">Hapus</button>
+                    </td>
+                </tr>`;
+            }
+        });
+
+        if(!hasData) tbody.innerHTML = '<tr><td colspan="3" align="center">Tidak ada jadwal utama.</td></tr>';
+    });
+}
+window.deleteSchedule = async function(id) { if(confirm("Hapus Jadwal?")) await deleteDoc(doc(db,"events",id)); }
+    
+// TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
     const type = document.getElementById('content-category').value;
     document.getElementById('form-news-container').style.display = type === 'news' ? 'block' : 'none';
     document.getElementById('form-podcast-container').style.display = type === 'podcast' ? 'block' : 'none';
 }
+
 window.toggleNewsInput = function() {
     const type = document.getElementById('news-type').value;
     document.getElementById('news-input-external').style.display = type === 'external' ? 'block' : 'none';
     document.getElementById('news-input-internal').style.display = type === 'internal' ? 'block' : 'none';
 }
+
 window.saveNews = async function() {
     if(confirm("Publish Berita?")) {
         await addDoc(collection(db, "news"), {
@@ -675,6 +682,7 @@ window.saveNews = async function() {
         alert("Berita Terbit!");
     }
 }
+
 window.savePodcast = async function() {
     if(confirm("Publish Podcast?")) {
         await addDoc(collection(db, "podcasts"), {
@@ -687,6 +695,56 @@ window.savePodcast = async function() {
             timestamp: new Date()
         });
         alert("Podcast Terbit!");
+    }
+}
+
+// RADIO
+let currentRadioDocId = null; 
+
+window.loadRadioSessionData = async function() {
+    const sessionName = document.getElementById('radio-session-select').value;
+    const editArea = document.getElementById('radio-edit-area');
+    
+    if(!sessionName) {
+        editArea.style.display = 'none';
+        return;
+    }
+    editArea.style.display = 'block';
+
+    const q = query(collection(db, "broadcasts"), where("sessionName", "==", sessionName), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if(!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+        currentRadioDocId = docSnap.id; 
+
+        document.getElementById('radio-title').value = data.title;
+        document.getElementById('radio-host').value = data.host;
+        document.getElementById('radio-topic').value = data.topic;
+        document.getElementById('radio-link').value = data.link;
+        document.getElementById('radio-live-toggle').checked = data.isLive;
+    } else {
+        currentRadioDocId = null;
+        document.getElementById('radio-title').value = "";
+    }
+}
+
+window.saveRadioUpdate = async function() {
+    const sessionName = document.getElementById('radio-session-select').value;
+    const dataPayload = {
+        sessionName: sessionName,
+        title: document.getElementById('radio-title').value,
+        host: document.getElementById('radio-host').value,
+        topic: document.getElementById('radio-topic').value,
+        link: document.getElementById('radio-link').value,
+        isLive: document.getElementById('radio-live-toggle').checked
+    };
+
+    if(confirm("Simpan perubahan jadwal siaran?")) {
+        if(currentRadioDocId) await updateDoc(doc(db, "broadcasts", currentRadioDocId), dataPayload);
+        else await addDoc(collection(db, "broadcasts"), dataPayload);
+        alert("Jadwal Radio Berhasil Disimpan!");
     }
 }
 
