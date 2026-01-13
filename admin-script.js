@@ -526,14 +526,14 @@ window.openRaport = async function(studentId) {
 /* =========================================
 7. CMS MODULE
 ========================================= */
-async function loadArtistDropdowns() {
-const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
-const q = query(collection(db, "performers"), orderBy("name", "asc"));
-const snapshot = await getDocs(q);
-let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
-snapshot.forEach(doc => { optionsHTML += <option value="${doc.data().name}">${doc.data().name}</option>; });
-selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
-}
+        async function loadArtistDropdowns() {
+        const selects = ['p1-name', 'p2-name', 'p3-name', 'radio-host', 'tour-perf-name'];
+        const q = query(collection(db, "performers"), orderBy("name", "asc"));
+        const snapshot = await getDocs(q);
+        let optionsHTML = '<option value="">-- Pilih Artis --</option><option value="Lainnya">Lainnya / Band Luar</option>';
+        snapshot.forEach(doc => { optionsHTML += <option value="${doc.data().name}">${doc.data().name}</option>; });
+        selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = optionsHTML; });
+        }
 window.saveSchedule = async function() {
 const displayDate = document.getElementById('sched-display-date').value;
 const realDate = document.getElementById('sched-real-date').value;
@@ -550,8 +550,10 @@ if(confirm("Publish Jadwal?")) {
         type: "main", displayDate, date: realDate, location, performers
     });
     alert("Jadwal Dipublish!");
-}
-}
+    }
+        }
+        }
+
 // --- FUNGSI LOAD LIST RADIO (Supaya muncul di tabel) ---
 async function loadAllRadioSchedules() {
 const tbody = document.getElementById('radio-list-body');
@@ -583,23 +585,27 @@ onSnapshot(q, (snapshot) => {
     });
 });
 }
+
 // --- FUNGSI HAPUS RADIO ---
 window.deleteRadio = async function(id) {
 if(confirm("Hapus jadwal siaran ini?")) {
 await deleteDoc(doc(db, "broadcasts", id));
 }
 }
+
 // TOGGLE NEWS VS PODCAST
 window.toggleContentForm = function() {
 const type = document.getElementById('content-category').value;
 document.getElementById('form-news-container').style.display = type === 'news' ? 'block' : 'none';
 document.getElementById('form-podcast-container').style.display = type === 'podcast' ? 'block' : 'none';
 }
+
 window.toggleNewsInput = function() {
 const type = document.getElementById('news-type').value;
 document.getElementById('news-input-external').style.display = type === 'external' ? 'block' : 'none';
 document.getElementById('news-input-internal').style.display = type === 'internal' ? 'block' : 'none';
 }
+
 window.saveNews = async function() {
 if(confirm("Publish Berita?")) {
 await addDoc(collection(db, "news"), {
@@ -615,6 +621,7 @@ timestamp: new Date()
 alert("Berita Terbit!");
 }
 }
+
 window.savePodcast = async function() {
 if(confirm("Publish Podcast?")) {
 await addDoc(collection(db, "podcasts"), {
@@ -629,6 +636,7 @@ timestamp: new Date()
 alert("Podcast Terbit!");
 }
 }
+
 // RADIO
 window.loadRadioSessionData = async function() {
 const sessionName = document.getElementById('radio-session-select').value;
@@ -658,6 +666,7 @@ if(!querySnapshot.empty) {
     document.getElementById('radio-title').value = "";
 }
 }
+
 window.saveRadioUpdate = async function() {
 const sessionName = document.getElementById('radio-session-select').value;
 const dataPayload = {
@@ -675,6 +684,7 @@ if(confirm("Simpan perubahan jadwal siaran?")) {
     alert("Jadwal Radio Berhasil Disimpan!");
 }
 }
+
 // MEMUAT LIST JADWAL AGAR BISA DIHAPUS
 async function loadActiveSchedules() {
 const tbody = document.getElementById('cms-schedule-list-body');
@@ -691,6 +701,7 @@ onSnapshot(q, (snapshot) => {
     });
 });
 }
+
 window.deleteSchedule = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db,"events",id)); }
 
 
