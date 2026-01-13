@@ -538,8 +538,7 @@ window.saveSchedule = async function() {
 const displayDate = document.getElementById('sched-display-date').value;
 const realDate = document.getElementById('sched-real-date').value;
 const location = document.getElementById('sched-location').value;
-code
-Code
+
 const performers = [1,2,3].map(i => ({
     name: document.getElementById(`p${i}-name`).value,
     time: document.getElementById(`p${i}-time`).value,
@@ -557,8 +556,7 @@ if(confirm("Publish Jadwal?")) {
 async function loadAllRadioSchedules() {
 const tbody = document.getElementById('radio-list-body');
 if(!tbody) return;
-code
-Code
+
 // Ambil data broadcast, urutkan
 const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
 
@@ -635,8 +633,7 @@ alert("Podcast Terbit!");
 window.loadRadioSessionData = async function() {
 const sessionName = document.getElementById('radio-session-select').value;
 const editArea = document.getElementById('radio-edit-area');
-code
-Code
+
 if(!sessionName) {
     editArea.style.display = 'none';
     return;
@@ -695,7 +692,6 @@ onSnapshot(q, (snapshot) => {
 });
 }
 window.deleteSchedule = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db,"events",id)); }
-
 
 
 /* =========================================
