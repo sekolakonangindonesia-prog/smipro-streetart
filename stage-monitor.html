@@ -97,7 +97,7 @@
         // 2. LOGIKA UTAMA (HANYA APPROVED)
         // Filter: Hanya ambil yang status == 'approved'
         // Urutan: 'asc' (Yang duluan masuk, tampil duluan / Antrian)
-        const q = query(collection(db, "requests"), where("status", "==", "approved"));
+        const q = query(collection(db, "requests"), where("status", "==", "approved"), orderBy("timestamp", "asc"));
         
         onSnapshot(q, (snapshot) => {
             const list = document.getElementById('request-list');
