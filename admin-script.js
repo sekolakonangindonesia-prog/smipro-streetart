@@ -52,12 +52,16 @@ window.switchCmsTab = function(tabId, btn) {
     }
     if(btn) btn.classList.add('active');
 
-     // --- TAMBAHKAN/PASTIKAN BARIS INI ADA ---
-    if(tabId === 'cms-schedule') loadActiveSchedules();
-    if(tabId === 'cms-radio') loadAllRadioSchedules(); {
-        loadRadioSessionData(); // Load form
-        loadAllRadioSchedules(); // Load tabel list
+    // --- LOGIKA LOAD DATA PER TAB ---
+    if(tabId === 'cms-schedule') {
+        loadActiveSchedules();
     }
+    
+    if(tabId === 'cms-radio') {
+        loadRadioSessionData();  // Load Form Input
+        loadAllRadioSchedules(); // Load Tabel List
+    }
+    
     if(tabId === 'cms-tour') {
         loadCafeDropdownForSchedule();
         loadActiveTourSchedules();
