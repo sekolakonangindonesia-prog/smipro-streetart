@@ -237,50 +237,55 @@
             if(!foundMain) container.innerHTML = `<div class="main-schedule-card"><div class="msc-info">Belum ada jadwal minggu ini.</div></div>`;
         }
 
-        // RADIO
+       // 4. LOAD RADIO (TAMPILKAN WALAU OFFLINE)
         async function loadMainRadio() {
             const container = document.getElementById('home-radio-container');
-            const q = query(collection(db, "broadcasts"), orderBy("order", "desc"));
+            // Urutkan dari Pagi (1) ke Malam (3)
+            const q = query(collection(db, "broadcasts"), orderBy("order", "asc")); 
             const querySnapshot = await getDocs(q);
-                        
+
+            if (querySnapshot.empty) {
+                container.style.display = 'none';
+                return;
+            }
+
             let dataToShow = null;
-            
-             // Cari yang LIVE dulu
+
+            // 1. Cek apakah ada yang LIVE?
             querySnapshot.forEach(doc => {
-                const d = doc.data();
-                if(d.isLive) dataToShow = d; 
+                if (doc.data().isLive) dataToShow = doc.data();
             });
 
-            // Jika tidak ada yang LIVE, dan user ingin HILANGKAN jika offline,
-            // Maka kita cek: apakah kita mau menampilkan jadwal yang akan datang?
-            // Sesuai permintaan Anda: "Kalau tidak ada jadwal/offline, hilang".
-            
-            // Logika: Hanya muncul jika isLive = true ATAU (opsional) ada data tapi belum live
-            // Jika Anda ingin BENAR-BENAR HILANG jika tidak Live:
-            if(!dataToShow) return; // Keluar, biarkan display:none
+            // 2. Jika TIDAK ada yang Live, ambil jadwal pertama (Pagi) sebagai info
+            if (!dataToShow) {
+                dataToShow = querySnapshot.docs[0].data();
+            }
 
-             // Jika ada data (Live), munculkan
             container.style.display = 'block';
             container.innerHTML = '';
            
-            const liveBadge = dataToShow.isLive ? 'border:1px solid #00d2ff; background:#00d2ff; color:black;' : 'border:1px solid #00d2ff; background:transparent; color:#00d2ff;';
-            const liveText = dataToShow.isLive ? 'LIVE SEKARANG' : 'SEGERA TAYANG';
+            // Logika Tampilan (Biru jika Live, Abu jika Offline)
+            const isLive = dataToShow.isLive;
+            const badgeStyle = isLive ? 'border:1px solid #00d2ff; background:#00d2ff; color:black;' : 'border:1px solid #555; background:transparent; color:#888;';
+            const badgeText = isLive ? 'LIVE SEKARANG' : 'SEGERA TAYANG';
+            const titleColor = isLive ? 'white' : '#888';
+            const iconColor = isLive ? 'cyan-text' : 'style="color:#555"';
             
             container.innerHTML = `
-            <div class="main-schedule-card cyan-theme" onclick="location.href='radio.html'">
-                <div class="msc-date cyan-bg">
+            <div class="main-schedule-card ${isLive ? 'cyan-theme' : ''}" onclick="location.href='radio.html'" style="border-left: 5px solid ${isLive ? '#00d2ff' : '#333'};">
+                <div class="msc-date" style="background:${isLive ? '#00d2ff' : '#222'}; color:${isLive ? 'black' : '#888'};">
                     <span style="font-size:0.8rem; letter-spacing:2px;">${dataToShow.sessionName || 'RADIO'}</span>
-                    <span style="font-size:2.5rem; font-weight:800; line-height:1;">${dataToShow.time ? dataToShow.time.split(':')[0] : 'NOW'}</span>
+                    <span style="font-size:2.5rem; font-weight:800; line-height:1;">${dataToShow.time ? dataToShow.time.split(':')[0] : '00'}</span>
                     <span style="font-size:0.9rem; font-weight:bold;">WIB</span>
                 </div>
                 <div class="msc-info">
-                    <div class="msc-badge cyan-theme" style="${liveBadge}">${liveText}</div>
-                    <h3 style="margin:5px 0 5px 0; color:white;">${dataToShow.title}</h3>
+                    <div class="msc-badge" style="${badgeStyle}">${badgeText}</div>
+                    <h3 style="margin:5px 0 5px 0; color:${titleColor};">${dataToShow.title}</h3>
                     <p style="color:#ccc; font-size:0.9rem; margin:0;">
-                        <i class="fa-brands fa-tiktok cyan-text"></i> Topik: "${dataToShow.topic}"
+                        <i class="fa-brands fa-tiktok" ${iconColor}></i> Topik: "${dataToShow.topic}"
                     </p>
-                    <small style="color:#888; margin-top:5px; display:block;">
-                        <i class="fa-solid fa-paper-plane cyan-text"></i> Klik untuk Gabung Live
+                    <small style="color:#666; margin-top:5px; display:block;">
+                        <i class="fa-solid fa-paper-plane"></i> Klik untuk Request & Gabung
                     </small>
                 </div>
             </div>`;
