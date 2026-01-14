@@ -595,19 +595,27 @@
 
             <!-- PANEL 1: LIVE CONTROL (Untuk Layar TV di Lokasi) -->
             <div id="panel-live" class="live-content">
+               <!-- MONITOR PREVIEW (BARU) -->
+                <div class="cms-form-group" style="background:#000; border:1px solid #333; text-align:center; padding:0; overflow:hidden; position:relative; aspect-ratio:16/9; max-width:600px; margin:0 auto 20px auto;">
+                    <iframe id="admin-monitor-frame" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="display:none;"></iframe>
+                    <div id="admin-monitor-placeholder" style="padding-top:20%; color:#555;">
+                        <i class="fa-solid fa-tv" style="font-size:3rem;"></i><br>Belum ada siaran aktif.
+                    </div>
+                </div>
+
                 <div class="cms-form-group" style="background:#051a05; border:1px solid #00ff00;">
                     <h3 style="margin-top:0; color:#00ff00;">📺 Layar Utama (Saat Ini)</h3>
-                    <p style="color:#ccc; font-size:0.9rem;">Masukkan Link YouTube untuk ditayangkan di layar besar Venue.</p>
                     
                     <label class="cms-label">Paste Link YouTube (Live/Rekaman):</label>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="main-live-link" class="cms-input" 
                                placeholder="https://www.youtube.com/watch?v=..." style="margin:0;">
                         <button class="btn-action btn-view" onclick="updateLiveLink()" 
-                                style="background:#00ff00; color:black; font-weight:bold; width: 150px;">
+                                style="background:#00ff00; color:black; font-weight:bold;">
                             TAYANGKAN
                         </button>
                     </div>
+                    <small style="color:#aaa;">*Video ini akan muncul otomatis di halaman Venue & Monitor di atas.</small>
                 </div>
             </div>
 
