@@ -202,6 +202,7 @@
     <!-- MODAL REQUEST (POPUP TENGAH) -->
     <div id="request-modal" class="modal-overlay">
         <div class="modal-box">
+            <button onclick="document.getElementById('request-modal').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
             <!-- LOGO DI MODAL -->
             <div style="text-align:center; margin-bottom:20px;">
                 <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:60px;">
@@ -215,10 +216,21 @@
             <input type="number" id="req-amount" class="input-glass" placeholder="Nominal Sawer (Rp)" style="border-color:#FFD700; color:#FFD700; font-weight:bold;">
             <input type="text" id="req-sender" class="input-glass" placeholder="Nama Kamu (Pengirim)">
 
+            <!-- BAGIAN QRIS & DOWNLOAD (BARU DITAMBAHKAN) -->
+            <div style="background:white; padding:10px; border-radius:10px; margin-bottom:15px; text-align:center;">
+                <!-- GANTI LINK GAMBAR DI BAWAH DENGAN QRIS ANDA -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" style="width:150px; height:150px; display:block; margin:0 auto;">
+
+                 <!-- TOMBOL DOWNLOAD QR -->
+                <a href="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" download="QRIS_SMIPRO.png" style="display:block; background:#333; color:white; text-decoration:none; padding:8px; border-radius:5px; margin-top:10px; font-size:0.9rem; font-weight:bold;">
+                    <i class="fa-solid fa-download"></i> Download QR
+                </a>
+            </div>
+
             <div style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; text-align:center; border:1px dashed #444;">
                 <small style="color:#aaa;">Saweran akan masuk setelah diverifikasi Admin.</small>
             </div>
-
+            
             <div style="display:flex; gap:10px;">
                 <button class="btn-modal" style="background:#444; color:white;" onclick="document.getElementById('request-modal').style.display='none'">Batal</button>
                 <button class="btn-modal" style="background:#E50914; color:white;" onclick="sendRequest()">KIRIM</button>
