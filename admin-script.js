@@ -26,6 +26,13 @@ window.showView = function(viewId, btn) {
         const tabBtn = document.querySelector('.sub-tab-btn');
         if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
     }
+     if(viewId === 'live') {
+        loadCurrentLiveLink(); // Fungsi ini akan kita buat di bawah
+        // Default buka tab pertama
+        const btns = document.querySelectorAll('.sub-tab-btn');
+        // Cari tombol Live di dalam view-live (index agak tricky, kita buat fungsi switchLiveTab handle null btn)
+        switchLiveTab('panel-live', null);
+    }
 
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
@@ -967,6 +974,124 @@ window.loadCafeReport = async function() {
     document.getElementById('rep-total-pax').innerText = (loc === 'all' || loc === 'Stadion Bayuangga Zone') ? "Stadion Only" : "-";
     
     tbody.innerHTML = detailHTML || '<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter.</td></tr>';
+}
+
+/* =========================================
+   11. MODUL KONTROL LAYAR & GALERI (NEW)
+   ========================================= */
+
+// A. NAVIGASI SUB-TAB
+window.switchLiveTab = function(tabId, btn) {
+    document.querySelectorAll('.live-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    
+    // Reset tombol active (Hanya jika btn ada/diklik)
+    if(btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    // Load Data
+    if(tabId === 'panel-live') loadCurrentLiveLink();
+    if(tabId === 'panel-galeri') loadGalleryList(); 
+}
+
+// B. LIVE STREAMING (VENUE)
+window.updateLiveLink = async function() {
+    const url = document.getElementById('main-live-link').value;
+    
+    if (!url) return alert("Link kosong!");
+    if (!url.includes("youtu")) return alert("Harap masukkan link YouTube!");
+
+    let videoId = "";
+    if (url.includes("v=")) videoId = url.split('v=')[1].split('&')[0];
+    else if (url.includes("youtu.be/")) videoId = url.split('youtu.be/')[1];
+    else if (url.includes("live/")) videoId = url.split('live/')[1];
+
+    if (!videoId) return alert("ID Video tidak valid.");
+
+    await setDoc(doc(db, "system", "main_stage"), {
+        youtubeId: videoId, fullUrl: url, updatedAt: new Date()
+    });
+    
+    // Auto Refresh Monitor Admin
+    loadCurrentLiveLink();
+    alert("Layar Venue Telah Diupdate!");
+}
+
+async function loadCurrentLiveLink() {
+    const docSnap = await getDoc(doc(db, "system", "main_stage"));
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        document.getElementById('main-live-link').value = data.fullUrl || "";
+        
+        // Update Monitor Admin
+        const monitor = document.getElementById('admin-monitor-frame');
+        const placeholder = document.getElementById('admin-monitor-placeholder');
+        
+        if(data.youtubeId && monitor) {
+            monitor.src = `https://www.youtube.com/embed/${data.youtubeId}?autoplay=0&mute=0&controls=1&origin=https://smipro-streetart.github.io`;
+            monitor.style.display = 'block';
+            if(placeholder) placeholder.style.display = 'none';
+        }
+    }
+}
+
+// C. MANAJEMEN GALERI VIDEO
+window.saveGalleryVideo = async function() {
+    const title = document.getElementById('vid-title').value;
+    const creator = document.getElementById('vid-creator').value;
+    const link = document.getElementById('vid-link').value;
+    const category = document.getElementById('vid-category').value;
+    const desc = document.getElementById('vid-desc').value;
+
+    if(!title || !creator || !link) return alert("Data Wajib diisi!");
+
+    let videoId = "";
+    if (link.includes("v=")) videoId = link.split('v=')[1].split('&')[0];
+    else if (link.includes("youtu.be/")) videoId = link.split('youtu.be/')[1];
+    
+    const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+    if(confirm("Simpan ke Galeri?")) {
+        await addDoc(collection(db, "content_gallery"), {
+            title, creator, link, category, description: desc, thumbnail, timestamp: new Date()
+        });
+        alert("Video Masuk Galeri!");
+        // Reset
+        document.getElementById('vid-title').value = "";
+        document.getElementById('vid-link').value = "";
+        loadGalleryList();
+    }
+}
+
+async function loadGalleryList() {
+    const tbody = document.getElementById('gallery-list-body');
+    if(!tbody) return;
+
+    const q = query(collection(db, "content_gallery"), orderBy("timestamp", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" align="center">Kosong.</td></tr>'; return; }
+
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            let catColor = d.category === 'Live Perform' ? '#E50914' : (d.category === 'Podcast' ? '#a855f7' : '#00d2ff');
+
+            tbody.innerHTML += `
+            <tr>
+                <td><img src="${d.thumbnail}" style="width:60px; border-radius:5px;"></td>
+                <td><b>${d.title}</b><br><small style="color:#888;">${d.creator}</small></td>
+                <td><span style="color:${catColor}; font-weight:bold;">${d.category}</span></td>
+                <td><button class="btn-action btn-delete" onclick="deleteGalleryVideo('${doc.id}')">Hapus</button></td>
+            </tr>`;
+        });
+    });
+}
+
+window.deleteGalleryVideo = async function(id) {
+    if(confirm("Hapus?")) await deleteDoc(doc(db, "content_gallery", id));
 }
 
 /* =========================================
