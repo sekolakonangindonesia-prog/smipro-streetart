@@ -160,6 +160,7 @@
             <a href="#" class="menu-item" onclick="showView('cafe', this)"><i class="fa-solid fa-mug-hot"></i> <span>Data Cafe & Tour</span></a>
             <a href="#" class="menu-item" onclick="showView('students', this)"><i class="fa-solid fa-user-graduate"></i> <span>Bengkel Siswa</span></a>
             <a href="#" class="menu-item" onclick="showView('cms', this)"><i class="fa-solid fa-pen-to-square"></i> <span>Kelola Konten</span></a>
+             <a href="#" class="menu-item" onclick="showView('live', this)"><i class="fa-solid fa-satellite-dish"></i> <span>Control Room & Galeri</span></a>
             <a href="#" class="menu-item" onclick="showView('finance', this)"><i class="fa-solid fa-money-bill-wave"></i> <span>Keuangan & Request</span></a>
             
             <div style="margin-top:auto; border-top:1px solid #222;">
@@ -577,6 +578,88 @@
                          <button class="btn-action btn-edit" onclick="savePodcast()" style="width:100%; margin-top:10px;">PUBLISH PODCAST</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- VIEW KHUSUS: KONTROL LAYAR & GALERI -->
+        <div id="view-live" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:#00ff00;">📡 Control Room & Media</h2>
+            </div>
+
+            <!-- SUB TABS -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchLiveTab('panel-live', this)">🔴 Live Control (Venue)</button>
+                <button class="sub-tab-btn" onclick="switchLiveTab('panel-galeri', this)">🎬 Manajemen Galeri</button>
+            </div>
+
+            <!-- PANEL 1: LIVE CONTROL (Untuk Layar TV di Lokasi) -->
+            <div id="panel-live" class="live-content">
+                <div class="cms-form-group" style="background:#051a05; border:1px solid #00ff00;">
+                    <h3 style="margin-top:0; color:#00ff00;">📺 Layar Utama (Saat Ini)</h3>
+                    <p style="color:#ccc; font-size:0.9rem;">Masukkan Link YouTube untuk ditayangkan di layar besar Venue.</p>
+                    
+                    <label class="cms-label">Paste Link YouTube (Live/Rekaman):</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="main-live-link" class="cms-input" 
+                               placeholder="https://www.youtube.com/watch?v=..." style="margin:0;">
+                        <button class="btn-action btn-view" onclick="updateLiveLink()" 
+                                style="background:#00ff00; color:black; font-weight:bold; width: 150px;">
+                            TAYANGKAN
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: MANAJEMEN GALERI (Untuk Website / Podcast) -->
+            <div id="panel-galeri" class="live-content hidden">
+                <div class="cms-form-group" style="background:#151515; border-left:5px solid #FFD700;">
+                    <h4 style="margin-top:0; color:#FFD700;">Tambah Koleksi Video (Podcast/Lagu)</h4>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                        <div>
+                            <label class="cms-label">Judul Video / Lagu:</label>
+                            <input type="text" id="vid-title" class="cms-input" placeholder="Contoh: Akulah Dia (Cover)">
+                        </div>
+                        <div>
+                            <label class="cms-label">Nama Kreator (Artis/Mentor):</label>
+                            <input type="text" id="vid-creator" class="cms-input" placeholder="Contoh: Acoustic Boys">
+                        </div>
+                    </div>
+
+                    <label class="cms-label">Link YouTube:</label>
+                    <input type="text" id="vid-link" class="cms-input" placeholder="https://youtube.com/...">
+
+                    <label class="cms-label">Kategori:</label>
+                    <select id="vid-category" class="cms-input">
+                        <option value="Live Perform">🎤 Live Perform (Konser)</option>
+                        <option value="Podcast">🎙️ Podcast & Talkshow</option>
+                        <option value="Songs">🎵 Lagu-Lagu Hits (Music Video)</option>
+                    </select>
+
+                    <label class="cms-label">Deskripsi Singkat:</label>
+                    <textarea id="vid-desc" class="cms-input" style="height:80px;" placeholder="Ceritakan sedikit tentang video ini..."></textarea>
+
+                    <button class="btn-action btn-edit" style="width:100%; padding:12px; font-weight:bold;" onclick="saveGalleryVideo()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN KE GALERI
+                    </button>
+                </div>
+
+                <!-- TABEL LIST VIDEO -->
+                <h4 style="margin-top:20px; color:#aaa;">Daftar Video Tersimpan</h4>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>Info Video</th>
+                            <th>Kategori</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gallery-list-body">
+                        <tr><td colspan="4" align="center">Memuat data...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
         
