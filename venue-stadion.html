@@ -77,8 +77,9 @@
         
         <!-- BAGIAN ATAS: LIVE & REQUEST -->
         <div class="split-view">
-            <div class="live-frame">
-                <i class="fa-solid fa-circle-play play-btn-big"></i>
+            <div class="live-frame"id="main-stage-container">                                
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br>
+                Memuat Siaran...
                 <div style="position:absolute; bottom:15px; left:15px;">
                     <h3 style="margin:0; text-shadow:0 0 10px black;">Panggung Utama Live</h3>
                 </div>
@@ -480,6 +481,26 @@
         async function seedWarungData() {
             await db.collection("warungs").doc("warung_smipro").set({ name: "Warung SMIPRO.ID", totalTables: 15, bookedCount: 0, status: "open", img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=300" });
         }
+
+        // LOAD LIVE VIDEO
+        db.collection("system").doc("main_stage").onSnapshot((doc) => {
+            const container = document.getElementById('main-stage-container');
+            if (doc.exists) {
+                const data = doc.data();
+                if(data.youtubeId) {
+                    container.innerHTML = `
+                    <iframe width="100%" height="100%" 
+                        src="https://www.youtube.com/embed/${data.youtubeId}?autoplay=1&mute=0&rel=0&modestbranding=1&playsinline=1" 
+                        title="SMIPRO Live" frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen style="border-radius:15px;">
+                    </iframe>`;
+                } else {
+                    container.innerHTML = `<div style="text-align:center;"><i class="fa-solid fa-tv fa-3x"></i><br>OFF AIR</div>`;
+                }
+            }
+        });
+        
     </script>
 </body>
 </html>
