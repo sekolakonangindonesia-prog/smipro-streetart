@@ -28,6 +28,32 @@
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
             animation: float 3s infinite ease-in-out;
         }
+
+        /* --- TOMBOL KEMBALI MELAYANG (CAFE LIVE) --- */
+.btn-back-float {
+    position: absolute;
+    top: 25px;
+    left: 25px; /* Pojok Kiri Atas */
+    width: 45px;
+    height: 45px;
+    background: rgba(0, 0, 0, 0.6); /* Hitam Transparan */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%; /* Bulat */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 999; /* Wajib di atas elemen lain */
+    transition: all 0.3s ease;
+}
+
+.btn-back-float:hover {
+    background: var(--primary); /* Merah sesuai tema */
+    border-color: var(--primary);
+    transform: scale(1.1);
+}
         
         .venue-badge {
             background: #E50914; color: white; padding: 5px 15px; 
@@ -127,11 +153,15 @@
 
     <!-- HEADER -->
     <div class="tour-header">
+        <button class="btn-back-float" onclick="location.href='index.html'">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="header-logo">
         <div class="venue-badge" id="venue-name-badge">SMIPRO ON TOUR</div>
         <h1 class="live-title" id="venue-title">LOADING...</h1>
-        <p class="live-subtitle">@ <span id="venue-address">-</span></p>
+        <p class="live-subtitle">@ <span id="venue-address">-</span></p>       
     </div>
+    
 
     <div class="container">
         
@@ -240,8 +270,12 @@
             const snapshot = await getDocs(q);
             if(!snapshot.empty) {
                 const data = snapshot.docs[0].data();
-                if(data.img) document.getElementById('cafe-hero-img').src = data.img;
-                if(data.address) document.getElementById('venue-address').innerText = data.address;
+                if(data.img) { document.getElementById('cafe-hero-img').src = data.img;
+                document.querySelector('.tour-header').style.backgroundImage = 
+                        `linear-gradient(to bottom, rgba(0,0,0,0.6), #121212), url('${data.img}')`;
+                }
+                if(data.address) { document.getElementById('venue-address').innerText = data.address;
+                }
             }
         }
 
