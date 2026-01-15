@@ -209,44 +209,32 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF DETAIL (VERSI STABIL) ---
+// --- FUNGSI CETAK PDF DETAIL (FIX FINAL: TANPA INDEX ERROR) ---
 window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // 1. Ambil Filter
     const filter = document.getElementById('report-filter').value;
     const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
 
-    // Tampilkan Loading
     document.body.style.cursor = 'wait';
 
-    // 2. SIAPKAN VARIABEL LOGO (Di Luar Try-Catch agar dikenali global)
-    let logoData = null; 
-
-    // 3. COBA DOWNLOAD LOGO DULU
     try {
-        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
-        logoData = await getBase64ImageFromURL(logoUrl);
-    } catch (err) {
-        console.warn("Logo gagal dimuat, lanjut cetak tanpa logo.");
-    }
-
-    // 4. MULAI PROSES DATA & PDF
-    try {
-        // Query Database (Tanpa OrderBy agar tidak error index)
+        // 1. QUERY DATABASE (HANYA 'WHERE', TIDAK PAKAI 'ORDERBY')
+        // Ini kuncinya agar tidak error Index
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
-        // Kelompokkan Data
+        // 2. KELOMPOKKAN DATA
         let groupedData = {};
         const now = new Date();
         
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
+            // Konversi Timestamp Firebase ke Date Javascript
             const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
 
-            // Filter Waktu Manual
+            // FILTER WAKTU (LOGIC MANUAL)
             let include = false;
             if (filter === 'all') include = true;
             else if (filter === 'month') {
@@ -272,45 +260,34 @@ window.generateReportPDF = async function() {
             }
         });
 
-        // TULIS KE PDF
+        // 3. CETAK PDF
         let y = 20;
 
-        // -- KOP SURAT --
-        // Cek dulu apakah logo berhasil didownload tadi?
-        if (logoData) {
-            doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
-        }
-        
-        doc.setFontSize(18); doc.setFont("helvetica", "bold");
-        doc.text("SMIPRO MANAGEMENT", 105, 20, null, null, "center");
-        
-        doc.setFontSize(14);
-        doc.text("LAPORAN STATISTIK UMKM", 105, 28, null, null, "center");
-
-        doc.setLineWidth(1.5);
-        doc.line(15, 40, 195, 40);
-        
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        doc.text("LAPORAN DETAIL TRANSAKSI SMIPRO", 105, y, null, null, "center");
+        y += 7;
         doc.setFontSize(10); doc.setFont("helvetica", "normal");
-        doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 15, 48);
+        doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 105, y, null, null, "center");
+        y += 15;
 
-        y = 55;
         let grandTotal = 0;
 
-        // Loop Data Warung
+        // Loop per Warung
         for (const [warungName, transactions] of Object.entries(groupedData)) {
-            // Urutkan tanggal
+            
+            // --- URUTKAN DATA SECARA MANUAL DISINI (JAVASCRIPT SORT) ---
             transactions.sort((a, b) => a.date - b.date); 
 
             if (y > 250) { doc.addPage(); y = 20; }
 
-            // Header Tabel
+            // Header Warung
             doc.setFontSize(12); doc.setFont("helvetica", "bold");
             doc.setFillColor(230, 230, 230);
             doc.rect(14, y-5, 182, 8, 'F');
-            doc.setTextColor(0, 0, 0);
             doc.text(`WARUNG: ${warungName.toUpperCase()}`, 15, y);
             y += 8;
 
+            // Header Tabel
             doc.setFontSize(9); doc.setFont("helvetica", "bold");
             doc.text("Tanggal & Jam", 15, y);
             doc.text("Meja", 60, y);
@@ -322,6 +299,7 @@ window.generateReportPDF = async function() {
             let subTotal = 0;
             doc.setFont("helvetica", "normal");
 
+            // Tulis Baris Transaksi
             transactions.forEach(t => {
                 const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 
@@ -340,8 +318,9 @@ window.generateReportPDF = async function() {
                 }
             });
 
+            // Subtotal
             y += 2; doc.line(100, y, 195, y); y += 5;
-            doc.setFontSize(10); doc.setFont("helvetica", "bold");
+            doc.setFont("helvetica", "bold");
             doc.text("SUBTOTAL:", 100, y);
             doc.text(`Rp ${subTotal.toLocaleString('id-ID')}`, 160, y);
             
@@ -361,22 +340,11 @@ window.generateReportPDF = async function() {
 
     } catch (error) {
         console.error(error);
-        alert("Gagal membuat PDF: " + error.message);
+        alert("Gagal: " + error.message);
     } finally {
         document.body.style.cursor = 'default';
     }
 }
-
-// FUNGSI PEMBANTU (WAJIB ADA DI ADMIN-SCRIPT.JS)
-function getBase64ImageFromURL(url) {
-    return new Promise((resolve, reject) => {
-        var img = new Image();
-        img.setAttribute("crossOrigin", "anonymous");
-        img.onload = () => {
-            var canvas = document.createElement("canvas");
-            canvas.width = img.width;
-            canvas.height = img.height;
-            var ctx
 
 /* =========================================
    3. MANAJEMEN PERFORMER
