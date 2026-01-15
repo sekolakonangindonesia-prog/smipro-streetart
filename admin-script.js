@@ -909,7 +909,7 @@ function listenCommandCenter() {
     });
 }
 
-// B. STATISTIK & LAPORAN SAWERAN (FIXED)
+// B. STATISTIK & LAPORAN SAWERAN (VERSI LENGKAP: GRAFIK + LOG)
 async function renderFinanceData() {
     const locFilter = document.getElementById('stats-location').value;
     const timeFilter = document.getElementById('stats-time').value;
