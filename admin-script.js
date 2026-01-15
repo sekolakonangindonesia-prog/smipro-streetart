@@ -209,7 +209,7 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF DETAIL (FIX INDEX ERROR) ---
+// --- FUNGSI CETAK PDF DETAIL (FIX FINAL: TANPA INDEX ERROR) ---
 window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -220,7 +220,8 @@ window.generateReportPDF = async function() {
     document.body.style.cursor = 'wait';
 
     try {
-        // 1. QUERY DATABASE (HAPUS 'orderBy' AGAR TIDAK ERROR INDEX)
+        // 1. QUERY DATABASE (HANYA 'WHERE', TIDAK PAKAI 'ORDERBY')
+        // Ini kuncinya agar tidak error Index
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
@@ -230,9 +231,10 @@ window.generateReportPDF = async function() {
         
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
-            const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
+            // Konversi Timestamp Firebase ke Date Javascript
+            const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
 
-            // FILTER WAKTU
+            // FILTER WAKTU (LOGIC MANUAL)
             let include = false;
             if (filter === 'all') include = true;
             else if (filter === 'month') {
@@ -270,9 +272,10 @@ window.generateReportPDF = async function() {
 
         let grandTotal = 0;
 
+        // Loop per Warung
         for (const [warungName, transactions] of Object.entries(groupedData)) {
             
-            // --- INI PERBAIKANNYA: URUTKAN TANGGAL DI SINI ---
+            // --- URUTKAN DATA SECARA MANUAL DISINI (JAVASCRIPT SORT) ---
             transactions.sort((a, b) => a.date - b.date); 
 
             if (y > 250) { doc.addPage(); y = 20; }
@@ -296,6 +299,7 @@ window.generateReportPDF = async function() {
             let subTotal = 0;
             doc.setFont("helvetica", "normal");
 
+            // Tulis Baris Transaksi
             transactions.forEach(t => {
                 const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 
@@ -341,7 +345,6 @@ window.generateReportPDF = async function() {
         document.body.style.cursor = 'default';
     }
 }
-
 /* =========================================
    3. MANAJEMEN PERFORMER
    ========================================= */
