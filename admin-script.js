@@ -820,7 +820,6 @@ window.deleteRadio = async function(id) { if(confirm("Hapus?")) await deleteDoc(
 
 // Variable Global untuk Listener
 let monitorUnsubscribe = null;
-let statsUnsubscribe = null;
 
 // Fungsi ini dipanggil saat tab Finance dibuka
 function listenCommandCenter() {
