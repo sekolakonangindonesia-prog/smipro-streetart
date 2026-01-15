@@ -918,25 +918,19 @@ window.deleteReq = async function(id) {
     if(confirm("Tolak/Hapus Request ini?")) await deleteDoc(doc(db, "requests", id));
 }
 
-/* =========================================
-   B. STATISTIK & LAPORAN (VERSI FIX)
-   ========================================= */
-let statsUnsubscribe = null;
-
+// B. STATISTIK & LAPORAN (VERSI FIX FILTER)
 function renderFinanceData() {
-    const locFilter = document.getElementById('stats-location').value;
-    const timeFilter = document.getElementById('stats-time').value;
+    const locFilter = document.getElementById('stats-location') ? document.getElementById('stats-location').value : 'all';
+    const timeFilter = document.getElementById('stats-time') ? document.getElementById('stats-time').value : 'all';
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
-    // PERBAIKAN: Gunakan locFilter, bukan locSelect
-    if(!locFilter || !tbody) return; 
-    
-    // QUERY: Ambil semua yang finished
-    // Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
+    if (!tbody) return;
+
+    // QUERY: Ambil semua data status 'finished'
     const q = query(collection(db, "requests"), where("status", "==", "finished"));
 
-    if(statsUnsubscribe) statsUnsubscribe();
+    if (statsUnsubscribe) statsUnsubscribe();
 
     statsUnsubscribe = onSnapshot(q, (snapshot) => {
         let totalMoney = 0;
@@ -946,55 +940,62 @@ function renderFinanceData() {
         let dataList = [];
 
         const now = new Date();
-        now.setHours(0,0,0,0); // Reset jam hari ini ke 00:00
+        now.setHours(0, 0, 0, 0); // Jam 00:00 hari ini
 
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
-            const date = d.timestamp ? d.timestamp.toDate() : new Date();
-            // Jika tidak ada lokasi, anggap Stadion (untuk data lama)
+            
+            // Konversi Tanggal (Aman untuk data lama)
+            let dateObj = new Date();
+            if (d.timestamp && d.timestamp.toDate) {
+                dateObj = d.timestamp.toDate(); 
+            } else if (d.timestamp) {
+                dateObj = new Date(d.timestamp); // Fallback string
+            }
+
             const dLoc = d.location || "Stadion Bayuangga Zone";
 
-            // --- FILTER ---
+            // --- LOGIKA FILTER YANG DIPERBAIKI ---
             let include = true;
 
-            // 1. Filter Lokasi
+            // 1. Cek Lokasi
             if (locFilter !== 'all' && dLoc !== locFilter) include = false;
 
-            // 2. Filter Waktu
-            const dateZero = new Date(date); 
-            dateZero.setHours(0,0,0,0); // Samakan jam jadi 00:00 untuk perbandingan tanggal
+            // 2. Cek Waktu
+            if (timeFilter !== 'all') { // Jika 'all', otomatis true
+                const dataDate = new Date(dateObj);
+                dataDate.setHours(0,0,0,0);
 
-            if (timeFilter === 'today') {
-                if (dateZero.getTime() !== now.getTime()) include = false;
-            } else if (timeFilter === 'week') {
-                const weekAgo = new Date(now); 
-                weekAgo.setDate(now.getDate() - 7);
-                if (date < weekAgo) include = false;
-            } else if (timeFilter === 'month') {
-                if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) include = false;
+                const diffTime = now - dataDate;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                if (timeFilter === 'today' && diffDays !== 0) include = false;
+                if (timeFilter === 'week' && diffDays > 7) include = false;
+                if (timeFilter === 'month' && diffDays > 30) include = false;
             }
 
             if (include) {
-                // Masukkan ke list
-                dataList.push({ ...d, dateObj: date, loc: dLoc });
+                // Masukkan ke array
+                dataList.push({ ...d, dateObj, loc: dLoc });
             }
         });
 
-        // Urutkan Data (Terbaru di atas)
+        // Urutkan dari Terbaru
         dataList.sort((a, b) => b.dateObj - a.dateObj);
 
-        // Loop Data untuk Tampilan & Hitungan
+        // Render Tabel
         let historyHTML = '';
         dataList.forEach(d => {
-            totalMoney += parseInt(d.amount);
+            totalMoney += parseInt(d.amount || 0);
             totalReq++;
 
+            // Hitung Statistik Artis
             const pName = d.performer || "Unknown";
-            if(!perfStats[pName]) perfStats[pName] = 0;
-            perfStats[pName] += parseInt(d.amount);
+            perfStats[pName] = (perfStats[pName] || 0) + parseInt(d.amount || 0);
 
-            const sTitle = d.song.trim();
-            if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+            // Hitung Statistik Lagu
+            const sTitle = d.song ? d.song.trim().toUpperCase() : "UNKNOWN";
+            if (!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
             songStats[sTitle].count++;
 
             historyHTML += `
@@ -1014,26 +1015,26 @@ function renderFinanceData() {
             </tr>`;
         });
 
-        // Update UI Angka
+        // Update UI
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
-        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong (Sesuai Filter).</td></tr>';
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data Kosong.</td></tr>';
 
         // Update Top Artis
-        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
         const elTopPerf = document.getElementById('stat-top-perf');
-        if(sortedPerf.length > 0) {
-            elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
-        } else {
-            elTopPerf.innerText = "-";
+        const sortedPerf = Object.entries(perfStats).sort(([, a], [, b]) => b - a);
+        if (elTopPerf) {
+            elTopPerf.innerHTML = sortedPerf.length > 0 
+                ? `<span style="color:gold;">${sortedPerf[0][0]}</span>` 
+                : "-";
         }
 
-        // Update Grafik Lagu
-        if(chartContainer) {
+        // Update Chart Lagu Trending
+        if (chartContainer) {
             chartContainer.innerHTML = '';
-            const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+            const sortedSongs = Object.values(songStats).sort((a, b) => b.count - a.count).slice(0, 5);
             
-            if(sortedSongs.length === 0) {
+            if (sortedSongs.length === 0) {
                 chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
             } else {
                 const maxCount = sortedSongs[0].count;
@@ -1044,8 +1045,9 @@ function renderFinanceData() {
                     chartContainer.innerHTML += `
                     <div style="margin-bottom:12px;">
                         <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                            <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                                <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                            <span style="color:white;">
+                                <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> 
+                                ${item.title}
                             </span>
                             <span style="color:gold; font-weight:bold;">${item.count} x</span>
                         </div>
@@ -1056,7 +1058,7 @@ function renderFinanceData() {
                 });
             }
         }
-    });
+    }); // End Snapshot
 }
 
 /* =========================================
