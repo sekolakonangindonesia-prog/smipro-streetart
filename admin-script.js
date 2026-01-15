@@ -1022,6 +1022,26 @@ async function loadDashboardOverview() {
             }
         }
     });
+    // C. CEK PENDAFTARAN MENTOR (BARU)
+    const mentorSnap = await getDocs(collection(db, "mentors"));
+    mentorSnap.forEach(doc => {
+        const d = doc.data();
+        // Cek jika statusnya masih 'pending'
+        if(d.status === 'pending') {
+            adaNotif = true;
+            notifArea.innerHTML += `
+            <div class="notif-card warning">
+                <div class="notif-content">
+                    <h4><i class="fa-solid fa-user-tie"></i> Pendaftaran Mentor Baru</h4>
+                    <p><b>${d.name}</b> (${d.specialist}) mendaftar. Email: ${d.email}</p>
+                </div>
+                <div class="notif-action">
+                    <button class="btn-action btn-edit" onclick="approveMentor('${doc.id}', '${d.name}')">Setujui</button>
+                    <button class="btn-action btn-delete" onclick="deleteMentor('${doc.id}')">Tolak</button>
+                </div>
+            </div>`;
+        }
+    });
 
     if(!adaNotif) {
         notifArea.innerHTML = `<div class="empty-state-box"><p>Tidak ada notifikasi baru.</p></div>`;
@@ -1038,6 +1058,16 @@ window.luluskanSiswa = async function(id, name, genre) {
         await updateDoc(doc(db, "students", id), { status: 'graduated' });
         alert("Berhasil!");
         loadDashboardOverview(); 
+    }
+}
+// Fungsi Approve Mentor Baru
+window.approveMentor = async function(id, name) {
+    if(confirm(`Setujui ${name} menjadi Mentor Resmi SMIPRO?`)) {
+        // Update status jadi 'active' agar bisa login
+        await updateDoc(doc(db, "mentors", id), { status: 'active' });
+        
+        alert("Mentor Disetujui! Sekarang dia bisa login.");
+        loadDashboardOverview(); // Refresh notifikasi
     }
 }
 
