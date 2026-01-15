@@ -29,10 +29,13 @@
         .role-btn.admin-btn:hover { background: #b71c1c; border-color: red; }
         .form-group { text-align: left; margin-bottom: 15px; }
         .form-group label { font-size: 0.8rem; color: #ccc; display: block; margin-bottom: 5px; }
-        .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
+        .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
         .back-icon { float: left; color: #888; cursor: pointer; background: none; border: none; font-size: 1rem; }
         .section-view { animation: fadeIn 0.3s; display: none; }
         #view-menu { display: block; }
+        
+        .link-text { color: #00d2ff; cursor: pointer; font-size: 0.9rem; text-decoration: underline; display: block; margin-top: 15px; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -57,7 +60,7 @@
             <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
         </div>
 
-        <!-- LOGIN PERFORMER (FIXED) -->
+        <!-- LOGIN PERFORMER -->
         <div id="view-login-performer" class="section-view">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
@@ -70,19 +73,23 @@
             <button id="btn-login-perf" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
         </div>
 
-        <!-- LOGIN MENTOR (DENGAN FIREBASE) -->
+        <!-- LOGIN MENTOR -->
         <div id="view-login-mentor" class="section-view">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
                 <h2>Login Mentor</h2><p>Akses Panel Penilaian</p>
             </div>
-            <div class="form-group"><label>Email Terdaftar</label><input type="email" id="mentor-email-login" class="form-input" placeholder="contoh: smipro.streetart@gmail.com"></div>
+            <div class="form-group">
+                <label>Email Terdaftar</label>
+                <input type="email" id="mentor-email-login" class="form-input" placeholder="contoh: andigomusicpro@gmail.com">
+            </div>
             <button id="btn-login-mentor" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK PANEL MENTOR</button>
+            
+            <!-- TOMBOL DAFTAR BARU -->
+            <span class="link-text" onclick="pindahKe('register-mentor')">Belum punya akun? Daftar Mentor</span>
         </div>
-        <span class="link-text" onclick="pindahKe('register-mentor')">Belum punya akun? Daftar Mentor</span>
-        </div>
-    
-    <!-- DAFTAR MENTOR BARU (NEW FORM) -->
+
+        <!-- DAFTAR MENTOR BARU (NEW FORM) -->
         <div id="view-register-mentor" class="section-view">
             <div class="auth-header">
                 <button class="back-icon" onclick="pindahKe('login-mentor')"><i class="fa-solid fa-arrow-left"></i></button>
@@ -111,17 +118,18 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // Fungsi Pindah Tampilan
         window.pindahKe = function(tujuan) {
             document.querySelectorAll('.section-view').forEach(e => e.style.display = 'none');
+            
             if (tujuan === 'menu') document.getElementById('view-menu').style.display = 'block';
-            if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
-            if (tujuan === 'login-mentor') document.getElementById('view-login-mentor').style.display = 'block';
-            if (tujuan === 'register-mentor') document.getElementById('view-register-mentor').style.display = 'block';
+            else if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
+            else if (tujuan === 'login-mentor') document.getElementById('view-login-mentor').style.display = 'block';
+            else if (tujuan === 'register-mentor') document.getElementById('view-register-mentor').style.display = 'block';
         }
-       
+
         // --- LOGIKA LOGIN MENTOR ---
         document.getElementById('btn-login-mentor').addEventListener('click', async () => {
             const email = document.getElementById('mentor-email-login').value;
@@ -164,8 +172,8 @@
                 btn.innerHTML = "MASUK PANEL MENTOR";
             }
         });
-        
-        // --- LOGIKA LOGIN PERFORMER REALTIME ---
+
+        // --- LOGIKA LOGIN PERFORMER ---
         document.getElementById('btn-login-perf').addEventListener('click', async () => {
             const name = document.getElementById('perf-name-login').value;
             const btn = document.getElementById('btn-login-perf');
@@ -175,7 +183,6 @@
             btn.innerHTML = "Memeriksa...";
             
             try {
-                // Cari di Firebase: Apakah ada performer dengan nama ini?
                 const q = query(collection(db, "performers"), where("name", "==", name));
                 const querySnapshot = await getDocs(q);
 
@@ -183,11 +190,10 @@
                     const doc = querySnapshot.docs[0];
                     const data = doc.data();
                     
-                    // LOGIN SUKSES
                     localStorage.setItem('userLoggedIn', 'true');
                     localStorage.setItem('userRole', 'performer');
                     localStorage.setItem('userName', data.name);
-                    localStorage.setItem('performerId', doc.id); // PENTING!
+                    localStorage.setItem('performerId', doc.id); 
                     localStorage.setItem('userLink', 'performer-dashboard.html');
                     
                     alert(`Selamat datang, ${data.name}!`);
