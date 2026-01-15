@@ -260,22 +260,33 @@ window.generateReportPDF = async function() {
             }
         });
 
-        // 3. CETAK PDF
-        let y = 20;
+       // 4. MULAI MENULIS PDF
+        
+        // --- BAGIAN KOP SURAT ---
+        // Tambah Logo (Posisi X:10, Y:10, Lebar:25, Tinggi:25)
+        doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
+        
+        // Judul Besar di Tengah
+        doc.setFontSize(18); doc.setFont("helvetica", "bold");
+        doc.text("SMIPRO MANAGEMENT", 105, 20, null, null, "center");
+        
+        doc.setFontSize(14);
+        doc.text("LAPORAN STATISTIK UMKM", 105, 28, null, null, "center");
 
-        doc.setFontSize(16); doc.setFont("helvetica", "bold");
-        doc.text("LAPORAN DETAIL TRANSAKSI SMIPRO", 105, y, null, null, "center");
-        y += 7;
+        // Garis Kop Surat
+        doc.setLineWidth(1.5); // Garis tebal
+        doc.line(15, 40, 195, 40);
+        
+        // Info Tanggal
         doc.setFontSize(10); doc.setFont("helvetica", "normal");
-        doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 105, y, null, null, "center");
-        y += 15;
+        doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 15, 48);
+
+        let y = 55; // Mulai tabel di bawah garis kop
 
         let grandTotal = 0;
 
-        // Loop per Warung
         for (const [warungName, transactions] of Object.entries(groupedData)) {
             
-            // --- URUTKAN DATA SECARA MANUAL DISINI (JAVASCRIPT SORT) ---
             transactions.sort((a, b) => a.date - b.date); 
 
             if (y > 250) { doc.addPage(); y = 20; }
@@ -284,6 +295,7 @@ window.generateReportPDF = async function() {
             doc.setFontSize(12); doc.setFont("helvetica", "bold");
             doc.setFillColor(230, 230, 230);
             doc.rect(14, y-5, 182, 8, 'F');
+            doc.setTextColor(0, 0, 0);
             doc.text(`WARUNG: ${warungName.toUpperCase()}`, 15, y);
             y += 8;
 
@@ -299,7 +311,6 @@ window.generateReportPDF = async function() {
             let subTotal = 0;
             doc.setFont("helvetica", "normal");
 
-            // Tulis Baris Transaksi
             transactions.forEach(t => {
                 const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 
@@ -345,6 +356,30 @@ window.generateReportPDF = async function() {
         document.body.style.cursor = 'default';
     }
 }
+
+// FUNGSI PEMBANTU: KONVERSI GAMBAR KE BASE64 (Wajib Ada)
+function getBase64ImageFromURL(url) {
+    return new Promise((resolve, reject) => {
+        var img = new Image();
+        img.setAttribute("crossOrigin", "anonymous");
+        img.onload = () => {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            var dataURL = canvas.toDataURL("image/png");
+            resolve(dataURL);
+        };
+        img.onerror = error => {
+            // Jika gambar gagal load, resolve kosong agar PDF tetap terbuat tanpa logo
+            console.warn("Gagal load logo, lanjut tanpa logo.");
+            resolve(null);
+        };
+        img.src = url;
+    });
+}
+
 /* =========================================
    3. MANAJEMEN PERFORMER
    ========================================= */
