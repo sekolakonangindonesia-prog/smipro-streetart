@@ -224,7 +224,7 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
 /* =========================================
    4. MANAJEMEN SISWA
    ========================================= */
-let currentStudentBase64 = null;
+let currentStudentBase64 = null; 
 
 window.previewStudentImg = function(input) {
     if (input.files && input.files[0]) {
@@ -905,20 +905,6 @@ window.editCafe = function(id, name, addr, img) {
     btnSave.style.background = "#FFD700"; 
     btnSave.style.color = "black";
     document.getElementById('btn-cancel-cafe').style.display = "inline-block"; 
-}
-
-window.resetCafeForm = function() {
-    document.getElementById('cafe-edit-id').value = ""; 
-    document.getElementById('new-cafe-name').value = "";
-    document.getElementById('new-cafe-address').value = "";
-    document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Foto";
-    currentCafeBase64 = null;
-    
-    const btnSave = document.getElementById('btn-save-cafe');
-    btnSave.innerText = "+ Simpan Partner";
-    btnSave.style.background = ""; 
-    btnSave.style.color = "white";
-    document.getElementById('btn-cancel-cafe').style.display = "none";
 }
 
 window.deleteCafe = async function(id) { 
