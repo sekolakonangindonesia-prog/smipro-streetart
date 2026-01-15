@@ -113,7 +113,7 @@ window.approveTable = async function(id) { if(confirm("Setujui?")) await updateD
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
 /* =========================================
-   9. MODUL LAPORAN STATISTIK WARUNG
+   2. MODUL LAPORAN STATISTIK WARUNG
    ========================================= */
 
 // Fungsi Pindah Tab Mitra
@@ -239,7 +239,7 @@ window.generateReportPDF = function() {
 }
 
 /* =========================================
-   2. MANAJEMEN PERFORMER
+   3. MANAJEMEN PERFORMER
    ========================================= */
 async function loadPerformerData() {
     const tbody = document.getElementById('perf-table-body');
@@ -301,7 +301,7 @@ window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(d
 
 
 /* =========================================
-   3. MANAJEMEN MENTOR
+   4. MANAJEMEN MENTOR
    ========================================= */
 async function loadMentorData() {
     const tbody = document.getElementById('mentor-table-body');
@@ -347,7 +347,7 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
 
 
 /* =========================================
-   4. MANAJEMEN SISWA
+   5. MANAJEMEN SISWA
    ========================================= */
 let currentStudentBase64 = null; 
 
@@ -461,7 +461,7 @@ window.openRaport = async function(studentId) {
 
 
 /* =========================================
-   5. CMS MODULE
+   6. CMS MODULE
    ========================================= */
 
 // 1. DROPDOWN ARTIS
@@ -702,7 +702,7 @@ async function loadAllRadioSchedules() {
 window.deleteRadio = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "broadcasts", id)); }
 
 /* =========================================
-   6. COMMAND CENTER (LIVE MONITOR & STATISTIK)
+   7. COMMAND CENTER (LIVE MONITOR & STATISTIK)
    ========================================= */
 
 // Variable Global untuk Listener
@@ -934,7 +934,7 @@ window.luluskanSiswa = async function(id, name, genre) {
 }
 
 /* =========================================
-   10. MODUL CAFE (MANAJEMEN & LAPORAN)
+   9. MODUL CAFE (MANAJEMEN & LAPORAN)
    ========================================= */
 // Navigasi Tab Cafe
 window.switchCafeTab = function(tabId, btn) {
@@ -1089,7 +1089,7 @@ window.loadCafeReport = async function() {
 }
 
 /* =========================================
-   11. MODUL KONTROL LAYAR & GALERI (NEW)
+   10. MODUL KONTROL LAYAR & GALERI (NEW)
    ========================================= */
 
 // A. NAVIGASI SUB-TAB
@@ -1207,7 +1207,7 @@ window.deleteGalleryVideo = async function(id) {
 }
 
 /* =========================================
-   EKSEKUSI (PALING BAWAH)
+   11. EKSEKUSI (PALING BAWAH)
    ========================================= */
 window.onload = function() {
     loadDashboardOverview();
