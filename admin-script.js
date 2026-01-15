@@ -224,7 +224,7 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
 /* =========================================
    4. MANAJEMEN SISWA
    ========================================= */
-let currentStudentBase64 = null
+let currentStudentBase64 = null;
 
 window.previewStudentImg = function(input) {
     if (input.files && input.files[0]) {
