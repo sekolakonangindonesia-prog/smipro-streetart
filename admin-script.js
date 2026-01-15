@@ -907,6 +907,16 @@ function listenCommandCenter() {
         if(!hasLive) liveContainer.innerHTML = '<p class="empty-state">Panggung sepi.</p>';
     });
 }
+// B. FUNGSI TOMBOL AKSI
+window.approveReq = async function(id) {
+    if(confirm("Terima Request ini?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
+}
+window.finishReq = async function(id) {
+    if(confirm("Selesaikan & Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' });
+}
+window.deleteReq = async function(id) {
+    if(confirm("Tolak/Hapus Request ini?")) await deleteDoc(doc(db, "requests", id));
+}
 
 /* =========================================
    B. STATISTIK & LAPORAN (VERSI FIX)
