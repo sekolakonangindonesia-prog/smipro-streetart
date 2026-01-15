@@ -918,16 +918,31 @@ window.deleteReq = async function(id) {
     if(confirm("Tolak/Hapus Request ini?")) await deleteDoc(doc(db, "requests", id));
 }
 
-// B. STATISTIK & LAPORAN (VERSI FIX FILTER)
+
+/* =========================================
+   B. STATISTIK & LAPORAN VENUE (STRICT: HANYA 5 VENUE)
+   ========================================= */
 function renderFinanceData() {
-    const locFilter = document.getElementById('stats-location') ? document.getElementById('stats-location').value : 'all';
-    const timeFilter = document.getElementById('stats-time') ? document.getElementById('stats-time').value : 'all';
+    const elLoc = document.getElementById('stats-location');
+    const elTime = document.getElementById('stats-time');
+    
+    const locFilter = elLoc ? elLoc.value : 'all';
+    const timeFilter = elTime ? elTime.value : 'all';
+    
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
     if (!tbody) return;
 
-    // QUERY: Ambil semua data status 'finished'
+    // DAFTAR VENUE RESMI (Hanya data dari sini yang boleh muncul)
+    const validVenues = [
+        "Stadion Bayuangga Zone",
+        "Angkringan TWSL",
+        "Angkringan Siaman",
+        "Angkringan A. Yani",
+        "Angkringan GOR Mastrip"
+    ];
+
     const q = query(collection(db, "requests"), where("status", "==", "finished"));
 
     if (statsUnsubscribe) statsUnsubscribe();
@@ -940,125 +955,116 @@ function renderFinanceData() {
         let dataList = [];
 
         const now = new Date();
-        now.setHours(0, 0, 0, 0); // Jam 00:00 hari ini
+        now.setHours(0, 0, 0, 0);
 
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
             
-            // Konversi Tanggal (Aman untuk data lama)
+            // Konversi Tanggal
             let dateObj = new Date();
-            if (d.timestamp && d.timestamp.toDate) {
-                dateObj = d.timestamp.toDate(); 
-            } else if (d.timestamp) {
-                dateObj = new Date(d.timestamp); // Fallback string
-            }
-
+            if (d.timestamp && d.timestamp.toDate) dateObj = d.timestamp.toDate();
+            else if (d.timestamp) dateObj = new Date(d.timestamp);
+            
             const dLoc = d.location || "Stadion Bayuangga Zone";
 
-            // --- LOGIKA FILTER YANG DIPERBAIKI ---
+            // --- FILTER UTAMA: CEK APAKAH INI VENUE? ---
+            // Jika lokasi TIDAK ada dalam daftar Venue Resmi, LEWATI (Jangan hitung)
+            if (!validVenues.includes(dLoc)) {
+                return; // Data Cafe (Gria Batik dll) akan berhenti di sini
+            }
+
+            // --- FILTER DROPDOWN ---
             let include = true;
 
-            // 1. Cek Lokasi
+            // 1. Filter Lokasi (Dropdown)
             if (locFilter !== 'all' && dLoc !== locFilter) include = false;
 
-            // 2. Cek Waktu
-            if (timeFilter !== 'all') { // Jika 'all', otomatis true
-                const dataDate = new Date(dateObj);
-                dataDate.setHours(0,0,0,0);
+            // 2. Filter Waktu
+            if (timeFilter !== 'all') {
+                const checkDate = new Date(dateObj);
+                checkDate.setHours(0,0,0,0);
+                const diffTime = Math.abs(now - checkDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
-                const diffTime = now - dataDate;
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-                if (timeFilter === 'today' && diffDays !== 0) include = false;
+                if (timeFilter === 'today' && checkDate.getTime() !== now.getTime()) include = false;
                 if (timeFilter === 'week' && diffDays > 7) include = false;
                 if (timeFilter === 'month' && diffDays > 30) include = false;
             }
 
             if (include) {
-                // Masukkan ke array
+                totalMoney += parseInt(d.amount || 0);
+                totalReq++;
                 dataList.push({ ...d, dateObj, loc: dLoc });
             }
         });
 
-        // Urutkan dari Terbaru
+        // Urutkan & Render
         dataList.sort((a, b) => b.dateObj - a.dateObj);
 
-        // Render Tabel
         let historyHTML = '';
-        dataList.forEach(d => {
-            totalMoney += parseInt(d.amount || 0);
-            totalReq++;
+        if (dataList.length === 0) {
+            historyHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Data kosong (Khusus Venue).</td></tr>';
+        } else {
+            dataList.forEach(d => {
+                const amount = parseInt(d.amount) || 0;
+                
+                // Statistik
+                const pName = d.performer || "Unknown";
+                perfStats[pName] = (perfStats[pName] || 0) + amount;
 
-            // Hitung Statistik Artis
-            const pName = d.performer || "Unknown";
-            perfStats[pName] = (perfStats[pName] || 0) + parseInt(d.amount || 0);
+                const sTitle = d.song ? d.song.trim().toUpperCase() : "UNKNOWN";
+                if (!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+                songStats[sTitle].count++;
 
-            // Hitung Statistik Lagu
-            const sTitle = d.song ? d.song.trim().toUpperCase() : "UNKNOWN";
-            if (!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
-            songStats[sTitle].count++;
+                const jam = d.dateObj.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+                const tgl = d.dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
-            historyHTML += `
-            <tr>
-                <td>
-                    ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
-                    <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
-                </td>
-                <td>
-                    <b>${d.song}</b><br>
-                    <small style="color:#aaa;">${d.performer}</small>
-                </td>
-                <td>
-                    <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
-                    <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
-                </td>
-            </tr>`;
-        });
+                historyHTML += `
+                <tr>
+                    <td><span style="color:white;">${jam}</span><br><small style="color:#888;">${tgl}</small></td>
+                    <td><b>${d.song}</b><br><small style="color:#E50914;">${d.performer}</small></td>
+                    <td style="text-align:right;">
+                        <span style="color:#00ff00; font-weight:bold;">Rp ${amount.toLocaleString()}</span><br>
+                        <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
+                    </td>
+                </tr>`;
+            });
+        }
 
-        // Update UI
+        // Update UI Angka
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
-        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data Kosong.</td></tr>';
+        tbody.innerHTML = historyHTML;
 
-        // Update Top Artis
+        // Top Artis
         const elTopPerf = document.getElementById('stat-top-perf');
         const sortedPerf = Object.entries(perfStats).sort(([, a], [, b]) => b - a);
         if (elTopPerf) {
             elTopPerf.innerHTML = sortedPerf.length > 0 
-                ? `<span style="color:gold;">${sortedPerf[0][0]}</span>` 
-                : "-";
+                ? `<span style="color:gold;">${sortedPerf[0][0]}</span>` : "-";
         }
 
-        // Update Chart Lagu Trending
+        // Grafik Lagu
         if (chartContainer) {
             chartContainer.innerHTML = '';
             const sortedSongs = Object.values(songStats).sort((a, b) => b.count - a.count).slice(0, 5);
-            
             if (sortedSongs.length === 0) {
                 chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
             } else {
                 const maxCount = sortedSongs[0].count;
                 sortedSongs.forEach((item, index) => {
                     const widthPct = (item.count / maxCount) * 100;
-                    const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
-                    
                     chartContainer.innerHTML += `
-                    <div style="margin-bottom:12px;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                            <span style="color:white;">
-                                <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> 
-                                ${item.title}
-                            </span>
-                            <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                    <div style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem;">
+                            <span style="color:#ccc;">${index+1}. ${item.title}</span><span style="color:gold;">${item.count}x</span>
                         </div>
-                        <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                            <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
-                        </div>
+                        <div style="background:#333; height:6px; border-radius:3px;"><div style="background:#E50914; height:100%; width:${widthPct}%;"></div></div>
                     </div>`;
                 });
             }
         }
-    }); // End Snapshot
+    });
 }
 
 /* =========================================
