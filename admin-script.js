@@ -209,7 +209,7 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF DETAIL (DENGAN LOGO & KOP SURAT) ---
+// --- FUNGSI CETAK PDF (VERSI ANTI ERROR) ---
 window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -217,18 +217,25 @@ window.generateReportPDF = async function() {
     const filter = document.getElementById('report-filter').value;
     const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
 
+    // 1. Definisikan variable di luar try-catch agar aman
+    let logoData = null; 
+
     document.body.style.cursor = 'wait';
 
     try {
-        // 1. SIAPKAN LOGO (Link Logo Anda)
-        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
-        const logoData = await getBase64ImageFromURL(logoUrl);
+        // 2. COBA LOAD LOGO (Pakai Try-Catch sendiri biar gak bikin macet)
+        try {
+            const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+            logoData = await getBase64ImageFromURL(logoUrl);
+        } catch (imgError) {
+            console.warn("Logo gagal dimuat, lanjut cetak tanpa logo.");
+        }
 
-        // 2. QUERY DATABASE
+        // 3. QUERY DATABASE
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
-        // 3. KELOMPOKKAN DATA
+        // 4. KELOMPOKKAN DATA
         let groupedData = {};
         const now = new Date();
         
@@ -261,29 +268,27 @@ window.generateReportPDF = async function() {
             }
         });
 
-        // 4. MULAI MENULIS PDF
+        // 5. MULAI MENULIS PDF
         
-        // --- BAGIAN KOP SURAT ---
-        // Tambah Logo (Posisi X:10, Y:10, Lebar:25, Tinggi:25)
-        doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
+        // --- KOP SURAT ---
+        // Cek dulu: Kalau logo berhasil didownload, baru tempel
+        if (logoData) {
+            doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
+        }
         
-        // Judul Besar di Tengah
         doc.setFontSize(18); doc.setFont("helvetica", "bold");
         doc.text("SMIPRO MANAGEMENT", 105, 20, null, null, "center");
         
         doc.setFontSize(14);
         doc.text("LAPORAN STATISTIK UMKM", 105, 28, null, null, "center");
 
-        // Garis Kop Surat
-        doc.setLineWidth(1.5); // Garis tebal
+        doc.setLineWidth(1.5);
         doc.line(15, 40, 195, 40);
         
-        // Info Tanggal
         doc.setFontSize(10); doc.setFont("helvetica", "normal");
         doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 15, 48);
 
-        let y = 55; // Mulai tabel di bawah garis kop
-
+        let y = 55;
         let grandTotal = 0;
 
         for (const [warungName, transactions] of Object.entries(groupedData)) {
@@ -332,7 +337,7 @@ window.generateReportPDF = async function() {
 
             // Subtotal
             y += 2; doc.line(100, y, 195, y); y += 5;
-            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10); doc.setFont("helvetica", "bold");
             doc.text("SUBTOTAL:", 100, y);
             doc.text(`Rp ${subTotal.toLocaleString('id-ID')}`, 160, y);
             
@@ -352,12 +357,34 @@ window.generateReportPDF = async function() {
 
     } catch (error) {
         console.error(error);
-        alert("Gagal: " + error.message);
+        alert("Gagal membuat PDF: " + error.message);
     } finally {
         document.body.style.cursor = 'default';
     }
 }
 
+// FUNGSI PEMBANTU (WAJIB ADA DI ADMIN-SCRIPT.JS)
+function getBase64ImageFromURL(url) {
+    return new Promise((resolve, reject) => {
+        var img = new Image();
+        img.setAttribute("crossOrigin", "anonymous");
+        img.onload = () => {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            var dataURL = canvas.toDataURL("image/png");
+            resolve(dataURL);
+        };
+        // Jika error load gambar, jangan reject (biar app gak crash), tapi kembalikan null
+        img.onerror = () => {
+            console.log("Gambar logo tidak ditemukan/cors error, skip logo.");
+            resolve(null); 
+        };
+        img.src = url;
+    });
+}
 // FUNGSI PEMBANTU: KONVERSI GAMBAR KE BASE64 (Wajib Ada)
 function getBase64ImageFromURL(url) {
     return new Promise((resolve, reject) => {
