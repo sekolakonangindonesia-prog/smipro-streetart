@@ -76,8 +76,34 @@
                 <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
                 <h2>Login Mentor</h2><p>Akses Panel Penilaian</p>
             </div>
-            <div class="form-group"><label>Email Terdaftar</label><input type="email" id="mentor-email-login" class="form-input" placeholder="contoh: andigomusicpro@gmail.com"></div>
+            <div class="form-group"><label>Email Terdaftar</label><input type="email" id="mentor-email-login" class="form-input" placeholder="contoh: smipro.streetart@gmail.com"></div>
             <button id="btn-login-mentor" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK PANEL MENTOR</button>
+        </div>
+        <span class="link-text" onclick="pindahKe('register-mentor')">Belum punya akun? Daftar Mentor</span>
+        </div>
+    <!-- DAFTAR MENTOR BARU (NEW FORM) -->
+        <div id="view-register-mentor" class="section-view">
+            <div class="auth-header">
+                <button class="back-icon" onclick="pindahKe('login-mentor')"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2>Daftar Mentor</h2><p>Bergabung dengan Tim Ahli</p>
+            </div>
+            <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="reg-name" class="form-input" placeholder="Nama Anda">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="reg-email" class="form-input" placeholder="Email Aktif">
+            </div>
+            <div class="form-group">
+                <label>Bidang Keahlian</label>
+                <input type="text" id="reg-spec" class="form-input" placeholder="Contoh: Vokal, Gitar, Audio">
+            </div>
+            <div class="form-group">
+                <label>Nomor WhatsApp</label>
+                <input type="number" id="reg-phone" class="form-input" placeholder="08xxxxxxxx">
+            </div>
+            <button id="btn-submit-reg" onclick="submitRegistration()" style="background:#00d2ff; width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">KIRIM PENDAFTARAN</button>
         </div>
 
     </div>
@@ -92,6 +118,7 @@
             if (tujuan === 'menu') document.getElementById('view-menu').style.display = 'block';
             if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
             if (tujuan === 'login-mentor') document.getElementById('view-login-mentor').style.display = 'block';
+            if (tujuan === 'register-mentor') document.getElementById('view-register-mentor').style.display = 'block';
         }
 
         // --- LOGIKA LOGIN MENTOR REALTIME ---
@@ -111,6 +138,13 @@
                 if (!querySnapshot.empty) {
                     const doc = querySnapshot.docs[0];
                     const data = doc.data();
+
+                // Cek Status Approval
+                    if (data.status === 'pending') {
+                        alert("Akun Anda sedang menunggu persetujuan Admin.");
+                        btn.innerHTML = "MASUK PANEL MENTOR";
+                        return;
+                    }
                     
                     // LOGIN SUKSES
                     localStorage.setItem('userLoggedIn', 'true');
@@ -131,6 +165,7 @@
                 btn.innerHTML = "MASUK PANEL MENTOR";
             }
         });
+        
         // --- LOGIKA LOGIN PERFORMER REALTIME ---
         document.getElementById('btn-login-perf').addEventListener('click', async () => {
             const name = document.getElementById('perf-name-login').value;
@@ -168,6 +203,43 @@
                 btn.innerHTML = "MASUK STUDIO";
             }
         });
+
+        // --- LOGIKA PENDAFTARAN MENTOR BARU ---
+        window.submitRegistration = async function() {
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const spec = document.getElementById('reg-spec').value;
+            const phone = document.getElementById('reg-phone').value;
+
+            if(!name || !email || !spec || !phone) return alert("Mohon lengkapi semua data!");
+
+            const btn = document.getElementById('btn-submit-reg');
+            btn.innerText = "Mengirim...";
+            btn.disabled = true;
+
+            try {
+                // Simpan ke database dengan status 'pending'
+                await addDoc(collection(db, "mentors"), {
+                    name: name,
+                    email: email,
+                    specialist: spec,
+                    phone: phone,
+                    status: 'pending', // <--- PENTING: Supaya masuk notifikasi Admin
+                    joinedAt: new Date(),
+                    portfolio: [],
+                    profession: []
+                });
+
+                alert("Pendaftaran Berhasil! Silakan tunggu persetujuan Admin via Email/WA.");
+                pindahKe('login-mentor'); // Kembali ke halaman login
+                
+            } catch (e) {
+                console.error(e);
+                alert("Gagal mendaftar: " + e.message);
+                btn.innerText = "KIRIM PENDAFTARAN";
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
