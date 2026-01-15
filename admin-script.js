@@ -209,7 +209,7 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF DETAIL (FIX FINAL: TANPA INDEX ERROR) ---
+// --- FUNGSI CETAK PDF DETAIL (DENGAN LOGO & KOP SURAT) ---
 window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -220,21 +220,22 @@ window.generateReportPDF = async function() {
     document.body.style.cursor = 'wait';
 
     try {
-        // 1. QUERY DATABASE (HANYA 'WHERE', TIDAK PAKAI 'ORDERBY')
-        // Ini kuncinya agar tidak error Index
+        // 1. SIAPKAN LOGO (Link Logo Anda)
+        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+        const logoData = await getBase64ImageFromURL(logoUrl);
+
+        // 2. QUERY DATABASE
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
-        // 2. KELOMPOKKAN DATA
+        // 3. KELOMPOKKAN DATA
         let groupedData = {};
         const now = new Date();
         
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
-            // Konversi Timestamp Firebase ke Date Javascript
             const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
 
-            // FILTER WAKTU (LOGIC MANUAL)
             let include = false;
             if (filter === 'all') include = true;
             else if (filter === 'month') {
@@ -260,7 +261,7 @@ window.generateReportPDF = async function() {
             }
         });
 
-       // 4. MULAI MENULIS PDF
+        // 4. MULAI MENULIS PDF
         
         // --- BAGIAN KOP SURAT ---
         // Tambah Logo (Posisi X:10, Y:10, Lebar:25, Tinggi:25)
