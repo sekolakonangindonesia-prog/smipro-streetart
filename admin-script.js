@@ -913,38 +913,43 @@ function listenCommandCenter() {
 async function renderFinanceData() {
     const locFilter = document.getElementById('stats-location').value;
     const timeFilter = document.getElementById('stats-time').value;
+    
+    // Elemen HTML yang mau diisi
     const tbody = document.getElementById('table-history-body');
-    
-    // QUERY TANPA ORDERBY (Agar data pasti muncul)
+    const chartContainer = document.getElementById('chart-top-songs');
+    const elMoney = document.getElementById('stat-total-money');
+    const elReq = document.getElementById('stat-total-req');
+    const elTopPerf = document.getElementById('stat-top-perf');
+
+    // Pastikan elemen ada
+    if(!tbody) return;
+
+    // 1. Ambil Data
     const q = query(collection(db, "requests"), where("status", "==", "finished"));
-    
-    // Kita pakai getDocs saja (bukan onSnapshot) untuk laporan, agar lebih stabil saat difilter
     const snapshot = await getDocs(q);
 
     let totalMoney = 0;
     let totalReq = 0;
-    let perfStats = {};
-    let songStats = {};
+    let perfStats = {}; // Untuk menghitung Top Artis
+    let songStats = {}; // Untuk menghitung Top Lagu
     let historyHTML = '';
+    
+    // Array penampung untuk disortir
+    let filteredData = [];
 
     const now = new Date();
-    
-    // Tampung data di array biar bisa disort manual
-    let dataList = [];
 
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        // Fallback tanggal & lokasi jika data lama tidak punya
+    // 2. Filter & Kumpulkan Data
+    snapshot.forEach(docSnap => {
+        const d = docSnap.data();
         const date = d.timestamp ? d.timestamp.toDate() : new Date();
         const dLoc = d.location || "Stadion Bayuangga Zone";
 
-        // --- LOGIKA FILTER ---
+        // Logic Filter
         let include = true;
-
-        // 1. Filter Lokasi
+        // Filter Lokasi
         if (locFilter !== 'all' && dLoc !== locFilter) include = false;
-
-        // 2. Filter Waktu
+        // Filter Waktu
         if (timeFilter === 'today') {
             if(date.getDate() !== now.getDate() || date.getMonth() !== now.getMonth()) include = false;
         } else if (timeFilter === 'week') {
@@ -955,28 +960,30 @@ async function renderFinanceData() {
         }
 
         if (include) {
-            dataList.push({ ...d, dateObj: date, location: dLoc });
+            filteredData.push({ ...d, dateObj: date, loc: dLoc });
         }
     });
 
-    // Urutkan Data (Terbaru di atas)
-    dataList.sort((a, b) => b.dateObj - a.dateObj);
+    // 3. Urutkan Data (Terbaru di atas)
+    filteredData.sort((a, b) => b.dateObj - a.dateObj);
 
-    // Render ke Tabel & Hitung Statistik
-    dataList.forEach(d => {
+    // 4. Loop Data untuk Tampilan & Hitungan
+    filteredData.forEach(d => {
+        // Hitung Total
         totalMoney += parseInt(d.amount);
         totalReq++;
 
-        // Hitung Top Artis
+        // Hitung Top Artis (Berdasarkan Total Uang)
         const pName = d.performer || "Unknown";
         if(!perfStats[pName]) perfStats[pName] = 0;
         perfStats[pName] += parseInt(d.amount);
 
-        // Hitung Top Lagu
-        const sTitle = d.song.trim().toLowerCase();
+        // Hitung Top Lagu (Berdasarkan Jumlah Request)
+        const sTitle = d.song.trim(); // Case sensitive dimatikan di logic sort nanti
         if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
         songStats[sTitle].count++;
 
+        // Render Tabel Log Transaksi
         historyHTML += `
         <tr>
             <td>
@@ -985,156 +992,59 @@ async function renderFinanceData() {
             </td>
             <td>
                 <b>${d.song}</b><br>
-                <small>${d.performer}</small>
+                <small style="color:#aaa;">${d.performer}</small>
             </td>
             <td>
                 <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
-                <small style="color:#aaa;">${d.location}</small>
+                <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
             </td>
         </tr>`;
     });
 
-    // Update UI
-    document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-    document.getElementById('stat-total-req').innerText = totalReq;
+    // 5. UPDATE TAMPILAN KE LAYAR
+    
+    // A. Angka Besar
+    elMoney.innerText = "Rp " + totalMoney.toLocaleString();
+    elReq.innerText = totalReq;
     tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong.</td></tr>';
-    
-    // Update Top Artis (Simpel)
+
+    // B. Top Performer (Juara Saweran)
     const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
-    document.getElementById('stat-top-perf').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
-}
+    if(sortedPerf.length > 0) {
+        // Tampilkan Nama Juara & Totalnya
+        elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
+    } else {
+        elTopPerf.innerText = "-";
+    }
 
-// --- FUNGSI CETAK PDF (GROUP BY LOCATION) ---
-window.generateSawerPDF = async function() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    // C. Grafik Lagu Trending (Top 5)
+    chartContainer.innerHTML = '';
+    const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
     
-    const locFilter = document.getElementById('stats-location').value;
-    const timeFilter = document.getElementById('stats-time').options[document.getElementById('stats-time').selectedIndex].text;
+    if(sortedSongs.length === 0) {
+        chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data lagu.</p>';
+    } else {
+        // Cari nilai tertinggi untuk persentase bar
+        const maxCount = sortedSongs[0].count;
 
-    document.body.style.cursor = 'wait';
-    let logoData = null;
-
-    try {
-        // Load Logo
-        try {
-            const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
-            logoData = await getBase64ImageFromURL(logoUrl);
-        } catch (e) {}
-
-        // Ambil Data Finished
-        const q = query(collection(db, "requests"), where("status", "==", "finished"));
-        const snapshot = await getDocs(q);
-        
-        let groupedData = {};
-        const now = new Date();
-
-        snapshot.forEach(docSnap => {
-            const d = docSnap.data();
-            const date = d.timestamp ? d.timestamp.toDate() : new Date();
-            const dLoc = d.location || "Stadion Bayuangga Zone";
-
-            // Filter (Copy logic dari renderFinanceData)
-            let include = true;
-            if (locFilter !== 'all' && dLoc !== locFilter) include = false;
-            // ... (logika waktu disederhanakan, anggap sama) ...
-
-            if (include) {
-                if (!groupedData[dLoc]) groupedData[dLoc] = [];
-                groupedData[dLoc].push({
-                    date: date,
-                    song: d.song,
-                    sender: d.sender,
-                    perf: d.performer,
-                    amount: parseInt(d.amount)
-                });
-            }
+        sortedSongs.forEach((item, index) => {
+            const widthPct = (item.count / maxCount) * 100;
+            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : (index === 2 ? '#CD7F32' : '#555'));
+            
+            chartContainer.innerHTML += `
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                    <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                        <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                    </span>
+                    <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                </div>
+                <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                    <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                </div>
+            </div>`;
         });
-
-        // --- MULAI CETAK ---
-        let y = 20;
-        if(logoData) doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
-
-        doc.setFontSize(18); doc.setFont("helvetica", "bold");
-        doc.text("LAPORAN SAWERAN & REQUEST", 105, 20, null, null, "center");
-        doc.setFontSize(10); doc.setFont("helvetica", "normal");
-        doc.text(`Periode: ${timeFilter} | Dicetak: ${new Date().toLocaleString()}`, 105, 28, null, null, "center");
-        
-        doc.setLineWidth(1); doc.line(15, 40, 195, 40);
-        y = 50;
-
-        let grandTotal = 0;
-
-        for (const [locationName, items] of Object.entries(groupedData)) {
-            // Urutkan tanggal
-            items.sort((a,b) => a.date - b.date);
-
-            if (y > 250) { doc.addPage(); y = 20; }
-
-            // Header Lokasi
-            doc.setFillColor(240, 240, 240); doc.rect(15, y-5, 180, 8, 'F');
-            doc.setFontSize(11); doc.setFont("helvetica", "bold");
-            doc.text(`LOKASI: ${locationName}`, 18, y);
-            y += 8;
-
-            // Header Tabel
-            doc.setFontSize(9);
-            doc.text("Waktu", 18, y);
-            doc.text("Pengirim", 45, y);
-            doc.text("Lagu / Artis", 80, y);
-            doc.text("Nominal", 170, y);
-            y += 5;
-
-            let subTotal = 0;
-            doc.setFont("helvetica", "normal");
-
-            items.forEach(item => {
-                doc.text(item.date.toLocaleTimeString(), 18, y);
-                doc.text(item.sender, 45, y);
-                doc.text(`${item.song} (${item.perf})`, 80, y);
-                doc.text(item.amount.toLocaleString(), 170, y);
-                
-                subTotal += item.amount;
-                y += 5;
-                if (y > 270) { doc.addPage(); y = 20; }
-            });
-
-            // Subtotal
-            y += 2; doc.line(100, y, 190, y); y += 5;
-            doc.setFont("helvetica", "bold");
-            doc.text(`Subtotal: Rp ${subTotal.toLocaleString()}`, 150, y);
-            grandTotal += subTotal;
-            y += 10;
-        }
-
-        y += 5; doc.line(15, y, 195, y); y += 10;
-        doc.setFontSize(14); doc.text(`GRAND TOTAL: Rp ${grandTotal.toLocaleString()}`, 195, y, {align: "right"});
-
-        doc.save("Laporan_Saweran.pdf");
-
-    } catch (e) { alert("Error PDF: " + e.message); } 
-    finally { document.body.style.cursor = 'default'; }
-}
-
-// C. ACTION BUTTONS (Fungsi Tombol)
-window.approveReq = async function(id) {
-    if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
-}
-window.finishReq = async function(id) {
-    if(confirm("Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' });
-}
-window.deleteReq = async function(id) {
-    if(confirm("Tolak?")) await deleteDoc(doc(db, "requests", id));
-}
-// C. ACTION BUTTONS
-window.approveReq = async function(id) {
-    if(confirm("Uang masuk?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
-}
-window.finishReq = async function(id) {
-    if(confirm("Arsipkan?")) await updateDoc(doc(db, "requests", id), { status: 'finished' });
-}
-window.deleteReq = async function(id) {
-    if(confirm("Tolak?")) await deleteDoc(doc(db, "requests", id));
+    }
 }
 
 /* =========================================
