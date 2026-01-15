@@ -217,9 +217,19 @@ window.generateReportPDF = async function() {
     const filter = document.getElementById('report-filter').value;
     const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
 
+    
+
     document.body.style.cursor = 'wait';
 
     try {
+        // 2. COBA LOAD LOGO (Pakai Try-Catch sendiri biar gak bikin macet)
+        try {
+            const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+            logoData = await getBase64ImageFromURL(logoUrl);
+        } catch (imgError) {
+            console.warn("Logo gagal dimuat, lanjut cetak tanpa logo.");
+        }
+        
         // 1. QUERY DATABASE (HANYA 'WHERE', TIDAK PAKAI 'ORDERBY')
         // Ini kuncinya agar tidak error Index
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
@@ -263,7 +273,14 @@ window.generateReportPDF = async function() {
         // 3. CETAK PDF
         let y = 20;
 
-        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+         if (logoData) {
+            doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
+        }
+
+        doc.setFontSize(18); doc.setFont("helvetica", "bold");
+        doc.text("SMIPRO MANAGEMENT", 105, 20, null, null, "center");
+
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
         doc.text("LAPORAN DETAIL TRANSAKSI SMIPRO", 105, y, null, null, "center");
         y += 7;
         doc.setFontSize(10); doc.setFont("helvetica", "normal");
@@ -344,6 +361,28 @@ window.generateReportPDF = async function() {
     } finally {
         document.body.style.cursor = 'default';
     }
+}
+// FUNGSI PEMBANTU (WAJIB ADA DI ADMIN-SCRIPT.JS)
+function getBase64ImageFromURL(url) {
+    return new Promise((resolve, reject) => {
+        var img = new Image();
+        img.setAttribute("crossOrigin", "anonymous");
+        img.onload = () => {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            var dataURL = canvas.toDataURL("image/png");
+            resolve(dataURL);
+        };
+        // Jika error load gambar, jangan reject (biar app gak crash), tapi kembalikan null
+        img.onerror = () => {
+            console.log("Gambar logo tidak ditemukan/cors error, skip logo.");
+            resolve(null); 
+        };
+        img.src = url;
+    });
 }
 
 /* =========================================
