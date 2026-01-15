@@ -209,33 +209,36 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF (VERSI ANTI ERROR) ---
+// --- FUNGSI CETAK PDF DETAIL (VERSI STABIL) ---
 window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
+    // 1. Ambil Filter
     const filter = document.getElementById('report-filter').value;
     const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
 
-    // 1. Definisikan variable di luar try-catch agar aman
-    let logoData = null; 
-
+    // Tampilkan Loading
     document.body.style.cursor = 'wait';
 
-    try {
-        // 2. COBA LOAD LOGO (Pakai Try-Catch sendiri biar gak bikin macet)
-        try {
-            const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
-            logoData = await getBase64ImageFromURL(logoUrl);
-        } catch (imgError) {
-            console.warn("Logo gagal dimuat, lanjut cetak tanpa logo.");
-        }
+    // 2. SIAPKAN VARIABEL LOGO (Di Luar Try-Catch agar dikenali global)
+    let logoData = null; 
 
-        // 3. QUERY DATABASE
+    // 3. COBA DOWNLOAD LOGO DULU
+    try {
+        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+        logoData = await getBase64ImageFromURL(logoUrl);
+    } catch (err) {
+        console.warn("Logo gagal dimuat, lanjut cetak tanpa logo.");
+    }
+
+    // 4. MULAI PROSES DATA & PDF
+    try {
+        // Query Database (Tanpa OrderBy agar tidak error index)
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
-        // 4. KELOMPOKKAN DATA
+        // Kelompokkan Data
         let groupedData = {};
         const now = new Date();
         
@@ -243,6 +246,7 @@ window.generateReportPDF = async function() {
             const d = docSnap.data();
             const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
 
+            // Filter Waktu Manual
             let include = false;
             if (filter === 'all') include = true;
             else if (filter === 'month') {
@@ -268,10 +272,11 @@ window.generateReportPDF = async function() {
             }
         });
 
-        // 5. MULAI MENULIS PDF
-        
-        // --- KOP SURAT ---
-        // Cek dulu: Kalau logo berhasil didownload, baru tempel
+        // TULIS KE PDF
+        let y = 20;
+
+        // -- KOP SURAT --
+        // Cek dulu apakah logo berhasil didownload tadi?
         if (logoData) {
             doc.addImage(logoData, 'PNG', 15, 10, 25, 25);
         }
@@ -288,16 +293,17 @@ window.generateReportPDF = async function() {
         doc.setFontSize(10); doc.setFont("helvetica", "normal");
         doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 15, 48);
 
-        let y = 55;
+        y = 55;
         let grandTotal = 0;
 
+        // Loop Data Warung
         for (const [warungName, transactions] of Object.entries(groupedData)) {
-            
+            // Urutkan tanggal
             transactions.sort((a, b) => a.date - b.date); 
 
             if (y > 250) { doc.addPage(); y = 20; }
 
-            // Header Warung
+            // Header Tabel
             doc.setFontSize(12); doc.setFont("helvetica", "bold");
             doc.setFillColor(230, 230, 230);
             doc.rect(14, y-5, 182, 8, 'F');
@@ -305,7 +311,6 @@ window.generateReportPDF = async function() {
             doc.text(`WARUNG: ${warungName.toUpperCase()}`, 15, y);
             y += 8;
 
-            // Header Tabel
             doc.setFontSize(9); doc.setFont("helvetica", "bold");
             doc.text("Tanggal & Jam", 15, y);
             doc.text("Meja", 60, y);
@@ -335,7 +340,6 @@ window.generateReportPDF = async function() {
                 }
             });
 
-            // Subtotal
             y += 2; doc.line(100, y, 195, y); y += 5;
             doc.setFontSize(10); doc.setFont("helvetica", "bold");
             doc.text("SUBTOTAL:", 100, y);
@@ -372,41 +376,7 @@ function getBase64ImageFromURL(url) {
             var canvas = document.createElement("canvas");
             canvas.width = img.width;
             canvas.height = img.height;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            var dataURL = canvas.toDataURL("image/png");
-            resolve(dataURL);
-        };
-        // Jika error load gambar, jangan reject (biar app gak crash), tapi kembalikan null
-        img.onerror = () => {
-            console.log("Gambar logo tidak ditemukan/cors error, skip logo.");
-            resolve(null); 
-        };
-        img.src = url;
-    });
-}
-// FUNGSI PEMBANTU: KONVERSI GAMBAR KE BASE64 (Wajib Ada)
-function getBase64ImageFromURL(url) {
-    return new Promise((resolve, reject) => {
-        var img = new Image();
-        img.setAttribute("crossOrigin", "anonymous");
-        img.onload = () => {
-            var canvas = document.createElement("canvas");
-            canvas.width = img.width;
-            canvas.height = img.height;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0);
-            var dataURL = canvas.toDataURL("image/png");
-            resolve(dataURL);
-        };
-        img.onerror = error => {
-            // Jika gambar gagal load, resolve kosong agar PDF tetap terbuat tanpa logo
-            console.warn("Gagal load logo, lanjut tanpa logo.");
-            resolve(null);
-        };
-        img.src = url;
-    });
-}
+            var ctx
 
 /* =========================================
    3. MANAJEMEN PERFORMER
