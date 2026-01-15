@@ -209,24 +209,22 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF DETAIL (LAPORAN KEUANGAN) ---
+// --- FUNGSI CETAK PDF DETAIL (FIX INDEX ERROR) ---
 window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // 1. Ambil Filter Waktu yang Sedang Dipilih
     const filter = document.getElementById('report-filter').value;
     const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
 
-    // Tampilkan notifikasi loading (opsional, biar user tau sedang proses)
     document.body.style.cursor = 'wait';
 
     try {
-        // 2. Ambil Data Mentah dari Database
-        const q = query(collection(db, "bookings"), where("status", "==", "finished"), orderBy("finishedAt", "asc"));
+        // 1. QUERY DATABASE (HAPUS 'orderBy' AGAR TIDAK ERROR INDEX)
+        const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
-        // 3. Kelompokkan Data per Warung
+        // 2. KELOMPOKKAN DATA
         let groupedData = {};
         const now = new Date();
         
@@ -234,7 +232,7 @@ window.generateReportPDF = async function() {
             const d = docSnap.data();
             const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
 
-            // --- LOGIKA FILTER WAKTU (SAMA SEPERTI DI LAYAR) ---
+            // FILTER WAKTU
             let include = false;
             if (filter === 'all') include = true;
             else if (filter === 'month') {
@@ -260,38 +258,34 @@ window.generateReportPDF = async function() {
             }
         });
 
-        // 4. Mulai Menulis PDF
-        let y = 20; // Posisi vertikal awal
+        // 3. CETAK PDF
+        let y = 20;
 
-        // Judul Laporan
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
         doc.text("LAPORAN DETAIL TRANSAKSI SMIPRO", 105, y, null, null, "center");
         y += 7;
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10); doc.setFont("helvetica", "normal");
         doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 105, y, null, null, "center");
         y += 15;
 
         let grandTotal = 0;
 
-        // Loop Setiap Warung
         for (const [warungName, transactions] of Object.entries(groupedData)) {
             
-            // Cek pindah halaman jika tidak muat
+            // --- INI PERBAIKANNYA: URUTKAN TANGGAL DI SINI ---
+            transactions.sort((a, b) => a.date - b.date); 
+
             if (y > 250) { doc.addPage(); y = 20; }
 
             // Header Warung
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.setFillColor(230, 230, 230); // Abu-abu muda
-            doc.rect(14, y-5, 182, 8, 'F'); // Kotak background
+            doc.setFontSize(12); doc.setFont("helvetica", "bold");
+            doc.setFillColor(230, 230, 230);
+            doc.rect(14, y-5, 182, 8, 'F');
             doc.text(`WARUNG: ${warungName.toUpperCase()}`, 15, y);
             y += 8;
 
             // Header Tabel
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
             doc.text("Tanggal & Jam", 15, y);
             doc.text("Meja", 60, y);
             doc.text("Visitor", 90, y);
@@ -302,60 +296,47 @@ window.generateReportPDF = async function() {
             let subTotal = 0;
             doc.setFont("helvetica", "normal");
 
-            // Loop Transaksi per Warung
             transactions.forEach(t => {
                 const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
                 
                 doc.text(dateStr, 15, y);
                 doc.text(`No. ${t.table}`, 60, y);
                 doc.text(`${t.pax} Org`, 90, y);
-                doc.text(t.revenue.toLocaleString('id-ID'), 160, y); // Tanpa Rp biar rapi
+                doc.text(t.revenue.toLocaleString('id-ID'), 160, y);
 
                 subTotal += t.revenue;
                 y += 6;
 
-                // Cek pindah halaman (di tengah transaksi)
                 if (y > 270) { 
                     doc.addPage(); y = 20; 
-                    doc.setFont("helvetica", "bold");
-                    doc.text(`(Lanjutan ${warungName})...`, 15, y);
-                    y += 10;
-                    doc.setFont("helvetica", "normal");
+                    doc.setFont("helvetica", "bold"); doc.text(`(Lanjutan ${warungName})...`, 15, y);
+                    y += 10; doc.setFont("helvetica", "normal");
                 }
             });
 
-            // Subtotal Warung
-            y += 2;
-            doc.line(100, y, 195, y);
-            y += 5;
+            // Subtotal
+            y += 2; doc.line(100, y, 195, y); y += 5;
             doc.setFont("helvetica", "bold");
             doc.text("SUBTOTAL:", 100, y);
             doc.text(`Rp ${subTotal.toLocaleString('id-ID')}`, 160, y);
             
             grandTotal += subTotal;
-            y += 15; // Jarak antar warung
+            y += 15;
         }
 
-        // 5. GRAND TOTAL (Paling Bawah)
+        // Grand Total
         if (y > 250) { doc.addPage(); y = 20; }
-        
-        doc.setLineWidth(0.5);
-        doc.line(15, y, 195, y);
-        y += 10;
-        doc.setFontSize(14);
-        doc.text("GRAND TOTAL OMZET:", 100, y);
-        doc.setTextColor(0, 150, 0); // Warna Hijau
+        doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 10;
+        doc.setFontSize(14); doc.text("GRAND TOTAL OMZET:", 100, y);
+        doc.setTextColor(0, 150, 0);
         doc.text(`Rp ${grandTotal.toLocaleString('id-ID')}`, 195, y, {align: "right"});
-        
-        // Kembalikan warna hitam
         doc.setTextColor(0, 0, 0);
 
-        // 6. Save File
         doc.save(`Laporan_Detail_SMIPRO_${filter}.pdf`);
 
     } catch (error) {
         console.error(error);
-        alert("Gagal membuat PDF: " + error.message);
+        alert("Gagal: " + error.message);
     } finally {
         document.body.style.cursor = 'default';
     }
