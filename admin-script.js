@@ -209,70 +209,156 @@ async function loadWarungStatistics() {
     });
 }
 
-// Fungsi Cetak PDF (Versi Rapi & Tanpa Error Emoji)
-window.generateReportPDF = function() {
+// --- FUNGSI CETAK PDF DETAIL (LAPORAN KEUANGAN) ---
+window.generateReportPDF = async function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // JUDUL LAPORAN
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("LAPORAN STATISTIK UMKM SMIPRO", 105, 20, null, null, "center");
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 28, null, null, "center");
+    // 1. Ambil Filter Waktu yang Sedang Dipilih
+    const filter = document.getElementById('report-filter').value;
+    const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
 
-    // --- HEADER TABEL (Manual Koordinat) ---
-    let y = 45; // Posisi baris awal
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    
-    // Format: doc.text("Tulisan", Posisi_Kiri_Kanan, Posisi_Atas_Bawah)
-    doc.text("No", 15, y);
-    doc.text("Nama Warung", 30, y);
-    doc.text("Transaksi", 100, y);
-    doc.text("Visitor", 130, y);
-    doc.text("Omzet", 160, y);
-    
-    // Garis Bawah Header
-    doc.line(15, y + 3, 195, y + 3);
+    // Tampilkan notifikasi loading (opsional, biar user tau sedang proses)
+    document.body.style.cursor = 'wait';
 
-    // --- ISI DATA ---
-    doc.setFont("helvetica", "normal");
-    const rows = document.querySelectorAll('#warung-ranking-body tr');
-    
-    rows.forEach((row, index) => {
-        const cols = row.querySelectorAll('td');
+    try {
+        // 2. Ambil Data Mentah dari Database
+        const q = query(collection(db, "bookings"), where("status", "==", "finished"), orderBy("finishedAt", "asc"));
+        const snapshot = await getDocs(q);
+
+        // 3. Kelompokkan Data per Warung
+        let groupedData = {};
+        const now = new Date();
         
-        // Pastikan baris memiliki data (bukan baris loading/kosong)
-        if(cols.length > 1) { 
-            y += 10; // Jarak antar baris
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const date = d.finishedAt ? d.finishedAt.toDate() : new Date();
 
-            // Cek jika kertas penuh, buat halaman baru
-            if (y > 270) {
-                doc.addPage();
-                y = 20;
+            // --- LOGIKA FILTER WAKTU (SAMA SEPERTI DI LAYAR) ---
+            let include = false;
+            if (filter === 'all') include = true;
+            else if (filter === 'month') {
+                if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) include = true;
+            } 
+            else if (filter === 'week') {
+                const oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                if (date >= oneWeekAgo) include = true;
+            }
+            else if (filter === 'today') {
+                 if (date.getDate() === now.getDate() && date.getMonth() === now.getMonth()) include = true;
             }
 
-            // Ambil Data Bersih (Tanpa Ikon)
-            const rank = (index + 1).toString(); // Pakai angka 1,2,3... bukan emoji
-            const name = cols[1].innerText;
-            const trx = cols[2].innerText;
-            const pax = cols[3].innerText;
-            const omzet = cols[4].innerText;
+            if (include) {
+                const wName = d.warungName || "Unknown";
+                if (!groupedData[wName]) groupedData[wName] = [];
+                groupedData[wName].push({
+                    date: date,
+                    table: Array.isArray(d.tableNum) ? d.tableNum.join(",") : d.tableNum,
+                    pax: d.pax,
+                    revenue: parseInt(d.revenue || 0)
+                });
+            }
+        });
 
-            // Tulis per kolom agar lurus
-            doc.text(rank, 15, y);
-            doc.text(name, 30, y);
-            doc.text(trx, 100, y);
-            doc.text(pax, 130, y);
-            doc.text(omzet, 160, y);
+        // 4. Mulai Menulis PDF
+        let y = 20; // Posisi vertikal awal
+
+        // Judul Laporan
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("LAPORAN DETAIL TRANSAKSI SMIPRO", 105, y, null, null, "center");
+        y += 7;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 105, y, null, null, "center");
+        y += 15;
+
+        let grandTotal = 0;
+
+        // Loop Setiap Warung
+        for (const [warungName, transactions] of Object.entries(groupedData)) {
+            
+            // Cek pindah halaman jika tidak muat
+            if (y > 250) { doc.addPage(); y = 20; }
+
+            // Header Warung
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setFillColor(230, 230, 230); // Abu-abu muda
+            doc.rect(14, y-5, 182, 8, 'F'); // Kotak background
+            doc.text(`WARUNG: ${warungName.toUpperCase()}`, 15, y);
+            y += 8;
+
+            // Header Tabel
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("Tanggal & Jam", 15, y);
+            doc.text("Meja", 60, y);
+            doc.text("Visitor", 90, y);
+            doc.text("Nominal (Rp)", 160, y);
+            doc.line(15, y+2, 195, y+2);
+            y += 7;
+
+            let subTotal = 0;
+            doc.setFont("helvetica", "normal");
+
+            // Loop Transaksi per Warung
+            transactions.forEach(t => {
+                const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                
+                doc.text(dateStr, 15, y);
+                doc.text(`No. ${t.table}`, 60, y);
+                doc.text(`${t.pax} Org`, 90, y);
+                doc.text(t.revenue.toLocaleString('id-ID'), 160, y); // Tanpa Rp biar rapi
+
+                subTotal += t.revenue;
+                y += 6;
+
+                // Cek pindah halaman (di tengah transaksi)
+                if (y > 270) { 
+                    doc.addPage(); y = 20; 
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`(Lanjutan ${warungName})...`, 15, y);
+                    y += 10;
+                    doc.setFont("helvetica", "normal");
+                }
+            });
+
+            // Subtotal Warung
+            y += 2;
+            doc.line(100, y, 195, y);
+            y += 5;
+            doc.setFont("helvetica", "bold");
+            doc.text("SUBTOTAL:", 100, y);
+            doc.text(`Rp ${subTotal.toLocaleString('id-ID')}`, 160, y);
+            
+            grandTotal += subTotal;
+            y += 15; // Jarak antar warung
         }
-    });
 
-    doc.save("Laporan_Keuangan_SMIPRO.pdf");
+        // 5. GRAND TOTAL (Paling Bawah)
+        if (y > 250) { doc.addPage(); y = 20; }
+        
+        doc.setLineWidth(0.5);
+        doc.line(15, y, 195, y);
+        y += 10;
+        doc.setFontSize(14);
+        doc.text("GRAND TOTAL OMZET:", 100, y);
+        doc.setTextColor(0, 150, 0); // Warna Hijau
+        doc.text(`Rp ${grandTotal.toLocaleString('id-ID')}`, 195, y, {align: "right"});
+        
+        // Kembalikan warna hitam
+        doc.setTextColor(0, 0, 0);
+
+        // 6. Save File
+        doc.save(`Laporan_Detail_SMIPRO_${filter}.pdf`);
+
+    } catch (error) {
+        console.error(error);
+        alert("Gagal membuat PDF: " + error.message);
+    } finally {
+        document.body.style.cursor = 'default';
+    }
 }
 
 /* =========================================
