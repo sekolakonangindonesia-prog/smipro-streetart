@@ -908,7 +908,9 @@ function listenCommandCenter() {
     });
 }
 
-// B. STATISTIK & LAPORAN (VERSI REALTIME & FILTER LEBIH KUAT)
+/* =========================================
+   B. STATISTIK & LAPORAN (VERSI FIX)
+   ========================================= */
 let statsUnsubscribe = null;
 
 function renderFinanceData() {
@@ -917,8 +919,8 @@ function renderFinanceData() {
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
-    // Pastikan elemen ada
-    if(!locSelect) return
+    // PERBAIKAN: Gunakan locFilter, bukan locSelect
+    if(!locFilter || !tbody) return; 
     
     // QUERY: Ambil semua yang finished
     // Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
@@ -1005,7 +1007,7 @@ function renderFinanceData() {
         // Update UI Angka
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
-        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong.</td></tr>';
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong (Sesuai Filter).</td></tr>';
 
         // Update Top Artis
         const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
