@@ -209,33 +209,70 @@ async function loadWarungStatistics() {
     });
 }
 
-// Fungsi Cetak PDF (Menggunakan jsPDF)
+// Fungsi Cetak PDF (Versi Rapi & Tanpa Error Emoji)
 window.generateReportPDF = function() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    doc.setFontSize(18);
+    // JUDUL LAPORAN
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
     doc.text("LAPORAN STATISTIK UMKM SMIPRO", 105, 20, null, null, "center");
     
-    doc.setFontSize(12);
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 30, null, null, "center");
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 28, null, null, "center");
 
-    // Ambil data dari HTML Tabel (Sederhana)
-    let y = 50;
-    doc.text("Peringkat  |  Nama Warung  |  Transaksi  |  Omzet", 20, y);
-    doc.line(20, y+2, 190, y+2);
+    // --- HEADER TABEL (Manual Koordinat) ---
+    let y = 45; // Posisi baris awal
     
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    
+    // Format: doc.text("Tulisan", Posisi_Kiri_Kanan, Posisi_Atas_Bawah)
+    doc.text("No", 15, y);
+    doc.text("Nama Warung", 30, y);
+    doc.text("Transaksi", 100, y);
+    doc.text("Visitor", 130, y);
+    doc.text("Omzet", 160, y);
+    
+    // Garis Bawah Header
+    doc.line(15, y + 3, 195, y + 3);
+
+    // --- ISI DATA ---
+    doc.setFont("helvetica", "normal");
     const rows = document.querySelectorAll('#warung-ranking-body tr');
-    rows.forEach(row => {
-        y += 10;
+    
+    rows.forEach((row, index) => {
         const cols = row.querySelectorAll('td');
-        if(cols.length > 1) { // Hindari baris "kosong"
-            const txt = `${cols[0].innerText}   ${cols[1].innerText}   (${cols[2].innerText})   ${cols[4].innerText}`;
-            doc.text(txt, 20, y);
+        
+        // Pastikan baris memiliki data (bukan baris loading/kosong)
+        if(cols.length > 1) { 
+            y += 10; // Jarak antar baris
+
+            // Cek jika kertas penuh, buat halaman baru
+            if (y > 270) {
+                doc.addPage();
+                y = 20;
+            }
+
+            // Ambil Data Bersih (Tanpa Ikon)
+            const rank = (index + 1).toString(); // Pakai angka 1,2,3... bukan emoji
+            const name = cols[1].innerText;
+            const trx = cols[2].innerText;
+            const pax = cols[3].innerText;
+            const omzet = cols[4].innerText;
+
+            // Tulis per kolom agar lurus
+            doc.text(rank, 15, y);
+            doc.text(name, 30, y);
+            doc.text(trx, 100, y);
+            doc.text(pax, 130, y);
+            doc.text(omzet, 160, y);
         }
     });
 
-    doc.save("Laporan_UMKM_SMIPRO.pdf");
+    doc.save("Laporan_Keuangan_SMIPRO.pdf");
 }
 
 /* =========================================
