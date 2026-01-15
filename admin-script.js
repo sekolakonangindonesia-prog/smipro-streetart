@@ -918,8 +918,8 @@ function renderFinanceData() {
     const chartContainer = document.getElementById('chart-top-songs');
 
     // Pastikan elemen ada
-    if(!tbody) return;
-
+    if(!locSelect) return
+    
     // QUERY: Ambil semua yang finished
     // Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
     const q = query(collection(db, "requests"), where("status", "==", "finished"));
