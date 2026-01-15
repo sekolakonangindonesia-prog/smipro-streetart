@@ -908,47 +908,143 @@ function listenCommandCenter() {
     });
 }
 
-// B. STATISTIK & LAPORAN (VERSI REALTIME OTOMATIS)
+// B. STATISTIK & LAPORAN (VERSI LENGKAP DENGAN FILTER & GRAFIK)
 let statsUnsubscribe = null;
 
 function renderFinanceData() {
-const tbody = document.getElementById('table-history-body');
-if(!tbody) return;
-code
-Code
-// Ambil data yang sudah SELESAI (finished)
-const q = query(collection(db, "requests"), where("status", "==", "finished"), orderBy("timestamp", "desc"));
-
-if(statsUnsubscribe) statsUnsubscribe();
-
-statsUnsubscribe = onSnapshot(q, (snapshot) => {
-    let totalMoney = 0;
-    let totalReq = 0;
-    let historyHTML = '';
-
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        totalMoney += parseInt(d.amount);
-        totalReq++;
-        
-        // Render Tabel Riwayat
-        const dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString() : '-';
-        historyHTML += `
-        <tr>
-            <td>${dateStr}</td>
-            <td><b>${d.song}</b><br><small>${d.performer}</small></td>
-            <td style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</td>
-        </tr>`;
-    });
-
-    // Update Angka Statistik
+    // 1. Ambil Nilai Filter dari HTML
+    const locFilter = document.getElementById('stats-location').value;
+    const timeFilter = document.getElementById('stats-time').value;
+    
+    // 2. Ambil Elemen Target
+    const tbody = document.getElementById('table-history-body');
+    const chartContainer = document.getElementById('chart-top-songs');
     const elMoney = document.getElementById('stat-total-money');
     const elReq = document.getElementById('stat-total-req');
-    if(elMoney) elMoney.innerText = "Rp " + totalMoney.toLocaleString();
-    if(elReq) elReq.innerText = totalReq;
-    
-    tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong.</td></tr>';
-});
+    const elTopPerf = document.getElementById('stat-top-perf');
+
+    if(!tbody) return; // Stop jika elemen tidak ada
+
+    // 3. QUERY DATABASE (Ambil semua yang 'finished')
+    // Kita hapus 'orderBy' di sini supaya tidak error Index Firebase
+    const q = query(collection(db, "requests"), where("status", "==", "finished"));
+
+    if(statsUnsubscribe) statsUnsubscribe();
+
+    statsUnsubscribe = onSnapshot(q, (snapshot) => {
+        let totalMoney = 0;
+        let totalReq = 0;
+        let perfStats = {}; // Penampung hitungan artis
+        let songStats = {}; // Penampung hitungan lagu
+        let dataList = [];  // Penampung data untuk diurutkan
+        
+        const now = new Date();
+
+        // 4. LOOPING & FILTERING
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const date = d.timestamp ? d.timestamp.toDate() : new Date();
+            const dLoc = d.location || "Stadion Bayuangga Zone"; // Default lokasi
+
+            // --- CEK FILTER ---
+            let include = true;
+
+            // Filter Lokasi
+            if (locFilter !== 'all' && dLoc !== locFilter) include = false;
+
+            // Filter Waktu
+            if (timeFilter === 'today') {
+                if(date.getDate() !== now.getDate() || date.getMonth() !== now.getMonth()) include = false;
+            } else if (timeFilter === 'week') {
+                const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
+                if (date < weekAgo) include = false;
+            } else if (timeFilter === 'month') {
+                if(date.getMonth() !== now.getMonth()) include = false;
+            }
+
+            // Jika Lolos Filter, Masukkan ke Perhitungan
+            if (include) {
+                // Simpan ke array biar bisa disort
+                dataList.push({ ...d, dateObj: date, loc: dLoc });
+
+                // Hitung Uang
+                totalMoney += parseInt(d.amount);
+                totalReq++;
+
+                // Hitung Artis Terlaris
+                const pName = d.performer || "Unknown";
+                if(!perfStats[pName]) perfStats[pName] = 0;
+                perfStats[pName] += parseInt(d.amount);
+
+                // Hitung Lagu Trending
+                const sTitle = d.song.trim();
+                if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+                songStats[sTitle].count++;
+            }
+        });
+
+        // 5. UPDATE TAMPILAN ANGKA
+        elMoney.innerText = "Rp " + totalMoney.toLocaleString();
+        elReq.innerText = totalReq;
+
+        // 6. UPDATE TABEL (Urutkan Waktu Terbaru)
+        dataList.sort((a, b) => b.dateObj - a.dateObj);
+        
+        let historyHTML = '';
+        dataList.forEach(d => {
+            historyHTML += `
+            <tr>
+                <td>
+                    ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
+                    <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
+                </td>
+                <td>
+                    <b>${d.song}</b><br>
+                    <small style="color:#aaa;">${d.performer}</small>
+                </td>
+                <td>
+                    <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
+                    <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong.</td></tr>';
+
+        // 7. UPDATE TOP ARTIS
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
+        if(sortedPerf.length > 0) {
+            elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
+        } else {
+            elTopPerf.innerText = "-";
+        }
+
+        // 8. UPDATE GRAFIK LAGU (Top 5)
+        chartContainer.innerHTML = '';
+        const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+        
+        if(sortedSongs.length === 0) {
+            chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
+        } else {
+            const maxCount = sortedSongs[0].count;
+            sortedSongs.forEach((item, index) => {
+                const widthPct = (item.count / maxCount) * 100;
+                const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
+                
+                chartContainer.innerHTML += `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                        <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                            <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                        </span>
+                        <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                    </div>
+                    <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                    </div>
+                </div>`;
+            });
+        }
+    });
 }
 
 /* =========================================
