@@ -909,144 +909,140 @@ function listenCommandCenter() {
     });
 }
 
-// B. STATISTIK & LAPORAN SAWERAN (VERSI LENGKAP: GRAFIK + LOG)
-async function renderFinanceData() {
+// B. STATISTIK & LAPORAN (VERSI REALTIME OTOMATIS)
+let statsUnsubscribe = null;
+
+function renderFinanceData() {
     const locFilter = document.getElementById('stats-location').value;
     const timeFilter = document.getElementById('stats-time').value;
     
-    // Elemen HTML yang mau diisi
+    // Elemen HTML
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
     const elMoney = document.getElementById('stat-total-money');
     const elReq = document.getElementById('stat-total-req');
     const elTopPerf = document.getElementById('stat-top-perf');
 
-    // Pastikan elemen ada
     if(!tbody) return;
 
-    // 1. Ambil Data
-    const q = query(collection(db, "requests"), where("status", "==", "finished"));
-    const snapshot = await getDocs(q);
+    // 1. QUERY REALTIME (Ambil Approved & Finished)
+    // Supaya Omzet menghitung semua uang yang sudah masuk (sedang nyanyi maupun sudah selesai)
+    const q = query(collection(db, "requests"), where("status", "in", ["approved", "finished"]));
 
-    let totalMoney = 0;
-    let totalReq = 0;
-    let perfStats = {}; // Untuk menghitung Top Artis
-    let songStats = {}; // Untuk menghitung Top Lagu
-    let historyHTML = '';
-    
-    // Array penampung untuk disortir
-    let filteredData = [];
+    if(statsUnsubscribe) statsUnsubscribe();
 
-    const now = new Date();
+    statsUnsubscribe = onSnapshot(q, (snapshot) => {
+        let totalMoney = 0;
+        let totalReq = 0;
+        let perfStats = {};
+        let songStats = {};
+        let historyHTML = '';
+        
+        let dataList = [];
+        const now = new Date();
 
-    // 2. Filter & Kumpulkan Data
-    snapshot.forEach(docSnap => {
-        const d = docSnap.data();
-        const date = d.timestamp ? d.timestamp.toDate() : new Date();
-        const dLoc = d.location || "Stadion Bayuangga Zone";
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const date = d.timestamp ? d.timestamp.toDate() : new Date();
+            const dLoc = d.location || "Stadion Bayuangga Zone";
 
-        // Logic Filter
-        let include = true;
-        // Filter Lokasi
-        if (locFilter !== 'all' && dLoc !== locFilter) include = false;
-        // Filter Waktu
-        if (timeFilter === 'today') {
-            if(date.getDate() !== now.getDate() || date.getMonth() !== now.getMonth()) include = false;
-        } else if (timeFilter === 'week') {
-            const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
-            if(date < weekAgo) include = false;
-        } else if (timeFilter === 'month') {
-            if(date.getMonth() !== now.getMonth()) include = false;
-        }
-
-        if (include) {
-            filteredData.push({ ...d, dateObj: date, loc: dLoc });
-        }
-    });
-
-    // 3. Urutkan Data (Terbaru di atas)
-    filteredData.sort((a, b) => b.dateObj - a.dateObj);
-
-    // 4. Loop Data untuk Tampilan & Hitungan
-    filteredData.forEach(d => {
-        // Hitung Total
-        totalMoney += parseInt(d.amount);
-        totalReq++;
-
-        // Hitung Top Artis (Berdasarkan Total Uang)
-        const pName = d.performer || "Unknown";
-        if(!perfStats[pName]) perfStats[pName] = 0;
-        perfStats[pName] += parseInt(d.amount);
-
-        // Hitung Top Lagu (Berdasarkan Jumlah Request)
-        const sTitle = d.song.trim(); // Case sensitive dimatikan di logic sort nanti
-        if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
-        songStats[sTitle].count++;
-
-        // Render Tabel Log Transaksi
-        historyHTML += `
-        <tr>
-            <td>
-                ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
-                <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
-            </td>
-            <td>
-                <b>${d.song}</b><br>
-                <small style="color:#aaa;">${d.performer}</small>
-            </td>
-            <td>
-                <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
-                <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
-            </td>
-        </tr>`;
-    });
-
-    // 5. UPDATE TAMPILAN KE LAYAR
-    
-    // A. Angka Besar
-    elMoney.innerText = "Rp " + totalMoney.toLocaleString();
-    elReq.innerText = totalReq;
-    tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong.</td></tr>';
-
-    // B. Top Performer (Juara Saweran)
-    const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
-    if(sortedPerf.length > 0) {
-        // Tampilkan Nama Juara & Totalnya
-        elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
-    } else {
-        elTopPerf.innerText = "-";
-    }
-
-    // C. Grafik Lagu Trending (Top 5)
-    chartContainer.innerHTML = '';
-    const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
-    
-    if(sortedSongs.length === 0) {
-        chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data lagu.</p>';
-    } else {
-        // Cari nilai tertinggi untuk persentase bar
-        const maxCount = sortedSongs[0].count;
-
-        sortedSongs.forEach((item, index) => {
-            const widthPct = (item.count / maxCount) * 100;
-            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : (index === 2 ? '#CD7F32' : '#555'));
+            // --- FILTER ---
+            let include = true;
+            if (locFilter !== 'all' && dLoc !== locFilter) include = false;
             
-            chartContainer.innerHTML += `
-            <div style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                    <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                        <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
-                    </span>
-                    <span style="color:gold; font-weight:bold;">${item.count} x</span>
-                </div>
-                <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                    <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
-                </div>
-            </div>`;
-        });
-    }
-}
+            if (timeFilter === 'today') {
+                if(date.getDate() !== now.getDate() || date.getMonth() !== now.getMonth()) include = false;
+            } else if (timeFilter === 'week') {
+                const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
+                if (date < weekAgo) include = false;
+            } else if (timeFilter === 'month') {
+                if(date.getMonth() !== now.getMonth()) include = false;
+            }
 
+            if (include) {
+                // Hitung Statistik (Approved + Finished)
+                totalMoney += parseInt(d.amount);
+                totalReq++;
+
+                const pName = d.performer || "Unknown";
+                if(!perfStats[pName]) perfStats[pName] = 0;
+                perfStats[pName] += parseInt(d.amount);
+
+                const sTitle = d.song.trim();
+                if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+                songStats[sTitle].count++;
+
+                // Masukkan ke Tabel HANYA jika statusnya 'finished' (Arsip)
+                if (d.status === 'finished') {
+                    dataList.push({ ...d, dateObj: date, loc: dLoc });
+                }
+            }
+        });
+
+        // --- UPDATE TAMPILAN ---
+
+        // 1. Angka Besar (Total Omzet)
+        elMoney.innerText = "Rp " + totalMoney.toLocaleString();
+        elReq.innerText = totalReq;
+
+        // 2. Top Performer
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
+        if(sortedPerf.length > 0) {
+            elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
+        } else {
+            elTopPerf.innerText = "-";
+        }
+
+        // 3. Tabel Riwayat (Log) - Urutkan Waktu Terbaru
+        dataList.sort((a, b) => b.dateObj - a.dateObj);
+        
+        dataList.forEach(d => {
+            historyHTML += `
+            <tr>
+                <td>
+                    ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
+                    <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
+                </td>
+                <td>
+                    <b>${d.song}</b><br>
+                    <small style="color:#aaa;">${d.performer}</small>
+                </td>
+                <td>
+                    <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
+                    <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Belum ada data arsip.</td></tr>';
+
+        // 4. Grafik Lagu (Top 5)
+        chartContainer.innerHTML = '';
+        const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+        
+        if(sortedSongs.length === 0) {
+            chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
+        } else {
+            const maxCount = sortedSongs[0].count;
+            sortedSongs.forEach((item, index) => {
+                const widthPct = (item.count / maxCount) * 100;
+                const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : (index === 2 ? '#CD7F32' : '#555'));
+                
+                chartContainer.innerHTML += `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                        <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                            <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                        </span>
+                        <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                    </div>
+                    <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                    </div>
+                </div>`;
+            });
+        }
+    });
+}
 /* =========================================
    8. DASHBOARD OVERVIEW (NOTIFIKASI)
    ========================================= */
