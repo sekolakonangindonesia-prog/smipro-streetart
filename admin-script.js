@@ -922,35 +922,34 @@ function initFinanceSystem() {
     listenFinanceData();  // Mulai dengarkan data transaksi
 }
 
-// 2. LOAD VENUE OTOMATIS (Mengambil dari collection 'venues')
+// 2. LOAD VENUE OTOMATIS (Update ID: finance-location)
 async function loadVenueOptions() {
+    // KITA CARI ID YANG BARU
     const locSelect = document.getElementById('finance-location');
-    if (!locSelect) { console.error("Error: Dropdown 'finance-location' tidak ditemukan di HTML!");
+    
+    if (!locSelect) {
+        console.error("Error: Dropdown 'finance-location' tidak ditemukan di HTML!");
         return;
-    } 
+    }
 
-    // Simpan opsi default (Semua & Stadion Pusat) agar tidak hilang
-    // Pastikan value 'Stadion Bayuangga Zone' sesuai dengan data yang tersimpan di request
+    // Reset opsi
     locSelect.innerHTML = `
         <option value="all">Semua Lokasi</option>
         <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
     `;
 
     try {
-        // Ambil data venues dari Firebase
         const querySnapshot = await getDocs(collection(db, "venues"));
-        
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            // Ambil field 'name' dari venue
             if (data.name) {
-                // Buat opsi baru di dropdown
                 const option = document.createElement("option");
-                option.value = data.name; // Value sesuai nama venue
+                option.value = data.name; 
                 option.text = data.name;
                 locSelect.appendChild(option);
             }
         });
+    } catch (error) {
         console.error("Gagal load venue:", error);
     }
 }
