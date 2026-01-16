@@ -924,8 +924,10 @@ function initFinanceSystem() {
 
 // 2. LOAD VENUE OTOMATIS (Mengambil dari collection 'venues')
 async function loadVenueOptions() {
-    const locSelect = document.getElementById('stats-location');
-    if (!locSelect) return;
+    const locSelect = document.getElementById('finance-location');
+    if (!locSelect) { console.error("Error: Dropdown 'finance-location' tidak ditemukan di HTML!");
+        return;
+    } 
 
     // Simpan opsi default (Semua & Stadion Pusat) agar tidak hilang
     // Pastikan value 'Stadion Bayuangga Zone' sesuai dengan data yang tersimpan di request
@@ -949,129 +951,98 @@ async function loadVenueOptions() {
                 locSelect.appendChild(option);
             }
         });
-        console.log("Dropdown Venue berhasil di-update.");
-    } catch (error) {
-        console.error("Gagal mengambil data venues:", error);
+        console.error("Gagal load venue:", error);
     }
 }
 
-// 3. AMBIL DATA TRANSAKSI (Hanya sekali jalan, Realtime update)
-function listenFinanceData() {
-    // Ambil SEMUA data yang statusnya 'finished'
-    const q = query(collection(db, "requests"), where("status", "==", "finished"));
-
-    if (statsListener) statsListener(); // Matikan listener lama jika ada
-
-    statsListener = onSnapshot(q, (snapshot) => {
-        rawTransactionData = []; // Kosongkan wadah
-        
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            // Konversi Timestamp Firebase ke Date Object JavaScript
-            const dateObj = d.timestamp ? d.timestamp.toDate() : new Date();
-            // Default lokasi jika kosong
-            const loc = d.location || "Stadion Bayuangga Zone"; 
-            
-            // Simpan ke variabel global
-            rawTransactionData.push({
-                ...d,
-                id: doc.id,
-                dateObj: dateObj,
-                locName: loc
-            });
-        });
-
-        // Urutkan data berdasarkan waktu (Terbaru di atas)
-        rawTransactionData.sort((a, b) => b.dateObj - a.dateObj);
-
-        // Langsung render tampilan setelah data masuk
-        renderFinanceData();
-    });
-}
-
-// 4. FUNGSI FILTER & RENDER (Dipanggil saat Dropdown berubah)
+// 4. FUNGSI FILTER & RENDER (Update ID: finance-location & finance-time)
 function renderFinanceData() {
-    // Ambil elemen HTML
-    const locFilter = document.getElementById('stats-location').value;
-    const timeFilter = document.getElementById('stats-time').value;
+    // KITA CARI ID YANG BARU
+    const locSelect = document.getElementById('finance-location');
+    const timeSelect = document.getElementById('finance-time');
+    
+    if (!locSelect || !timeSelect) return;
+
+    const locFilter = locSelect.value;
+    const timeFilter = timeSelect.value;
+    
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
+    // Debugging: Cek apakah JS membaca nilai yang benar sekarang
+    console.log("Filter Lokasi:", locFilter); 
+    console.log("Filter Waktu:", timeFilter);
+
     if (!tbody) return;
 
-    // Siapkan variabel hitungan
     let totalMoney = 0;
     let totalReq = 0;
-    let perfStats = {}; // Hitung top artis
-    let songStats = {}; // Hitung trending lagu
+    let perfStats = {};
+    let songStats = {};
     let displayHTML = '';
 
-    // Siapkan Waktu untuk Filter
     const now = new Date();
-    // Reset jam hari ini ke 00:00:00 untuk perbandingan akurat
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // --- MULAI LOOP FILTER ---
-    // Kita looping dari data yang sudah ada di memori (rawTransactionData)
+
+    // --- FILTER DATA ---
     const filteredData = rawTransactionData.filter(item => {
         
-        // A. FILTER LOKASI
+        // A. Filter Lokasi
         if (locFilter !== 'all') {
-            // Jika lokasi item TIDAK SAMA dengan filter, buang data ini
-            if (item.locName !== locFilter) return false;
+            const itemLoc = (item.locName || "").toString().toLowerCase().trim();
+            const filterLoc = locFilter.toString().toLowerCase().trim();
+            
+            // Jika lokasi item beda dengan filter, buang.
+            if (itemLoc !== filterLoc) return false;
         }
 
-        // B. FILTER WAKTU
+        // B. Filter Waktu
         const itemDate = new Date(item.dateObj);
         const itemDateZero = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate());
 
         if (timeFilter === 'today') {
-            // Bandingkan tanggal tanpa jam
             if (itemDateZero.getTime() !== todayStart.getTime()) return false;
         } 
         else if (timeFilter === 'week') {
-            // 7 Hari ke belakang
             const weekAgo = new Date(todayStart);
             weekAgo.setDate(todayStart.getDate() - 7);
-            if (itemDate < weekAgo) return false;
+            if (itemDateZero < weekAgo) return false;
         } 
         else if (timeFilter === 'month') {
-            // Bulan & Tahun yang sama
             if (itemDate.getMonth() !== now.getMonth() || itemDate.getFullYear() !== now.getFullYear()) return false;
         }
-        // Jika 'all', lolos semua
 
-        return true; // Data lolos seleksi
+        return true;
     });
 
-    // --- RENDER DATA YANG LOLOS FILTER ---
+    // --- RENDER HTML ---
     if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Tidak ada data sesuai filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Tidak ada data transaksi di lokasi ini.</td></tr>';
         document.getElementById('stat-total-money').innerText = "Rp 0";
         document.getElementById('stat-total-req').innerText = "0";
         document.getElementById('stat-top-perf').innerText = "-";
         if(chartContainer) chartContainer.innerHTML = '<p style="text-align:center; color:#555;">Belum ada data.</p>';
+        
+        // Update PDF Button jadi 0
+        const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
+        if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (0)`;
+        
         return;
     }
 
     filteredData.forEach(d => {
-        // 1. Hitung Total Uang & Request
-        totalMoney += parseInt(d.amount);
+        totalMoney += d.amount;
         totalReq++;
 
-        // 2. Hitung Top Artis
         const pName = d.performer || "Unknown";
         if (!perfStats[pName]) perfStats[pName] = 0;
-        perfStats[pName] += parseInt(d.amount);
+        perfStats[pName] += d.amount;
 
-        // 3. Hitung Lagu (Case insensitive cleaning)
-        const sTitle = d.song.trim().toLowerCase(); 
-        const displayTitle = d.song.trim(); // Judul asli buat ditampilkan
-        
-        if (!songStats[sTitle]) songStats[sTitle] = { count: 0, title: displayTitle };
-        songStats[sTitle].count++;
+        const sTitle = d.song ? d.song.trim() : "Unknown";
+        const sKey = sTitle.toLowerCase(); 
+        if (!songStats[sKey]) songStats[sKey] = { count: 0, title: sTitle };
+        songStats[sKey].count++;
 
-        // 4. Susun HTML Tabel
         displayHTML += `
         <tr>
             <td>
@@ -1083,22 +1054,21 @@ function renderFinanceData() {
                 <small style="color:#aaa;">${d.performer}</small>
             </td>
             <td>
-                <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString('id-ID')}</span><br>
+                <span style="color:#00ff00;">Rp ${d.amount.toLocaleString('id-ID')}</span><br>
                 <small style="color:#666; font-size:0.7rem;">${d.locName}</small>
             </td>
         </tr>`;
     });
 
-    // --- UPDATE DOM / UI ---
-    
-    // Tabel Log
     tbody.innerHTML = displayHTML;
-
-    // Angka Statistik
     document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString('id-ID');
     document.getElementById('stat-total-req').innerText = totalReq;
+    
+    // Update PDF Button
+    const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
+    if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (${filteredData.length})`;
 
-    // Top Artis Logic
+    // Top Artis
     const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
     const elTopPerf = document.getElementById('stat-top-perf');
     if (sortedPerf.length > 0) {
@@ -1107,30 +1077,29 @@ function renderFinanceData() {
         elTopPerf.innerText = "-";
     }
 
-    // Grafik Lagu Trending Logic
+    // Grafik
     if (chartContainer) {
         chartContainer.innerHTML = '';
         const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
-        
-        const maxCount = sortedSongs[0].count; // Nilai tertinggi untuk persentase bar
-
-        sortedSongs.forEach((item, index) => {
-            const widthPct = (item.count / maxCount) * 100;
-            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
-            
-            chartContainer.innerHTML += `
-            <div style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                    <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                        <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
-                    </span>
-                    <span style="color:gold; font-weight:bold;">${item.count} x</span>
-                </div>
-                <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                    <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
-                </div>
-            </div>`;
-        });
+        if(sortedSongs.length > 0) {
+            const maxCount = sortedSongs[0].count;
+            sortedSongs.forEach((item, index) => {
+                const widthPct = (item.count / maxCount) * 100;
+                const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
+                chartContainer.innerHTML += `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                        <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                            <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                        </span>
+                        <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                    </div>
+                    <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                    </div>
+                </div>`;
+            });
+        }
     }
 }
 
