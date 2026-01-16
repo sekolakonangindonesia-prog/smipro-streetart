@@ -1301,22 +1301,31 @@ window.approveMentor = async function(id, name) {
 }
 
 /* =========================================
-   9. MODUL CAFE (MANAJEMEN & LAPORAN)
+   9. MODUL CAFE (MANAJEMEN & LAPORAN FIX)
    ========================================= */
-// Navigasi Tab Cafe
+
+// Variabel Global untuk Daftar Cafe Valid
+window.listCafeValid = []; 
+
+// A. NAVIGASI TAB
 window.switchCafeTab = function(tabId, btn) {
+    // Sembunyikan semua konten cafe
     document.querySelectorAll('.cafe-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
+    // Tampilkan tab yang dipilih
+    const target = document.getElementById(tabId);
+    if(target) target.classList.remove('hidden');
     
+    // Atur tombol aktif
     if(btn && btn.parentElement) {
         btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
     }
     if(btn) btn.classList.add('active');
 
+    // Jika buka tab laporan, siapkan filter
     if(tabId === 'cafe-report') prepareReportFilters(); 
 }
 
-// A. MANAJEMEN CAFE
+// B. MANAJEMEN CAFE (CRUD)
 let currentCafeBase64 = null;
 
 window.previewCafeImg = function(input) {
@@ -1330,6 +1339,18 @@ window.previewCafeImg = function(input) {
     }
 }
 
+window.resetCafeForm = function() {
+    document.getElementById('cafe-edit-id').value = "";
+    document.getElementById('new-cafe-name').value = "";
+    document.getElementById('new-cafe-address').value = "";
+    document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Logo";
+    currentCafeBase64 = null;
+    document.getElementById('btn-save-cafe').innerText = "+ Simpan Partner";
+    document.getElementById('btn-save-cafe').style.background = "";
+    document.getElementById('btn-save-cafe').style.color = "";
+    document.getElementById('btn-cancel-cafe').style.display = "none";
+}
+
 window.saveCafe = async function() {
     const id = document.getElementById('cafe-edit-id').value; 
     const name = document.getElementById('new-cafe-name').value;
@@ -1338,46 +1359,45 @@ window.saveCafe = async function() {
 
     if(!name) return alert("Nama Cafe wajib diisi!");
 
-    if(id) {
-        if(confirm("Simpan perubahan?")) {
-            const updateData = { name, address: addr };
-            if(img) updateData.img = img; 
-            await updateDoc(doc(db, "venues_partner", id), updateData);
-            alert("Data Diperbarui!");
-            resetCafeForm();
+    try {
+        if(id) {
+            if(confirm("Simpan perubahan?")) {
+                const updateData = { name, address: addr };
+                if(img) updateData.img = img; 
+                await updateDoc(doc(db, "venues_partner", id), updateData);
+                alert("Data Diperbarui!");
+                resetCafeForm();
+            }
+        } else {
+            if(confirm("Tambah Cafe?")) {
+                await addDoc(collection(db, "venues_partner"), {
+                    name, address: addr, img: img || "", type: 'cafe', joinedAt: new Date()
+                });
+                alert("Cafe Ditambahkan!");
+                resetCafeForm();
+            }
         }
-    } else {
-        if(confirm("Tambah Cafe?")) {
-            await addDoc(collection(db, "venues_partner"), {
-                name, address: addr, img: img || "https://via.placeholder.com/100?text=Cafe", type: 'cafe', joinedAt: new Date()
-            });
-            alert("Cafe Ditambahkan!");
-            resetCafeForm();
-        }
-    }
+    } catch(e) { alert("Error: " + e.message); }
 }
 
-async function loadCafeData() {
+window.loadCafeData = function() {
     const tbody = document.getElementById('cafe-table-body');
     if(!tbody) return;
 
     onSnapshot(collection(db, "venues_partner"), (snap) => {
         tbody.innerHTML = '';
-        if(snap.empty) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada partner.</td></tr>'; return; }
+        if(snap.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada partner.</td></tr>'; return; }
 
         snap.forEach(doc => {
             const d = doc.data();
-            const linkSawer = `cafe-live.html?loc=${encodeURIComponent(d.name)}`;
-            
             const btnEdit = `<button class="btn-action btn-edit" onclick="editCafe('${doc.id}', '${d.name}', '${d.address}', '${d.img}')"><i class="fa-solid fa-pen"></i></button>`;
-            const btnDel = `<button class="btn-action btn-delete" onclick="window.deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
+            const btnDel = `<button class="btn-action btn-delete" onclick="deleteCafe('${doc.id}')"><i class="fa-solid fa-trash"></i></button>`;
 
             tbody.innerHTML += `
             <tr>
                 <td><img src="${d.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"></td>
                 <td><b>${d.name}</b></td>
                 <td>${d.address}</td>
-                <td><a href="${linkSawer}" target="_blank" style="color:#00d2ff;">Link Live</a></td>
                 <td>${btnEdit} ${btnDel}</td>
             </tr>`;
         });
@@ -1388,7 +1408,7 @@ window.editCafe = function(id, name, addr, img) {
     document.getElementById('cafe-edit-id').value = id; 
     document.getElementById('new-cafe-name').value = name;
     document.getElementById('new-cafe-address').value = addr;
-    document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Foto";
+    document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Logo";
     currentCafeBase64 = null; 
 
     const btnSave = document.getElementById('btn-save-cafe');
@@ -1400,6 +1420,198 @@ window.editCafe = function(id, name, addr, img) {
 
 window.deleteCafe = async function(id) { 
     if(confirm("Hapus Cafe ini?")) await deleteDoc(doc(db,"venues_partner",id)); 
+}
+
+
+// C. LAPORAN KHUSUS CAFE (SATPAM AKTIF)
+window.prepareReportFilters = async function() {
+    const locSelect = document.getElementById('rep-loc');
+    const artSelect = document.getElementById('rep-art');
+    
+    // 1. Reset & Isi Default (Hanya "Semua Cafe", STADION DIBUANG)
+    locSelect.innerHTML = `<option value="all">Semua Cafe Partner</option>`;
+    
+    // Reset Array Satpam
+    window.listCafeValid = [];
+
+    try {
+        const cafes = await getDocs(collection(db, "venues_partner"));
+        cafes.forEach(doc => { 
+            const d = doc.data();
+            if(d.name) {
+                // Masukkan ke Dropdown
+                locSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                // Masukkan ke Daftar Valid (Satpam)
+                window.listCafeValid.push(d.name.trim().toLowerCase());
+            }
+        });
+    } catch(e) { console.error("Gagal load cafe", e); }
+
+    // Isi Dropdown Artis
+    artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
+    try {
+        const perfs = await getDocs(collection(db, "performers"));
+        perfs.forEach(doc => { 
+             const d = doc.data();
+             if(d.name) artSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`; 
+        });
+    } catch(e) { console.error("Gagal load artis", e); }
+}
+
+window.loadCafeReport = async function() {
+    const locInput = document.getElementById('rep-loc').value;
+    const timeInput = document.getElementById('rep-time').value;
+    const artInput = document.getElementById('rep-art').value;
+    const tbody = document.getElementById('rep-detail-body');
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
+
+    try {
+        // TARIK DATA RAW (Biar data lama masuk)
+        const reqSnap = await getDocs(collection(db, "requests"));
+        
+        let totalMoney = 0;
+        let totalSongs = 0;
+        let perfCount = {};
+        let tempList = [];
+        
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        reqSnap.forEach(doc => {
+            const d = doc.data();
+            
+            // Cek Status
+            if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
+
+            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
+            const dataLoc = d.location ? d.location : "-";
+            const dataArt = d.performer || "Unknown";
+            
+            // Bersihkan Nama Lokasi
+            const locClean = dataLoc.trim().toLowerCase();
+
+            // === 1. SATPAM CAFE (WAJIB) ===
+            // Jika lokasi transaksi ini TIDAK ADA di daftar Cafe Valid, BUANG!
+            // (Ini yang bikin Stadion & Gria Batik Spasi hilang)
+            if (!window.listCafeValid.includes(locClean)) return;
+
+            // === 2. FILTER LOKASI ===
+            if(locInput !== 'all') {
+                if(locClean !== locInput.trim().toLowerCase()) return;
+            }
+
+            // === 3. FILTER WAKTU ===
+            const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+            if(timeInput === 'today') {
+                if(dateZero.getTime() !== todayStart.getTime()) return;
+            } else if(timeInput === 'week') {
+                let weekAgo = new Date(todayStart);
+                weekAgo.setDate(todayStart.getDate() - 7);
+                if(dateZero < weekAgo) return;
+            } else if(timeInput === 'month') {
+                if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
+            }
+
+            // === 4. FILTER ARTIS ===
+            if(artInput !== 'all') {
+                if(dataArt.trim().toLowerCase() !== artInput.trim().toLowerCase()) return;
+            }
+
+            // Lolos Seleksi
+            tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
+        });
+
+        // Urutkan
+        tempList.sort((a,b) => b.dateObj - a.dateObj);
+
+        // Simpan Global untuk PDF
+        window.cafeReportData = tempList;
+        window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
+
+        // Render
+        if(tempList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data.</td></tr>';
+            document.getElementById('rep-total-money').innerText = "Rp 0";
+            document.getElementById('rep-total-song').innerText = "0";
+            document.getElementById('rep-top-artist').innerText = "-";
+            return;
+        }
+
+        let detailHTML = '';
+        tempList.forEach(d => {
+            totalMoney += d.amount;
+            totalSongs++;
+            let p = d.performer || "Unknown";
+            if(!perfCount[p]) perfCount[p] = 0;
+            perfCount[p] += d.amount;
+
+            detailHTML += `
+            <tr>
+                <td>${d.dateObj.toLocaleDateString()} ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</td>
+                <td>${d.loc}</td>
+                <td>${d.performer}</td>
+                <td>${d.song}</td>
+                <td style="color:#00ff00;">Rp ${d.amount.toLocaleString()}</td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = detailHTML;
+        document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('rep-total-song').innerText = totalSongs;
+        
+        const sortedPerf = Object.entries(perfCount).sort(([,a], [,b]) => b - a);
+        document.getElementById('rep-top-artist').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
+
+    } catch (e) {
+        console.error("Error Report:", e);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal load data.</td></tr>';
+    }
+}
+
+// 4. GENERATE PDF CAFE
+window.generateCafePDF = function() {
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
+    
+    const data = window.cafeReportData || [];
+    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
+
+    if (data.length === 0) { alert("Data kosong!"); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Filter: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi} | Periode: ${info.periode}`, 14, 30);
+    doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 35);
+
+    let tableBody = [];
+    let grandTotal = 0;
+
+    data.forEach(d => {
+        tableBody.push([
+            d.dateObj.toLocaleDateString() + ' ' + d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}),
+            d.loc, d.performer, d.song, `Rp ${d.amount.toLocaleString('id-ID')}`
+        ]);
+        grandTotal += d.amount;
+    });
+
+    tableBody.push([
+        { content: "GRAND TOTAL", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 255, 0] } }
+    ]);
+
+    doc.autoTable({
+        startY: 40,
+        head: [['Waktu', 'Lokasi', 'Artis', 'Lagu', 'Sawer']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 100, 200] }
+    });
+
+    doc.save(`Laporan_Cafe_${new Date().getTime()}.pdf`);
 }
 
 /* =========================================
