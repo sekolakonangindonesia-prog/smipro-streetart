@@ -908,26 +908,31 @@ function listenCommandCenter() {
 }
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI FINAL - ANTI BENTROK)
+   B. STATISTIK & LAPORAN (VERSI PENYELAMATAN / ROBUST)
    ========================================= */
 
-// Variabel Penampung Data (Global)
 let databaseTransaksi = []; 
 let listenerTransaksi = null;
 
-// 1. INIT SYSTEM (Panggil ini di window.showView)
+// 1. INIT SYSTEM
 function initFinanceSystem() {
-    console.log("Sistem Keuangan Dimulai...");
+    console.log("Mulai Sistem Keuangan...");
     isiDropdownLokasi();   
     tarikDataTransaksi(); 
 }
 
-// 2. ISI DROPDOWN LOKASI (ID Baru: filter-laporan-lokasi)
+// 2. ISI DROPDOWN LOKASI (Mencoba mencari ID Baru ATAU Lama)
 async function isiDropdownLokasi() {
-    const elemenSelect = document.getElementById('filter-laporan-lokasi');
-    if (!elemenSelect) return;
+    // Coba cari ID baru, kalau gak ada, cari ID lama
+    let elemenSelect = document.getElementById('filter-laporan-lokasi');
+    if (!elemenSelect) elemenSelect = document.getElementById('stats-location');
 
-    // Reset isi dropdown
+    if (!elemenSelect) {
+        console.error("Gawat! Tidak ada Dropdown Lokasi yang ditemukan di HTML.");
+        return;
+    }
+
+    // Reset isi
     elemenSelect.innerHTML = `
         <option value="all">Semua Lokasi</option>
         <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
@@ -944,39 +949,36 @@ async function isiDropdownLokasi() {
                 elemenSelect.appendChild(opsi);
             }
         });
-        console.log("Dropdown Lokasi Berhasil Diisi.");
     } catch (error) {
         console.error("Gagal ambil venue:", error);
     }
 }
 
-// 3. TARIK DATA DARI FIREBASE (Simpan ke Memory)
+// 3. TARIK DATA (SEMUA STATUS DITAMPILKAN DULU)
 function tarikDataTransaksi() {
-    // Ambil SEMUA data request
     const q = query(collection(db, "requests"));
 
-    if (listenerTransaksi) listenerTransaksi(); // Matikan listener lama
+    if (listenerTransaksi) listenerTransaksi(); 
 
     listenerTransaksi = onSnapshot(q, (snapshot) => {
-        databaseTransaksi = []; // Kosongkan wadah
+        databaseTransaksi = []; 
         
         snapshot.forEach(doc => {
             const d = doc.data();
 
-            // Saring hanya yang FINISHED
-            if (!d.status || d.status.toString().toLowerCase().trim() !== 'finished') return;
+            // --- FILTER STATUS DIMATIKAN SEMENTARA ---
+            // Kita loloskan semua data dulu biar Mas yakin datanya masuk.
+            // Nanti kalau sudah muncul, baru kita filter 'finished' lagi.
+            // if (!d.status || d.status !== 'finished') return; 
 
-            // Fix Tanggal
             let dateObj = new Date();
             if (d.timestamp) {
                 if(typeof d.timestamp.toDate === 'function') dateObj = d.timestamp.toDate();
                 else dateObj = new Date(d.timestamp);
             }
 
-            // Fix Lokasi (Data lama dianggap Stadion)
             const loc = d.location ? d.location : "Stadion Bayuangga Zone"; 
 
-            // Simpan
             databaseTransaksi.push({
                 ...d,
                 id: doc.id,
@@ -986,35 +988,32 @@ function tarikDataTransaksi() {
             });
         });
 
-        // Urutkan (Terbaru diatas)
+        // Urutkan
         databaseTransaksi.sort((a, b) => b.dateObj - a.dateObj);
 
-        // Render pertama kali
+        console.log("Data berhasil ditarik:", databaseTransaksi.length); // Cek Console
         updateFilterLaporan();
     });
 }
 
-// 4. FUNGSI FILTER UTAMA (Nama Baru: updateFilterLaporan)
+// 4. FILTER UTAMA (Mencari ID Baru ATAU Lama)
 function updateFilterLaporan() {
-    // Ambil elemen dengan ID BARU
-    const elLokasi = document.getElementById('filter-laporan-lokasi');
-    const elWaktu = document.getElementById('filter-laporan-waktu');
+    // 1. CARI ELEMEN FILTER (SAFE MODE)
+    let elLokasi = document.getElementById('filter-laporan-lokasi');
+    if(!elLokasi) elLokasi = document.getElementById('stats-location'); // Fallback ke ID lama
+
+    let elWaktu = document.getElementById('filter-laporan-waktu');
+    if(!elWaktu) elWaktu = document.getElementById('stats-time'); // Fallback ke ID lama
     
-    // Cek Error: Jika elemen tidak ketemu, stop.
+    // Jika masih tidak ketemu juga, baru nyerah
     if (!elLokasi || !elWaktu) {
-        console.error("Elemen Filter HTML tidak ditemukan! Cek ID HTML.");
+        console.error("HTML ERROR: Dropdown Filter tidak ditemukan!");
         return;
     }
 
     const nilaiLokasi = elLokasi.value;
     const nilaiWaktu = elWaktu.value;
     
-    // DEBUG: Munculkan pesan ini di Console Browser
-    console.log("=== FILTER AKTIF ===");
-    console.log("Lokasi dipilih:", nilaiLokasi);
-    console.log("Waktu dipilih:", nilaiWaktu);
-
-    // Ambil wadah tabel
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
     if (!tbody) return;
@@ -1026,26 +1025,26 @@ function updateFilterLaporan() {
     let htmlTabel = '';
 
     const sekarang = new Date();
+    // Set Jam 00:00 hari ini
     const hariIniMulai = new Date(sekarang.getFullYear(), sekarang.getMonth(), sekarang.getDate());
 
-    // --- MULAI PENYARINGAN DATA ---
+    // --- FILTER LOGIC ---
     const hasilFilter = databaseTransaksi.filter(item => {
         
-        // 1. CEK LOKASI
+        // A. Filter Lokasi
         if (nilaiLokasi !== 'all') {
-            // Bersihkan string biar akurat (kecilkan huruf, buang spasi)
             const dataLoc = (item.locName || "").toLowerCase().trim();
             const filterLoc = nilaiLokasi.toLowerCase().trim();
-            
-            // Jika BEDA, buang data ini.
             if (dataLoc !== filterLoc) return false;
         }
 
-        // 2. CEK WAKTU
+        // B. Filter Waktu
         const tglItem = new Date(item.dateObj);
+        // Reset jam item ke 00:00
         const tglItemNol = new Date(tglItem.getFullYear(), tglItem.getMonth(), tglItem.getDate());
 
         if (nilaiWaktu === 'today') {
+            // Bandingkan waktu komputer (Timestamp)
             if (tglItemNol.getTime() !== hariIniMulai.getTime()) return false;
         } 
         else if (nilaiWaktu === 'week') {
@@ -1057,35 +1056,38 @@ function updateFilterLaporan() {
             if (tglItem.getMonth() !== sekarang.getMonth() || tglItem.getFullYear() !== sekarang.getFullYear()) return false;
         }
 
-        return true; // Data Lolos
+        return true;
     });
 
-    // --- TAMPILKAN HASIL ---
-    
-    // Jika Kosong
+    // --- RENDER ---
     if (hasilFilter.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Data KOSONG untuk lokasi/waktu ini.</td></tr>';
-        resetStatistik(chartContainer);
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Data Kosong (Coba ganti filter "Semua Waktu")</td></tr>';
+        document.getElementById('stat-total-money').innerText = "Rp 0";
+        document.getElementById('stat-total-req').innerText = "0";
+        document.getElementById('stat-top-perf').innerText = "-";
+        if(chartContainer) chartContainer.innerHTML = '';
         return;
     }
 
-    // Jika Ada Data
     hasilFilter.forEach(d => {
         totalUang += d.amount;
         totalReq++;
 
-        // Hitung Artis
         const namaArtis = d.performer || "Unknown";
         if (!statsArtis[namaArtis]) statsArtis[namaArtis] = 0;
         statsArtis[namaArtis] += d.amount;
 
-        // Hitung Lagu
         const judulLagu = d.song ? d.song.trim() : "Unknown";
         const keyLagu = judulLagu.toLowerCase(); 
         if (!statsLagu[keyLagu]) statsLagu[keyLagu] = { count: 0, title: judulLagu };
         statsLagu[keyLagu].count++;
 
-        // Buat Baris Tabel
+        // Label Status (KARENA KITA BUKA SEMUA STATUS)
+        let labelStatus = '';
+        if(d.status !== 'finished') {
+            labelStatus = `<span style="color:orange; font-size:0.6rem; border:1px solid orange; padding:0 3px; border-radius:3px;">${d.status}</span>`;
+        }
+
         htmlTabel += `
         <tr>
             <td>
@@ -1093,7 +1095,7 @@ function updateFilterLaporan() {
                 <small style="color:#888;">${d.dateObj.toLocaleDateString('id-ID')}</small>
             </td>
             <td>
-                <b>${d.song}</b><br>
+                <b>${d.song}</b> ${labelStatus}<br>
                 <small style="color:#aaa;">${d.performer}</small>
             </td>
             <td>
@@ -1103,33 +1105,11 @@ function updateFilterLaporan() {
         </tr>`;
     });
 
-    // Masukkan ke HTML
     tbody.innerHTML = htmlTabel;
     document.getElementById('stat-total-money').innerText = "Rp " + totalUang.toLocaleString('id-ID');
     document.getElementById('stat-total-req').innerText = totalReq;
     
-    // Update Tombol PDF
-    const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
-    if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (${hasilFilter.length})`;
-
-    // Update Top Artis
-    renderTopArtis(statsArtis);
-    // Update Grafik Lagu
-    renderGrafikLagu(statsLagu, chartContainer);
-}
-
-// Fungsi Bantu: Reset Angka 0
-function resetStatistik(chartContainer) {
-    document.getElementById('stat-total-money').innerText = "Rp 0";
-    document.getElementById('stat-total-req').innerText = "0";
-    document.getElementById('stat-top-perf').innerText = "-";
-    if(chartContainer) chartContainer.innerHTML = '<p style="text-align:center; color:#555;">Belum ada data.</p>';
-    const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
-    if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (0)`;
-}
-
-// Fungsi Bantu: Render Artis
-function renderTopArtis(statsArtis) {
+    // Top Artis
     const sortedPerf = Object.entries(statsArtis).sort(([,a], [,b]) => b - a);
     const elTopPerf = document.getElementById('stat-top-perf');
     if (sortedPerf.length > 0) {
@@ -1137,31 +1117,30 @@ function renderTopArtis(statsArtis) {
     } else {
         elTopPerf.innerText = "-";
     }
-}
 
-// Fungsi Bantu: Render Grafik
-function renderGrafikLagu(statsLagu, container) {
-    if (!container) return;
-    container.innerHTML = '';
-    const sortedSongs = Object.values(statsLagu).sort((a,b) => b.count - a.count).slice(0, 5);
-    if(sortedSongs.length > 0) {
-        const maxCount = sortedSongs[0].count;
-        sortedSongs.forEach((item, index) => {
-            const widthPct = (item.count / maxCount) * 100;
-            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
-            container.innerHTML += `
-            <div style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                    <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                        <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
-                    </span>
-                    <span style="color:gold; font-weight:bold;">${item.count} x</span>
-                </div>
-                <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                    <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
-                </div>
-            </div>`;
-        });
+    // Grafik
+    if (chartContainer) {
+        chartContainer.innerHTML = '';
+        const sortedSongs = Object.values(statsLagu).sort((a,b) => b.count - a.count).slice(0, 5);
+        if(sortedSongs.length > 0) {
+            const maxCount = sortedSongs[0].count;
+            sortedSongs.forEach((item, index) => {
+                const widthPct = (item.count / maxCount) * 100;
+                const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
+                chartContainer.innerHTML += `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                        <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                            <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                        </span>
+                        <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                    </div>
+                    <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                    </div>
+                </div>`;
+            });
+        }
     }
 }
 
