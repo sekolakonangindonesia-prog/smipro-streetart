@@ -909,152 +909,146 @@ function listenCommandCenter() {
 }
 
 /* =========================================
-B. STATISTIK & LAPORAN (VERSI FIX)
-========================================= */
+   B. STATISTIK & LAPORAN (VERSI FIX)
+   ========================================= */
 let statsUnsubscribe = null;
 
 function renderFinanceData() {
-const locFilter = document.getElementById('stats-location').value;
-const timeFilter = document.getElementById('stats-time').value;
-const tbody = document.getElementById('table-history-body');
-const chartContainer = document.getElementById('chart-top-songs');
+    const locFilter = document.getElementById('stats-location').value;
+    const timeFilter = document.getElementById('stats-time').value;
+    const tbody = document.getElementById('table-history-body');
+    const chartContainer = document.getElementById('chart-top-songs');
 
-if(!tbody) return;
+    // PERBAIKAN: Gunakan locFilter, bukan locSelect
+    if(!locFilter || !tbody) return; 
+    
+    // QUERY: Ambil semua yang finished
+    // Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
+    const q = query(collection(db, "requests"), where("status", "==", "finished"));
 
-     // Reset Tampilan ke Loading
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Memuat data...</td></tr>';
+    if(statsUnsubscribe) statsUnsubscribe();
 
-// QUERY: Ambil semua yang finished
-// Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
-const q = query(collection(db, "requests"), where("status", "==", "finished"));
-const snapshot = await getDocs(q); // Pakai getDocs biar filter lebih stabil
+    statsUnsubscribe = onSnapshot(q, (snapshot) => {
+        let totalMoney = 0;
+        let totalReq = 0;
+        let perfStats = {};
+        let songStats = {};
+        let dataList = [];
 
-    let totalMoney = 0;
-    let totalReq = 0;
-    let historyHTML = '';
-    let filteredList = [];
-    let perfStats = {};
-    let songStats = {};
-    let dataList = [];
+        const now = new Date();
+        now.setHours(0,0,0,0); // Reset jam hari ini ke 00:00
 
-    const now = new Date();
-    now.setHours(0,0,0,0); // Reset jam hari ini ke 00:00
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const date = d.timestamp ? d.timestamp.toDate() : new Date();
+            // Jika tidak ada lokasi, anggap Stadion (untuk data lama)
+            const dLoc = d.location || "Stadion Bayuangga Zone";
 
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        const date = d.timestamp ? d.timestamp.toDate() : new Date();
-        // Jika tidak ada lokasi, anggap Stadion (untuk data lama)
-        const dLoc = d.location || "Stadion Bayuangga Zone";
+            // --- FILTER ---
+            let include = true;
 
-        // --- FILTER ---
-        let include = true;
+            // 1. Filter Lokasi
+            if (locFilter !== 'all' && dLoc !== locFilter) include = false;
 
-        // 1. Filter Lokasi
-        if (locFilter !== 'all' && dLoc !== locFilter) include = false;
+            // 2. Filter Waktu
+            const dateZero = new Date(date); 
+            dateZero.setHours(0,0,0,0); // Samakan jam jadi 00:00 untuk perbandingan tanggal
 
-        // 2. Filter Waktu
-        const dDate = new Date(date); 
-        dDate.setHours(0,0,0,0); // Reset jam data agar adil
-        
-        if (timeFilter === 'today') {
-            if (dDate.getTime() !== now.getTime()) include = false;
-        } else if (timeFilter === 'week') {
-            const weekAgo = new Date(now); 
-            weekAgo.setDate(now.getDate() - 7);
-            if (date < weekAgo) include = false;
-        } else if (timeFilter === 'month') {
-            if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) include = false;
-        }
+            if (timeFilter === 'today') {
+                if (dateZero.getTime() !== now.getTime()) include = false;
+            } else if (timeFilter === 'week') {
+                const weekAgo = new Date(now); 
+                weekAgo.setDate(now.getDate() - 7);
+                if (date < weekAgo) include = false;
+            } else if (timeFilter === 'month') {
+                if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) include = false;
+            }
 
-        if (include) {
-            // Masukkan ke list
-            dataList.push({ ...d, dateObj: date, loc: dLoc });
-        }
-    });
+            if (include) {
+                // Masukkan ke list
+                dataList.push({ ...d, dateObj: date, loc: dLoc });
+            }
+        });
 
-    // Urutkan Data (Terbaru di atas)
-     filteredData.sort((a, b) => b.dateObj - a.dateObj);
+        // Urutkan Data (Terbaru di atas)
+        dataList.sort((a, b) => b.dateObj - a.dateObj);
 
-    // RENDER HASIL FILTER
-    filteredData.forEach(d => {
-        totalMoney += parseInt(d.amount);
-        totalReq++;
-        
-    // Loop Data untuk Tampilan & Hitungan
-    let historyHTML = '';
-    dataList.forEach(d => {
-        totalMoney += parseInt(d.amount);
-        totalReq++;
+        // Loop Data untuk Tampilan & Hitungan
+        let historyHTML = '';
+        dataList.forEach(d => {
+            totalMoney += parseInt(d.amount);
+            totalReq++;
 
-        const pName = d.performer || "Unknown";
-        if(!perfStats[pName]) perfStats[pName] = 0;
-        perfStats[pName] += parseInt(d.amount);
+            const pName = d.performer || "Unknown";
+            if(!perfStats[pName]) perfStats[pName] = 0;
+            perfStats[pName] += parseInt(d.amount);
 
-        const sTitle = d.song.trim();
-        if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
-        songStats[sTitle].count++;
+            const sTitle = d.song.trim();
+            if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+            songStats[sTitle].count++;
 
-        historyHTML += `
-        <tr>
-            <td>
-                ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
-                <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
-            </td>
-            <td>
-                <b>${d.song}</b><br>
-                <small style="color:#aaa;">${d.performer}</small>
-            </td>
-            <td>
-                <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
-                <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
-            </td>
-        </tr>`;
-    });
+            historyHTML += `
+            <tr>
+                <td>
+                    ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
+                    <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
+                </td>
+                <td>
+                    <b>${d.song}</b><br>
+                    <small style="color:#aaa;">${d.performer}</small>
+                </td>
+                <td>
+                    <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
+                    <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
+                </td>
+            </tr>`;
+        });
 
-    // Update UI Angka
-    document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-    document.getElementById('stat-total-req').innerText = totalReq;
-    tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong (Sesuai Filter).</td></tr>';
+        // Update UI Angka
+        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('stat-total-req').innerText = totalReq;
+        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong (Sesuai Filter).</td></tr>';
 
-    // Update Top Artis
-    const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
-    const elTopPerf = document.getElementById('stat-top-perf');
-    if(sortedPerf.length > 0) {
-        elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
-    } else {
-        elTopPerf.innerText = "-";
-    }
-
-    // Update Grafik Lagu
-    if(chartContainer) {
-        chartContainer.innerHTML = '';
-        const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
-        
-        if(sortedSongs.length === 0) {
-            chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
+        // Update Top Artis
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
+        const elTopPerf = document.getElementById('stat-top-perf');
+        if(sortedPerf.length > 0) {
+            elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
         } else {
-            const maxCount = sortedSongs[0].count;
-            sortedSongs.forEach((item, index) => {
-                const widthPct = (item.count / maxCount) * 100;
-                const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
-                
-                chartContainer.innerHTML += `
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                        <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                            <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
-                        </span>
-                        <span style="color:gold; font-weight:bold;">${item.count} x</span>
-                    </div>
-                    <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                        <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
-                    </div>
-                </div>`;
-            });
+            elTopPerf.innerText = "-";
         }
-    }
-});
+
+        // Update Grafik Lagu
+        if(chartContainer) {
+            chartContainer.innerHTML = '';
+            const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+            
+            if(sortedSongs.length === 0) {
+                chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
+            } else {
+                const maxCount = sortedSongs[0].count;
+                sortedSongs.forEach((item, index) => {
+                    const widthPct = (item.count / maxCount) * 100;
+                    const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
+                    
+                    chartContainer.innerHTML += `
+                    <div style="margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                            <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                                <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                            </span>
+                            <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                        </div>
+                        <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                            <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                        </div>
+                    </div>`;
+                });
+            }
+        }
+    });
 }
+
 
 
 /* =========================================
