@@ -907,60 +907,74 @@ function listenCommandCenter() {
 }
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI FINAL - POLES TERAKHIR)
+   B. STATISTIK & LAPORAN (VERSI SATPAM / ANTI PENYUSUP)
    ========================================= */
 
 let rawTransactionData = []; 
 let statsUnsubscribe = null;
+window.daftarVenueValid = ["Stadion Bayuangga Zone"]; // Default Stadion selalu boleh
 
 // 1. INIT SYSTEM
-window.initFinanceSystem = function() {
+window.initFinanceSystem = async function() {
     console.log("🚀 Memulai Sistem Keuangan...");
-    window.loadVenueOptions();   
+    // Kita pakai AWAIT biar Dropdown terisi dulu, baru tarik data
+    await window.loadVenueOptions();   
     window.renderFinanceData();  
 }
 
-// 2. ISI DROPDOWN (HANYA DARI DATABASE BIAR TIDAK DOBEL)
+// 2. ISI DROPDOWN & CATAT DAFTAR VENUE VALID
 window.loadVenueOptions = async function() {
     const locSelect = document.getElementById('filter-uang-lokasi'); 
     if(!locSelect) return;
 
-    // REVISI: Hapus "Stadion Pusat" manual biar gak dobel dengan database
-    // Cukup "Semua Lokasi" saja sebagai default.
+    // Reset Dropdown
     locSelect.innerHTML = `<option value="all">Semua Lokasi</option>`;
+
+    // Reset Daftar Valid (Stadion selalu masuk)
+    window.daftarVenueValid = ["Stadion Bayuangga Zone"];
 
     try {
         const querySnapshot = await getDocs(collection(db, "venues"));
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             if (data.name) {
+                // 1. Masukkan ke Dropdown HTML
                 const option = document.createElement("option");
                 option.value = data.name; 
                 option.text = data.name;
                 locSelect.appendChild(option);
+
+                // 2. Masukkan ke Daftar Absen (Array)
+                window.daftarVenueValid.push(data.name);
             }
         });
-        console.log("✅ Dropdown Lokasi Rapi (Tanpa Duplikat).");
+        
+        // Tambahkan Stadion ke dropdown manual jika belum ada
+        // (Opsional, tapi biar aman kita inject satu opsi Stadion)
+        const optStadion = document.createElement("option");
+        optStadion.value = "Stadion Bayuangga Zone";
+        optStadion.text = "Stadion Pusat";
+        locSelect.appendChild(optStadion);
+
+        console.log("✅ Venue Valid:", window.daftarVenueValid);
     } catch (error) {
         console.error("Error ambil venue:", error);
     }
 }
 
-// 3. TARIK DATA & FILTER (LEBIH KETAT)
+// 3. TARIK DATA & FILTER (HANYA YANG TERDAFTAR)
 window.renderFinanceData = function() {
     const elLokasi = document.getElementById('filter-uang-lokasi');
-    const elWaktu = document.getElementById('stats-time'); 
     
     // Default Filter
     const filterLoc = elLokasi ? elLokasi.value : 'all';
-    const filterTime = 'all'; // Paksa ALL dulu biar data tahun depan muncul
+    const filterTime = 'all'; // Paksa ALL waktu
 
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
     if(!tbody) return;
 
-    // QUERY DATABASE
     const q = query(collection(db, "requests"));
 
     if(statsUnsubscribe) statsUnsubscribe();
@@ -980,41 +994,41 @@ window.renderFinanceData = function() {
 
             // Siapkan Data
             let dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone"; // Default jika kosong
+            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone"; // Default
 
-            // === LOGIKA FILTER SUPER KETAT ===
-            
+            // === 1. SATPAM VENUE (BLOCK CAFE) ===
+            // Cek apakah lokasi data ini ada di daftar venue resmi?
+            // "Gria batik Cafe" tidak ada di window.daftarVenueValid, jadi akan return false
+            if (!window.daftarVenueValid.includes(dataLoc)) {
+                // Tapi tunggu, kadang ada masalah spasi, kita cek agak longgar
+                const isMatch = window.daftarVenueValid.some(v => v.trim().toLowerCase() === dataLoc.trim().toLowerCase());
+                if (!isMatch) return; // TENDANG KELUAR DATA CAFE!
+            }
+
+            // === 2. FILTER DROPDOWN USER ===
             if (filterLoc !== 'all') {
-                // Kecilkan semua huruf dan buang spasi biar cocok 100%
-                const lokasiDataBersih = dataLoc.toString().toLowerCase().trim();
-                const lokasiFilterBersih = filterLoc.toString().toLowerCase().trim();
-
-                // Jika TIDAK SAMA, Langsung Skip/Buang
-                if (lokasiDataBersih !== lokasiFilterBersih) {
+                if (dataLoc.trim().toLowerCase() !== filterLoc.trim().toLowerCase()) {
                     return; 
                 }
             }
 
-            // === Data Lolos Filter ===
+            // === Data Lolos ===
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan (Terbaru di atas)
+        // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
 
         // Render HTML
         let htmlRows = '';
-        
         if(tempList.length === 0) {
-            // Tampilan Jika Kosong
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">Tidak ada data di lokasi ini.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">Data kosong.</td></tr>';
             document.getElementById('stat-total-money').innerText = "Rp 0";
             document.getElementById('stat-total-req').innerText = "0";
             if(chartContainer) chartContainer.innerHTML = '';
             return;
         }
 
-        // Loop Render Baris
         tempList.forEach(d => {
             totalMoney += d.amount;
             totalReq++;
@@ -1039,7 +1053,6 @@ window.renderFinanceData = function() {
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
         
-        // Render Grafik (Opsional, pastikan fungsi renderChartAndTopArtist ada di file Mas)
         if(chartContainer && typeof renderChartAndTopArtist === 'function') {
             renderChartAndTopArtist(perfStats, songStats, chartContainer);
         }
