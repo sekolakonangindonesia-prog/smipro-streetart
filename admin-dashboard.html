@@ -799,5 +799,144 @@
         window.location.href = 'index.html';
     }
 </script>   
+    
+    <!-- SCRIPT PENYELAMAT FIREBASE (Taruh di atas </body>) -->
+<script type="module">
+    import { collection, query, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // Pastikan variabel 'db' sudah ada dari script firebase-config anda sebelumnya
+    // Jika Mas pakai script type="module" terpisah, kode ini harus menyesuaikan.
+    // TAPI, coba tempel ini dulu di HTML paling bawah untuk tes.
+    
+    console.log("🚑 MENGAKTIFKAN SCRIPT PENYELAMAT...");
+
+    // Tunggu 3 detik biar loading awal selesai
+    setTimeout(() => {
+        jalankanStatistikDarurat();
+    }, 3000);
+
+    function jalankanStatistikDarurat() {
+        console.log("⚡ MULAI TARIK DATA (METODE RAW)...");
+        
+        // 1. ISI DROPDOWN (Cari semua kemungkinan ID)
+        let elLokasi = document.getElementById('filter-laporan-lokasi');
+        if (!elLokasi) elLokasi = document.getElementById('stats-location');
+        if (!elLokasi) elLokasi = document.getElementById('finance-location');
+
+        if (elLokasi) {
+            elLokasi.innerHTML = '<option value="all">Semua Lokasi</option><option value="Stadion Bayuangga Zone">Stadion Pusat</option>';
+            // Load Venue manual (bypass DB venue dulu biar cepat)
+            elLokasi.innerHTML += `
+                <option value="Angkringan GOR Mastrip">Angkringan GOR Mastrip</option>
+                <option value="Angkringan TWSL">Angkringan TWSL</option>
+                <option value="Angkringan Siaman">Angkringan Siaman</option>
+                <option value="Angkringan A. Yani">Angkringan A. Yani</option>
+            `;
+            // Tambahkan event listener manual
+            elLokasi.addEventListener('change', renderTabel);
+            console.log("✅ Dropdown Lokasi Diisi Manual.");
+        }
+
+        // Tambahkan event listener untuk waktu juga
+        let elWaktu = document.getElementById('filter-laporan-waktu');
+        if(!elWaktu) elWaktu = document.getElementById('stats-time');
+        if(elWaktu) elWaktu.addEventListener('change', renderTabel);
+
+        // 2. TARIK DATA (TANPA ORDERBY, TANPA WHERE -> BIAR GAK ERROR 400)
+        // Kita pakai window.db jika db global, atau pastikan import db benar.
+        // Asumsi variabel 'db' sudah global dari script sebelumnya.
+        
+        try {
+            const q = query(collection(window.db || db, "requests"));
+
+            onSnapshot(q, (snapshot) => {
+                let dataMentah = [];
+                
+                snapshot.forEach(doc => {
+                    let d = doc.data();
+                    
+                    // Filter Status manual di sini
+                    if(!d.status || d.status.toLowerCase() !== 'finished') return;
+
+                    let dateObj = new Date();
+                    if (d.timestamp && typeof d.timestamp.toDate === 'function') {
+                        dateObj = d.timestamp.toDate();
+                    } else if (d.timestamp) {
+                        dateObj = new Date(d.timestamp);
+                    }
+
+                    dataMentah.push({
+                        id: doc.id,
+                        ...d,
+                        dateObj: dateObj,
+                        // Normalisasi Lokasi
+                        locName: d.location ? d.location : "Stadion Bayuangga Zone",
+                        amount: parseInt(d.amount) || 0
+                    });
+                });
+
+                // URUTKAN DI SINI (Bukan di Query)
+                dataMentah.sort((a, b) => b.dateObj - a.dateObj);
+
+                console.log(`📦 Berhasil tarik ${dataMentah.length} data transaksi.`);
+                
+                // Simpan ke variabel global biar bisa diakses fungsi lain
+                window.DATA_TRANSAKSI = dataMentah;
+                
+                // Render Tabel
+                renderTabel();
+            });
+        } catch (e) {
+            console.error("❌ Masih Error:", e);
+        }
+    }
+
+    // 3. FUNGSI RENDER SEDERHANA
+    window.renderTabel = function() {
+        const data = window.DATA_TRANSAKSI || [];
+        
+        // Ambil Filter
+        let elLoc = document.getElementById('filter-laporan-lokasi') || document.getElementById('stats-location');
+        let valLoc = elLoc ? elLoc.value : 'all';
+        
+        let elTime = document.getElementById('filter-laporan-waktu') || document.getElementById('stats-time');
+        // KITA PAKSA WAKTU 'ALL' DULU BIAR DATA MUNCUL
+        // valTime = elTime ? elTime.value : 'all';
+        let valTime = 'all'; 
+
+        const tbody = document.getElementById('table-history-body');
+        if(!tbody) return;
+
+        // Filtering
+        const filtered = data.filter(item => {
+            if(valLoc !== 'all' && item.locName !== valLoc) return false;
+            return true;
+        });
+
+        if(filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Data Kosong.</td></tr>';
+            document.getElementById('stat-total-money').innerText = "Rp 0";
+            return;
+        }
+
+        let html = '';
+        let total = 0;
+        filtered.forEach(d => {
+            total += d.amount;
+            html += `
+            <tr>
+                <td>${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br><small>${d.dateObj.toLocaleDateString()}</small></td>
+                <td><b>${d.song}</b><br><small>${d.performer}</small></td>
+                <td><span style="color:#00ff00">Rp ${d.amount.toLocaleString()}</span><br><small>${d.locName}</small></td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
+        document.getElementById('stat-total-money').innerText = "Rp " + total.toLocaleString();
+        
+        // Update PDF Button
+        const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
+        if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (${filtered.length})`;
+    }
+</script>
 </body>
 </html>
