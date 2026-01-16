@@ -992,7 +992,7 @@ function listenFinanceData() {
 // 4. FUNGSI FILTER & RENDER (Dipanggil saat Dropdown berubah)
 function renderFinanceData() {
     // Ambil elemen HTML
-    const locFilter = document.getElementById('stats-location').value;
+    const locFilter = document.getElementById('filter-uang-lokasi').value;
     const timeFilter = document.getElementById('stats-time').value;
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
