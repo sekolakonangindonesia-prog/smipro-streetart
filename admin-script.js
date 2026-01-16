@@ -912,24 +912,27 @@ function listenCommandCenter() {
 B. STATISTIK & LAPORAN (VERSI FIX)
 ========================================= */
 let statsUnsubscribe = null;
+
 function renderFinanceData() {
 const locFilter = document.getElementById('stats-location').value;
 const timeFilter = document.getElementById('stats-time').value;
 const tbody = document.getElementById('table-history-body');
 const chartContainer = document.getElementById('chart-top-songs');
 
-// PERBAIKAN: Gunakan locFilter, bukan locSelect
-if(!locFilter || !tbody) return; 
+if(!tbody) return;
+
+     // Reset Tampilan ke Loading
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Memuat data...</td></tr>';
 
 // QUERY: Ambil semua yang finished
 // Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
 const q = query(collection(db, "requests"), where("status", "==", "finished"));
+const snapshot = await getDocs(q); // Pakai getDocs biar filter lebih stabil
 
-if(statsUnsubscribe) statsUnsubscribe();
-
-statsUnsubscribe = onSnapshot(q, (snapshot) => {
     let totalMoney = 0;
     let totalReq = 0;
+    let historyHTML = '';
+    let filteredList = [];
     let perfStats = {};
     let songStats = {};
     let dataList = [];
@@ -937,8 +940,8 @@ statsUnsubscribe = onSnapshot(q, (snapshot) => {
     const now = new Date();
     now.setHours(0,0,0,0); // Reset jam hari ini ke 00:00
 
-    snapshot.forEach(docSnap => {
-        const d = docSnap.data();
+    snapshot.forEach(doc => {
+        const d = doc.data();
         const date = d.timestamp ? d.timestamp.toDate() : new Date();
         // Jika tidak ada lokasi, anggap Stadion (untuk data lama)
         const dLoc = d.location || "Stadion Bayuangga Zone";
@@ -950,11 +953,11 @@ statsUnsubscribe = onSnapshot(q, (snapshot) => {
         if (locFilter !== 'all' && dLoc !== locFilter) include = false;
 
         // 2. Filter Waktu
-        const dateZero = new Date(date); 
-        dateZero.setHours(0,0,0,0); // Samakan jam jadi 00:00 untuk perbandingan tanggal
-
+        const dDate = new Date(date); 
+        dDate.setHours(0,0,0,0); // Reset jam data agar adil
+        
         if (timeFilter === 'today') {
-            if (dateZero.getTime() !== now.getTime()) include = false;
+            if (dDate.getTime() !== now.getTime()) include = false;
         } else if (timeFilter === 'week') {
             const weekAgo = new Date(now); 
             weekAgo.setDate(now.getDate() - 7);
@@ -970,8 +973,13 @@ statsUnsubscribe = onSnapshot(q, (snapshot) => {
     });
 
     // Urutkan Data (Terbaru di atas)
-    dataList.sort((a, b) => b.dateObj - a.dateObj);
+     filteredData.sort((a, b) => b.dateObj - a.dateObj);
 
+    // RENDER HASIL FILTER
+    filteredData.forEach(d => {
+        totalMoney += parseInt(d.amount);
+        totalReq++;
+        
     // Loop Data untuk Tampilan & Hitungan
     let historyHTML = '';
     dataList.forEach(d => {
