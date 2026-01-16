@@ -924,7 +924,7 @@ function initFinanceSystem() {
 
 // 2. LOAD VENUE OTOMATIS (Mengambil dari collection 'venues')
 async function loadVenueOptions() {
-    const locSelect = document.getElementById('stats-location');
+    const locSelect = document.getElementById('filter-uang-lokasi');
     if (!locSelect) return;
 
     // Simpan opsi default (Semua & Stadion Pusat) agar tidak hilang
