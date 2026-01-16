@@ -701,19 +701,18 @@
                 <h2 style="margin:0; color:white;">Laporan & Analisa</h2>
                 <div style="display:flex; gap:10px;">
                     <!-- Filter Lokasi Baru -->
-                    <select id="stats-location" onchange="renderFinanceData()" class="cms-input" style="width:auto; padding:5px; margin:0;">
-                        <option value="all">Semua Lokasi</option>
-                        <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
-                        <!-- Nanti nama Cafe masuk sini otomatis -->
-                    </select>
+                    <select id="filter-laporan-lokasi" onchange="updateFilterLaporan()" class="cms-input" style="width:auto; padding:5px; margin:0;">
+    <option value="all">Semua Lokasi</option>
+    <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
+</select>
 
-                    <!-- Filter Waktu (ID diganti biar unik) -->
-                    <select id="stats-time" onchange="renderFinanceData()" class="cms-input" style="width:auto; padding:5px; margin:0;">
-                        <option value="today">Hari Ini</option>
-                        <option value="week">Minggu Ini</option>
-                        <option value="month">Bulan Ini</option>
-                        <option value="all">Semua Waktu</option>
-                    </select>
+                    <!-- Filter Waktu (ID BARU: filter-laporan-waktu) -->
+<select id="filter-laporan-waktu" onchange="updateFilterLaporan()" class="cms-input" style="width:auto; padding:5px; margin:0;">
+    <option value="today">Hari Ini</option>
+    <option value="week">Minggu Ini</option>
+    <option value="month">Bulan Ini</option>
+    <option value="all">Semua Waktu</option>
+</select>
 
                     <!-- Tombol Print PDF -->
                     <button class="btn-action btn-view" onclick="generateSawerPDF()">
