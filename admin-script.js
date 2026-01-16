@@ -907,37 +907,29 @@ function listenCommandCenter() {
 }
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI GLOBAL & FIX ID)
+   B. STATISTIK & LAPORAN (VERSI FINAL - POLES TERAKHIR)
    ========================================= */
 
 let rawTransactionData = []; 
 let statsUnsubscribe = null;
 
-// 1. INIT SYSTEM (Kita buat Global biar bisa dipanggil dari mana saja)
+// 1. INIT SYSTEM
 window.initFinanceSystem = function() {
     console.log("🚀 Memulai Sistem Keuangan...");
-    window.loadVenueOptions();   // Isi Dropdown
-    window.renderFinanceData();  // Tarik Data
+    window.loadVenueOptions();   
+    window.renderFinanceData();  
 }
 
-// 2. ISI DROPDOWN (Target ID: filter-uang-lokasi)
+// 2. ISI DROPDOWN (HANYA DARI DATABASE BIAR TIDAK DOBEL)
 window.loadVenueOptions = async function() {
-    // Pastikan ID ini SAMA PERSIS dengan di HTML Anda
     const locSelect = document.getElementById('filter-uang-lokasi'); 
-    
-    if(!locSelect) {
-        console.error("❌ Gagal: Dropdown 'filter-uang-lokasi' tidak ditemukan di HTML.");
-        return;
-    }
+    if(!locSelect) return;
 
-    // Reset isi dropdown (Default)
-    locSelect.innerHTML = `
-        <option value="all">Semua Lokasi</option>
-        <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
-    `;
+    // REVISI: Hapus "Stadion Pusat" manual biar gak dobel dengan database
+    // Cukup "Semua Lokasi" saja sebagai default.
+    locSelect.innerHTML = `<option value="all">Semua Lokasi</option>`;
 
     try {
-        // Ambil daftar Venue dari Firebase
         const querySnapshot = await getDocs(collection(db, "venues"));
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -948,29 +940,27 @@ window.loadVenueOptions = async function() {
                 locSelect.appendChild(option);
             }
         });
-        console.log("✅ Dropdown berhasil diisi nama-nama Cafe.");
+        console.log("✅ Dropdown Lokasi Rapi (Tanpa Duplikat).");
     } catch (error) {
         console.error("Error ambil venue:", error);
     }
 }
 
-// 3. TARIK DATA & FILTER
+// 3. TARIK DATA & FILTER (LEBIH KETAT)
 window.renderFinanceData = function() {
-    // Ambil elemen Filter Lokasi (ID BARU)
     const elLokasi = document.getElementById('filter-uang-lokasi');
-    // Ambil elemen Filter Waktu (ID LAMA - sesuaikan dengan HTML)
     const elWaktu = document.getElementById('stats-time'); 
     
+    // Default Filter
     const filterLoc = elLokasi ? elLokasi.value : 'all';
-    // Paksa waktu 'all' dulu biar data muncul semua
-    const filterTime = 'all'; 
+    const filterTime = 'all'; // Paksa ALL dulu biar data tahun depan muncul
 
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
     if(!tbody) return;
 
-    // QUERY: Ambil SEMUA data finished (Tanpa filter DB biar gak error 400)
+    // QUERY DATABASE
     const q = query(collection(db, "requests"));
 
     if(statsUnsubscribe) statsUnsubscribe();
@@ -985,35 +975,46 @@ window.renderFinanceData = function() {
         snapshot.forEach(doc => {
             const d = doc.data();
 
-            // 1. Saring Status Finished
+            // Saring Status Finished
             if (!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
+            // Siapkan Data
             let dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
+            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone"; // Default jika kosong
 
-            // === LOGIKA FILTER ===
-            // Jika filter bukan 'all', dan nama lokasi BEDA, buang data ini.
+            // === LOGIKA FILTER SUPER KETAT ===
+            
             if (filterLoc !== 'all') {
-                if (dataLoc.trim() !== filterLoc.trim()) return;
+                // Kecilkan semua huruf dan buang spasi biar cocok 100%
+                const lokasiDataBersih = dataLoc.toString().toLowerCase().trim();
+                const lokasiFilterBersih = filterLoc.toString().toLowerCase().trim();
+
+                // Jika TIDAK SAMA, Langsung Skip/Buang
+                if (lokasiDataBersih !== lokasiFilterBersih) {
+                    return; 
+                }
             }
 
-            // Masukkan ke list
+            // === Data Lolos Filter ===
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan Terbaru
+        // Urutkan (Terbaru di atas)
         tempList.sort((a,b) => b.dateObj - a.dateObj);
 
         // Render HTML
         let htmlRows = '';
+        
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Data Kosong.</td></tr>';
+            // Tampilan Jika Kosong
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">Tidak ada data di lokasi ini.</td></tr>';
             document.getElementById('stat-total-money').innerText = "Rp 0";
             document.getElementById('stat-total-req').innerText = "0";
             if(chartContainer) chartContainer.innerHTML = '';
             return;
         }
 
+        // Loop Render Baris
         tempList.forEach(d => {
             totalMoney += d.amount;
             totalReq++;
@@ -1038,7 +1039,7 @@ window.renderFinanceData = function() {
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
         
-        // Render Grafik (Panggil fungsi helper jika ada, atau biarkan kosong dulu)
+        // Render Grafik (Opsional, pastikan fungsi renderChartAndTopArtist ada di file Mas)
         if(chartContainer && typeof renderChartAndTopArtist === 'function') {
             renderChartAndTopArtist(perfStats, songStats, chartContainer);
         }
