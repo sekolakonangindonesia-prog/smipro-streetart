@@ -907,74 +907,65 @@ function listenCommandCenter() {
 }
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI SATPAM / ANTI PENYUSUP)
+   B. STATISTIK & LAPORAN (VERSI FIX FINAL - MANUAL & LENGKAP)
    ========================================= */
 
-let rawTransactionData = []; 
 let statsUnsubscribe = null;
-window.daftarVenueValid = ["Stadion Bayuangga Zone"]; // Default Stadion selalu boleh
 
-// 1. INIT SYSTEM
-window.initFinanceSystem = async function() {
+// 1. DAFTAR VENUE MANUAL (Biar Dropdown PASTI MUNCUL walau DB Error)
+window.daftarVenueValid = [
+    "Stadion Bayuangga Zone",
+    "Angkringan GOR Mastrip", 
+    "Angkringan TWSL", 
+    "Angkringan Siaman", 
+    "Angkringan A. Yani"
+];
+
+// 2. INIT SYSTEM
+window.initFinanceSystem = function() {
     console.log("🚀 Memulai Sistem Keuangan...");
-    // Kita pakai AWAIT biar Dropdown terisi dulu, baru tarik data
-    await window.loadVenueOptions();   
+    window.loadVenueOptions();   
     window.renderFinanceData();  
 }
 
-// 2. ISI DROPDOWN & CATAT DAFTAR VENUE VALID
-window.loadVenueOptions = async function() {
+// 3. ISI DROPDOWN (Manual dari Array di atas)
+window.loadVenueOptions = function() {
     const locSelect = document.getElementById('filter-uang-lokasi'); 
     if(!locSelect) return;
 
     // Reset Dropdown
     locSelect.innerHTML = `<option value="all">Semua Lokasi</option>`;
 
-    // Reset Daftar Valid (Stadion selalu masuk)
-    window.daftarVenueValid = ["Stadion Bayuangga Zone"];
-
-    try {
-        const querySnapshot = await getDocs(collection(db, "venues"));
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            if (data.name) {
-                // 1. Masukkan ke Dropdown HTML
-                const option = document.createElement("option");
-                option.value = data.name; 
-                option.text = data.name;
-                locSelect.appendChild(option);
-
-                // 2. Masukkan ke Daftar Absen (Array)
-                window.daftarVenueValid.push(data.name);
-            }
-        });
-        
-        // Tambahkan Stadion ke dropdown manual jika belum ada
-        // (Opsional, tapi biar aman kita inject satu opsi Stadion)
-        const optStadion = document.createElement("option");
-        optStadion.value = "Stadion Bayuangga Zone";
-        optStadion.text = "Stadion Pusat";
-        locSelect.appendChild(optStadion);
-
-        console.log("✅ Venue Valid:", window.daftarVenueValid);
-    } catch (error) {
-        console.error("Error ambil venue:", error);
+    // Masukkan nama-nama venue dari daftar manual
+    window.daftarVenueValid.forEach(venueName => {
+        const option = document.createElement("option");
+        option.value = venueName; 
+        option.text = venueName;
+        locSelect.appendChild(option);
+    });
+    
+    // Kita ubah teks "Stadion Bayuangga Zone" jadi "Stadion Pusat" biar enak dilihat (Opsional)
+    // Cari opsinya dan ubah text-nya
+    for (let i = 0; i < locSelect.options.length; i++) {
+        if (locSelect.options[i].value === "Stadion Bayuangga Zone") {
+            locSelect.options[i].text = "Stadion Pusat";
+        }
     }
+
+    console.log("✅ Dropdown Terisi Lengkap (Mode Manual).");
 }
 
-// 3. TARIK DATA & FILTER (HANYA YANG TERDAFTAR)
+// 4. TARIK DATA & FILTER
 window.renderFinanceData = function() {
     const elLokasi = document.getElementById('filter-uang-lokasi');
-    
-    // Default Filter
     const filterLoc = elLokasi ? elLokasi.value : 'all';
-    const filterTime = 'all'; // Paksa ALL waktu
-
+    
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
     if(!tbody) return;
 
+    // QUERY DATABASE
     const q = query(collection(db, "requests"));
 
     if(statsUnsubscribe) statsUnsubscribe();
@@ -982,7 +973,7 @@ window.renderFinanceData = function() {
     statsUnsubscribe = onSnapshot(q, (snapshot) => {
         let totalMoney = 0;
         let totalReq = 0;
-        let perfStats = {};
+        let perfStats = {}; // Wadah hitung artis
         let songStats = {};
         let tempList = [];
         
@@ -992,39 +983,32 @@ window.renderFinanceData = function() {
             // Saring Status Finished
             if (!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
-            // Siapkan Data
             let dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone"; // Default
+            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
 
-            // === 1. SATPAM VENUE (BLOCK CAFE) ===
-            // Cek apakah lokasi data ini ada di daftar venue resmi?
-            // "Gria batik Cafe" tidak ada di window.daftarVenueValid, jadi akan return false
-            if (!window.daftarVenueValid.includes(dataLoc)) {
-                // Tapi tunggu, kadang ada masalah spasi, kita cek agak longgar
-                const isMatch = window.daftarVenueValid.some(v => v.trim().toLowerCase() === dataLoc.trim().toLowerCase());
-                if (!isMatch) return; // TENDANG KELUAR DATA CAFE!
-            }
+            // === 1. SATPAM VENUE (Sesuai Daftar Manual) ===
+            // Kalau lokasi data TIDAK ADA di daftar manual, TENDANG! (Gria Batik hilang disini)
+            const isListed = window.daftarVenueValid.some(v => v.toLowerCase() === dataLoc.trim().toLowerCase());
+            if (!isListed) return; 
 
-            // === 2. FILTER DROPDOWN USER ===
+            // === 2. FILTER DROPDOWN ===
             if (filterLoc !== 'all') {
-                if (dataLoc.trim().toLowerCase() !== filterLoc.trim().toLowerCase()) {
-                    return; 
-                }
+                if (dataLoc.trim().toLowerCase() !== filterLoc.trim().toLowerCase()) return; 
             }
 
-            // === Data Lolos ===
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan
+        // Urutkan Terbaru
         tempList.sort((a,b) => b.dateObj - a.dateObj);
 
-        // Render HTML
+        // Render Tabel
         let htmlRows = '';
         if(tempList.length === 0) {
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">Data kosong.</td></tr>';
             document.getElementById('stat-total-money').innerText = "Rp 0";
             document.getElementById('stat-total-req').innerText = "0";
+            document.getElementById('stat-top-perf').innerText = "-"; // Reset Top Artis
             if(chartContainer) chartContainer.innerHTML = '';
             return;
         }
@@ -1033,10 +1017,12 @@ window.renderFinanceData = function() {
             totalMoney += d.amount;
             totalReq++;
 
+            // HITUNG TOP ARTIS (Diperbaiki)
             let pName = d.performer || "Unknown";
             if(!perfStats[pName]) perfStats[pName] = 0;
             perfStats[pName] += d.amount;
 
+            // Hitung Lagu
             let sTitle = d.song.trim();
             if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
             songStats[sTitle].count++;
@@ -1053,8 +1039,38 @@ window.renderFinanceData = function() {
         document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('stat-total-req').innerText = totalReq;
         
-        if(chartContainer && typeof renderChartAndTopArtist === 'function') {
-            renderChartAndTopArtist(perfStats, songStats, chartContainer);
+        // === RENDER TOP ARTIS (LANGSUNG DISINI BIAR GAK RUSAK) ===
+        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
+        const elTopPerf = document.getElementById('stat-top-perf');
+        if(elTopPerf) {
+            if(sortedPerf.length > 0) {
+                // Tampilkan Artis #1
+                elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
+            } else {
+                elTopPerf.innerText = "-";
+            }
+        }
+
+        // === RENDER GRAFIK LAGU (LANGSUNG DISINI JUGA) ===
+        if(chartContainer) {
+            chartContainer.innerHTML = '';
+            const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+            if(sortedSongs.length > 0) {
+                const maxCount = sortedSongs[0].count;
+                sortedSongs.forEach((item, index) => {
+                    const widthPct = (item.count / maxCount) * 100;
+                    chartContainer.innerHTML += `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                            <span style="color:white;">#${index+1} ${item.title}</span>
+                            <span style="color:gold;">${item.count}</span>
+                        </div>
+                        <div style="background:#333; height:6px; border-radius:3px;">
+                            <div style="background:#E50914; height:100%; width:${widthPct}%;"></div>
+                        </div>
+                    </div>`;
+                });
+            }
         }
     });
 }
