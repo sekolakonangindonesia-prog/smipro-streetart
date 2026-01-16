@@ -14,8 +14,7 @@ window.showView = function(viewId, btn) {
     else console.error("View tidak ditemukan: " + viewId);
     
     // Auto Load Data Khusus
-    if(viewId === 'dashboard') loadDashboardOverview();
-    if(viewId === 'finance') { renderFinanceData(); listenCommandCenter(); }
+    if(viewId === 'dashboard') loadDashboardOverview();   
     if(viewId === 'cms') loadArtistDropdowns(); 
     if(viewId === 'students') loadStudentData();
     if(viewId === 'mitra') loadMitraData();
@@ -34,7 +33,7 @@ window.showView = function(viewId, btn) {
         switchLiveTab('panel-live', null);
     }
     if(viewId === 'finance') { 
-        initFinanceSystem();       
+        window.initFinanceSystem();       
         listenCommandCenter(); 
     }
 
