@@ -907,6 +907,7 @@ function listenCommandCenter() {
         if(!hasLive) liveContainer.innerHTML = '<p class="empty-state">Panggung sepi.</p>';
     });
 }
+
 // B. FUNGSI TOMBOL AKSI
 window.approveReq = async function(id) {
     if(confirm("Terima Request ini?")) await updateDoc(doc(db, "requests", id), { status: 'approved' });
@@ -930,11 +931,13 @@ function renderFinanceData() {
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
-    // PERBAIKAN: Gunakan locFilter, bukan locSelect
-    if(!locFilter || !tbody) return; 
+    // Cek elemen filter (Default 'all' jika belum siap)
+    const locFilter = elLoc ? elLoc.value : 'all';
+    const timeFilter = elTime ? elTime.value : 'all';
     
-    // QUERY: Ambil semua yang finished
-    // Hapus orderBy dari query DB, kita sort manual di JS biar gak error index
+    if (!tbody) return;
+    
+    // QUERY: Ambil semua yang STATUS SELESAI
     const q = query(collection(db, "requests"), where("status", "==", "finished"));
 
     if(statsUnsubscribe) statsUnsubscribe();
@@ -949,35 +952,70 @@ function renderFinanceData() {
         const now = new Date();
         now.setHours(0,0,0,0); // Reset jam hari ini ke 00:00
 
+        // DAFTAR VENUE RESMI (Hanya ini yang boleh muncul)
+        const validVenues = [
+            "Stadion Bayuangga Zone",
+            "Angkringan TWSL",
+            "Angkringan Siaman",
+            "Angkringan A. Yani",
+            "Angkringan GOR Mastrip"
+        ];
+
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
-            const date = d.timestamp ? d.timestamp.toDate() : new Date();
-            // Jika tidak ada lokasi, anggap Stadion (untuk data lama)
-            const dLoc = d.location || "Stadion Bayuangga Zone";
+            
+          / 1. PERBAIKAN BACA TANGGAL (KEBAL ERROR)
+            let dateObj = new Date();
+            if (d.timestamp && typeof d.timestamp.toDate === 'function') {
+                dateObj = d.timestamp.toDate(); // Format Timestamp Firebase
+            } else if (d.timestamp) {
+                dateObj = new Date(d.timestamp); // Format String/Date
+            } 
 
-            // --- FILTER ---
+             // 2. PERBAIKAN DETEKSI LOKASI (Default Stadion jika kosong)
+            const dLoc = (d.location && d.location !== "") ? d.location : "Stadion Bayuangga Zone";
+
+           // --- FILTER LOGIC ---
             let include = true;
 
-            // 1. Filter Lokasi
-            if (locFilter !== 'all' && dLoc !== locFilter) include = false;
-
-            // 2. Filter Waktu
-            const dateZero = new Date(date); 
-            dateZero.setHours(0,0,0,0); // Samakan jam jadi 00:00 untuk perbandingan tanggal
-
-            if (timeFilter === 'today') {
-                if (dateZero.getTime() !== now.getTime()) include = false;
-            } else if (timeFilter === 'week') {
-                const weekAgo = new Date(now); 
-                weekAgo.setDate(now.getDate() - 7);
-                if (date < weekAgo) include = false;
-            } else if (timeFilter === 'month') {
-                if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) include = false;
+            // A. CEK APAKAH INI VENUE RESMI? (PENTING!)
+            if (!validVenues.includes(dLoc)) {
+                return; // Langsung stop, Gria Batik Cafe dkk DIBUANG.
             }
 
+            // B. CEK FILTER DROPDOWN LOKASI
+            if (locFilter !== 'all' && dLoc !== locFilter) include = false;
+
+            // C. CEK FILTER DROPDOWN WAKTU
+            if (timeFilter !== 'all') {
+                const checkDate = new Date(dateObj);
+                checkDate.setHours(0,0,0,0);
+
+                const diffTime = Math.abs(now - checkDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                if (timeFilter === 'today' && diffDays !== 0) include = false;
+                if (timeFilter === 'week' && diffDays > 7) include = false;
+                if (timeFilter === 'month' && diffDays > 30) include = false;
+            }        
+            
+            // Jika Lolos Semua Filter
             if (include) {
-                // Masukkan ke list
-                dataList.push({ ...d, dateObj: date, loc: dLoc });
+                const amount = parseInt(d.amount) || 0;
+                totalMoney += amount;
+                totalReq++;
+                
+                dataList.push({ ...d, dateObj, loc: dLoc, realAmount: amount });
+
+                // Statistik Artis & Lagu
+                const pName = d.performer || "Unknown";
+                perfStats[pName] = (perfStats[pName] || 0) + amount;
+
+                if(d.song) {
+                    const sTitle = d.song.trim().toLowerCase();
+                    if (!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
+                    songStats[sTitle].count++;
+                }
             }
         });
 
