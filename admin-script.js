@@ -1423,31 +1423,43 @@ window.deleteCafe = async function(id) {
 }
 
 
-// C. LAPORAN KHUSUS CAFE (SATPAM AKTIF)
+/* =========================================
+   C. LAPORAN KHUSUS CAFE (VERSI STERIL - TANPA STADION)
+   ========================================= */
+
+// Variabel Global untuk Daftar Cafe Resmi
+window.listCafeValid = []; 
+
 window.prepareReportFilters = async function() {
     const locSelect = document.getElementById('rep-loc');
     const artSelect = document.getElementById('rep-art');
     
-    // 1. Reset & Isi Default (Hanya "Semua Cafe", STADION DIBUANG)
+    // 1. RESET DROPDOWN (HANYA CAFE)
+    // Kita hapus opsi manual Stadion Pusat. Hanya "Semua Cafe Partner".
     locSelect.innerHTML = `<option value="all">Semua Cafe Partner</option>`;
     
-    // Reset Array Satpam
+    // Reset Daftar Valid
     window.listCafeValid = [];
 
     try {
+        // Ambil data hanya dari koleksi 'venues_partner' (Isinya cuma Cafe)
         const cafes = await getDocs(collection(db, "venues_partner"));
+        
         cafes.forEach(doc => { 
             const d = doc.data();
             if(d.name) {
-                // Masukkan ke Dropdown
+                // Masukkan Nama Cafe ke Dropdown
                 locSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
-                // Masukkan ke Daftar Valid (Satpam)
+                
+                // Masukkan Nama Cafe ke Daftar Absen (Satpam)
+                // Kita simpan versi huruf kecil biar gampang dicek
                 window.listCafeValid.push(d.name.trim().toLowerCase());
             }
         });
+        console.log("Daftar Cafe Valid:", window.listCafeValid);
     } catch(e) { console.error("Gagal load cafe", e); }
 
-    // Isi Dropdown Artis
+    // Isi Dropdown Artis (Sama seperti sebelumnya)
     artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
     try {
         const perfs = await getDocs(collection(db, "performers"));
@@ -1467,7 +1479,7 @@ window.loadCafeReport = async function() {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
     try {
-        // TARIK DATA RAW (Biar data lama masuk)
+        // Tarik Semua Data
         const reqSnap = await getDocs(collection(db, "requests"));
         
         let totalMoney = 0;
@@ -1488,15 +1500,16 @@ window.loadCafeReport = async function() {
             const dataLoc = d.location ? d.location : "-";
             const dataArt = d.performer || "Unknown";
             
-            // Bersihkan Nama Lokasi
+            // Bersihkan Nama Lokasi Data
             const locClean = dataLoc.trim().toLowerCase();
 
-            // === 1. SATPAM CAFE (WAJIB) ===
-            // Jika lokasi transaksi ini TIDAK ADA di daftar Cafe Valid, BUANG!
-            // (Ini yang bikin Stadion & Gria Batik Spasi hilang)
+            // === 1. SATPAM CAFE (INTI MASALAHNYA DI SINI) ===
+            // Cek: Apakah lokasi transaksi ini ada di daftar Cafe Valid?
+            // Karena "stadion bayuangga zone" TIDAK ADA di window.listCafeValid,
+            // Maka dia akan DITOLAK (return).
             if (!window.listCafeValid.includes(locClean)) return;
 
-            // === 2. FILTER LOKASI ===
+            // === 2. FILTER LOKASI DROPDOWN ===
             if(locInput !== 'all') {
                 if(locClean !== locInput.trim().toLowerCase()) return;
             }
@@ -1518,7 +1531,7 @@ window.loadCafeReport = async function() {
                 if(dataArt.trim().toLowerCase() !== artInput.trim().toLowerCase()) return;
             }
 
-            // Lolos Seleksi
+            // Data Lolos Seleksi (Hanya Cafe)
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
@@ -1531,7 +1544,7 @@ window.loadCafeReport = async function() {
 
         // Render
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data transaksi Cafe.</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
