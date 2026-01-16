@@ -920,27 +920,23 @@ window.deleteReq = async function(id) {
 }
 
 
-/* =========================================
-   B. STATISTIK & LAPORAN (VERSI FIX)
-   ========================================= */
-let statsUnsubscribe = null;
-
+// B. STATISTIK & LAPORAN (VERSI FINAL - FILTER VENUE RESMI & TANGGAL AMAN)
 function renderFinanceData() {
-    const locFilter = document.getElementById('stats-location').value;
-    const timeFilter = document.getElementById('stats-time').value;
+    const elLoc = document.getElementById('stats-location');
+    const elTime = document.getElementById('stats-time');
     const tbody = document.getElementById('table-history-body');
     const chartContainer = document.getElementById('chart-top-songs');
 
     // Cek elemen filter (Default 'all' jika belum siap)
     const locFilter = elLoc ? elLoc.value : 'all';
     const timeFilter = elTime ? elTime.value : 'all';
-    
+
     if (!tbody) return;
-    
+
     // QUERY: Ambil semua yang STATUS SELESAI
     const q = query(collection(db, "requests"), where("status", "==", "finished"));
 
-    if(statsUnsubscribe) statsUnsubscribe();
+    if (statsUnsubscribe) statsUnsubscribe();
 
     statsUnsubscribe = onSnapshot(q, (snapshot) => {
         let totalMoney = 0;
@@ -950,7 +946,7 @@ function renderFinanceData() {
         let dataList = [];
 
         const now = new Date();
-        now.setHours(0,0,0,0); // Reset jam hari ini ke 00:00
+        now.setHours(0, 0, 0, 0); // Reset jam ke 00:00
 
         // DAFTAR VENUE RESMI (Hanya ini yang boleh muncul)
         const validVenues = [
@@ -964,18 +960,18 @@ function renderFinanceData() {
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
             
-          / 1. PERBAIKAN BACA TANGGAL (KEBAL ERROR)
+            // 1. PERBAIKAN BACA TANGGAL (KEBAL ERROR)
             let dateObj = new Date();
             if (d.timestamp && typeof d.timestamp.toDate === 'function') {
                 dateObj = d.timestamp.toDate(); // Format Timestamp Firebase
             } else if (d.timestamp) {
                 dateObj = new Date(d.timestamp); // Format String/Date
-            } 
+            }
 
-             // 2. PERBAIKAN DETEKSI LOKASI (Default Stadion jika kosong)
+            // 2. PERBAIKAN DETEKSI LOKASI (Default Stadion jika kosong)
             const dLoc = (d.location && d.location !== "") ? d.location : "Stadion Bayuangga Zone";
 
-           // --- FILTER LOGIC ---
+            // --- FILTER LOGIC ---
             let include = true;
 
             // A. CEK APAKAH INI VENUE RESMI? (PENTING!)
@@ -990,15 +986,15 @@ function renderFinanceData() {
             if (timeFilter !== 'all') {
                 const checkDate = new Date(dateObj);
                 checkDate.setHours(0,0,0,0);
-
+                
                 const diffTime = Math.abs(now - checkDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
                 if (timeFilter === 'today' && diffDays !== 0) include = false;
                 if (timeFilter === 'week' && diffDays > 7) include = false;
                 if (timeFilter === 'month' && diffDays > 30) include = false;
-            }        
-            
+            }
+
             // Jika Lolos Semua Filter
             if (include) {
                 const amount = parseInt(d.amount) || 0;
@@ -1022,77 +1018,69 @@ function renderFinanceData() {
         // Urutkan Data (Terbaru di atas)
         dataList.sort((a, b) => b.dateObj - a.dateObj);
 
-        // Loop Data untuk Tampilan & Hitungan
+        // Render HTML Tabel
         let historyHTML = '';
-        dataList.forEach(d => {
-            totalMoney += parseInt(d.amount);
-            totalReq++;
-
-            const pName = d.performer || "Unknown";
-            if(!perfStats[pName]) perfStats[pName] = 0;
-            perfStats[pName] += parseInt(d.amount);
-
-            const sTitle = d.song.trim();
-            if(!songStats[sTitle]) songStats[sTitle] = { count: 0, title: d.song };
-            songStats[sTitle].count++;
-
-            historyHTML += `
-            <tr>
-                <td>
-                    ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
-                    <small style="color:#888;">${d.dateObj.toLocaleDateString()}</small>
-                </td>
-                <td>
-                    <b>${d.song}</b><br>
-                    <small style="color:#aaa;">${d.performer}</small>
-                </td>
-                <td>
-                    <span style="color:#00ff00;">Rp ${parseInt(d.amount).toLocaleString()}</span><br>
-                    <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
-                </td>
-            </tr>`;
-        });
-
-        // Update UI Angka
-        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-        document.getElementById('stat-total-req').innerText = totalReq;
-        tbody.innerHTML = historyHTML || '<tr><td colspan="3" style="text-align:center;">Data kosong (Sesuai Filter).</td></tr>';
-
-        // Update Top Artis
-        const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
-        const elTopPerf = document.getElementById('stat-top-perf');
-        if(sortedPerf.length > 0) {
-            elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString()}</small>`;
+        if (dataList.length === 0) {
+            historyHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Data kosong (Filter Aktif).</td></tr>';
         } else {
-            elTopPerf.innerText = "-";
+            dataList.forEach(d => {
+                const jam = d.dateObj.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+                const tgl = d.dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+                historyHTML += `
+                <tr>
+                    <td>
+                        <span style="color:white; font-weight:bold;">${jam}</span><br>
+                        <small style="color:#888;">${tgl}</small>
+                    </td>
+                    <td>
+                        <b style="color:#d1d5db;">${d.song}</b><br>
+                        <small style="color:#E50914;">${d.performer}</small>
+                    </td>
+                    <td style="text-align:right;">
+                        <span style="color:#00ff00; font-weight:bold;">Rp ${d.realAmount.toLocaleString()}</span><br>
+                        <small style="color:#666; font-size:0.7rem;">${d.loc}</small>
+                    </td>
+                </tr>`;
+            });
         }
 
-        // Update Grafik Lagu
-        if(chartContainer) {
+        // OUTPUT KE LAYAR
+        document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('stat-total-req').innerText = totalReq;
+        tbody.innerHTML = historyHTML;
+
+        // Update Top Artis
+        const elTop = document.getElementById('stat-top-perf');
+        const sortedPerf = Object.entries(perfStats).sort(([, a], [, b]) => b - a);
+        if (elTop) {
+            elTop.innerHTML = sortedPerf.length > 0 
+                ? `<span style="color:gold;">${sortedPerf[0][0]}</span>` 
+                : "-";
+        }
+
+        // Update Chart (Jika Ada)
+        if (chartContainer) {
             chartContainer.innerHTML = '';
-            const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
+            const sortedSongs = Object.values(songStats).sort((a, b) => b.count - a.count).slice(0, 5);
             
-            if(sortedSongs.length === 0) {
-                chartContainer.innerHTML = '<p style="color:#555; text-align:center;">Belum ada data.</p>';
-            } else {
+            if (sortedSongs.length > 0) {
                 const maxCount = sortedSongs[0].count;
                 sortedSongs.forEach((item, index) => {
                     const widthPct = (item.count / maxCount) * 100;
-                    const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
-                    
                     chartContainer.innerHTML += `
-                    <div style="margin-bottom:12px;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                            <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                                <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
-                            </span>
-                            <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                    <div style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:2px;">
+                            <span style="color:#ccc;">${index+1}. ${item.title}</span>
+                            <span style="color:gold;">${item.count}x</span>
                         </div>
-                        <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                            <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                        <div style="background:#333; height:6px; border-radius:3px;">
+                            <div style="background:#E50914; height:100%; width:${widthPct}%;"></div>
                         </div>
                     </div>`;
                 });
+            } else {
+                chartContainer.innerHTML = '<p style="color:#555; text-align:center; font-size:0.8rem;">Belum ada data.</p>';
             }
         }
     });
