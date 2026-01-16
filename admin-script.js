@@ -908,141 +908,185 @@ function listenCommandCenter() {
 }
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI PERBAIKAN TOTAL)
+   B. STATISTIK & LAPORAN (VERSI FINAL - ANTI BENTROK)
    ========================================= */
 
-// Variabel Global untuk menyimpan data mentah (biar filter tidak reload database)
-let rawTransactionData = []; 
-let statsListener = null;
+// Variabel Penampung Data (Global)
+let databaseTransaksi = []; 
+let listenerTransaksi = null;
 
-// 1. FUNGSI UTAMA: Dipanggil saat Admin membuka halaman ini
-// Pastikan anda memanggil initFinanceSystem() saat halaman dimuat
+// 1. INIT SYSTEM (Panggil ini di window.showView)
 function initFinanceSystem() {
-    loadVenueOptions();   // Isi Dropdown Lokasi otomatis
-    listenFinanceData();  // Mulai dengarkan data transaksi
+    console.log("Sistem Keuangan Dimulai...");
+    isiDropdownLokasi();   
+    tarikDataTransaksi(); 
 }
 
-// 2. LOAD VENUE OTOMATIS (Update ID: finance-location)
-async function loadVenueOptions() {
-    // KITA CARI ID YANG BARU
-    const locSelect = document.getElementById('finance-location');
-    
-    if (!locSelect) {
-        console.error("Error: Dropdown 'finance-location' tidak ditemukan di HTML!");
-        return;
-    }
+// 2. ISI DROPDOWN LOKASI (ID Baru: filter-laporan-lokasi)
+async function isiDropdownLokasi() {
+    const elemenSelect = document.getElementById('filter-laporan-lokasi');
+    if (!elemenSelect) return;
 
-    // Reset opsi
-    locSelect.innerHTML = `
+    // Reset isi dropdown
+    elemenSelect.innerHTML = `
         <option value="all">Semua Lokasi</option>
         <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
     `;
 
     try {
-        const querySnapshot = await getDocs(collection(db, "venues"));
-        querySnapshot.forEach((doc) => {
+        const snapshot = await getDocs(collection(db, "venues"));
+        snapshot.forEach((doc) => {
             const data = doc.data();
             if (data.name) {
-                const option = document.createElement("option");
-                option.value = data.name; 
-                option.text = data.name;
-                locSelect.appendChild(option);
+                const opsi = document.createElement("option");
+                opsi.value = data.name; 
+                opsi.text = data.name;
+                elemenSelect.appendChild(opsi);
             }
         });
+        console.log("Dropdown Lokasi Berhasil Diisi.");
     } catch (error) {
-        console.error("Gagal load venue:", error);
+        console.error("Gagal ambil venue:", error);
     }
 }
 
-// 4. FUNGSI FILTER & RENDER (Update ID: finance-location & finance-time)
-function renderFinanceData() {
-    // KITA CARI ID YANG BARU
-    const locSelect = document.getElementById('finance-location');
-    const timeSelect = document.getElementById('finance-time');
-    
-    if (!locSelect || !timeSelect) return;
+// 3. TARIK DATA DARI FIREBASE (Simpan ke Memory)
+function tarikDataTransaksi() {
+    // Ambil SEMUA data request
+    const q = query(collection(db, "requests"));
 
-    const locFilter = locSelect.value;
-    const timeFilter = timeSelect.value;
-    
-    const tbody = document.getElementById('table-history-body');
-    const chartContainer = document.getElementById('chart-top-songs');
+    if (listenerTransaksi) listenerTransaksi(); // Matikan listener lama
 
-    // Debugging: Cek apakah JS membaca nilai yang benar sekarang
-    console.log("Filter Lokasi:", locFilter); 
-    console.log("Filter Waktu:", timeFilter);
-
-    if (!tbody) return;
-
-    let totalMoney = 0;
-    let totalReq = 0;
-    let perfStats = {};
-    let songStats = {};
-    let displayHTML = '';
-
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    // --- FILTER DATA ---
-    const filteredData = rawTransactionData.filter(item => {
+    listenerTransaksi = onSnapshot(q, (snapshot) => {
+        databaseTransaksi = []; // Kosongkan wadah
         
-        // A. Filter Lokasi
-        if (locFilter !== 'all') {
-            const itemLoc = (item.locName || "").toString().toLowerCase().trim();
-            const filterLoc = locFilter.toString().toLowerCase().trim();
-            
-            // Jika lokasi item beda dengan filter, buang.
-            if (itemLoc !== filterLoc) return false;
-        }
+        snapshot.forEach(doc => {
+            const d = doc.data();
 
-        // B. Filter Waktu
-        const itemDate = new Date(item.dateObj);
-        const itemDateZero = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate());
+            // Saring hanya yang FINISHED
+            if (!d.status || d.status.toString().toLowerCase().trim() !== 'finished') return;
 
-        if (timeFilter === 'today') {
-            if (itemDateZero.getTime() !== todayStart.getTime()) return false;
-        } 
-        else if (timeFilter === 'week') {
-            const weekAgo = new Date(todayStart);
-            weekAgo.setDate(todayStart.getDate() - 7);
-            if (itemDateZero < weekAgo) return false;
-        } 
-        else if (timeFilter === 'month') {
-            if (itemDate.getMonth() !== now.getMonth() || itemDate.getFullYear() !== now.getFullYear()) return false;
-        }
+            // Fix Tanggal
+            let dateObj = new Date();
+            if (d.timestamp) {
+                if(typeof d.timestamp.toDate === 'function') dateObj = d.timestamp.toDate();
+                else dateObj = new Date(d.timestamp);
+            }
 
-        return true;
+            // Fix Lokasi (Data lama dianggap Stadion)
+            const loc = d.location ? d.location : "Stadion Bayuangga Zone"; 
+
+            // Simpan
+            databaseTransaksi.push({
+                ...d,
+                id: doc.id,
+                dateObj: dateObj,
+                locName: loc,
+                amount: parseInt(d.amount) || 0
+            });
+        });
+
+        // Urutkan (Terbaru diatas)
+        databaseTransaksi.sort((a, b) => b.dateObj - a.dateObj);
+
+        // Render pertama kali
+        updateFilterLaporan();
     });
+}
 
-    // --- RENDER HTML ---
-    if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Tidak ada data transaksi di lokasi ini.</td></tr>';
-        document.getElementById('stat-total-money').innerText = "Rp 0";
-        document.getElementById('stat-total-req').innerText = "0";
-        document.getElementById('stat-top-perf').innerText = "-";
-        if(chartContainer) chartContainer.innerHTML = '<p style="text-align:center; color:#555;">Belum ada data.</p>';
-        
-        // Update PDF Button jadi 0
-        const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
-        if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (0)`;
-        
+// 4. FUNGSI FILTER UTAMA (Nama Baru: updateFilterLaporan)
+function updateFilterLaporan() {
+    // Ambil elemen dengan ID BARU
+    const elLokasi = document.getElementById('filter-laporan-lokasi');
+    const elWaktu = document.getElementById('filter-laporan-waktu');
+    
+    // Cek Error: Jika elemen tidak ketemu, stop.
+    if (!elLokasi || !elWaktu) {
+        console.error("Elemen Filter HTML tidak ditemukan! Cek ID HTML.");
         return;
     }
 
-    filteredData.forEach(d => {
-        totalMoney += d.amount;
+    const nilaiLokasi = elLokasi.value;
+    const nilaiWaktu = elWaktu.value;
+    
+    // DEBUG: Munculkan pesan ini di Console Browser
+    console.log("=== FILTER AKTIF ===");
+    console.log("Lokasi dipilih:", nilaiLokasi);
+    console.log("Waktu dipilih:", nilaiWaktu);
+
+    // Ambil wadah tabel
+    const tbody = document.getElementById('table-history-body');
+    const chartContainer = document.getElementById('chart-top-songs');
+    if (!tbody) return;
+
+    let totalUang = 0;
+    let totalReq = 0;
+    let statsArtis = {};
+    let statsLagu = {};
+    let htmlTabel = '';
+
+    const sekarang = new Date();
+    const hariIniMulai = new Date(sekarang.getFullYear(), sekarang.getMonth(), sekarang.getDate());
+
+    // --- MULAI PENYARINGAN DATA ---
+    const hasilFilter = databaseTransaksi.filter(item => {
+        
+        // 1. CEK LOKASI
+        if (nilaiLokasi !== 'all') {
+            // Bersihkan string biar akurat (kecilkan huruf, buang spasi)
+            const dataLoc = (item.locName || "").toLowerCase().trim();
+            const filterLoc = nilaiLokasi.toLowerCase().trim();
+            
+            // Jika BEDA, buang data ini.
+            if (dataLoc !== filterLoc) return false;
+        }
+
+        // 2. CEK WAKTU
+        const tglItem = new Date(item.dateObj);
+        const tglItemNol = new Date(tglItem.getFullYear(), tglItem.getMonth(), tglItem.getDate());
+
+        if (nilaiWaktu === 'today') {
+            if (tglItemNol.getTime() !== hariIniMulai.getTime()) return false;
+        } 
+        else if (nilaiWaktu === 'week') {
+            const semingguLalu = new Date(hariIniMulai);
+            semingguLalu.setDate(hariIniMulai.getDate() - 7);
+            if (tglItemNol < semingguLalu) return false;
+        } 
+        else if (nilaiWaktu === 'month') {
+            if (tglItem.getMonth() !== sekarang.getMonth() || tglItem.getFullYear() !== sekarang.getFullYear()) return false;
+        }
+
+        return true; // Data Lolos
+    });
+
+    // --- TAMPILKAN HASIL ---
+    
+    // Jika Kosong
+    if (hasilFilter.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#666;">Data KOSONG untuk lokasi/waktu ini.</td></tr>';
+        resetStatistik(chartContainer);
+        return;
+    }
+
+    // Jika Ada Data
+    hasilFilter.forEach(d => {
+        totalUang += d.amount;
         totalReq++;
 
-        const pName = d.performer || "Unknown";
-        if (!perfStats[pName]) perfStats[pName] = 0;
-        perfStats[pName] += d.amount;
+        // Hitung Artis
+        const namaArtis = d.performer || "Unknown";
+        if (!statsArtis[namaArtis]) statsArtis[namaArtis] = 0;
+        statsArtis[namaArtis] += d.amount;
 
-        const sTitle = d.song ? d.song.trim() : "Unknown";
-        const sKey = sTitle.toLowerCase(); 
-        if (!songStats[sKey]) songStats[sKey] = { count: 0, title: sTitle };
-        songStats[sKey].count++;
+        // Hitung Lagu
+        const judulLagu = d.song ? d.song.trim() : "Unknown";
+        const keyLagu = judulLagu.toLowerCase(); 
+        if (!statsLagu[keyLagu]) statsLagu[keyLagu] = { count: 0, title: judulLagu };
+        statsLagu[keyLagu].count++;
 
-        displayHTML += `
+        // Buat Baris Tabel
+        htmlTabel += `
         <tr>
             <td>
                 ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}<br>
@@ -1059,46 +1103,65 @@ function renderFinanceData() {
         </tr>`;
     });
 
-    tbody.innerHTML = displayHTML;
-    document.getElementById('stat-total-money').innerText = "Rp " + totalMoney.toLocaleString('id-ID');
+    // Masukkan ke HTML
+    tbody.innerHTML = htmlTabel;
+    document.getElementById('stat-total-money').innerText = "Rp " + totalUang.toLocaleString('id-ID');
     document.getElementById('stat-total-req').innerText = totalReq;
     
-    // Update PDF Button
+    // Update Tombol PDF
     const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
-    if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (${filteredData.length})`;
+    if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (${hasilFilter.length})`;
 
-    // Top Artis
-    const sortedPerf = Object.entries(perfStats).sort(([,a], [,b]) => b - a);
+    // Update Top Artis
+    renderTopArtis(statsArtis);
+    // Update Grafik Lagu
+    renderGrafikLagu(statsLagu, chartContainer);
+}
+
+// Fungsi Bantu: Reset Angka 0
+function resetStatistik(chartContainer) {
+    document.getElementById('stat-total-money').innerText = "Rp 0";
+    document.getElementById('stat-total-req').innerText = "0";
+    document.getElementById('stat-top-perf').innerText = "-";
+    if(chartContainer) chartContainer.innerHTML = '<p style="text-align:center; color:#555;">Belum ada data.</p>';
+    const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
+    if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (0)`;
+}
+
+// Fungsi Bantu: Render Artis
+function renderTopArtis(statsArtis) {
+    const sortedPerf = Object.entries(statsArtis).sort(([,a], [,b]) => b - a);
     const elTopPerf = document.getElementById('stat-top-perf');
     if (sortedPerf.length > 0) {
         elTopPerf.innerHTML = `<span style="color:gold;">${sortedPerf[0][0]}</span> <br><small>Rp ${sortedPerf[0][1].toLocaleString('id-ID')}</small>`;
     } else {
         elTopPerf.innerText = "-";
     }
+}
 
-    // Grafik
-    if (chartContainer) {
-        chartContainer.innerHTML = '';
-        const sortedSongs = Object.values(songStats).sort((a,b) => b.count - a.count).slice(0, 5);
-        if(sortedSongs.length > 0) {
-            const maxCount = sortedSongs[0].count;
-            sortedSongs.forEach((item, index) => {
-                const widthPct = (item.count / maxCount) * 100;
-                const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
-                chartContainer.innerHTML += `
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
-                        <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
-                            <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
-                        </span>
-                        <span style="color:gold; font-weight:bold;">${item.count} x</span>
-                    </div>
-                    <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                        <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
-                    </div>
-                </div>`;
-            });
-        }
+// Fungsi Bantu: Render Grafik
+function renderGrafikLagu(statsLagu, container) {
+    if (!container) return;
+    container.innerHTML = '';
+    const sortedSongs = Object.values(statsLagu).sort((a,b) => b.count - a.count).slice(0, 5);
+    if(sortedSongs.length > 0) {
+        const maxCount = sortedSongs[0].count;
+        sortedSongs.forEach((item, index) => {
+            const widthPct = (item.count / maxCount) * 100;
+            const rankColor = index === 0 ? '#FFD700' : (index === 1 ? '#C0C0C0' : '#CD7F32');
+            container.innerHTML += `
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                    <span style="color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:80%;">
+                        <span style="color:${rankColor}; font-weight:bold; margin-right:5px;">#${index+1}</span> ${item.title}
+                    </span>
+                    <span style="color:gold; font-weight:bold;">${item.count} x</span>
+                </div>
+                <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
+                    <div style="background:#E50914; height:100%; width:${widthPct}%; border-radius:4px;"></div>
+                </div>
+            </div>`;
+        });
     }
 }
 
