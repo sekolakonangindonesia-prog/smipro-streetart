@@ -1002,6 +1002,22 @@ window.renderFinanceData = function() {
         // Urutkan Terbaru
         tempList.sort((a,b) => b.dateObj - a.dateObj);
 
+        // === SISIPAN UNTUK PDF (Insert This) ===
+        // Simpan data bersih ke variabel global biar bisa diambil fungsi PDF
+        window.laporanSiapCetak = tempList; 
+        
+        // Simpan Info filter untuk Judul PDF
+        const elTime = document.getElementById('stats-time');
+        window.infoLaporan = {
+            lokasi: document.getElementById('filter-uang-lokasi').value,
+            periode: elTime ? elTime.options[elTime.selectedIndex].text : "Semua Waktu"
+        };
+        
+        // Update Label Tombol PDF
+        const btnPdf = document.querySelector('button[onclick="generateSawerPDF()"]');
+        if(btnPdf) btnPdf.innerHTML = `<i class="fa-solid fa-print"></i> PDF (${tempList.length})`;
+        // === BATAS SISIPAN ===
+
         // Render Tabel
         let htmlRows = '';
         if(tempList.length === 0) {
@@ -1073,6 +1089,108 @@ window.renderFinanceData = function() {
             }
         }
     });
+}
+
+/* =========================================
+   C. GENERATE PDF (VERSI AMAN - SUBTITLES & TOTAL)
+   ========================================= */
+window.generateSawerPDF = function() {
+    // 1. Cek apakah Library PDF Tabel sudah ada?
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang di HTML!"); return; }
+    
+    // 2. Ambil data dari "Kantong Global" (Nanti kita siapkan kantongnya)
+    const data = window.laporanSiapCetak || [];
+    const info = window.infoLaporan || { lokasi: 'Data', periode: '-' };
+
+    if (data.length === 0) {
+        alert("Tidak ada data untuk dicetak/download.");
+        return;
+    }
+
+    // 3. Siapkan PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // -- Header --
+    doc.setFontSize(16);
+    doc.text("LAPORAN TRANSAKSI SAWERAN & REQUEST", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Lokasi Filter: ${info.lokasi}`, 14, 30);
+    doc.text(`Periode Waktu: ${info.periode}`, 14, 35);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 40);
+
+    // -- Persiapan Tabel --
+    // Kita harus mengelompokkan data berdasarkan LOKASI (Venue)
+    // Supaya bisa bikin Subtotal per Venue.
+    
+    // a. Urutkan data berdasarkan Nama Lokasi dulu
+    data.sort((a, b) => a.loc.localeCompare(b.loc));
+
+    // b. Susun Body Tabel
+    let tableBody = [];
+    let currentVenue = "";
+    let subTotal = 0;
+    let grandTotal = 0;
+
+    data.forEach((item, index) => {
+        // Jika Venue berubah, cetak Subtotal venue sebelumnya (kalau bukan baris pertama)
+        if (currentVenue !== item.loc) {
+            if (currentVenue !== "") {
+                // Baris Subtotal
+                tableBody.push([
+                    { content: `SUBTOTAL ${currentVenue.toUpperCase()}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240] } },
+                    { content: `Rp ${subTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+                ]);
+            }
+            // Reset untuk venue baru
+            currentVenue = item.loc;
+            subTotal = 0;
+            
+            // Baris Judul Venue Baru
+            tableBody.push([
+                { content: `VENUE: ${currentVenue}`, colSpan: 3, styles: { fontStyle: 'bold', fillColor: [229, 9, 20], textColor: 255 } }
+            ]);
+        }
+
+        // Tambahkan Baris Data
+        let timeStr = item.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) + ' ' + item.dateObj.toLocaleDateString('id-ID');
+        tableBody.push([
+            timeStr,
+            `${item.song} (${item.performer})`,
+            `Rp ${item.amount.toLocaleString('id-ID')}`
+        ]);
+
+        // Hitung Total
+        subTotal += item.amount;
+        grandTotal += item.amount;
+
+        // Jika ini data TERAKHIR, cetak subtotal terakhir
+        if (index === data.length - 1) {
+             tableBody.push([
+                { content: `SUBTOTAL ${currentVenue.toUpperCase()}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240] } },
+                { content: `Rp ${subTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+            ]);
+        }
+    });
+
+    // Baris GRAND TOTAL
+    tableBody.push([
+        { content: `GRAND TOTAL OMZET`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [0, 0, 0], textColor: [0, 255, 0], fontSize: 12 } },
+        { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 0, 0], textColor: [0, 255, 0], fontSize: 12 } }
+    ]);
+
+    // 4. Generate Tabel Otomatis
+    doc.autoTable({
+        startY: 45,
+        head: [['Waktu', 'Lagu & Artis', 'Nominal']],
+        body: tableBody,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [50, 50, 50], textColor: 255 }
+    });
+
+    // 5. Simpan File
+    doc.save(`Laporan_Saweran_${new Date().getTime()}.pdf`);
 }
 
 /* =========================================
