@@ -1684,13 +1684,14 @@ window.prepareReportFilters = async function() {
 }
 
 // 2. TAMPILKAN DATA (VERSI ANTI-STADION AGRESIF)
+// 2. TAMPILKAN DATA (LOGIKA KEUANGAN: KOSONG = STADION -> BUANG STADION)
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Sedang mengambil data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
     try {
         const reqSnap = await getDocs(collection(db, "requests"));
@@ -1705,27 +1706,30 @@ window.loadCafeReport = async function() {
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // 1. Cek Status Finished
+            // 1. Cek Status
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            // Pastikan dataLoc adalah string
-            const dataLoc = d.location ? d.location.toString() : "-"; 
             
-            // Ubah ke huruf kecil semua untuk pengecekan
-            const locCheck = dataLoc.toLowerCase(); 
+            // === LOGIKA KEUANGAN (INI KUNCINYA) ===
+            // Jika lokasi kosong/null, kita paksa jadi "Stadion Bayuangga Zone"
+            // Supaya dia punya identitas, tidak cuma "-"
+            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
+            
+            // Bersihkan hurufnya
+            let locClean = dataLoc.trim().toLowerCase();
 
-            // === FILTER "NUCLEAR" (SATPAM GALAK) ===
-            // Cek apakah di dalam nama lokasi ada kata "stadion"?
-            // Mau "Stadion Pusat", "stadion bayuangga", "Area Stadion"... SEMUA DIBUANG.
-            if (locCheck.includes("stadion")) {
-                return; // TENDANG KELUAR!
+            // === FILTER PENGUSIR STADION ===
+            // Sekarang, karena yang kosong tadi sudah bernama "stadion...",
+            // Kita bisa usir dengan mudah.
+            if (locClean.includes("stadion")) {
+                return; // JANGAN MASUK SINI! INI WILAYAH CAFE!
             }
-            // =======================================
+            // ===============================
 
-            // 2. Filter Lokasi dari Dropdown
+            // 2. Filter Lokasi Dropdown (Pilihan User)
             if(locInput !== 'all') {
-                if(dataLoc.trim().toLowerCase() !== locInput.trim().toLowerCase()) return;
+                if(locClean !== locInput.trim().toLowerCase()) return;
             }
 
             // 3. Filter Waktu
@@ -1747,19 +1751,19 @@ window.loadCafeReport = async function() {
                 if(artistDB !== artistFilter) return;
             }
 
-            // Masukkan Data yang Lolos
+            // Lolos Seleksi
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
         // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
         
-        // Simpan PDF
+        // Simpan PDF Global
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Cafe).</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Cafe Partner).</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
