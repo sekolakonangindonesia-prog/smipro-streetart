@@ -1471,33 +1471,31 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-// 2. TAMPILKAN DATA (VERSI WHITELIST DATABASE - ANTI JEBOL)
+
+
+// 4. GENERATE PDF CAFE
+window.generateCafePDF = function() {
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
+    
+    const data = window.cafeReportData || [];
+    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
+
+    if (data.length === 0) { alert("Data kosong!"); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);// 2. TAMPILKAN DATA (LOGIKA KEUANGAN: KOSONG = STADION -> BUANG STADION)
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Sedang memverifikasi data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
     try {
-        // --- LANGKAH 1: AMBIL DAFTAR RESMI CAFE DARI DATABASE ---
-        // Kita tidak mengandalkan dropdown HTML. Kita ambil "KTP" cafe langsung dari server.
-        const cafeSnap = await getDocs(collection(db, "venues_partner"));
-        let daftarCafeSah = [];
-        
-        cafeSnap.forEach(doc => {
-            const data = doc.data();
-            if (data.name) {
-                // Simpan nama cafe (huruf kecil semua biar cocok)
-                daftarCafeSah.push(data.name.trim().toLowerCase());
-            }
-        });
-
-        // Debugging: Lihat daftar cafe yang sah di console
-        console.log("Daftar Cafe Sah:", daftarCafeSah);
-
-        // --- LANGKAH 2: AMBIL TRANSAKSI ---
         const reqSnap = await getDocs(collection(db, "requests"));
         let tempList = [];
         let totalMoney = 0;
@@ -1513,30 +1511,31 @@ window.loadCafeReport = async function() {
             // 1. Cek Status
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
-            // 2. Cek Nama Lokasi Data
-            // Kalau kosong/undefined, kita anggap string kosong ""
-            let dataLoc = d.location ? d.location.toString() : "";
+            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
+            
+            // === LOGIKA KEUANGAN (INI KUNCINYA) ===
+            // Jika lokasi kosong/null, kita paksa jadi "Stadion Bayuangga Zone"
+            // Supaya dia punya identitas, tidak cuma "-"
+            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
+            
+            // Bersihkan hurufnya
             let locClean = dataLoc.trim().toLowerCase();
 
-            // === FILTER PENENTU (SATPAM GALAK) ===
-            // Cek: Apakah lokasi data ini terdaftar di Cafe Sah?
-            // - Kalau datanya Stadion -> Gak ada di daftar -> BUANG.
-            // - Kalau datanya Kosong/Strip -> Gak ada di daftar -> BUANG.
-            // - Kalau datanya Gria Batik -> Ada di daftar -> MASUK.
-            if (!daftarCafeSah.includes(locClean)) {
-                return; // TENDANG KELUAR!
+            // === FILTER PENGUSIR STADION ===
+            // Sekarang, karena yang kosong tadi sudah bernama "stadion...",
+            // Kita bisa usir dengan mudah.
+            if (locClean.includes("stadion")) {
+                return; // JANGAN MASUK SINI! INI WILAYAH CAFE!
             }
-            // =====================================
+            // ===============================
 
-            // 3. Filter Pilihan User (Dropdown)
+            // 2. Filter Lokasi Dropdown (Pilihan User)
             if(locInput !== 'all') {
                 if(locClean !== locInput.trim().toLowerCase()) return;
             }
 
-            // 4. Filter Waktu
-            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
+            // 3. Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-            
             if(timeInput === 'today') {
                 if(dateZero.getTime() !== todayStart.getTime()) return;
             } else if(timeInput === 'week') {
@@ -1547,14 +1546,14 @@ window.loadCafeReport = async function() {
                 if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
 
-            // 5. Filter Artis
+            // 4. Filter Artis
             if(artInput !== 'all') {
                 const artistDB = (d.performer || "").toLowerCase().trim();
                 const artistFilter = artInput.toLowerCase().trim();
                 if(artistDB !== artistFilter) return;
             }
 
-            // Lolos Semua Seleksi
+            // Lolos Seleksi
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
@@ -1602,21 +1601,6 @@ window.loadCafeReport = async function() {
         tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
     }
 }
-
-// 4. GENERATE PDF CAFE
-window.generateCafePDF = function() {
-    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
-    
-    const data = window.cafeReportData || [];
-    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
-
-    if (data.length === 0) { alert("Data kosong!"); return; }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFontSize(16);
-    doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);
     doc.setFontSize(10);
     doc.text(`Filter: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi} | Periode: ${info.periode}`, 14, 30);
     doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 35);
