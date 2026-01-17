@@ -1242,19 +1242,56 @@ window.generateSawerPDF = function() {
 async function loadDashboardOverview() {
     console.log("Memuat Data Overview...");
 
-    // 1. STATISTIK
+    // 1. STATISTIK JUMLAH
     const mitraSnap = await getDocs(collection(db, "warungs"));
     const perfSnap = await getDocs(collection(db, "performers"));
     
-    document.getElementById('count-mitra').innerText = mitraSnap.size;
-    document.getElementById('count-perf').innerText = perfSnap.size;
+    // Update Badge
+    if(document.getElementById('count-mitra')) document.getElementById('count-mitra').innerText = mitraSnap.size;
+    if(document.getElementById('count-perf')) document.getElementById('count-perf').innerText = perfSnap.size;
 
-    const moneySnap = await getDocs(collection(db, "requests"));
-    let totalPending = 0;
-    moneySnap.forEach(doc => {
-        if(doc.data().status === 'pending') totalPending += parseInt(doc.data().amount);
+    // --- LOGIKA BARU: AMBIL DAFTAR NAMA VENUE DULU DARI DATABASE ---
+    const venueSnap = await getDocs(collection(db, "venues")); // Ambil koleksi venues
+    let validVenueNames = [];
+    
+    venueSnap.forEach(doc => {
+        const v = doc.data();
+        if (v.name) validVenueNames.push(v.name); // Masukkan nama venue ke daftar
     });
-    document.getElementById('total-revenue').innerText = "Rp " + totalPending.toLocaleString();
+
+    // Tambahkan Stadion Pusat manual (jaga-jaga jika di data venues belum ada, tapi biasanya ada)
+    if (!validVenueNames.includes("Stadion Bayuangga Zone")) {
+        validVenueNames.push("Stadion Bayuangga Zone");
+    }
+    // -------------------------------------------------------------
+
+    // 2. HITUNG PEMASUKAN REAL (STATUS: FINISHED)
+    const moneySnap = await getDocs(query(collection(db, "requests"), where("status", "==", "finished")));
+    
+    let venueTotal = 0;
+    let cafeTotal = 0;
+
+    moneySnap.forEach(doc => {
+        const d = doc.data();
+        const nominal = parseInt(d.amount) || 0;
+        
+        // Logika Pemilah Lokasi
+        const dLoc = d.location || "Stadion Bayuangga Zone";
+
+        // Cek apakah lokasi ini ada di daftar Venue yang kita ambil dari database tadi?
+        if (validVenueNames.includes(dLoc)) {
+            venueTotal += nominal; // Masuk ke Venue
+        } else {
+            cafeTotal += nominal;  // Masuk ke Cafe (karena namanya tidak ditemukan di daftar Venue)
+        }
+    });
+
+    // TAMPILKAN KE KARTU
+    if(document.getElementById('rev-total')) {
+        document.getElementById('rev-venue').innerText = "Rp " + venueTotal.toLocaleString();
+        document.getElementById('rev-cafe').innerText = "Rp " + cafeTotal.toLocaleString();
+        document.getElementById('rev-total').innerText = "Rp " + (venueTotal + cafeTotal).toLocaleString();
+    }
 
     // 3. NOTIFIKASI
     const notifArea = document.getElementById('admin-notification-area');
