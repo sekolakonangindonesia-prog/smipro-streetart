@@ -1645,25 +1645,40 @@ window.generateCafePDF = function() {
    ========================================= */
 
 // 1. ISI DROPDOWN FILTER (Dipanggil saat tab dibuka)
+// 1. ISI DROPDOWN FILTER (MURNI DARI DB CAFE)
 window.prepareReportFilters = async function() {
     const locSelect = document.getElementById('rep-loc');
     const artSelect = document.getElementById('rep-art');
     
-    // Reset Dropdown Lokasi
+    // --- PEMBERSIHAN TOTAL ---
+    // Kita reset isinya. HANYA ada "Semua Lokasi".
+    // Tidak ada "Stadion Pusat" manual disini.
     locSelect.innerHTML = `<option value="all">Semua Lokasi</option>`;
-    // Tambah opsi Stadion manual
-    locSelect.innerHTML += `<option value="Stadion Bayuangga Zone">Stadion Pusat</option>`;
     
-    // Ambil data Partner Cafe
+    window.listCafeValid = []; // Reset Satpam
+
     try {
+        // Ambil data HANYA dari koleksi 'venues_partner' (Isinya cuma Cafe)
         const cafes = await getDocs(collection(db, "venues_partner"));
+        
+        if (cafes.empty) {
+            console.log("Tidak ada data cafe di database.");
+        }
+
         cafes.forEach(doc => { 
             const d = doc.data();
             if(d.name) {
-                // Masukkan nama cafe apa adanya
-                locSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`; 
+                // Masukkan Nama Cafe ke Dropdown
+                // KITA TIDAK MENAMBAHKAN STADION DISINI
+                locSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                
+                // Masukkan ke Daftar Absen (Satpam)
+                window.listCafeValid.push(d.name.trim().toLowerCase());
             }
         });
+        
+        console.log("✅ Dropdown Cafe Siap. Stadion harusnya hilang.", window.listCafeValid);
+
     } catch(e) { console.error("Gagal load cafe", e); }
 
     // Reset Dropdown Artis
@@ -1674,7 +1689,7 @@ window.prepareReportFilters = async function() {
              const d = doc.data();
              if(d.name) artSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`; 
         });
-    } catch(e) { console.error("Gagal load artis", e); }
+    } catch(e) { console.error(e); }
 }
 
 // 2. TAMPILKAN DATA (TOMBOL KLIK)
