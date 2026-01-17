@@ -1629,7 +1629,6 @@ window.generateCafePDF = function() {
    B. LAPORAN CAFE & TOUR (VERSI RAW FETCH & SMART FILTER)
    ========================================= */
 
-// 1. ISI DROPDOWN FILTER (Dipanggil saat tab dibuka)
 // 1. ISI DROPDOWN FILTER (MURNI DARI DB CAFE)
 window.prepareReportFilters = async function() {
     const locSelect = document.getElementById('rep-loc');
@@ -1677,122 +1676,116 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-// 2. TAMPILKAN DATA (TOMBOL KLIK)
+// 2. TAMPILKAN DATA (VERSI ANTI-STADION AGRESIF)
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Sedang mengambil data dari server...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Sedang mengambil data...</td></tr>';
 
     try {
-        // TARIK SEMUA DATA (Raw Fetch - Solusi Data Lama)
-        // Kita tidak pakai 'where' di query untuk menghindari error index/format
         const reqSnap = await getDocs(collection(db, "requests"));
-        
+        let tempList = [];
         let totalMoney = 0;
         let totalSongs = 0;
         let perfCount = {};
-        let tempList = [];
+        
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // Filter Status Finished (Case Insensitive)
+            // 1. Cek Status Finished
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
-            // Normalisasi Data
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            const dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
-            const dataArt = d.performer || "Unknown";
+            // Pastikan dataLoc adalah string
+            const dataLoc = d.location ? d.location.toString() : "-"; 
+            
+            // Ubah ke huruf kecil semua untuk pengecekan
+            const locCheck = dataLoc.toLowerCase(); 
 
-            // === LOGIKA FILTER PINTAR (IGNORE SPASI) ===
-            let isValid = true;
+            // === FILTER "NUCLEAR" (SATPAM GALAK) ===
+            // Cek apakah di dalam nama lokasi ada kata "stadion"?
+            // Mau "Stadion Pusat", "stadion bayuangga", "Area Stadion"... SEMUA DIBUANG.
+            if (locCheck.includes("stadion")) {
+                return; // TENDANG KELUAR!
+            }
+            // =======================================
 
-            // 1. Cek Lokasi
+            // 2. Filter Lokasi dari Dropdown
             if(locInput !== 'all') {
-                // Bersihkan spasi dan huruf kecil di kedua sisi
-                if(dataLoc.trim().toLowerCase() !== locInput.trim().toLowerCase()) isValid = false;
+                if(dataLoc.trim().toLowerCase() !== locInput.trim().toLowerCase()) return;
             }
 
-            // 2. Cek Waktu
+            // 3. Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
             if(timeInput === 'today') {
-                if(dateZero.getTime() !== todayStart.getTime()) isValid = false;
+                if(dateZero.getTime() !== todayStart.getTime()) return;
             } else if(timeInput === 'week') {
                 let weekAgo = new Date(todayStart);
                 weekAgo.setDate(todayStart.getDate() - 7);
-                if(dateZero < weekAgo) isValid = false;
+                if(dateZero < weekAgo) return;
             } else if(timeInput === 'month') {
-                if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) isValid = false;
+                if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
-            // Kalau 'all' (Semua Waktu), otomatis lolos.
 
-            // 3. Cek Artis
+            // 4. Filter Artis
             if(artInput !== 'all') {
-                if(dataArt.trim().toLowerCase() !== artInput.trim().toLowerCase()) isValid = false;
+                const artistDB = (d.performer || "").toLowerCase().trim();
+                const artistFilter = artInput.toLowerCase().trim();
+                if(artistDB !== artistFilter) return;
             }
 
-            // Jika Lolos semua filter
-            if(isValid) {
-                tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
-            }
+            // Masukkan Data yang Lolos
+            tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan (Terbaru di atas)
+        // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
-
-        // Simpan ke Global untuk PDF
+        
+        // Simpan PDF
         window.cafeReportData = tempList;
-        window.cafeReportInfo = { lokasi: locInput, periode: timeInput, artis: artInput };
+        window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
-        // RENDER HASIL
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data sesuai filter.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Cafe).</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
             return;
         }
 
-        let detailHTML = '';
+        let html = '';
         tempList.forEach(d => {
             totalMoney += d.amount;
             totalSongs++;
-            
-            // Hitung Artis Terlaris
             let p = d.performer || "Unknown";
             if(!perfCount[p]) perfCount[p] = 0;
-            perfCount[p] += d.amount; // Hitung berdasarkan omzet saweran
+            perfCount[p] += d.amount;
 
-            detailHTML += `
-            <tr>
-                <td>${d.dateObj.toLocaleDateString()} ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</td>
+            html += `<tr>
+                <td>${d.dateObj.toLocaleDateString()}</td>
                 <td>${d.loc}</td>
                 <td>${d.performer}</td>
                 <td>${d.song}</td>
-                <td style="color:#00ff00;">Rp ${d.amount.toLocaleString()}</td>
+                <td style="color:#00ff00">Rp ${d.amount.toLocaleString()}</td>
             </tr>`;
         });
 
-        tbody.innerHTML = detailHTML;
+        tbody.innerHTML = html;
         document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('rep-total-song').innerText = totalSongs;
-
-        // Cari Top Artis
+        
         const sortedPerf = Object.entries(perfCount).sort(([,a], [,b]) => b - a);
-        if(sortedPerf.length > 0) {
-            document.getElementById('rep-top-artist').innerText = sortedPerf[0][0]; // Nama artis
-        } else {
-            document.getElementById('rep-top-artist').innerText = "-";
-        }
+        document.getElementById('rep-top-artist').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
 
-    } catch (e) {
-        console.error("Error Report:", e);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal mengambil data. Cek Console.</td></tr>';
+    } catch(e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
     }
 }
 
