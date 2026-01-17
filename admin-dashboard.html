@@ -373,78 +373,76 @@
         </table>
     </div>
 
-    <!-- TAB 2: LAPORAN (PUSAT KONTROL) -->
-    <div id="cafe-report" class="cafe-content hidden">
-        <div class="cms-form-group" style="background:#111; border:1px solid #444;">
-            <h4 style="margin-top:0; color:#00d2ff;">Filter Laporan Tour</h4>
-            
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
-                <!-- Filter Lokasi -->
-                <div>
-                    <label class="cms-label">Pilih Lokasi</label>
-                    <select id="rep-loc" class="cms-input">
-                        <option value="all">Semua Cafe Partner</option>
-                        <!-- Opsi akan diisi JS -->
-                    </select>
+   <!-- TAB 2: PUSAT KONTROL (LAPORAN KHUSUS TOUR) -->
+            <div id="cafe-report" class="cafe-content hidden">
+                <div class="cms-form-group" style="background:#111; border:1px solid #444;">
+                    <h4 style="margin-top:0; color:#00d2ff;">Filter Laporan Tour</h4>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
+                        <div>
+                            <label class="cms-label">Pilih Lokasi</label>
+                            <select id="rep-loc" class="cms-input">
+                                <option value="all">Semua Lokasi</option>
+                                <!-- Nanti diisi otomatis oleh JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="cms-label">Pilih Periode</label>
+                            <select id="rep-time" class="cms-input">
+                                <option value="today">Hari Ini</option>
+                                <option value="week">Minggu Ini</option>
+                                <option value="month">Bulan Ini</option>
+                                <option value="all">Semua Waktu</option> <!-- TAMBAHAN BARU -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="cms-label">Pilih Artis</label>
+                            <select id="rep-art" class="cms-input">
+                                <option value="all">Semua Artis</option>
+                                <!-- Nanti diisi otomatis oleh JS -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-action btn-edit" style="flex:1; font-weight:bold; padding:10px;" onclick="loadCafeReport()">
+                            <i class="fa-solid fa-filter"></i> TAMPILKAN DATA
+                        </button>
+                        <!-- TOMBOL PDF BARU -->
+                        <button class="btn-action btn-view" style="width:auto; font-weight:bold; padding:10px 20px;" onclick="generateCafePDF()">
+                            <i class="fa-solid fa-print"></i> PDF
+                        </button>
+                    </div>
                 </div>
-                <!-- Filter Waktu -->
-                <div>
-                    <label class="cms-label">Pilih Periode</label>
-                    <select id="rep-time" class="cms-input">
-                        <option value="today">Hari Ini</option>
-                        <option value="week">Minggu Ini</option>
-                        <option value="month">Bulan Ini</option>
-                        <option value="all">Semua Waktu</option>
-                    </select>
-                </div>
-                <!-- Filter Artis -->
-                <div>
-                    <label class="cms-label">Pilih Artis</label>
-                    <select id="rep-art" class="cms-input">
-                        <option value="all">Semua Artis</option>
-                        <!-- Opsi akan diisi JS -->
-                    </select>
-                </div>
-            </div>
-            
-            <div style="display:flex; gap:10px;">
-                <button class="btn-action btn-edit" style="flex:1; font-weight:bold; padding:10px;" onclick="loadCafeReport()">
-                    <i class="fa-solid fa-filter"></i> TAMPILKAN DATA
-                </button>
-                <button class="btn-action btn-view" style="width:auto; font-weight:bold; padding:10px 20px;" onclick="generateCafePDF()">
-                    <i class="fa-solid fa-print"></i> PDF
-                </button>
-            </div>
-        </div>
 
-        <!-- Statistik Angka -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-sack-dollar"></i></div>
-                <div><h3 style="margin:0; color:white;" id="rep-total-money">Rp 0</h3><small style="color:#888;">Total Saweran</small></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="color:#FFD700; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-music"></i></div>
-                <div><h3 style="margin:0; color:white;" id="rep-total-song">0</h3><small style="color:#888;">Lagu Direquest</small></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-trophy"></i></div>
-                <div><h3 style="margin:0; color:white; font-size:1rem;" id="rep-top-artist">-</h3><small style="color:#888;">Artis Terlaris</small></div>
-            </div>
-        </div>
+                <!-- HASIL LAPORAN -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div><h3 style="margin:0; color:white;" id="rep-total-money">Rp 0</h3><small style="color:#888;">Total Saweran</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#FFD700; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-music"></i></div>
+                        <div><h3 style="margin:0; color:white;" id="rep-total-song">0</h3><small style="color:#888;">Lagu Direquest</small></div>
+                    </div>
+                    <!-- Card Pengunjung diganti jadi Top Artis -->
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-trophy"></i></div>
+                        <div><h3 style="margin:0; color:white; font-size:1rem;" id="rep-top-artist">-</h3><small style="color:#888;">Artis Terlaris</small></div>
+                    </div>
+                </div>
 
-        <!-- Tabel Detail -->
-        <h4 style="margin-top:20px; color:#aaa;">Rincian Transaksi</h4>
-        <div style="max-height:500px; overflow-y:auto;">
-            <table class="admin-table">
-                <thead><tr><th>Waktu</th><th>Lokasi</th><th>Artis</th><th>Lagu</th><th>Sawer</th></tr></thead>
-                <tbody id="rep-detail-body">
-                    <tr><td colspan="5" style="text-align:center;">Silakan filter data dulu.</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                <!-- TABEL DETAIL -->
+                <h4 style="margin-top:20px; color:#aaa;">Rincian Transaksi</h4>
+                <div style="max-height:500px; overflow-y:auto;">
+                    <table class="admin-table">
+                        <thead><tr><th>Waktu</th><th>Lokasi</th><th>Artis</th><th>Lagu</th><th>Sawer</th></tr></thead>
+                        <tbody id="rep-detail-body">
+                            <tr><td colspan="5" style="text-align:center;">Silakan filter data dulu.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
         <!-- 5. BENGKEL SISWA -->
         <div id="view-students" class="admin-view hidden">
