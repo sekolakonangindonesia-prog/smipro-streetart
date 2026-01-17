@@ -1430,36 +1430,37 @@ window.deleteCafe = async function(id) {
 // Variabel Global untuk Daftar Cafe Resmi
 window.listCafeValid = []; 
 
+// 1. ISI DROPDOWN FILTER (VERSI CUCI GUDANG)
 window.prepareReportFilters = async function() {
     const locSelect = document.getElementById('rep-loc');
     const artSelect = document.getElementById('rep-art');
     
-    // 1. RESET DROPDOWN (HANYA CAFE)
-    // Kita hapus opsi manual Stadion Pusat. Hanya "Semua Cafe Partner".
+    // --- LANGKAH PEMBERSIHAN ---
+    // Kita hapus paksa semua isi dropdown, lalu isi ulang.
+    // Jadi kalau ada Stadion nyangkut, dia akan hilang.
     locSelect.innerHTML = `<option value="all">Semua Cafe Partner</option>`;
     
-    // Reset Daftar Valid
+    // Reset Array Satpam
     window.listCafeValid = [];
 
     try {
-        // Ambil data hanya dari koleksi 'venues_partner' (Isinya cuma Cafe)
+        // Ambil data HANYA dari venues_partner (Cafe)
         const cafes = await getDocs(collection(db, "venues_partner"));
         
         cafes.forEach(doc => { 
             const d = doc.data();
             if(d.name) {
-                // Masukkan Nama Cafe ke Dropdown
+                // Masukkan Nama Cafe
                 locSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
                 
-                // Masukkan Nama Cafe ke Daftar Absen (Satpam)
-                // Kita simpan versi huruf kecil biar gampang dicek
+                // Catat ke Satpam (Huruf kecil semua biar aman)
                 window.listCafeValid.push(d.name.trim().toLowerCase());
             }
         });
-        console.log("Daftar Cafe Valid:", window.listCafeValid);
+        console.log("✅ Dropdown Cafe Bersih (Stadion Dibuang). List:", window.listCafeValid);
     } catch(e) { console.error("Gagal load cafe", e); }
 
-    // Isi Dropdown Artis (Sama seperti sebelumnya)
+    // Reset Dropdown Artis
     artSelect.innerHTML = `<option value="all">Semua Artis</option>`;
     try {
         const perfs = await getDocs(collection(db, "performers"));
@@ -1467,7 +1468,7 @@ window.prepareReportFilters = async function() {
              const d = doc.data();
              if(d.name) artSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`; 
         });
-    } catch(e) { console.error("Gagal load artis", e); }
+    } catch(e) { console.error(e); }
 }
 
 window.loadCafeReport = async function() {
