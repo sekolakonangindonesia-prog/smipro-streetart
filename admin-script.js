@@ -1471,6 +1471,7 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
+// 2. TAMPILKAN DATA (VERSI ANTI-STADION)
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
@@ -1480,13 +1481,11 @@ window.loadCafeReport = async function() {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
     try {
-        // Tarik Semua Data
         const reqSnap = await getDocs(collection(db, "requests"));
-        
+        let tempList = [];
         let totalMoney = 0;
         let totalSongs = 0;
         let perfCount = {};
-        let tempList = [];
         
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1494,28 +1493,24 @@ window.loadCafeReport = async function() {
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // Cek Status
+            // 1. Cek Status
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             const dataLoc = d.location ? d.location : "-";
-            const dataArt = d.performer || "Unknown";
             
-            // Bersihkan Nama Lokasi Data
-            const locClean = dataLoc.trim().toLowerCase();
+            // === FILTER KASAR: BLOKIR STADION ===
+            // Apapun ceritanya, kalau lokasi mengandung kata "Stadion", BUANG!
+            if (dataLoc.toLowerCase().includes("stadion")) return;
+            // ====================================
 
-            // === 1. SATPAM CAFE (INTI MASALAHNYA DI SINI) ===
-            // Cek: Apakah lokasi transaksi ini ada di daftar Cafe Valid?
-            // Karena "stadion bayuangga zone" TIDAK ADA di window.listCafeValid,
-            // Maka dia akan DITOLAK (return).
-            if (!window.listCafeValid.includes(locClean)) return;
-
-            // === 2. FILTER LOKASI DROPDOWN ===
+            // 2. Filter Lokasi (Dropdown)
+            // Pakai trim() biar Gria Batik spasi hilang
             if(locInput !== 'all') {
-                if(locClean !== locInput.trim().toLowerCase()) return;
+                if(dataLoc.trim().toLowerCase() !== locInput.trim().toLowerCase()) return;
             }
 
-            // === 3. FILTER WAKTU ===
+            // 3. Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
             if(timeInput === 'today') {
                 if(dateZero.getTime() !== todayStart.getTime()) return;
@@ -1527,32 +1522,29 @@ window.loadCafeReport = async function() {
                 if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
 
-            // === 4. FILTER ARTIS ===
-            if(artInput !== 'all') {
-                if(dataArt.trim().toLowerCase() !== artInput.trim().toLowerCase()) return;
-            }
+            // 4. Filter Artis
+            if(artInput !== 'all' && d.performer !== artInput) return;
 
-            // Data Lolos Seleksi (Hanya Cafe)
+            // Masukkan data
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
         // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
-
-        // Simpan Global untuk PDF
+        
+        // Simpan PDF
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
-        // Render
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data transaksi Cafe.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Stadion Disembunyikan).</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
             return;
         }
 
-        let detailHTML = '';
+        let html = '';
         tempList.forEach(d => {
             totalMoney += d.amount;
             totalSongs++;
@@ -1560,26 +1552,25 @@ window.loadCafeReport = async function() {
             if(!perfCount[p]) perfCount[p] = 0;
             perfCount[p] += d.amount;
 
-            detailHTML += `
-            <tr>
-                <td>${d.dateObj.toLocaleDateString()} ${d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</td>
+            html += `<tr>
+                <td>${d.dateObj.toLocaleDateString()}</td>
                 <td>${d.loc}</td>
                 <td>${d.performer}</td>
                 <td>${d.song}</td>
-                <td style="color:#00ff00;">Rp ${d.amount.toLocaleString()}</td>
+                <td style="color:#00ff00">Rp ${d.amount.toLocaleString()}</td>
             </tr>`;
         });
 
-        tbody.innerHTML = detailHTML;
+        tbody.innerHTML = html;
         document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('rep-total-song').innerText = totalSongs;
         
         const sortedPerf = Object.entries(perfCount).sort(([,a], [,b]) => b - a);
         document.getElementById('rep-top-artist').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
 
-    } catch (e) {
-        console.error("Error Report:", e);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Gagal load data.</td></tr>';
+    } catch(e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
     }
 }
 
