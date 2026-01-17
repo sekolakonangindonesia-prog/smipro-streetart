@@ -2153,6 +2153,8 @@ window.onload = function() {
     loadStudentData(); 
     loadCafeData();
 
+    populateVenueFilters(); 
+
     setTimeout(() => {
         const lastTab = localStorage.getItem('adminReturnTab');
         if (lastTab) {
