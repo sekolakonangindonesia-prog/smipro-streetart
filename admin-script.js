@@ -924,29 +924,27 @@ window.approveReq = async function(id) {
     }
 }
 
-// 2. TOLAK / HAPUS (Hapus data permanen)
-window.deleteReq = async function(id) {
-    if(confirm("Yakin ingin menolak dan menghapus request ini?")) {
+// C. ACTION BUTTONS (DITEMPEL KE WINDOW AGAR BISA DIKLIK DI HTML)
+window.approveReq = async function(id) {
+    if(confirm("Pastikan uang sudah masuk mutasi?")) {
         try {
-            await deleteDoc(doc(db, "requests", id));
-            console.log("🗑️ Request dihapus:", id);
-        } catch (e) {
-            alert("Gagal hapus: " + e.message);
+            await updateDoc(doc(db, "requests", id), { status: 'approved' });
+            // Tidak perlu alert, karena onSnapshot akan memindahkannya otomatis ke kolom kanan
+        } catch(e) {
+            alert("Gagal update: " + e.message);
         }
     }
 }
 
-// 3. SELESAI / ARSIP (Pindah status: approved -> finished)
-// Ini tombol untuk memindahkan data dari "Live Stage" ke "Laporan Statistik"
 window.finishReq = async function(id) {
-    try {
-        const docRef = doc(db, "requests", id);
-        await updateDoc(docRef, { 
-            status: "finished" 
-        });
-        console.log("🏁 Request selesai (masuk laporan):", id);
-    } catch (e) {
-        alert("Gagal update status: " + e.message);
+    if(confirm("Lagu selesai dinyanyikan? Arsipkan ke laporan?")) {
+        await updateDoc(doc(db, "requests", id), { status: 'finished' });
+    }
+}
+
+window.deleteReq = async function(id) {
+    if(confirm("Tolak request ini? Data akan dihapus permanen.")) {
+        await deleteDoc(doc(db, "requests", id));
     }
 }
 
