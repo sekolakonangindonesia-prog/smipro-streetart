@@ -1471,9 +1471,10 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-// 2. TAMPILKAN DATA (VERSI ANTI-STADION)
+// 2. TAMPILKAN DATA (VERSI PENCOCOKAN DROPDOWN)
 window.loadCafeReport = async function() {
-    const locInput = document.getElementById('rep-loc').value;
+    const locSelect = document.getElementById('rep-loc'); // Dropdown Lokasi
+    const locInput = locSelect.value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
@@ -1481,6 +1482,19 @@ window.loadCafeReport = async function() {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
     try {
+        // 1. BUAT DAFTAR CAFE VALID DARI ISI DROPDOWN
+        // Kita contek apa saja yang ada di dropdown. 
+        // Kalau Stadion gak ada di dropdown, berarti dia GAK VALID.
+        let validLocations = [];
+        for (let i = 0; i < locSelect.options.length; i++) {
+            const val = locSelect.options[i].value;
+            if (val !== 'all') { // Jangan masukkan 'all'
+                validLocations.push(val.trim().toLowerCase());
+            }
+        }
+        console.log("Daftar Lokasi yang Diizinkan:", validLocations);
+
+        // 2. AMBIL DATA TRANSAKSI
         const reqSnap = await getDocs(collection(db, "requests"));
         let tempList = [];
         let totalMoney = 0;
@@ -1493,29 +1507,32 @@ window.loadCafeReport = async function() {
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // 1. Cek Status
+            // Cek Status
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             const dataLoc = d.location ? d.location : "-";
             const dataArt = d.performer || "Unknown";
             
-            // Bersihkan nama lokasi
+            // Bersihkan nama lokasi data
             const locClean = dataLoc.trim().toLowerCase();
 
-            // === [SATPAM BARU] BLOKIR STADION SECARA MANUAL ===
-            // Apapun ceritanya, kalau lokasi ini Stadion, BUANG!
-            if (locClean === "stadion bayuangga zone" || locClean === "stadion pusat") {
-                return; // JANGAN DIMASUKKAN
+            // === FILTER UTAMA: COCOKKAN DENGAN DROPDOWN ===
+            // Apakah lokasi data ini ada di daftar dropdown kita?
+            const isAllowed = validLocations.includes(locClean);
+            
+            if (!isAllowed) {
+                // KALAU GAK ADA DI DROPDOWN, BUANG!
+                return; 
             }
-            // ==================================================
+            // ==============================================
 
-            // 2. Filter Lokasi Dropdown
+            // Filter Lokasi (Jika user memilih salah satu cafe spesifik)
             if(locInput !== 'all') {
                 if(locClean !== locInput.trim().toLowerCase()) return;
             }
 
-            // 3. Filter Waktu
+            // Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
             if(timeInput === 'today') {
                 if(dateZero.getTime() !== todayStart.getTime()) return;
@@ -1527,11 +1544,12 @@ window.loadCafeReport = async function() {
                 if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
 
-            // 4. Filter Artis
+            // Filter Artis
             if(artInput !== 'all') {
                 if(dataArt.trim().toLowerCase() !== artInput.trim().toLowerCase()) return;
             }
 
+            // Data Lolos
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
@@ -1543,7 +1561,7 @@ window.loadCafeReport = async function() {
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Menampilkan Cafe).</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Cafe Resmi).</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
@@ -1576,7 +1594,7 @@ window.loadCafeReport = async function() {
 
     } catch(e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
     }
 }
 
