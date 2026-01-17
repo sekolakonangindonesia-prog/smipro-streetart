@@ -134,38 +134,54 @@ window.switchMitraTab = function(tabId, btn) {
     if(tabId === 'mitra-stats') loadWarungStatistics();
 }
 
+// MODUL LAPORAN STATISTIK WARUNG (VERSI FILTER VENUE)
 async function loadWarungStatistics() {
-    const filter = document.getElementById('report-filter').value;
+    // 1. Ambil Nilai dari Dropdown Filter
+    const elVenue = document.getElementById('filter-stats-venue');
+    const elTime = document.getElementById('report-filter');
     const tbody = document.getElementById('warung-ranking-body');
-    
-    // Ambil SEMUA data booking yang sudah selesai (finished)
+
+    // Default 'all' jika elemen belum siap
+    const venueFilter = elVenue ? elVenue.value : 'all';
+    const timeFilter = elTime ? elTime.value : 'all';
+
+    // 2. Ambil Data
     const q = query(collection(db, "bookings"), where("status", "==", "finished"));
     const snapshot = await getDocs(q);
 
     let totalVisitor = 0;
     let totalTrx = 0;
     let totalOmzet = 0;
-    let warungStats = {}; // Object untuk menampung data per warung
+    let warungStats = {}; 
 
     const now = new Date();
     
     snapshot.forEach(doc => {
         const d = doc.data();
-        const date = d.finishedAt ? d.finishedAt.toDate() : new Date(); // Fallback date
+        // Konversi Tanggal (Biar aman)
+        const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
         
-        // Filter Waktu
-        let include = false;
-        if(filter === 'all') include = true;
-        else if (filter === 'month') {
-            if(date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) include = true;
+        // Asumsi lokasi. Jika di data booking gak ada nama venue, anggap data lama (Stadion)
+        // Nanti Bapak bisa update sistem booking agar menyimpan nama venue juga.
+        const dVenue = d.venueName || "Stadion Bayuangga Zone";
+
+        // --- FILTER ---
+        let include = true;
+
+        // 1. Filter Venue
+        if (venueFilter !== 'all' && dVenue !== venueFilter) include = false;
+
+        // 2. Filter Waktu
+        if (timeFilter === 'month') {
+            if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) include = false;
         } 
-        else if (filter === 'week') {
+        else if (timeFilter === 'week') {
             const oneWeekAgo = new Date(); 
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            if(date >= oneWeekAgo) include = true;
+            if (date < oneWeekAgo) include = false;
         }
 
-        if(include) {
+        if (include) {
             // Hitung Global
             totalVisitor += parseInt(d.pax || 0);
             totalTrx++;
@@ -190,11 +206,10 @@ async function loadWarungStatistics() {
     // Render Tabel Ranking
     tbody.innerHTML = '';
     
-    // Convert Object to Array & Sort by Omzet (Tertinggi)
     const sortedWarung = Object.values(warungStats).sort((a,b) => b.omzet - a.omzet);
 
     if(sortedWarung.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data transaksi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data kosong sesuai filter.</td></tr>';
         return;
     }
 
