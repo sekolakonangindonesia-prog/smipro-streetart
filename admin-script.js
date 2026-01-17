@@ -1471,32 +1471,33 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-// 2. TAMPILKAN DATA (LOGIKA: APA YANG ADA DI DROPDOWN = VALID)
+// 2. TAMPILKAN DATA (VERSI WHITELIST DATABASE - ANTI JEBOL)
 window.loadCafeReport = async function() {
-    const locSelect = document.getElementById('rep-loc');
-    const locInput = locSelect.value;
+    const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Memfilter data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Sedang memverifikasi data...</td></tr>';
 
     try {
-        // --- LANGKAH 1: BUAT DAFTAR IZIN MASUK DARI DROPDOWN ---
-        // Kita catat semua nama cafe yang ada di dropdown HTML saat ini.
-        let daftarIzinMasuk = [];
-        for (let i = 0; i < locSelect.options.length; i++) {
-            const val = locSelect.options[i].value;
-            // Jangan masukkan 'all', masukkan hanya nama cafenya
-            if (val !== 'all') {
-                daftarIzinMasuk.push(val.trim().toLowerCase());
-            }
-        }
+        // --- LANGKAH 1: AMBIL DAFTAR RESMI CAFE DARI DATABASE ---
+        // Kita tidak mengandalkan dropdown HTML. Kita ambil "KTP" cafe langsung dari server.
+        const cafeSnap = await getDocs(collection(db, "venues_partner"));
+        let daftarCafeSah = [];
         
-        // Debugging di console biar ketahuan siapa yang boleh masuk
-        console.log("Yang boleh masuk:", daftarIzinMasuk);
+        cafeSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.name) {
+                // Simpan nama cafe (huruf kecil semua biar cocok)
+                daftarCafeSah.push(data.name.trim().toLowerCase());
+            }
+        });
 
-        // --- LANGKAH 2: AMBIL DATA ---
+        // Debugging: Lihat daftar cafe yang sah di console
+        console.log("Daftar Cafe Sah:", daftarCafeSah);
+
+        // --- LANGKAH 2: AMBIL TRANSAKSI ---
         const reqSnap = await getDocs(collection(db, "requests"));
         let tempList = [];
         let totalMoney = 0;
@@ -1509,30 +1510,33 @@ window.loadCafeReport = async function() {
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // Cek Status
+            // 1. Cek Status
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
-            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            
-            // Ambil nama lokasi, kalau kosong kasih string kosong
-            const rawLoc = d.location ? d.location.toString() : ""; 
-            const cleanLoc = rawLoc.trim().toLowerCase();
+            // 2. Cek Nama Lokasi Data
+            // Kalau kosong/undefined, kita anggap string kosong ""
+            let dataLoc = d.location ? d.location.toString() : "";
+            let locClean = dataLoc.trim().toLowerCase();
 
-            // --- FILTER UTAMA (SATPAM) ---
-            // Cek apakah lokasi data ini ada di daftar izin masuk?
-            // Stadion dan "-" (strip) pasti tidak ada di daftar ini, jadi otomatis DIBUANG.
-            if (!daftarIzinMasuk.includes(cleanLoc)) {
-                return; // TENDANG KELUAR
+            // === FILTER PENENTU (SATPAM GALAK) ===
+            // Cek: Apakah lokasi data ini terdaftar di Cafe Sah?
+            // - Kalau datanya Stadion -> Gak ada di daftar -> BUANG.
+            // - Kalau datanya Kosong/Strip -> Gak ada di daftar -> BUANG.
+            // - Kalau datanya Gria Batik -> Ada di daftar -> MASUK.
+            if (!daftarCafeSah.includes(locClean)) {
+                return; // TENDANG KELUAR!
             }
-            // -----------------------------
+            // =====================================
 
-            // Filter Lokasi (Pilihan User)
+            // 3. Filter Pilihan User (Dropdown)
             if(locInput !== 'all') {
-                if(cleanLoc !== locInput.trim().toLowerCase()) return;
+                if(locClean !== locInput.trim().toLowerCase()) return;
             }
 
-            // Filter Waktu
+            // 4. Filter Waktu
+            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+            
             if(timeInput === 'today') {
                 if(dateZero.getTime() !== todayStart.getTime()) return;
             } else if(timeInput === 'week') {
@@ -1543,21 +1547,21 @@ window.loadCafeReport = async function() {
                 if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
 
-            // Filter Artis
+            // 5. Filter Artis
             if(artInput !== 'all') {
                 const artistDB = (d.performer || "").toLowerCase().trim();
                 const artistFilter = artInput.toLowerCase().trim();
                 if(artistDB !== artistFilter) return;
             }
 
-            // Data Lolos
-            tempList.push({ ...d, dateObj: dateObj, loc: rawLoc || "-", amount: parseInt(d.amount)||0 });
+            // Lolos Semua Seleksi
+            tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
         // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
         
-        // Simpan PDF
+        // Simpan PDF Global
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
