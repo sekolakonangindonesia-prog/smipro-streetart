@@ -1472,15 +1472,29 @@ window.prepareReportFilters = async function() {
 }
 
 // 2. TAMPILKAN DATA (VERSI ANTI-STADION)
+// 2. TAMPILKAN DATA (MODE DETEKTIF)
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Sedang memeriksa data...</td></tr>';
 
     try {
+        // 1. Ambil Dulu Daftar Cafe Resmi (Whitelist)
+        // Kita ambil langsung fresh dari DB biar akurat
+        const cafeSnap = await getDocs(collection(db, "venues_partner"));
+        let daftarCafeResmi = [];
+        cafeSnap.forEach(doc => {
+            if(doc.data().name) {
+                daftarCafeResmi.push(doc.data().name.trim().toLowerCase());
+            }
+        });
+        
+        console.log("📋 DAFTAR CAFE RESMI (WHITELIST):", daftarCafeResmi);
+
+        // 2. Ambil Data Transaksi
         const reqSnap = await getDocs(collection(db, "requests"));
         let tempList = [];
         let totalMoney = 0;
@@ -1493,24 +1507,32 @@ window.loadCafeReport = async function() {
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // 1. Cek Status
+            // Cek Status
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             const dataLoc = d.location ? d.location : "-";
-            
-            // === FILTER KASAR: BLOKIR STADION ===
-            // Apapun ceritanya, kalau lokasi mengandung kata "Stadion", BUANG!
-            if (dataLoc.toLowerCase().includes("stadion")) return;
-            // ====================================
+            const locClean = dataLoc.trim().toLowerCase();
 
-            // 2. Filter Lokasi (Dropdown)
-            // Pakai trim() biar Gria Batik spasi hilang
-            if(locInput !== 'all') {
-                if(dataLoc.trim().toLowerCase() !== locInput.trim().toLowerCase()) return;
+            // === PEMERIKSAAN KETAT (DETEKTIF) ===
+            
+            // Cek apakah lokasi transaksi ini ada di daftar Whitelist?
+            const isCafe = daftarCafeResmi.includes(locClean);
+            
+            if (!isCafe) {
+                // Jika bukan cafe resmi, kita cek lognya (kenapa dibuang?)
+                // console.log(`⛔ Ditolak (Bukan Cafe): ${dataLoc}`);
+                return; // TENDANG KELUAR!
             }
 
-            // 3. Filter Waktu
+            // === END PEMERIKSAAN ===
+
+            // Filter Lokasi Dropdown
+            if(locInput !== 'all') {
+                if(locClean !== locInput.trim().toLowerCase()) return;
+            }
+
+            // Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
             if(timeInput === 'today') {
                 if(dateZero.getTime() !== todayStart.getTime()) return;
@@ -1522,10 +1544,9 @@ window.loadCafeReport = async function() {
                 if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
 
-            // 4. Filter Artis
+            // Filter Artis
             if(artInput !== 'all' && d.performer !== artInput) return;
 
-            // Masukkan data
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
@@ -1537,7 +1558,7 @@ window.loadCafeReport = async function() {
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Stadion Disembunyikan).</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Menampilkan Cafe Resmi).</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
