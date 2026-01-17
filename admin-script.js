@@ -19,7 +19,10 @@ window.showView = function(viewId, btn) {
     if(viewId === 'students') loadStudentData();
     if(viewId === 'mitra') loadMitraData();
     if(viewId === 'performer') loadPerformerData();
-    if(viewId === 'mentor') loadMentorData();
+    if(viewId === 'mentor') loadMentorData();   
+    if(viewId === 'venue') {    
+    if(window.loadVenueManagement) window.loadVenueManagement();
+    }
     if(viewId === 'cafe') { 
         loadCafeData();
         const tabBtn = document.querySelector('.sub-tab-btn');
