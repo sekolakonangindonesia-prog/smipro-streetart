@@ -907,6 +907,50 @@ function listenCommandCenter() {
 }
 
 /* =========================================
+   AKSI TOMBOL LIVE MONITOR (TERIMA / TOLAK / SELESAI)
+   ========================================= */
+
+// 1. TERIMA DANA (Pindah status: pending -> approved)
+window.approveReq = async function(id) {
+    try {
+        const docRef = doc(db, "requests", id);
+        await updateDoc(docRef, { 
+            status: "approved" 
+        });
+        // Tidak perlu alert, karena layar akan update otomatis (realtime)
+        console.log("✅ Request diterima:", id);
+    } catch (e) {
+        alert("Gagal terima data: " + e.message);
+    }
+}
+
+// 2. TOLAK / HAPUS (Hapus data permanen)
+window.deleteReq = async function(id) {
+    if(confirm("Yakin ingin menolak dan menghapus request ini?")) {
+        try {
+            await deleteDoc(doc(db, "requests", id));
+            console.log("🗑️ Request dihapus:", id);
+        } catch (e) {
+            alert("Gagal hapus: " + e.message);
+        }
+    }
+}
+
+// 3. SELESAI / ARSIP (Pindah status: approved -> finished)
+// Ini tombol untuk memindahkan data dari "Live Stage" ke "Laporan Statistik"
+window.finishReq = async function(id) {
+    try {
+        const docRef = doc(db, "requests", id);
+        await updateDoc(docRef, { 
+            status: "finished" 
+        });
+        console.log("🏁 Request selesai (masuk laporan):", id);
+    } catch (e) {
+        alert("Gagal update status: " + e.message);
+    }
+}
+
+/* =========================================
    B. STATISTIK & LAPORAN (VERSI FIX FINAL - MANUAL & LENGKAP)
    ========================================= */
 
