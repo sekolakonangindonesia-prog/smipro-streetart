@@ -1296,103 +1296,106 @@ window.renderFinanceData = function() {
 /* =========================================
    C. GENERATE PDF (VERSI AMAN - SUBTITLES & TOTAL)
    ========================================= */
-window.generateSawerPDF = function() {
-    // 1. Cek apakah Library PDF Tabel sudah ada?
+// --- FUNGSI GENERATE PDF RAPORT (VERSI PINTAR - AMBIL DATA DATABASE) ---
+window.generateStudentPDF = async function(studentData, averageScore) {
+    // 1. Cek Library
     if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang di HTML!"); return; }
     
-    // 2. Ambil data dari "Kantong Global" (Nanti kita siapkan kantongnya)
-    const data = window.laporanSiapCetak || [];
-    const info = window.infoLaporan || { lokasi: 'Data', periode: '-' };
+    // Tampilkan loading cursor
+    document.body.style.cursor = 'wait';
 
-    if (data.length === 0) {
-        alert("Tidak ada data untuk dicetak/download.");
-        return;
-    }
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-    // 3. Siapkan PDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+        // 2. HEADER PDF
+        doc.setFillColor(20, 20, 20); // Hitam
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(255, 215, 0); // Emas
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("SMIPRO MUSIC ACADEMY", 105, 20, null, null, "center");
+        
+        doc.setTextColor(255, 255, 255); // Putih
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("Laporan Hasil Evaluasi & Performansi Siswa", 105, 28, null, null, "center");
 
-    // -- Header --
-    doc.setFontSize(16);
-    doc.text("LAPORAN TRANSAKSI APRESIASI & REQUEST", 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Lokasi Filter: ${info.lokasi}`, 14, 30);
-    doc.text(`Periode Waktu: ${info.periode}`, 14, 35);
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 40);
+        // 3. FOTO & IDENTITAS
+        // Coba masukkan foto, kalau gagal lanjut saja
+        if(studentData.img && studentData.img.length > 50) {
+            try { doc.addImage(studentData.img, 'JPEG', 15, 50, 40, 40); } catch(e) {}
+        }
+        
+        doc.setTextColor(0, 0, 0); // Hitam
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text(`NAMA: ${studentData.name.toUpperCase()}`, 65, 60);
+        
+        doc.setFontSize(12); doc.setFont("helvetica", "normal");
+        doc.text(`Genre: ${studentData.genre}`, 65, 70);
+        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 65, 80);
 
-    // -- Persiapan Tabel --
-    // Kita harus mengelompokkan data berdasarkan LOKASI (Venue)
-    // Supaya bisa bikin Subtotal per Venue.
-    
-    // a. Urutkan data berdasarkan Nama Lokasi dulu
-    data.sort((a, b) => a.loc.localeCompare(b.loc));
+        // 4. SIAPKAN DATA NILAI (AMBIL DARI DB MENTOR)
+        const mentorSnap = await getDocs(collection(db, "mentors"));
+        let tableBody = [];
+        const scores = studentData.scores || {};
 
-    // b. Susun Body Tabel
-    let tableBody = [];
-    let currentVenue = "";
-    let subTotal = 0;
-    let grandTotal = 0;
-
-    data.forEach((item, index) => {
-        // Jika Venue berubah, cetak Subtotal venue sebelumnya (kalau bukan baris pertama)
-        if (currentVenue !== item.loc) {
-            if (currentVenue !== "") {
-                // Baris Subtotal
+        mentorSnap.forEach(docSnap => {
+            const m = docSnap.data();
+            const nilai = scores[docSnap.id]; // Ambil nilai berdasarkan ID Mentor
+            
+            let statusText = "-";
+            if(nilai) {
+                statusText = parseInt(nilai) >= 75 ? `${nilai} (Kompeten)` : `${nilai} (Remidi)`;
+                
+                // Masukkan ke baris tabel PDF
                 tableBody.push([
-                    { content: `SUBTOTAL ${currentVenue.toUpperCase()}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240] } },
-                    { content: `Rp ${subTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+                    m.name,
+                    m.specialty || "Umum",
+                    statusText
                 ]);
             }
-            // Reset untuk venue baru
-            currentVenue = item.loc;
-            subTotal = 0;
-            
-            // Baris Judul Venue Baru
-            tableBody.push([
-                { content: `VENUE: ${currentVenue}`, colSpan: 3, styles: { fontStyle: 'bold', fillColor: [229, 9, 20], textColor: 255 } }
-            ]);
-        }
+        });
 
-        // Tambahkan Baris Data
-        let timeStr = item.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) + ' ' + item.dateObj.toLocaleDateString('id-ID');
-        tableBody.push([
-            timeStr,
-            `${item.song} (${item.performer})`,
-            `Rp ${item.amount.toLocaleString('id-ID')}`
-        ]);
+        // 5. BUAT TABEL
+        doc.autoTable({
+            startY: 100,
+            head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
+            styles: { fontSize: 11, cellPadding: 4 }
+        });
 
-        // Hitung Total
-        subTotal += item.amount;
-        grandTotal += item.amount;
+        // 6. NILAI AKHIR (FOOTER)
+        let finalY = doc.lastAutoTable.finalY + 20;
 
-        // Jika ini data TERAKHIR, cetak subtotal terakhir
-        if (index === data.length - 1) {
-             tableBody.push([
-                { content: `SUBTOTAL ${currentVenue.toUpperCase()}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240] } },
-                { content: `Rp ${subTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
-            ]);
-        }
-    });
+        doc.setLineWidth(1); doc.setDrawColor(0);
+        doc.rect(120, finalY, 70, 30);
+        
+        doc.setFontSize(12); doc.setTextColor(0,0,0);
+        doc.text("NILAI RATA-RATA:", 155, finalY + 10, null, null, "center");
+        
+        doc.setFontSize(18); doc.setFont("helvetica", "bold"); doc.setTextColor(229, 9, 20);
+        doc.text(String(averageScore.toFixed(1)), 155, finalY + 22, null, null, "center");
 
-    // Baris GRAND TOTAL
-    tableBody.push([
-        { content: `GRAND TOTAL OMZET`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [0, 0, 0], textColor: [0, 255, 0], fontSize: 12 } },
-        { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 0, 0], textColor: [0, 255, 0], fontSize: 12 } }
-    ]);
+        doc.setTextColor(0,0,0); doc.setFontSize(12);
+        doc.text("STATUS AKHIR:", 15, finalY + 10);
+        
+        let statusLulus = averageScore >= 75 ? "LULUS / SIAP PERFORM" : "BELUM LULUS";
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text(statusLulus, 15, finalY + 20);
 
-    // 4. Generate Tabel Otomatis
-    doc.autoTable({
-        startY: 45,
-        head: [['Waktu', 'Lagu & Artis', 'Nominal']],
-        body: tableBody,
-        theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [50, 50, 50], textColor: 255 }
-    });
+        // 7. DOWNLOAD
+        doc.save(`Raport_${studentData.name.replace(/\s+/g, '_')}.pdf`);
 
-    // 5. Simpan File
-    doc.save(`Laporan_Saweran_${new Date().getTime()}.pdf`);
+    } catch(e) {
+        console.error("PDF Error:", e);
+        alert("Gagal membuat PDF: " + e.message);
+    } finally {
+        document.body.style.cursor = 'default';
+    }
 }
 
 
