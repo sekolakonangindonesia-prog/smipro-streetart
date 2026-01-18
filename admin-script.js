@@ -2179,6 +2179,7 @@ window.deleteGalleryVideo = async function(id) {
 /* =========================================
    MODUL TAMBAHAN: DATA VENUE LOKASI (GABUNGAN)
    ========================================= */
+let currentVenueBase64 = null;
    
 // 1. PREVIEW GAMBAR
 window.previewVenueImg = function(input) {
