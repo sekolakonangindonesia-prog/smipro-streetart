@@ -604,16 +604,29 @@ async function loadStudentData() {
             const id = docSnap.id;
             const scores = data.scores || {};
             const jumlahDinilai = Object.keys(scores).length;
+
+            // Cek Status Kelengkapan Nilai
+            const isComplete = (totalMentors > 0 && jumlahDinilai >= totalMentors);
             
             let statusHTML = '';
             if (jumlahDinilai === 0) {
                 statusHTML = `<span style="color:#888;">Belum ada nilai</span>`;
-            } else if (jumlahDinilai < totalMentors) {
-                statusHTML = `<span style="color:orange;">Proses: ${jumlahDinilai} / ${totalMentors} Mentor</span>`;
-            } else {
+            } else if (isComplete) {
                 statusHTML = `<span style="color:#00ff00; font-weight:bold;">Selesai (${jumlahDinilai}/${totalMentors})</span>`;
+            } else {            
+                statusHTML = `<span style="color:orange;">Proses: ${jumlahDinilai} / ${totalMentors} Mentor</span>`;
             }
 
+            // --- LOGIKA TOMBOL PRINT (BARU) ---
+            // Tombol ini hanya muncul jika isComplete = TRUE
+            let btnPrint = '';
+            if(isComplete) {
+                btnPrint = `
+                <button class="btn-action btn-view" style="background:#28a745;" onclick="printRaportDirect('${id}')" title="Download PDF Sekarang">
+                    <i class="fa-solid fa-print"></i>
+                </button>`;
+            }
+            
             const actionBtns = `
                 <div style="display:flex; gap:5px;">
                     <button class="btn-action btn-view" onclick="openRaport('${id}')" title="Lihat Raport Detail"><i class="fa-solid fa-list-check"></i></button>
@@ -664,6 +677,41 @@ window.openRaport = async function(studentId) {
             tbody.innerHTML += `<tr><td>${mData.name}</td><td><small style="color:#aaa;">${mData.specialist}</small></td><td>${statusNilai}</td></tr>`;
         });
     } catch (e) { console.error(e); }
+}
+
+// FUNGSI CETAK LANGSUNG DARI TABEL
+window.printRaportDirect = async function(id) {
+    // Tampilkan loading cursor
+    document.body.style.cursor = 'wait';
+
+    try {
+        // 1. Ambil Data Siswa
+        const studentSnap = await getDoc(doc(db, "students", id));
+        const sData = studentSnap.data();
+        const sScores = sData.scores || {};
+
+        // 2. Hitung Rata-rata Nilai
+        let totalScore = 0;
+        let count = 0;
+        
+        // Kita loop nilai yang ada di siswa saja (karena sudah pasti lengkap/lulus filter)
+        for (let key in sScores) {
+            totalScore += parseInt(sScores[key]);
+            count++;
+        }
+
+        const avg = count > 0 ? (totalScore / count) : 0;
+
+        // 3. Panggil Fungsi PDF yang sudah ada
+        // (Fungsi generateStudentPDF kan sudah Bapak punya di kode sebelumnya)
+        generateStudentPDF(sData, avg);
+
+    } catch (e) {
+        console.error(e);
+        alert("Gagal memproses data PDF.");
+    } finally {
+        document.body.style.cursor = 'default';
+    }
 }
 
 
