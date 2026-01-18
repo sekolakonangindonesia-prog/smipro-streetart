@@ -2186,8 +2186,13 @@ window.previewVenueImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            currentVenueBase64 = e.target.result;
-            document.getElementById('venue-preview').src = currentVenueBase64;
+            // Pastikan variable global currentVenueBase64 sudah dideklarasikan di paling atas file
+            // Jika belum, uncomment baris bawah ini:
+            // window.currentVenueBase64 = e.target.result; 
+            
+            // Atau gunakan property window langsung jika variabel let tidak terjangkau
+            window.currentVenueBase64 = e.target.result;
+            document.getElementById('venue-preview').src = window.currentVenueBase64;
         }
         reader.readAsDataURL(input.files[0]);
     }
@@ -2199,13 +2204,12 @@ window.saveVenue = async function() {
     const name = document.getElementById('venue-name').value;
     const order = parseInt(document.getElementById('venue-order').value) || 99;
     const desc = document.getElementById('venue-desc').value;
-    const img = currentVenueBase64;
+    const img = window.currentVenueBase64; // Ambil dari window
 
     if(!name) return alert("Nama Venue Wajib Diisi!");
 
     const dataPayload = { name, order, desc };
 
-    // Update Gambar jika ada upload baru
     if(img) {
         dataPayload.img = img; 
         dataPayload.icon = "fa-map-marker-alt";
@@ -2231,7 +2235,7 @@ window.saveVenue = async function() {
 
 // 3. LOAD DATA (REALTIME TABEL)
 window.loadVenueManagement = function() {
-    console.log("Memuat Data Venue...");
+    // console.log("Memuat Data Venue..."); 
     const tbody = document.getElementById('venue-table-body');
     if(!tbody) return;
 
@@ -2255,7 +2259,6 @@ window.loadVenueManagement = function() {
                 imgDisplay = `<img src="${d.img}" style="width:40px; height:40px; border-radius:5px; object-fit:cover;">`;
             }
 
-            // PERHATIKAN: Tombol toggle dan delete memakai fungsi window.
             tbody.innerHTML += `
             <tr>
                 <td style="text-align:center;">${imgDisplay}</td>
@@ -2293,7 +2296,7 @@ window.editVenue = function(id, name, order, desc, img) {
     if(img && img.length > 100) document.getElementById('venue-preview').src = img;
     else document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
     
-    currentVenueBase64 = null; 
+    window.currentVenueBase64 = null; 
     
     document.getElementById('btn-save-venue').innerText = "Simpan Perubahan";
     document.getElementById('btn-save-venue').style.background = "#FFD700";
@@ -2307,7 +2310,7 @@ window.resetVenueForm = function() {
     document.getElementById('venue-order').value = "";
     document.getElementById('venue-desc').value = "";
     document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
-    currentVenueBase64 = null;
+    window.currentVenueBase64 = null;
 
     document.getElementById('btn-save-venue').innerText = "+ Simpan Venue";
     document.getElementById('btn-save-venue').style.background = "";
