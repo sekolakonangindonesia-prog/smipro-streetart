@@ -208,6 +208,92 @@
                     </div>
                 </div>
             </div>      
+
+            <!-- ============================================ -->
+<!-- MODAL APPROVAL MITRA (WARUNG) -->
+<!-- ============================================ -->
+<div id="modal-approve-mitra" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:4000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e1e1e; width:100%; max-width:450px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
+        <button onclick="document.getElementById('modal-approve-mitra').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        
+        <!-- LOGO & JUDUL -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:70px; margin-bottom:10px;">
+            <h3 style="margin:0; color:white;">Verifikasi Mitra Baru</h3>
+        </div>
+
+        <!-- ISI DATA -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:0.9rem; color:#ccc; margin-bottom:20px;">
+            <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Nama Warung</label>
+                <b style="color:white;" id="app-mitra-name">-</b>
+            </div>
+            <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Pemilik</label>
+                <b style="color:white;" id="app-mitra-owner">-</b>
+            </div>
+            <div style="grid-column: span 2; background:#333; padding:10px; border-radius:5px; border-left:3px solid #E50914;">
+                <label style="display:block; color:#aaa; font-size:0.75rem;">LOKASI ZONA / VENUE</label>
+                <b style="color:#FFF; font-size:1.1rem;" id="app-mitra-venue">-</b>
+            </div>
+            <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Jumlah Meja</label>
+                <b style="color:white;" id="app-mitra-table">-</b>
+            </div>
+             <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Kontak / WA</label>
+                <b style="color:white;" id="app-mitra-phone">-</b>
+            </div>
+        </div>
+
+        <!-- TOMBOL AKSI -->
+        <div style="display:flex; gap:10px;">
+            <button id="btn-reject-mitra" class="btn-action btn-delete" style="flex:1; padding:12px;">
+                <i class="fa-solid fa-trash"></i> TOLAK
+            </button>
+            <button id="btn-accept-mitra" class="btn-action btn-view" style="flex:1; padding:12px; background:var(--green); color:black;">
+                <i class="fa-solid fa-check"></i> SETUJUI
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL APPROVAL SISWA (LULUS) -->
+<!-- ============================================ -->
+<div id="modal-approve-siswa" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:4000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e1e1e; width:100%; max-width:500px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
+        <button onclick="document.getElementById('modal-approve-siswa').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        
+        <!-- LOGO & JUDUL -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:70px; margin-bottom:10px;">
+            <h3 style="margin:0; color:#2ecc71;">Verifikasi Kelulusan</h3>
+        </div>
+
+        <!-- INFO SISWA -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <img id="app-siswa-img" src="" style="width:80px; height:80px; border-radius:50%; border:2px solid #2ecc71; object-fit:cover; margin-bottom:10px;">
+            <h2 id="app-siswa-name" style="margin:0; color:white;">-</h2>
+            <small id="app-siswa-genre" style="color:#aaa;">-</small>
+        </div>
+
+        <!-- TABEL NILAI -->
+        <h4 style="margin:0 0 10px 0; color:#FFD700; border-bottom:1px dashed #444; padding-bottom:5px;">Rincian Nilai Mentor</h4>
+        <div style="max-height:150px; overflow-y:auto; margin-bottom:20px;">
+            <table class="admin-table" style="font-size:0.85rem;">
+                <tbody id="app-siswa-scores">
+                    <!-- Diisi JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TOMBOL AKSI -->
+        <button id="btn-accept-siswa" class="btn-action btn-edit" style="width:100%; padding:12px; font-size:1rem; font-weight:bold;">
+            <i class="fa-solid fa-graduation-cap"></i> TERBITKAN AKUN PERFORMER
+        </button>
+    </div>
+</div>
             
         <!-- JUDUL SECTION -->
     <div class="section-header" style="margin-top: 40px; border-bottom: 1px solid #333; padding-bottom: 10px;">
