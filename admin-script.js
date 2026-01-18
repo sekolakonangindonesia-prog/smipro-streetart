@@ -83,6 +83,40 @@ window.adminLogout = function() {
 /* =========================================
    1. MANAJEMEN MITRA
    ========================================= */
+// ISI DROPDOWN FILTER VENUE (UNTUK KEDUA TAB)
+async function populateVenueFilters() {
+    // KITA ISI DUA DROPDOWN SEKALIGUS
+    const ids = ['filter-warung-venue', 'filter-stats-venue'];
+    
+    const q = query(collection(db, "venues"), orderBy("name", "asc"));
+    const snap = await getDocs(q);
+    
+    // Opsi Default
+    let opts = '<option value="all">Semua Venue</option>';
+    
+    // Tambahkan Stadion Manual (Jaga-jaga)
+    opts += '<option value="Stadion Bayuangga Zone">Stadion Bayuangga Zone</option>';
+
+    snap.forEach(doc => {
+        const v = doc.data();
+        // Cek agar tidak dobel jika Stadion sdh ada di database
+        if(v.name && v.name !== "Stadion Bayuangga Zone") {
+            opts += `<option value="${v.name}">${v.name}</option>`;
+        }
+    });
+
+    // MASUKKAN KE HTML
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.innerHTML = opts;
+            // Jika ini filter statistik, tambahkan event listener agar grafik berubah saat diganti
+            if(id === 'filter-stats-venue') {
+                el.onchange = function() { loadWarungStatistics(); };
+            }
+        }
+    });
+}
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
     if(!tbody) return;
@@ -1786,7 +1820,6 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-// 2. TAMPILKAN DATA (VERSI ANTI-STADION AGRESIF)
 // 2. TAMPILKAN DATA (LOGIKA KEUANGAN: KOSONG = STADION -> BUANG STADION)
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
