@@ -271,11 +271,16 @@
                     <h3 style="margin:0; color:#E50914;">Analisa Performa UMKM</h3>
                     
                     <div style="display:flex; gap:10px;">
+                         <select id="filter-stats-venue" onchange="loadWarungStatistics()" class="cms-input" style="width:auto; padding:5px; margin:0;">
+                            <option value="all">Semua Venue</option>
+                            </select>
+                        
                         <select id="report-filter" class="cms-input" style="width:auto; padding:5px; margin:0;">
                             <option value="all">Semua Waktu</option>
                             <option value="month">Bulan Ini</option>
                             <option value="week">Minggu Ini</option>
                         </select>
+                        
                         <button class="btn-action btn-view" onclick="generateReportPDF()"><i class="fa-solid fa-print"></i> Cetak Laporan PDF</button>
                     </div>
                 </div>
