@@ -1296,9 +1296,9 @@ window.renderFinanceData = function() {
 /* =========================================
    C. GENERATE PDF (VERSI AMAN - SUBTITLES & TOTAL)
    ========================================= */
-// --- FUNGSI GENERATE PDF RAPORT (DENGAN LOGO) ---
+// --- FUNGSI GENERATE PDF RAPORT (FIX LOGO) ---
 window.generateStudentPDF = async function(studentData, averageScore) {
-    if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang di HTML!"); return; }
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang!"); return; }
     
     document.body.style.cursor = 'wait';
 
@@ -1306,38 +1306,38 @@ window.generateStudentPDF = async function(studentData, averageScore) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // --- FUNGSI KECIL UNTUK AMBIL GAMBAR DARI URL ---
-        const loadImage = (url) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "Anonymous"; // Izin ambil gambar luar
-                img.src = url;
-                img.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL("image/png"));
-                };
-                img.onerror = () => resolve(null); // Kalau gagal, tetap lanjut tanpa logo
-            });
+        // --- FUNGSI BARU: LEBIH KUAT MENEMBUS CORS ---
+        // Menggunakan fetch blob lebih stabil daripada new Image()
+        const getBase64FromUrl = async (url) => {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => resolve(reader.result);
+                });
+            } catch (error) {
+                console.error("Gagal load logo:", error);
+                return null;
+            }
         };
 
-        // 1. LOAD LOGO DULU (Tunggu sampai selesai)
+        // 1. LOAD LOGO DENGAN CARA BARU
         const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
-        const logoBase64 = await loadImage(logoUrl);
+        const logoBase64 = await getBase64FromUrl(logoUrl);
 
         // 2. HEADER PDF (HITAM)
         doc.setFillColor(20, 20, 20); 
-        doc.rect(0, 0, 210, 45, 'F'); // Tinggi header sedikit dibesarkan
+        doc.rect(0, 0, 210, 45, 'F'); 
         
-        // TEMPEL LOGO DI KIRI ATAS
+        // TEMPEL LOGO (Jika berhasil didownload)
         if (logoBase64) {
-            doc.addImage(logoBase64, 'PNG', 15, 5, 35, 35); // Posisi: x:15, y:5, Ukuran: 35x35
+            // Format 'PNG' wajib sesuai dengan format asli gambar
+            doc.addImage(logoBase64, 'PNG', 15, 5, 35, 35); 
         }
 
-        // JUDUL DI TENGAH (Digeser dikit biar imbang sama logo)
+        // JUDUL
         doc.setTextColor(255, 215, 0); // Emas
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
@@ -1351,11 +1351,13 @@ window.generateStudentPDF = async function(studentData, averageScore) {
         // 3. FOTO & IDENTITAS SISWA
         let y = 70;
         
-        // Foto Siswa
+        // Foto Siswa (Ini Base64 dari upload, jadi aman)
         if(studentData.img && studentData.img.length > 50) {
             try { 
-                doc.addImage(studentData.img, 'JPEG', 20, 60, 40, 40); 
-            } catch(e) { }
+                // Deteksi format gambar siswa (JPEG/PNG)
+                const imgFormat = studentData.img.includes('image/png') ? 'PNG' : 'JPEG';
+                doc.addImage(studentData.img, imgFormat, 20, 60, 40, 40); 
+            } catch(e) { console.error("Foto siswa skip:", e); }
         }
         
         doc.setTextColor(0, 0, 0);
@@ -1393,8 +1395,6 @@ window.generateStudentPDF = async function(studentData, averageScore) {
 
         // 6. NILAI AKHIR (FOOTER)
         let finalY = doc.lastAutoTable.finalY + 20;
-
-        // Cek jika halaman habis
         if (finalY > 250) { doc.addPage(); finalY = 20; }
 
         doc.setLineWidth(1); doc.setDrawColor(0);
