@@ -609,33 +609,48 @@ async function loadStudentData() {
             const isComplete = (totalMentors > 0 && jumlahDinilai >= totalMentors);
             
             let statusHTML = '';
+            // Variabel Tombol Print (Default Kosong)
+            let btnPrint = '';
+
             if (jumlahDinilai === 0) {
                 statusHTML = `<span style="color:#888;">Belum ada nilai</span>`;
             } else if (isComplete) {
                 statusHTML = `<span style="color:#00ff00; font-weight:bold;">Selesai (${jumlahDinilai}/${totalMentors})</span>`;
-            } else {            
+                
+                // MUNCULKAN TOMBOL PRINT (HIJAU)
+                btnPrint = `
+                <button class="btn-action btn-view" style="background:#28a745;" onclick="printRaportDirect('${id}')" title="Cetak Raport">
+                    <i class="fa-solid fa-print"></i>
+                </button>`;
+            
+            } else {
                 statusHTML = `<span style="color:orange;">Proses: ${jumlahDinilai} / ${totalMentors} Mentor</span>`;
             }
 
-            // --- LOGIKA TOMBOL PRINT (BARU) ---
-            // Tombol ini hanya muncul jika isComplete = TRUE
-            let btnPrint = '';
-            if(isComplete) {
-                btnPrint = `
-                <button class="btn-action btn-view" style="background:#28a745;" onclick="printRaportDirect('${id}')" title="Download PDF Sekarang">
-                    <i class="fa-solid fa-print"></i>
-                </button>`;
-            }
-            
+            // GABUNGKAN TOMBOL AKSI
             const actionBtns = `
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-action btn-view" onclick="openRaport('${id}')" title="Lihat Raport Detail"><i class="fa-solid fa-list-check"></i></button>
-                    <button class="btn-action btn-delete" onclick="deleteStudent('${id}', '${data.name}')" title="Hapus Siswa"><i class="fa-solid fa-trash"></i></button>
+                <div style="display:flex; gap:5px; justify-content:center;">
+                    <button class="btn-action btn-view" onclick="openRaport('${id}')" title="Lihat Detail">
+                        <i class="fa-solid fa-list-check"></i>
+                    </button>
+                    
+                    ${btnPrint}  <!-- PRINTER MUNCUL DISINI -->
+
+                    <button class="btn-action btn-delete" onclick="deleteStudent('${id}', '${data.name}')" title="Hapus Siswa">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>`;
 
             const imgHTML = `<img src="${data.img}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #555;">`;
             
-            tbody.innerHTML += `<tr><td>${imgHTML}</td><td><b>${data.name}</b></td><td>${data.genre}</td><td>${statusHTML}</td><td>${actionBtns}</td></tr>`;
+            tbody.innerHTML += `
+            <tr>
+                <td style="text-align:center;">${imgHTML}</td>
+                <td><b>${data.name}</b></td>
+                <td>${data.genre}</td>
+                <td>${statusHTML}</td>
+                <td>${actionBtns}</td>
+            </tr>`;
         });
     });
 }
