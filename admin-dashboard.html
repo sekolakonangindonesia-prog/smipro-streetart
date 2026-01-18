@@ -241,8 +241,13 @@
             <!-- TAB 1: TABEL DAFTAR WARUNG -->
             <div id="mitra-list" class="mitra-content">
                 <div style="text-align:right; margin-bottom:10px;">
+                    
+                    <select id="filter-warung-venue" onchange="loadMitraData()" class="cms-input" style="width:auto; margin:0; padding:8px;">
+                        <option value="all">Semua Venue</option>
+                    </select>
                     <button class="btn-action btn-view" onclick="alert('Fitur Tambah Mitra Manual')">+ Tambah</button>
                 </div>
+                
                 <table class="admin-table">
                     <thead>
                         <tr>
