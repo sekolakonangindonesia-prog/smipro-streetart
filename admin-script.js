@@ -1296,80 +1296,106 @@ window.renderFinanceData = function() {
 /* =========================================
    C. GENERATE PDF (VERSI AMAN - SUBTITLES & TOTAL)
    ========================================= */
-// --- FUNGSI GENERATE PDF RAPORT (VERSI PINTAR - AMBIL DATA DATABASE) ---
+// --- FUNGSI GENERATE PDF RAPORT (DENGAN LOGO) ---
 window.generateStudentPDF = async function(studentData, averageScore) {
-    // 1. Cek Library
     if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang di HTML!"); return; }
     
-    // Tampilkan loading cursor
     document.body.style.cursor = 'wait';
 
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // 2. HEADER PDF
-        doc.setFillColor(20, 20, 20); // Hitam
-        doc.rect(0, 0, 210, 40, 'F');
+        // --- FUNGSI KECIL UNTUK AMBIL GAMBAR DARI URL ---
+        const loadImage = (url) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; // Izin ambil gambar luar
+                img.src = url;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL("image/png"));
+                };
+                img.onerror = () => resolve(null); // Kalau gagal, tetap lanjut tanpa logo
+            });
+        };
+
+        // 1. LOAD LOGO DULU (Tunggu sampai selesai)
+        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+        const logoBase64 = await loadImage(logoUrl);
+
+        // 2. HEADER PDF (HITAM)
+        doc.setFillColor(20, 20, 20); 
+        doc.rect(0, 0, 210, 45, 'F'); // Tinggi header sedikit dibesarkan
         
+        // TEMPEL LOGO DI KIRI ATAS
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 15, 5, 35, 35); // Posisi: x:15, y:5, Ukuran: 35x35
+        }
+
+        // JUDUL DI TENGAH (Digeser dikit biar imbang sama logo)
         doc.setTextColor(255, 215, 0); // Emas
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
-        doc.text("SMIPRO MUSIC ACADEMY", 105, 20, null, null, "center");
+        doc.text("SMIPRO MUSIC ACADEMY", 115, 23, null, null, "center");
         
         doc.setTextColor(255, 255, 255); // Putih
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
-        doc.text("Laporan Hasil Evaluasi & Performansi Siswa", 105, 28, null, null, "center");
+        doc.text("Laporan Hasil Evaluasi & Performansi Siswa", 115, 31, null, null, "center");
 
-        // 3. FOTO & IDENTITAS
-        // Coba masukkan foto, kalau gagal lanjut saja
+        // 3. FOTO & IDENTITAS SISWA
+        let y = 70;
+        
+        // Foto Siswa
         if(studentData.img && studentData.img.length > 50) {
-            try { doc.addImage(studentData.img, 'JPEG', 15, 50, 40, 40); } catch(e) {}
+            try { 
+                doc.addImage(studentData.img, 'JPEG', 20, 60, 40, 40); 
+            } catch(e) { }
         }
         
-        doc.setTextColor(0, 0, 0); // Hitam
+        doc.setTextColor(0, 0, 0);
         doc.setFontSize(14); doc.setFont("helvetica", "bold");
-        doc.text(`NAMA: ${studentData.name.toUpperCase()}`, 65, 60);
+        doc.text(`NAMA: ${studentData.name.toUpperCase()}`, 70, 70);
         
         doc.setFontSize(12); doc.setFont("helvetica", "normal");
-        doc.text(`Genre: ${studentData.genre}`, 65, 70);
-        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 65, 80);
+        doc.text(`Genre: ${studentData.genre}`, 70, 80);
+        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 70, 90);
 
-        // 4. SIAPKAN DATA NILAI (AMBIL DARI DB MENTOR)
+        // 4. SIAPKAN DATA NILAI
         const mentorSnap = await getDocs(collection(db, "mentors"));
         let tableBody = [];
         const scores = studentData.scores || {};
 
         mentorSnap.forEach(docSnap => {
             const m = docSnap.data();
-            const nilai = scores[docSnap.id]; // Ambil nilai berdasarkan ID Mentor
+            const nilai = scores[docSnap.id]; 
             
-            let statusText = "-";
             if(nilai) {
-                statusText = parseInt(nilai) >= 75 ? `${nilai} (Kompeten)` : `${nilai} (Remidi)`;
-                
-                // Masukkan ke baris tabel PDF
-                tableBody.push([
-                    m.name,
-                    m.specialty || "Umum",
-                    statusText
-                ]);
+                let statusText = parseInt(nilai) >= 75 ? `${nilai} (Kompeten)` : `${nilai} (Remidi)`;
+                tableBody.push([ m.name, m.specialty || "Umum", statusText ]);
             }
         });
 
         // 5. BUAT TABEL
         doc.autoTable({
-            startY: 100,
+            startY: 110,
             head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
             body: tableBody,
             theme: 'grid',
-            headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
+            headStyles: { fillColor: [229, 9, 20] }, 
             styles: { fontSize: 11, cellPadding: 4 }
         });
 
         // 6. NILAI AKHIR (FOOTER)
         let finalY = doc.lastAutoTable.finalY + 20;
+
+        // Cek jika halaman habis
+        if (finalY > 250) { doc.addPage(); finalY = 20; }
 
         doc.setLineWidth(1); doc.setDrawColor(0);
         doc.rect(120, finalY, 70, 30);
@@ -1381,11 +1407,11 @@ window.generateStudentPDF = async function(studentData, averageScore) {
         doc.text(String(averageScore.toFixed(1)), 155, finalY + 22, null, null, "center");
 
         doc.setTextColor(0,0,0); doc.setFontSize(12);
-        doc.text("STATUS AKHIR:", 15, finalY + 10);
+        doc.text("STATUS AKHIR:", 20, finalY + 10);
         
         let statusLulus = averageScore >= 75 ? "LULUS / SIAP PERFORM" : "BELUM LULUS";
         doc.setFontSize(14); doc.setFont("helvetica", "bold");
-        doc.text(statusLulus, 15, finalY + 20);
+        doc.text(statusLulus, 20, finalY + 20);
 
         // 7. DOWNLOAD
         doc.save(`Raport_${studentData.name.replace(/\s+/g, '_')}.pdf`);
