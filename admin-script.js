@@ -2326,22 +2326,19 @@ window.deleteGalleryVideo = async function(id) {
 }
 
 /* =========================================
-   MODUL TAMBAHAN: DATA VENUE LOKASI (GABUNGAN)
+   12. MODUL MANAJEMEN VENUE LOKASI (WAJIB ADA)
    ========================================= */
+
+// Variable lokal untuk foto venue
 let currentVenueBase64 = null;
-   
+
 // 1. PREVIEW GAMBAR
 window.previewVenueImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Pastikan variable global currentVenueBase64 sudah dideklarasikan di paling atas file
-            // Jika belum, uncomment baris bawah ini:
-            // window.currentVenueBase64 = e.target.result; 
-            
-            // Atau gunakan property window langsung jika variabel let tidak terjangkau
-            window.currentVenueBase64 = e.target.result;
-            document.getElementById('venue-preview').src = window.currentVenueBase64;
+            currentVenueBase64 = e.target.result;
+            document.getElementById('venue-preview').src = currentVenueBase64;
         }
         reader.readAsDataURL(input.files[0]);
     }
@@ -2353,40 +2350,53 @@ window.saveVenue = async function() {
     const name = document.getElementById('venue-name').value;
     const order = parseInt(document.getElementById('venue-order').value) || 99;
     const desc = document.getElementById('venue-desc').value;
-    const img = window.currentVenueBase64; // Ambil dari window
+    const img = currentVenueBase64; 
 
     if(!name) return alert("Nama Venue Wajib Diisi!");
 
     const dataPayload = { name, order, desc };
 
+    // Update Gambar jika ada upload baru
     if(img) {
         dataPayload.img = img; 
         dataPayload.icon = "fa-map-marker-alt";
     }
 
-    if(id) {
-        if(confirm("Simpan perubahan venue?")) {
-            await updateDoc(doc(db, "venues", id), dataPayload);
-            alert("Venue Diupdate!");
-            resetVenueForm();
+    try {
+        if(id) {
+            // --- MODE EDIT ---
+            if(confirm("Simpan perubahan venue?")) {
+                await updateDoc(doc(db, "venues", id), dataPayload);
+                alert("Venue Diupdate!");
+                resetVenueForm();
+            }
+        } else {
+            // --- MODE BARU ---
+            if(confirm("Tambah Venue Baru?")) {
+                dataPayload.status = "closed"; // Default tutup
+                if(!img) dataPayload.icon = "fa-store"; 
+    
+                await addDoc(collection(db, "venues"), dataPayload);
+                alert("Venue Baru Ditambahkan!");
+                resetVenueForm();
+            }
         }
-    } else {
-        if(confirm("Tambah Venue Baru?")) {
-            dataPayload.status = "closed"; 
-            if(!img) dataPayload.icon = "fa-store"; 
-
-            await addDoc(collection(db, "venues"), dataPayload);
-            alert("Venue Baru Ditambahkan!");
-            resetVenueForm();
-        }
+    } catch (e) {
+        console.error(e);
+        alert("Gagal menyimpan: " + e.message);
     }
 }
 
-// 3. LOAD DATA (REALTIME TABEL)
+// 3. LOAD DATA VENUE (TABEL)
 window.loadVenueManagement = function() {
-    // console.log("Memuat Data Venue..."); 
+    console.log("Memuat Data Venue...");
     const tbody = document.getElementById('venue-table-body');
-    if(!tbody) return;
+    
+    // Cek apakah tabel ada di HTML
+    if(!tbody) {
+        console.error("Tabel Venue tidak ditemukan di HTML!");
+        return;
+    }
 
     const q = query(collection(db, "venues"), orderBy("order", "asc"));
     
@@ -2400,6 +2410,8 @@ window.loadVenueManagement = function() {
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
             const isOpen = d.status === 'open';
+            
+            // Tampilan Status & Tombol
             const statusBadge = isOpen ? '<span style="color:#00ff00;">BUKA</span>' : '<span style="color:#666;">TUTUP</span>';
             const btnColor = isOpen ? '#2ecc71' : '#444';
             
@@ -2412,7 +2424,10 @@ window.loadVenueManagement = function() {
             <tr>
                 <td style="text-align:center;">${imgDisplay}</td>
                 <td style="text-align:center;">${d.order}</td>
-                <td><b>${d.name}</b><br><small style="color:#888;">${d.desc || '-'}</small></td>
+                <td>
+                    <b>${d.name}</b><br>
+                    <small style="color:#888;">${d.desc || '-'}</small>
+                </td>
                 <td>
                     <button onclick="toggleStatusVenue('${docSnap.id}', '${d.status}')" style="background:${btnColor}; border:none; color:white; padding:2px 8px; border-radius:4px; cursor:pointer;">${statusBadge}</button>
                 </td>
@@ -2435,7 +2450,7 @@ window.deleteVenue = async function(id) {
     if(confirm("Hapus Venue ini Permanen?")) await deleteDoc(doc(db, "venues", id));
 }
 
-// 5. FORM CONTROL (EDIT & RESET)
+// 5. FORM CONTROL
 window.editVenue = function(id, name, order, desc, img) {
     document.getElementById('venue-edit-id').value = id;
     document.getElementById('venue-name').value = name;
@@ -2445,7 +2460,7 @@ window.editVenue = function(id, name, order, desc, img) {
     if(img && img.length > 100) document.getElementById('venue-preview').src = img;
     else document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
     
-    window.currentVenueBase64 = null; 
+    currentVenueBase64 = null; 
     
     document.getElementById('btn-save-venue').innerText = "Simpan Perubahan";
     document.getElementById('btn-save-venue').style.background = "#FFD700";
@@ -2459,7 +2474,7 @@ window.resetVenueForm = function() {
     document.getElementById('venue-order').value = "";
     document.getElementById('venue-desc').value = "";
     document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
-    window.currentVenueBase64 = null;
+    currentVenueBase64 = null;
 
     document.getElementById('btn-save-venue').innerText = "+ Simpan Venue";
     document.getElementById('btn-save-venue').style.background = "";
