@@ -2494,8 +2494,10 @@ window.onload = function() {
     loadMentorData();
     loadStudentData(); 
     loadCafeData();
-
-    populateVenueFilters(); 
+    
+    if(window.loadVenueManagement) window.loadVenueManagement();
+    
+    populateVenueFilters();     
 
     setTimeout(() => {
         const lastTab = localStorage.getItem('adminReturnTab');
