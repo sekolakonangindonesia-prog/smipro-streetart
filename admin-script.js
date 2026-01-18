@@ -1423,9 +1423,9 @@ async function loadDashboardOverview() {
         // Logika: Jika belum diapprove (Baik baru daftar atau habis edit meja > 15)
         if (!d.adminApproved) {
             adaNotif = true;
-            let judul = "";
-            let pesan = "";
-            let warna = "";
+            let judul = "🆕 Pendaftaran Mitra Baru";
+            let pesan = `<b>${d.name}</b> mendaftar (${d.totalTables || 0} meja).`;
+            let warna = "#FFD700"; // Kuning
 
             if (d.totalTables > 15) {
                 // KASUS 3: Pengajuan Meja Banyak
@@ -1446,7 +1446,9 @@ async function loadDashboardOverview() {
                     <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;">${pesan}</p>
                 </div>
                 <div class="notif-action">
-                    <button class="btn-action btn-view" onclick="showView('mitra')">Cek & Approve</button>
+                    <button class="btn-action btn-view" onclick="openMitraApproval('${doc.id}')" style="background:#00d2ff; color:black; font-weight:bold;">
+                        <i class="fa-solid fa-eye"></i> Lihat Data
+                    </button>
                 </div>
             </div>`;
         }
