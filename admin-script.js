@@ -16,12 +16,17 @@ window.showView = function(viewId, btn) {
     // Auto Load Data Khusus
     if(viewId === 'dashboard') loadDashboardOverview();   
     if(viewId === 'cms') loadArtistDropdowns(); 
-    if(viewId === 'students') loadStudentData();
-    if(viewId === 'mitra') loadMitraData();
+    if(viewId === 'students') loadStudentData();    
     if(viewId === 'performer') loadPerformerData();
     if(viewId === 'mentor') loadMentorData();   
+    
     if(viewId === 'venue') {    
     if(window.loadVenueManagement) window.loadVenueManagement();
+    }
+    
+    if(viewId === 'mitra') { 
+        loadMitraData(); 
+        populateVenueFilters(); 
     }
     if(viewId === 'cafe') { 
         loadCafeData();
@@ -35,6 +40,7 @@ window.showView = function(viewId, btn) {
         // Cari tombol Live di dalam view-live (index agak tricky, kita buat fungsi switchLiveTab handle null btn)
         switchLiveTab('panel-live', null);
     }
+    
     if(viewId === 'finance') { 
         window.initFinanceSystem();       
         listenCommandCenter(); 
