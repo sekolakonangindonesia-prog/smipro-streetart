@@ -178,6 +178,8 @@ async function loadWarungStatistics() {
     const elTime = document.getElementById('report-filter');
     const tbody = document.getElementById('warung-ranking-body');
 
+    if(!tbody) return;
+
     // Default 'all' jika elemen belum siap
     const venueFilter = elVenue ? elVenue.value : 'all';
     const timeFilter = elTime ? elTime.value : 'all';
@@ -195,8 +197,12 @@ async function loadWarungStatistics() {
     
     snapshot.forEach(doc => {
         const d = doc.data();
+        
         // Konversi Tanggal (Biar aman)
-        const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
+        let date = new Date();
+        if(d.finishedAt && d.finishedAt.toDate) date = d.finishedAt.toDate();
+        else if(d.timestamp && d.timestamp.toDate) date = d.timestamp.toDate();
+        else if(d.timestamp) date = new Date(d.timestamp);
         
         // Asumsi lokasi. Jika di data booking gak ada nama venue, anggap data lama (Stadion)
         // Nanti Bapak bisa update sistem booking agar menyimpan nama venue juga.
@@ -209,15 +215,20 @@ async function loadWarungStatistics() {
         if (venueFilter !== 'all' && dVenue !== venueFilter) include = false;
 
         // 2. Filter Waktu
-        if (timeFilter === 'month') {
-            if (date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) include = false;
-        } 
-        else if (timeFilter === 'week') {
-            const oneWeekAgo = new Date(); 
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            if (date < oneWeekAgo) include = false;
-        }
+        if (timeFilter !== 'all') {
+            const checkDate = new Date(date);
+            checkDate.setHours(0,0,0,0);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            const diffTime = Math.abs(today - checkDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
+            if (timeFilter === 'today' && diffDays !== 0) include = false;
+            if (timeFilter === 'week' && diffDays > 7) include = false;
+            if (timeFilter === 'month' && diffDays > 30) include = false;
+        }
+           
         if (include) {
             // Hitung Global
             totalVisitor += parseInt(d.pax || 0);
@@ -428,7 +439,18 @@ async function loadPerformerData() {
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
             
-            tbody.innerHTML += `<tr><td><b>${data.name}</b></td><td>${data.genre}</td><td>${statusIcon}</td><td>${btnLogin} ${btnDel}</td></tr>`;
+             tbody.innerHTML += `
+            <tr>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${data.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <b>${data.name}</b>
+                    </div>
+                </td>
+                <td>${data.genre}</td>
+                <td>${statusIcon}</td>
+                <td>${btnLogin} ${btnDel}</td>
+            </tr>`;
         });
     });
 }
@@ -472,14 +494,33 @@ window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(d
 async function loadMentorData() {
     const tbody = document.getElementById('mentor-table-body');
     if(!tbody) return;
+    
     onSnapshot(collection(db, "mentors"), (snapshot) => {
         tbody.innerHTML = '';
+        
         if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Klik Generate.</td></tr>'; return; }
+        
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
+
+             const statusLabel = (data.status === 'pending') 
+                ? '<span style="color:orange;">Menunggu</span>' 
+                : '<span style="color:#00ff00;">Aktif</span>';
+            
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsMentor('${docSnap.id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteMentor('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
-            tbody.innerHTML += `<tr><td>${data.name}</td><td>${data.specialist}</td><td>Aktif</td><td>${btnLogin} ${btnDel}</td></tr>`;
+            tbody.innerHTML += `
+            <tr>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${data.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <b>${data.name}</b>
+                    </div>
+                </td>
+                <td>${data.specialist || data.specialty}</td>
+                <td>${statusLabel}</td>
+                <td>${btnLogin} ${btnDel}</td>
+            </tr>`;
         });
     });
 }
