@@ -639,6 +639,7 @@ async function loadStudentData() {
         });
     });
 }
+
 window.deleteStudent = async function(id, name) {
     if(confirm(`YAKIN MENGHAPUS SISWA: ${name}?`)) await deleteDoc(doc(db, "students", id));
 }
@@ -681,7 +682,7 @@ window.openRaport = async function(studentId) {
 
 // FUNGSI CETAK LANGSUNG DARI TABEL
 window.printRaportDirect = async function(id) {
-    // Tampilkan loading cursor
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }    
     document.body.style.cursor = 'wait';
 
     try {
@@ -1459,21 +1460,34 @@ async function loadDashboardOverview() {
 
     // B. CEK SISWA
     const siswaSnap = await getDocs(collection(db, "students"));
+
+    const mentorSnap = await getDocs(collection(db, "mentors"));
+    const totalMentors = mentorSnap.size;
+    
     siswaSnap.forEach(doc => {
         const d = doc.data();
         const scores = Object.values(d.scores || {});
-        if(scores.length > 0) {
-            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-            if(avg >= 90 && d.status === 'training') {
-                adaNotif = true;
+
+        const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+        const isCompleted = (scores.length >= totalMentors && totalMentors > 0);
+        
+         if (d.status === 'training' && isCompleted && avg >= 75) {
+            adaNotif = true;
                 notifArea.innerHTML += `
-                <div class="notif-card success">
-                    <div class="notif-content"><h4>Siswa Siap Lulus</h4><p>${d.name} (Rata-rata: ${avg.toFixed(1)})</p></div>
-                    <div class="notif-action"><button class="btn-action btn-edit" onclick="luluskanSiswa('${doc.id}', '${d.name}', '${d.genre}')">Terbitkan</button></div>
-                </div>`;
-            }
+                <div class="notif-card" style="border-left: 5px solid #00ff00; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+               <div class="notif-content">
+                    <h4 style="margin:0; color:#00ff00;">🎓 SIAP LULUS: ${d.name}</h4>
+                    <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;">Nilai Lengkap (${scores.length}/${totalMentors}) • Rata-rata: ${avg.toFixed(1)}</p>
+                </div>
+
+                <div class="notif-action">
+                    <button class="btn-action btn-edit" onclick="luluskanSiswa('${doc.id}', '${d.name}', '${d.genre}')">Terbitkan Sertifikat</button>
+                </div>                
+            </div>`;           
         }
     });
+    
     // C. CEK PENDAFTARAN MENTOR (BARU)
     const mentorSnap = await getDocs(collection(db, "mentors"));
     mentorSnap.forEach(doc => {
