@@ -370,63 +370,7 @@
                         <button class="btn-action btn-view" onclick="generateReportPDF()"><i class="fa-solid fa-print"></i> Cetak Laporan PDF</button>
                     </div>
                 </div>
-
-                <!-- VIEW KHUSUS: MANAJEMEN VENUE (LOKASI UTAMA) -->
-        <div id="view-venue" class="admin-view hidden">
-            <div class="section-header">
-                <h2 style="margin:0; color:white;">Manajemen Venue Lokasi</h2>
-            </div>
-            
-            <!-- FORM INPUT VENUE -->
-            <div class="cms-form-group" style="display:flex; gap:20px; align-items:center;">
-                <!-- Upload Foto Venue -->
-                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('venue-file').click()">
-                    <img id="venue-preview" src="https://via.placeholder.com/100?text=Foto" style="width:100px; height:80px; object-fit:cover; border:2px dashed #555; border-radius:10px;">
-                    <input type="file" id="venue-file" style="display:none;" accept="image/*" onchange="previewVenueImg(this)">
-                    <div style="font-size:0.7rem; color:#888; margin-top:5px;">Foto Lokasi</div>
-                </div>
-
-                <!-- Input Data -->
-                <div style="flex:1;">
-                    <input type="hidden" id="venue-edit-id"> <!-- ID untuk Edit -->
-                    
-                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
-                        <div>
-                            <label class="cms-label">Nama Venue:</label>
-                            <input type="text" id="venue-name" class="cms-input" placeholder="Contoh: Taman Maramis Zone">
-                        </div>
-                        <div>
-                            <label class="cms-label">Urutan Tampil:</label>
-                            <input type="number" id="venue-order" class="cms-input" placeholder="Urutan (1,2,3)">
-                        </div>
-                    </div>
-                    
-                    <label class="cms-label">Deskripsi Singkat:</label>
-                    <input type="text" id="venue-desc" class="cms-input" placeholder="Contoh: Pusat Kuliner Malam">
-
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button id="btn-save-venue" class="btn-action btn-view" onclick="saveVenue()" style="width:100%;">+ Simpan Venue</button>
-                        <button id="btn-cancel-venue" class="btn-action btn-delete" onclick="resetVenueForm()" style="width:auto; display:none;">Batal</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TABEL LIST VENUE -->
-            <table class="admin-table" style="margin-top:20px;">
-                <thead>
-                    <tr>
-                        <th style="width:50px;">Img</th>
-                        <th>Urutan</th>
-                        <th>Nama Venue & Deskripsi</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="venue-table-body">
-                    <tr><td colspan="5" align="center">Memuat data...</td></tr>
-                </tbody>
-            </table>
-        </div>
+              
 
                 <!-- RINGKASAN -->
                 <div class="stats-grid">
@@ -616,6 +560,63 @@
         </div>
     </div>
 </div>
+
+         <!-- VIEW KHUSUS: MANAJEMEN VENUE (LOKASI UTAMA) -->
+        <div id="view-venue" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Manajemen Venue Lokasi</h2>
+            </div>
+            
+            <!-- FORM INPUT VENUE -->
+            <div class="cms-form-group" style="display:flex; gap:20px; align-items:center;">
+                <!-- Upload Foto Venue -->
+                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('venue-file').click()">
+                    <img id="venue-preview" src="https://via.placeholder.com/100?text=Foto" style="width:100px; height:80px; object-fit:cover; border:2px dashed #555; border-radius:10px;">
+                    <input type="file" id="venue-file" style="display:none;" accept="image/*" onchange="previewVenueImg(this)">
+                    <div style="font-size:0.7rem; color:#888; margin-top:5px;">Foto Lokasi</div>
+                </div>
+
+                <!-- Input Data -->
+                <div style="flex:1;">
+                    <input type="hidden" id="venue-edit-id"> <!-- ID untuk Edit -->
+                    
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                        <div>
+                            <label class="cms-label">Nama Venue:</label>
+                            <input type="text" id="venue-name" class="cms-input" placeholder="Contoh: Taman Maramis Zone">
+                        </div>
+                        <div>
+                            <label class="cms-label">Urutan Tampil:</label>
+                            <input type="number" id="venue-order" class="cms-input" placeholder="Urutan (1,2,3)">
+                        </div>
+                    </div>
+                    
+                    <label class="cms-label">Deskripsi Singkat:</label>
+                    <input type="text" id="venue-desc" class="cms-input" placeholder="Contoh: Pusat Kuliner Malam">
+
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button id="btn-save-venue" class="btn-action btn-view" onclick="saveVenue()" style="width:100%;">+ Simpan Venue</button>
+                        <button id="btn-cancel-venue" class="btn-action btn-delete" onclick="resetVenueForm()" style="width:auto; display:none;">Batal</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABEL LIST VENUE -->
+            <table class="admin-table" style="margin-top:20px;">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">Img</th>
+                        <th>Urutan</th>
+                        <th>Nama Venue & Deskripsi</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="venue-table-body">
+                    <tr><td colspan="5" align="center">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
 
         <!-- 5. BENGKEL SISWA -->
         <div id="view-students" class="admin-view hidden">
