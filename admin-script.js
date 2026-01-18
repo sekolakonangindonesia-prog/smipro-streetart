@@ -1464,7 +1464,9 @@ async function loadDashboardOverview() {
                     <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;"><b>${d.name}</b> (${d.specialist})</p>
                 </div>
                 <div class="notif-action">
-                    <button class="btn-action btn-edit" onclick="approveMentor('${doc.id}', '${d.name}')">Setujui</button>
+                    <button class="btn-action btn-view" onclick="openMitraApproval('${doc.id}')">
+                    <i class="fa-solid fa-eye"></i> Lihat Data
+                    </button>                   
                     <button class="btn-action btn-delete" onclick="deleteMentor('${doc.id}')">Tolak</button>
                 </div>
             </div>`;
@@ -1491,7 +1493,9 @@ async function loadDashboardOverview() {
                     <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;"><b>${d.name}</b> - Rata-rata: ${avg.toFixed(1)}</p>
                 </div>
                 <div class="notif-action">
-                    <button class="btn-action btn-edit" onclick="luluskanSiswa('${doc.id}', '${d.name}', '${d.genre}')">Terbitkan Akun</button>
+                    <button class="btn-action btn-view" onclick="openSiswaApproval('${doc.id}')">
+                    <i class="fa-solid fa-eye"></i> Lihat Nilai
+                    </button>
                 </div>
             </div>`;
         }
@@ -1501,6 +1505,80 @@ async function loadDashboardOverview() {
     if(!adaNotif) {
         notifArea.innerHTML = `<div class="empty-state-box"><p>Semua aman. Tidak ada notifikasi baru.</p></div>`;
     }
+}
+
+
+/* =========================================
+   LOGIKA POPUP APPROVAL (NEW)
+   ========================================= */
+
+// 1. POPUP MITRA
+window.openMitraApproval = async function(id) {
+    const docSnap = await getDoc(doc(db, "warungs", id));
+    if(!docSnap.exists()) return;
+    const d = docSnap.data();
+
+    // Isi Data ke Modal
+    document.getElementById('app-mitra-name').innerText = d.name;
+    document.getElementById('app-mitra-owner').innerText = d.owner || "-";
+    document.getElementById('app-mitra-venue').innerText = d.venueName || "Belum Dipilih"; // Menampilkan Lokasi
+    document.getElementById('app-mitra-table').innerText = d.totalTables + " Meja";
+    document.getElementById('app-mitra-phone').innerText = d.phone || "-";
+
+    // Set Aksi Tombol
+    document.getElementById('btn-reject-mitra').onclick = function() { deleteMitra(id); document.getElementById('modal-approve-mitra').style.display='none'; }
+    document.getElementById('btn-accept-mitra').onclick = function() { approveTable(id); document.getElementById('modal-approve-mitra').style.display='none'; }
+
+    // Tampilkan
+    document.getElementById('modal-approve-mitra').style.display = 'flex';
+}
+
+// 2. POPUP SISWA
+window.openSiswaApproval = async function(id) {
+    const docSnap = await getDoc(doc(db, "students", id));
+    if(!docSnap.exists()) return;
+    const d = docSnap.data();
+    const scores = d.scores || {};
+
+    // Isi Header
+    document.getElementById('app-siswa-name').innerText = d.name;
+    document.getElementById('app-siswa-genre').innerText = d.genre;
+    document.getElementById('app-siswa-img').src = d.img || "https://via.placeholder.com/150";
+
+    // Isi Tabel Nilai
+    const tbody = document.getElementById('app-siswa-scores');
+    tbody.innerHTML = '<tr><td colspan="2">Memuat nilai...</td></tr>';
+    
+    // Ambil nama mentor
+    const mentors = await getDocs(collection(db, "mentors"));
+    let html = '';
+    let total = 0; let count = 0;
+
+    mentors.forEach(mDoc => {
+        const m = mDoc.data();
+        const nilai = scores[mDoc.id];
+        if(nilai) {
+            html += `<tr><td>${m.name}</td><td style="text-align:right; color:#00ff00; font-weight:bold;">${nilai}</td></tr>`;
+            total += parseInt(nilai);
+            count++;
+        }
+    });
+    
+    // Tambah Rata-rata
+    if(count > 0) {
+        const avg = (total/count).toFixed(1);
+        html += `<tr style="background:#333;"><td style="font-weight:bold;">RATA-RATA TOTAL</td><td style="text-align:right; color:gold; font-weight:bold;">${avg}</td></tr>`;
+    }
+    
+    tbody.innerHTML = html;
+
+    // Set Tombol
+    document.getElementById('btn-accept-siswa').onclick = function() { 
+        luluskanSiswa(id, d.name, d.genre); 
+        document.getElementById('modal-approve-siswa').style.display='none'; 
+    }
+
+    document.getElementById('modal-approve-siswa').style.display = 'flex';
 }
 
 /* =========================================
