@@ -493,21 +493,7 @@
                 await updateDoc(doc(db, "venues", id), { status: newStatus });
             }
         }
-
-        window.seedVenuesDirect = async function() {
-            const venuesData = [
-                { name: "Stadion Bayuangga Zone", status: "open", icon: "fa-door-open", order: 1, desc: "Pusat Kuliner & Seni Utama" },
-                { name: "Angkringan TWSL", status: "closed", icon: "fa-tree", order: 2, desc: "Taman Wisata Studi Lingkungan" },
-                { name: "Angkringan Siaman", status: "closed", icon: "fa-mug-hot", order: 3, desc: "Suasana Klasik Kota" },
-                { name: "Angkringan A. Yani", status: "closed", icon: "fa-road", order: 4, desc: "Pinggir Jalan Protokol" },
-                { name: "Angkringan GOR Mastrip", status: "closed", icon: "fa-volleyball", order: 5, desc: "Area Olahraga & Santai" }
-            ];
-            if(confirm("Generate data lokasi sekarang?")) {
-                for (const v of venuesData) { await addDoc(collection(db, "venues"), v); }
-                alert("Selesai! Lokasi akan muncul otomatis.");
-            }
-        }
-
+       
         // ==========================================
         // 4. EKSEKUSI
         // ==========================================
