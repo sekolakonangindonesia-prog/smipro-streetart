@@ -69,6 +69,14 @@ function listenMentorProfile(id) {
             window.renderGallery([]);
             }
 
+            // Isi Sosmed (Jika ada)
+            if (data.socials) {
+            setValueIfExists('edit-ig', data.socials.ig);
+            setValueIfExists('edit-tiktok', data.socials.tiktok);
+            setValueIfExists('edit-yt', data.socials.yt);
+            setValueIfExists('edit-fb', data.socials.fb);
+            }
+
             // Isi Portofolio & Profesi (Looping)
             if(data.portfolio) {
                 data.portfolio.forEach((txt, i) => setValueIfExists(`porto-${i}`, txt));
@@ -176,10 +184,18 @@ window.saveMentorProfile = async function() {
         if(p) newPorto.push(p); 
         if(f) newProf.push(f);
     }
+// Ambil data sosmed baru
+    const ig = document.getElementById('edit-ig').value;
+    const tiktok = document.getElementById('edit-tiktok').value;
+    const yt = document.getElementById('edit-yt').value;
+    const fb = document.getElementById('edit-fb').value;
+
+// Bungkus jadi object
+    const socialData = { ig, tiktok, yt, fb };
 
     try {
         await updateDoc(doc(db, "mentors", MENTOR_ID), {
-            name, specialist: spec, phone, portfolio: newPorto, profession: newProf
+            name, specialist: spec, phone, portfolio: newPorto, profession: newProf, socials: socialData
         });
         alert("Profil Tersimpan!");
     } catch (e) {
