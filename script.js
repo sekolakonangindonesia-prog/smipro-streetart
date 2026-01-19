@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { 
-    collection, getDocs, onSnapshot, addDoc, updateDoc, doc, query, where 
+    collection, getDocs, getDoc, onSnapshot, addDoc, updateDoc, doc, query, where 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 
@@ -171,57 +171,95 @@ function renderWarungs() {
 }
 
 /* =========================================
-   5. SISTEM BOOKING
+   5. SISTEM BOOKING (TRANSAKSI FIREBASE)
    ========================================= */
 
-let selectedWarung = null; // Menyimpan warung yang sedang dipilih
+let selectedWarungId = null; // Menyimpan ID warung yang akan dibooking
 
-// Buka Modal Booking
-function openBooking(id) {
-    selectedWarung = warungData.find(w => w.id === id);
-    if(selectedWarung) {
-        document.getElementById('modal-warung-name').innerText = selectedWarung.name;
-        document.getElementById('booking-modal').style.display = 'flex';
-    }
-}
-
-// Tutup Modal (Apapun)
-function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+// 1. Buka Modal Booking
+window.openBooking = async function(id) {
+    selectedWarungId = id; // Simpan ID
     
-    // Reset form booking jika modal booking ditutup
-    if(id === 'booking-modal') {
-        document.getElementById('book-name').value = '';
-        document.getElementById('book-qty').value = '1';
+    // Ambil Nama Warung dulu dari database biar judul modalnya benar
+    const docRef = doc(db, "warungs", id);
+    const docSnap = await getDocs(query(collection(db, "warungs"), where(document.id, "==", id))); 
+    // *Catatan: Cara di atas agak ribet, kita pakai cara getDoc biasa:
+    
+    // Kita reset dulu formnya
+    document.getElementById('book-name').value = '';
+    document.getElementById('book-qty').value = '1';
+    document.getElementById('modal-warung-name').innerText = "Memuat...";
+    document.getElementById('booking-modal').style.display = 'flex';
+
+    // Ambil detail nama warung
+    const snap = await getDoc(doc(db, "warungs", id));
+    if(snap.exists()) {
+        document.getElementById('modal-warung-name').innerText = snap.data().name;
     }
 }
 
-// Proses Konfirmasi Booking
-function confirmBooking() {
+// 2. Tutup Modal (Apapun)
+window.closeModal = function(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+// 3. Proses Konfirmasi Booking (KIRIM KE FIREBASE)
+window.confirmBooking = async function() {
     const name = document.getElementById('book-name').value;
     const qty = parseInt(document.getElementById('book-qty').value);
     
-    if(!name || !qty) return alert("Harap isi Nama dan Jumlah Meja!");
-    if(qty < 1) return alert("Minimal 1 meja!");
+    if(!name || !qty || qty < 1) return alert("Data booking tidak valid!");
+    if(!selectedWarungId) return alert("Warung tidak terdeteksi!");
 
-    // Cek ketersediaan lagi (takutnya keduluan)
-    if(selectedWarung.booked + qty > selectedWarung.total) {
-        return alert("Maaf, meja tidak cukup untuk jumlah tersebut!");
+    const btn = document.querySelector('.btn-submit');
+    btn.innerHTML = "Memproses...";
+    btn.disabled = true;
+
+    try {
+        // A. Cek Ketersediaan Meja Dulu
+        const warungRef = doc(db, "warungs", selectedWarungId);
+        const warungSnap = await getDoc(warungRef); // Perlu import getDoc di atas nanti
+
+        if (!warungSnap.exists()) throw new Error("Warung tidak ditemukan");
+
+        const wData = warungSnap.data();
+        const currentBooked = parseInt(wData.bookedTables) || 0;
+        const maxTables = parseInt(wData.totalTables) || 0;
+
+        if (currentBooked + qty > maxTables) {
+            alert("Maaf! Meja tidak cukup. Sisa meja: " + (maxTables - currentBooked));
+            btn.innerHTML = "Booking Sekarang";
+            btn.disabled = false;
+            return;
+        }
+
+        // B. Simpan Data Pesanan ke Koleksi 'bookings'
+        await addDoc(collection(db, "bookings"), {
+            warungId: selectedWarungId,
+            warungName: wData.name,
+            customerName: name,
+            qty: qty,
+            status: 'active', // Tamu sedang berkunjung
+            timestamp: new Date()
+        });
+
+        // C. Update Jumlah Meja Terpakai di Dokumen Warung
+        await updateDoc(warungRef, {
+            bookedTables: currentBooked + qty
+        });
+
+        alert(`Berhasil! ${qty} meja dipesan atas nama ${name}.`);
+        closeModal('booking-modal');
+
+    } catch (e) {
+        console.error("Booking Error:", e);
+        alert("Gagal booking: " + e.message);
+    } finally {
+        btn.innerHTML = "Booking Sekarang";
+        btn.disabled = false;
     }
-
-    // Update Data
-    selectedWarung.booked += qty;
-    selectedWarung.bookings.push({ 
-        name: name, 
-        qty: qty, 
-        time: new Date().toLocaleTimeString() 
-    });
-    
-    // Feedback User
-    alert(`Berhasil Booking ${qty} Meja di ${selectedWarung.name} atas nama ${name}`);
-    closeModal('booking-modal');
-    renderWarungs(); // Refresh tampilan grid agar stok berkurang
 }
+
 
 /* =========================================
    6. SISTEM ADMIN (MITRA WARUNG)
