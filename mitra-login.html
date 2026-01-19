@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Mitra - SMIPRO</title>
+    <title>Daftar Mitra Baru - SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -16,168 +16,147 @@
         .auth-card {
             background: #1a1a1a; padding: 30px; border-radius: 15px; border: 1px solid var(--primary);
             width: 90%; max-width: 400px; text-align: center; box-shadow: 0 0 40px rgba(229, 9, 20, 0.4);
-            max-height: 90vh; overflow-y: auto; position: relative;
+            max-height: 90vh; overflow-y: auto; position: relative; animation: fadeIn 0.5s;
         }
-        
-        /* HEADER TAB */
         .auth-header { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .auth-header h2 { color: white; margin: 0; }
         .auth-header p { color: #888; font-size: 0.9rem; margin: 5px 0 0; }
-
-        /* LOGO STYLE */
-        .register-logo {
-            width: 100px;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); /* Efek glow emas dikit */
-        }
-
-        /* FORM STYLES */
+        .register-logo { width: 80px; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
+        
         .form-group { text-align: left; margin-bottom: 15px; }
         .form-group label { font-size: 0.8rem; color: #ccc; display: block; margin-bottom: 5px; }
-        .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
-        .form-input:focus { border-color: var(--primary); }
+        .form-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing:border-box; }
+        .form-input:focus { border-color: var(--primary); outline:none; }
 
-        /* SWITCH LINK */
-        .switch-link { margin-top: 15px; font-size: 0.8rem; color: #aaa; }
-        .switch-link span { color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline; }
-        
-        /* TRANSITION */
-        .form-container { animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="auth-card">
-        
-        <!-- === BAGIAN LOGIN === -->
-        <div id="section-login" class="form-container">
-            <div class="auth-header">
-                <h2>Login Mitra</h2>
-                <p>Masuk untuk kelola warung Anda</p>
-            </div>
-
-            <div class="form-group">
-                <label>Username / Email</label>
-                <input type="text" class="form-input" placeholder="Contoh: warungbusri">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" class="form-input" placeholder="******">
-            </div>
-            
-            <button class="btn-primary" onclick="loginAction()">MASUK DASHBOARD</button>
-
-            <div class="switch-link">
-                Belum punya akun? <span onclick="showSection('register')">Daftar Sekarang</span>
-            </div>
+        <div class="auth-header">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo SMIPRO" class="register-logo">
+            <h2>Daftar Mitra Baru</h2>
+            <p>Isi formulir untuk verifikasi admin</p>
         </div>
 
-        <!-- === BAGIAN REGISTER (Form Lengkap + LOGO) === -->
-        <div id="section-register" class="form-container" style="display:none;">
-            <div class="auth-header">
-                <!-- LOGO DITAMBAHKAN DISINI -->
-                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo SMIPRO" class="register-logo">
-                
-                <h2>Daftar Mitra Baru</h2>
-                <p>Isi data untuk verifikasi admin</p>
-            </div>
-
-            <div class="form-group">
-                <label>Pilih Lokasi Zona</label>
-                <select class="form-input" id="reg-location">
-                    <option value="">-- Pilih Lokasi --</option>
-                    <option value="1">Stadion Bayuangga Zone</option>
-                    <option value="2">Alun-Alun Kota</option>
-                    <option value="3">Benteng Mayangan</option>
-                    <option value="4">Museum Probolinggo</option>
-                    <option value="5">BJBR Mangrove</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Nama Pemilik</label>
-                <input type="text" id="reg-owner" class="form-input" placeholder="Nama Lengkap Sesuai KTP">
-            </div>
-
-            <div class="form-group">
-                <label>Nama Warung</label>
-                <input type="text" id="reg-warung" class="form-input" placeholder="Contoh: Angkringan Joss">
-            </div>
-
-            <div class="form-group">
-                <label>Jumlah Meja (Maksimal 15)</label>
-                <input type="number" id="reg-table" class="form-input" placeholder="Contoh: 10" max="15">
-                <small style="color:#666; font-size:0.7rem;">*Jika > 15 butuh survei tim admin.</small>
-            </div>
-
-            <div class="form-group">
-                <label>Nomor HP / WhatsApp</label>
-                <input type="number" id="reg-wa" class="form-input" placeholder="08xxxxx (Aktif WA)">
-            </div>
-
-            <div class="form-group">
-                <label>Email (Untuk Verifikasi)</label>
-                <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
-            </div>
-
-            <button class="btn-primary" onclick="registerAction()" style="background:var(--green);">DAFTAR SEKARANG</button>
-
-            <div class="switch-link">
-                Sudah punya akun? <span onclick="showSection('login')">Login Disini</span>
-            </div>
+        <!-- FORMULIR PENDAFTARAN -->
+        <div class="form-group">
+            <label>Pilih Lokasi Zona</label>
+            <!-- DROPDOWN INI AKAN DIISI OTOMATIS OLEH FIREBASE -->
+            <select class="form-input" id="reg-location">
+                <option value="">-- Memuat Lokasi... --</option>
+            </select>
         </div>
 
-        <br>
-        <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">&larr; Kembali ke Website Utama</a>
+        <div class="form-group">
+            <label>Nama Pemilik</label>
+            <input type="text" id="reg-owner" class="form-input" placeholder="Nama Lengkap Sesuai KTP">
+        </div>
+
+        <div class="form-group">
+            <label>Nama Warung (Untuk Login)</label>
+            <input type="text" id="reg-warung" class="form-input" placeholder="Contoh: Warung Bu Sri">
+        </div>
+
+        <div class="form-group">
+            <label>Jumlah Meja (Maksimal 15)</label>
+            <input type="number" id="reg-table" class="form-input" placeholder="Contoh: 10" max="15">
+            <small style="color:#666; font-size:0.7rem;">*Jika > 15 butuh survei tim admin.</small>
+        </div>
+
+        <div class="form-group">
+            <label>Nomor HP / WhatsApp</label>
+            <input type="number" id="reg-wa" class="form-input" placeholder="08xxxxx (Aktif WA)">
+        </div>
+
+        <div class="form-group">
+            <label>Email (Opsional)</label>
+            <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
+        </div>
+
+        <button id="btn-submit" class="form-input" style="background:#00d2ff; color:black; font-weight:bold; cursor:pointer; margin-top:10px;">KIRIM PENDAFTARAN</button>
+
+        <br><br>
+        <a href="login.html" style="color:#666; font-size:0.8rem; text-decoration:none;">&larr; Batal & Kembali Login</a>
     </div>
 
-    <script>
-        // Logika Pindah Antara Login & Register (SATU FUNGSI UTAMA)
-        function showSection(sectionName) {
-            // Sembunyikan keduanya dulu
-            document.getElementById('section-login').style.display = 'none';
-            document.getElementById('section-register').style.display = 'none';
-            
-            // Tampilkan yang diminta
-            if (sectionName === 'login') {
-                document.getElementById('section-login').style.display = 'block';
-            } else if (sectionName === 'register') {
-                document.getElementById('section-register').style.display = 'block';
+    <!-- SCRIPT LOGIKA PENDAFTARAN (KONEK FIREBASE) -->
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. ISI DROPDOWN LOKASI SAAT HALAMAN DIBUKA
+        window.onload = async function() {
+            const sel = document.getElementById('reg-location');
+            try {
+                const q = query(collection(db, "venues"), orderBy("name", "asc"));
+                const snapshot = await getDocs(q);
+                
+                sel.innerHTML = '<option value="">-- Pilih Lokasi --</option>';
+                
+                if(snapshot.empty) {
+                    sel.innerHTML += '<option value="Lainnya">Lokasi Belum Tersedia</option>';
+                }
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    // Pastikan hanya lokasi yang BUKA/AKTIF (Opsional, tapi lebih baik semua muncul)
+                    sel.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                });
+            } catch (e) {
+                console.error(e);
+                sel.innerHTML = '<option value="">Gagal memuat lokasi</option>';
             }
         }
 
-        // Logika Login (Simulasi)
-        function loginAction() {
-            // Di sini nanti ada validasi username/password
-            window.location.href = 'mitra-dashboard.html';
-        }
-
-        // Logika Register (Validasi)
-        function registerAction() {
+        // 2. PROSES SIMPAN PENDAFTARAN
+        document.getElementById('btn-submit').addEventListener('click', async () => {
             const lokasi = document.getElementById('reg-location').value;
             const owner = document.getElementById('reg-owner').value;
             const warung = document.getElementById('reg-warung').value;
             const meja = parseInt(document.getElementById('reg-table').value);
             const wa = document.getElementById('reg-wa').value;
             const email = document.getElementById('reg-email').value;
+            const btn = document.getElementById('btn-submit');
 
-            // 1. Cek Kelengkapan
-            if(!lokasi || !owner || !warung || !meja || !wa || !email) {
-                return alert("Mohon lengkapi semua data pendaftaran!");
+            // Validasi
+            if(!lokasi || !owner || !warung || !meja || !wa) {
+                return alert("Mohon lengkapi semua data wajib!");
             }
-
-            // 2. Cek Batas Meja
             if(meja > 15) {
-                return alert("Pendaftaran mandiri maksimal 15 meja. Untuk lebih dari itu, silakan hubungi Admin.");
+                return alert("Maksimal 15 meja untuk pendaftaran online.");
             }
 
-            // 3. Simulasi Sukses
-            alert(`Terima kasih ${owner}! Data ${warung} berhasil dikirim.\n\nLink verifikasi telah dikirim ke email: ${email}.\nSilakan cek inbox/spam untuk mengaktifkan akun.`);
-            
-            // Kembalikan ke halaman login agar user bisa login setelah verifikasi (ceritanya)
-            showSection('login');
-        }
+            btn.innerText = "Mengirim Data...";
+            btn.disabled = true;
+
+            try {
+                // Simpan ke Koleksi 'warungs' (Status Pending / Perlu Approval)
+                await addDoc(collection(db, "warungs"), {
+                    name: warung,
+                    owner: owner,
+                    venueName: lokasi, // Ini data Real dari Firebase Venue
+                    totalTables: meja,
+                    bookedTables: 0,
+                    phone: wa,
+                    email: email,
+                    adminApproved: false, // Belum disetujui admin
+                    joinedAt: new Date(),
+                    img: "" // Kosong dulu
+                });
+
+                alert("✅ Pendaftaran Berhasil!\n\nSilakan tunggu konfirmasi Admin melalui WhatsApp.\nSetelah disetujui, nama warung Anda akan muncul di menu Login.");
+                window.location.href = 'login.html'; // Kembali ke halaman login utama
+
+            } catch (e) {
+                console.error(e);
+                alert("Gagal mendaftar: " + e.message);
+                btn.innerText = "KIRIM PENDAFTARAN";
+                btn.disabled = false;
+            }
+        });
     </script>
+
 </body>
 </html>
