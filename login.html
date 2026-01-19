@@ -51,7 +51,7 @@
                 <p>Silakan pilih peran Anda:</p>
             </div>
             <div class="role-grid">
-                <div class="role-btn" onclick="location.href='mitra-login.html'"><i class="fa-solid fa-store"></i><span>Mitra Warung</span></div>
+                <div class="role-btn" onclick="pindahKe('login-mitra')"><i class="fa-solid fa-store"></i><span>Mitra Warung</span></div>
                 <div class="role-btn" onclick="pindahKe('login-performer')"><i class="fa-solid fa-guitar"></i><span>Performer</span></div>
                 <div class="role-btn" onclick="pindahKe('login-mentor')"><i class="fa-solid fa-graduation-cap"></i><span>Mentor</span></div>
                 <div class="role-btn admin-btn" onclick="location.href='admin-login.html'"><i class="fa-solid fa-user-shield"></i><span>Admin</span></div>
@@ -59,6 +59,21 @@
             <br>
             <a href="index.html" style="color:#666; font-size:0.8rem; text-decoration:none;">Kembali ke Home</a>
         </div>
+
+        <!-- LOGIN MITRA / WARUNG -->
+<div id="view-login-mitra" class="section-view">
+    <div class="auth-header">
+        <button class="back-icon" onclick="pindahKe('menu')"><i class="fa-solid fa-arrow-left"></i></button>
+        <h2>Login Mitra</h2><p>Kelola Warung & Pesanan</p>
+    </div>
+    <div class="form-group">
+        <label>Nama Warung (Sesuai Pendaftaran)</label>
+        <input type="text" id="mitra-name-login" class="form-input" placeholder="Contoh: Warung Bu Sri">
+    </div>
+    <button id="btn-login-mitra" class="role-btn" style="background:#E50914; width:100%; border:none; margin-top:10px;">MASUK DASHBOARD</button>
+    
+    <span class="link-text" onclick="location.href='mitra-login.html'">Belum daftar? Buat Akun Baru</span>
+</div>
 
         <!-- LOGIN PERFORMER -->
         <div id="view-login-performer" class="section-view">
@@ -117,134 +132,160 @@
     </div>
 
     <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from './firebase-config.js';
+    import { collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Fungsi Pindah Tampilan
-        window.pindahKe = function(tujuan) {
-            document.querySelectorAll('.section-view').forEach(e => e.style.display = 'none');
-            
-            if (tujuan === 'menu') document.getElementById('view-menu').style.display = 'block';
-            else if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
-            else if (tujuan === 'login-mentor') document.getElementById('view-login-mentor').style.display = 'block';
-            else if (tujuan === 'register-mentor') document.getElementById('view-register-mentor').style.display = 'block';
+    // 1. FUNGSI PINDAH TAMPILAN
+    window.pindahKe = function(tujuan) {
+        document.querySelectorAll('.section-view').forEach(e => e.style.display = 'none');
+        
+        if (tujuan === 'menu') document.getElementById('view-menu').style.display = 'block';
+        else if (tujuan === 'login-mitra') document.getElementById('view-login-mitra').style.display = 'block';
+        else if (tujuan === 'login-performer') document.getElementById('view-login-performer').style.display = 'block';
+        else if (tujuan === 'login-mentor') document.getElementById('view-login-mentor').style.display = 'block';
+        else if (tujuan === 'register-mentor') document.getElementById('view-register-mentor').style.display = 'block';
+    }
+
+    // 2. LOGIKA LOGIN MITRA (PENTING: INI SINKRON DENGAN ADMIN)
+    document.getElementById('btn-login-mitra').addEventListener('click', async () => {
+        const name = document.getElementById('mitra-name-login').value;
+        const btn = document.getElementById('btn-login-mitra');
+        
+        if(!name) return alert("Masukkan Nama Warung!");
+        btn.innerText = "Memeriksa...";
+        
+        try {
+            // Cari data di Firebase berdasarkan Nama Warung
+            const q = query(collection(db, "warungs"), where("name", "==", name));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                const data = doc.data();
+
+                // SIMPAN KUNCI (SAMA PERSIS DENGAN ADMIN)
+                localStorage.clear();
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('userRole', 'mitra');
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('mitraId', doc.id); // <--- KUNCI UTAMA
+                localStorage.setItem('userLink', 'mitra-dashboard.html');
+
+                window.location.href = 'mitra-dashboard.html';
+            } else {
+                alert("Nama Warung tidak ditemukan. Pastikan penulisan benar.");
+                btn.innerText = "MASUK DASHBOARD";
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Gagal koneksi: " + e.message);
+            btn.innerText = "MASUK DASHBOARD";
         }
+    });
 
-        // --- LOGIKA LOGIN MENTOR ---
-        document.getElementById('btn-login-mentor').addEventListener('click', async () => {
-            const email = document.getElementById('mentor-email-login').value;
-            const btn = document.getElementById('btn-login-mentor');
-            
-            if(!email) return alert("Masukkan Email!");
-            
-            btn.innerHTML = "Memeriksa...";
-            
-            try {
-                const q = query(collection(db, "mentors"), where("email", "==", email));
-                const querySnapshot = await getDocs(q);
+    // 3. LOGIKA LOGIN PERFORMER
+    document.getElementById('btn-login-perf').addEventListener('click', async () => {
+        const name = document.getElementById('perf-name-login').value;
+        const btn = document.getElementById('btn-login-perf');
+        
+        if(!name) return alert("Masukkan Nama Panggung!");
+        btn.innerText = "Memeriksa...";
+        
+        try {
+            const q = query(collection(db, "performers"), where("name", "==", name));
+            const querySnapshot = await getDocs(q);
 
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    const data = doc.data();
-                    
-                    // Cek Status Approval
-                    if (data.status === 'pending') {
-                        alert("Akun Anda sedang menunggu persetujuan Admin.");
-                        btn.innerHTML = "MASUK PANEL MENTOR";
-                        return;
-                    }
-
-                    localStorage.setItem('userLoggedIn', 'true');
-                    localStorage.setItem('userRole', 'mentor');
-                    localStorage.setItem('userName', data.name);
-                    localStorage.setItem('mentorId', doc.id); 
-                    localStorage.setItem('userLink', 'mentor-dashboard.html');
-                    
-                    alert(`Selamat datang, ${data.name}!`);
-                    window.location.href = 'mentor-dashboard.html';
-                } else {
-                    alert("Email tidak ditemukan. Silakan daftar dulu.");
-                    btn.innerHTML = "MASUK PANEL MENTOR";
-                }
-            } catch (error) {
-                console.error("Login Error:", error);
-                alert("Terjadi kesalahan koneksi.");
-                btn.innerHTML = "MASUK PANEL MENTOR";
-            }
-        });
-
-        // --- LOGIKA LOGIN PERFORMER ---
-        document.getElementById('btn-login-perf').addEventListener('click', async () => {
-            const name = document.getElementById('perf-name-login').value;
-            const btn = document.getElementById('btn-login-perf');
-            
-            if(!name) return alert("Masukkan Nama Panggung!");
-            
-            btn.innerHTML = "Memeriksa...";
-            
-            try {
-                const q = query(collection(db, "performers"), where("name", "==", name));
-                const querySnapshot = await getDocs(q);
-
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    const data = doc.data();
-                    
-                    localStorage.setItem('userLoggedIn', 'true');
-                    localStorage.setItem('userRole', 'performer');
-                    localStorage.setItem('userName', data.name);
-                    localStorage.setItem('performerId', doc.id); 
-                    localStorage.setItem('userLink', 'performer-dashboard.html');
-                    
-                    alert(`Selamat datang, ${data.name}!`);
-                    window.location.href = 'performer-dashboard.html';
-                } else {
-                    alert("Nama Performer tidak ditemukan. Hubungi Admin.");
-                    btn.innerHTML = "MASUK STUDIO";
-                }
-            } catch (error) {
-                console.error("Login Error:", error);
-                alert("Terjadi kesalahan koneksi.");
-                btn.innerHTML = "MASUK STUDIO";
-            }
-        });
-
-        // --- LOGIKA PENDAFTARAN MENTOR BARU ---
-        window.submitRegistration = async function() {
-            const name = document.getElementById('reg-name').value;
-            const email = document.getElementById('reg-email').value;
-            const spec = document.getElementById('reg-spec').value;
-            const phone = document.getElementById('reg-phone').value;
-
-            if(!name || !email || !spec || !phone) return alert("Mohon lengkapi semua data!");
-
-            const btn = document.getElementById('btn-submit-reg');
-            btn.innerText = "Mengirim...";
-            btn.disabled = true;
-
-            try {
-                // Simpan ke database dengan status 'pending'
-                await addDoc(collection(db, "mentors"), {
-                    name: name,
-                    email: email,
-                    specialist: spec,
-                    phone: phone,
-                    status: 'pending', // <--- PENTING: Supaya masuk notifikasi Admin
-                    joinedAt: new Date(),
-                    portfolio: [],
-                    profession: []
-                });
-
-                alert("Pendaftaran Berhasil! Silakan tunggu persetujuan Admin via Email/WA.");
-                pindahKe('login-mentor'); // Kembali ke halaman login
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                const data = doc.data();
                 
-            } catch (e) {
-                console.error(e);
-                alert("Gagal mendaftar: " + e.message);
-                btn.innerText = "KIRIM PENDAFTARAN";
-                btn.disabled = false;
+                localStorage.clear();
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('userRole', 'performer');
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('performerId', doc.id); // <--- KUNCI UTAMA
+                localStorage.setItem('userLink', 'performer-dashboard.html');
+                
+                window.location.href = 'performer-dashboard.html';
+            } else {
+                alert("Nama Performer tidak ditemukan.");
+                btn.innerText = "MASUK STUDIO";
             }
+        } catch (error) {
+            console.error(error);
+            alert("Error: " + error.message);
+            btn.innerText = "MASUK STUDIO";
         }
-    </script>
+    });
+
+    // 4. LOGIKA LOGIN MENTOR
+    document.getElementById('btn-login-mentor').addEventListener('click', async () => {
+        const email = document.getElementById('mentor-email-login').value;
+        const btn = document.getElementById('btn-login-mentor');
+        
+        if(!email) return alert("Masukkan Email!");
+        btn.innerText = "Memeriksa...";
+        
+        try {
+            const q = query(collection(db, "mentors"), where("email", "==", email));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                const data = doc.data();
+                
+                if (data.status === 'pending') {
+                    alert("Akun Anda sedang menunggu persetujuan Admin.");
+                    btn.innerText = "MASUK PANEL MENTOR";
+                    return;
+                }
+
+                localStorage.clear();
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('userRole', 'mentor');
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('mentorId', doc.id); // <--- KUNCI UTAMA
+                localStorage.setItem('userLink', 'mentor-dashboard.html');
+                
+                window.location.href = 'mentor-dashboard.html';
+            } else {
+                alert("Email tidak ditemukan.");
+                btn.innerText = "MASUK PANEL MENTOR";
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error: " + error.message);
+            btn.innerText = "MASUK PANEL MENTOR";
+        }
+    });
+
+    // 5. LOGIKA REGISTER MENTOR (Sama seperti sebelumnya)
+    window.submitRegistration = async function() {
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const spec = document.getElementById('reg-spec').value;
+        const phone = document.getElementById('reg-phone').value;
+
+        if(!name || !email || !spec || !phone) return alert("Mohon lengkapi data!");
+
+        const btn = document.getElementById('btn-submit-reg');
+        btn.innerText = "Mengirim...";
+        btn.disabled = true;
+
+        try {
+            await addDoc(collection(db, "mentors"), {
+                name: name, email: email, specialist: spec, phone: phone,
+                status: 'pending', joinedAt: new Date(), portfolio: [], profession: []
+            });
+            alert("Pendaftaran Berhasil! Tunggu konfirmasi Admin.");
+            pindahKe('login-mentor');
+        } catch (e) {
+            console.error(e);
+            alert("Gagal: " + e.message);
+            btn.innerText = "KIRIM PENDAFTARAN";
+            btn.disabled = false;
+        }
+    }
+</script>
 </body>
 </html>
