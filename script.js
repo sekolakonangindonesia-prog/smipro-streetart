@@ -179,12 +179,7 @@ let selectedWarungId = null; // Menyimpan ID warung yang akan dibooking
 // 1. Buka Modal Booking
 window.openBooking = async function(id) {
     selectedWarungId = id; // Simpan ID
-    
-    // Ambil Nama Warung dulu dari database biar judul modalnya benar
-    const docRef = doc(db, "warungs", id);
-    const docSnap = await getDocs(query(collection(db, "warungs"), where(document.id, "==", id))); 
-    // *Catatan: Cara di atas agak ribet, kita pakai cara getDoc biasa:
-    
+            
     // Kita reset dulu formnya
     document.getElementById('book-name').value = '';
     document.getElementById('book-qty').value = '1';
@@ -346,16 +341,16 @@ window.processLogin = function() {
 }
 
 /* =========================================
-   7. FITUR LAIN (RATING, MODAL, DLL)
+   7. FITUR LAIN (RATING, MODAL, DLL) - WAJIB PAKAI WINDOW
    ========================================= */
 
 // Buka Modal Pelatihan
-function openTrainingModal() {
+window.openTrainingModal = function() {
     document.getElementById('training-modal').style.display = 'block';
 }
 
 // Logika Bintang Rating
-function rateVenue(n) {
+window.rateVenue = function(n) {
     const stars = document.querySelectorAll('#venue-stars i');
     stars.forEach((s, i) => {
         if(i < n) s.classList.add('gold');
@@ -364,13 +359,17 @@ function rateVenue(n) {
 }
 
 // Submit Kritik Saran
-function submitVenueFeedback() {
+window.submitVenueFeedback = function() {
     const text = document.getElementById('venue-feedback').value;
     if(!text) return alert("Mohon tulis kritik & saran!");
     
     alert("Terima kasih! Masukan Anda telah kami terima.");
     document.getElementById('venue-feedback').value = ''; // Kosongkan input
-    rateVenue(0); // Reset bintang
+    window.rateVenue(0); // Reset bintang
+}
+
+window.openScheduleModal = function() {
+    document.getElementById('schedule-modal').style.display = 'flex';
 }
 
 /* =========================================
@@ -386,8 +385,3 @@ window.onload = function() {
         loadLoginData(); 
     }
 };
-
-function openScheduleModal() {
-    document.getElementById('schedule-modal').style.display = 'flex';
-}
-// Fungsi closeModal sudah ada di script sebelumnya, tidak perlu double.
