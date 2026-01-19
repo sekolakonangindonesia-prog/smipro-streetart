@@ -262,73 +262,86 @@ window.confirmBooking = async function() {
 
 
 /* =========================================
-   6. SISTEM ADMIN (MITRA WARUNG)
+   6. SISTEM LOGIN PUBLIK (MITRA, ARTIS, MENTOR)
    ========================================= */
 
-// Isi dropdown warung di halaman login admin
-function prepareAdminLogin() {
-    const sel = document.getElementById('admin-select');
-    sel.innerHTML = '<option value="">-- Pilih Warung Anda --</option>';
-    warungData.forEach(w => {
-        sel.innerHTML += `<option value="${w.id}">${w.name}</option>`;
-    });
-}
-
-// Proses Login Admin
-function adminLogin() {
-    const id = parseInt(document.getElementById('admin-select').value);
-    if(!id) return alert("Silakan pilih warung terlebih dahulu!");
+// FUNGSI 1: ISI DROPDOWN DARI FIREBASE (Menggantikan Data Dummy)
+// Dipanggil saat user memilih jenis akun (Mitra/Performer/Mentor)
+async function loadLoginData() {
+    const roleSelect = document.getElementById('role-select'); // Dropdown Jenis
+    const nameSelect = document.getElementById('admin-select'); // Dropdown Nama
     
-    const w = warungData.find(item => item.id === id);
-    if(w) {
-        renderAdminDashboard(w);
-        showPage('admin-dashboard');
-    }
-}
+    if (!roleSelect || !nameSelect) return;
 
-// Logout Admin
-function adminLogout() {
-    showPage('home');
-}
-
-// Render Dashboard Admin
-function renderAdminDashboard(w) {
-    document.getElementById('admin-title-text').innerText = `Admin: ${w.name}`;
-    document.getElementById('stat-empty').innerText = w.total - w.booked;
-    document.getElementById('stat-booked').innerText = w.booked;
+    const role = roleSelect.value; 
     
-    const list = document.getElementById('booking-list-admin');
-    list.innerHTML = ''; // Bersihkan list
+    nameSelect.innerHTML = '<option value="">Memuat data...</option>';
+    nameSelect.disabled = true;
 
-    if(w.bookings.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">Belum ada tamu booking saat ini.</p>';
-    } else {
-        w.bookings.forEach((b, idx) => {
-            list.innerHTML += `
-            <div class="admin-book-item" style="background:#222; padding:10px; margin-bottom:10px; border-left:4px solid var(--accent); display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <b>${b.name}</b>
-                    <br><small style="color:#aaa;">${b.qty} Meja • Pukul ${b.time}</small>
-                </div>
-                <button class="btn-small" style="background:#444; border:1px solid #666; color:white; cursor:pointer;" onclick="releaseTable(${w.id}, ${idx})">Selesai</button>
-            </div>`;
-        });
-    }
-}
-
-// Kosongkan Meja (Tamu Pulang)
-function releaseTable(warungId, bookingIndex) {
-    if(!confirm("Apakah tamu sudah pulang? Meja akan dikosongkan.")) return;
-
-    const w = warungData.find(item => item.id === warungId);
-    if(w) {
-        // Kembalikan jumlah meja
-        w.booked -= w.bookings[bookingIndex].qty;
-        // Hapus dari daftar booking
-        w.bookings.splice(bookingIndex, 1);
+    try {
+        let collectionName = "";
         
-        alert("Meja berhasil dikosongkan!");
-        renderAdminDashboard(w); // Refresh tampilan admin
+        // Pilih Koleksi Sesuai Jenis
+        if (role === 'mitra') collectionName = "warungs";
+        else if (role === 'performer') collectionName = "performers";
+        else if (role === 'mentor') collectionName = "mentors";
+        
+        // Ambil Data Real dari Firebase
+        const q = query(collection(db, collectionName));
+        const snapshot = await getDocs(q);
+
+        nameSelect.innerHTML = `<option value="">-- Pilih Nama Anda --</option>`;
+        
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            // Value = ID (Kunci), Text = Nama
+            nameSelect.innerHTML += `<option value="${docSnap.id}">${d.name}</option>`;
+        });
+        
+        nameSelect.disabled = false;
+
+    } catch (e) {
+        console.error("Error:", e);
+        nameSelect.innerHTML = '<option value="">Gagal memuat data</option>';
+    }
+}
+
+// FUNGSI 2: PROSES LOGIN (MENYAMAKAN KUNCI DENGAN ADMIN)
+window.processLogin = function() {
+    const roleSelect = document.getElementById('role-select');
+    const nameSelect = document.getElementById('admin-select');
+
+    if (!roleSelect || !nameSelect) return;
+    
+    const role = roleSelect.value; // 'mitra', 'performer', atau 'mentor'
+    const id = nameSelect.value;   // ID Dokumen Firebase
+    const name = nameSelect.options[nameSelect.selectedIndex].text;
+
+    if (!id) return alert("Silakan pilih nama terlebih dahulu!");
+
+    // --- DI SINI KITA SAMAKAN LOGIKANYA DENGAN ADMIN ---
+    localStorage.clear(); // Bersihkan memori lama
+
+    // 1. Simpan Data Umum (Untuk Navbar Index)
+    localStorage.setItem('userLoggedIn', 'true');
+    localStorage.setItem('userRole', role);
+    localStorage.setItem('userName', name);
+
+    // 2. Simpan Kunci Khusus & Redirect (Sesuai Tujuan Dashboard)
+    if (role === 'mitra') {
+        localStorage.setItem('mitraId', id); // <--- INI KUNCINYA (SAMA DENGAN ADMIN)
+        localStorage.setItem('userLink', 'mitra-dashboard.html');
+        window.location.href = 'mitra-dashboard.html'; // <--- MENUJU SS4
+    
+    } else if (role === 'performer') {
+        localStorage.setItem('performerId', id);
+        localStorage.setItem('userLink', 'performer-dashboard.html');
+        window.location.href = 'performer-dashboard.html';
+    
+    } else if (role === 'mentor') {
+        localStorage.setItem('mentorId', id);
+        localStorage.setItem('userLink', 'mentor-dashboard.html');
+        window.location.href = 'mentor-dashboard.html';
     }
 }
 
@@ -366,7 +379,12 @@ function submitVenueFeedback() {
 
 // Jalankan saat web pertama dibuka
 window.onload = function() {
-    renderDashboard();
+    if(typeof renderDashboard === 'function') renderDashboard();
+    
+    // Jika kita di halaman Login (ada dropdown role)
+    if(document.getElementById('role-select')) {
+        loadLoginData(); 
+    }
 };
 
 function openScheduleModal() {
