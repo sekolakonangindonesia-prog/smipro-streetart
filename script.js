@@ -1,35 +1,8 @@
-/* =========================================
-   1. DATABASE SIMULASI (DATA DUMMY)
-   ========================================= */
+import { db } from './firebase-config.js';
+import { 
+    collection, getDocs, onSnapshot, addDoc, updateDoc, doc, query, where 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Data 5 Lokasi untuk Dashboard Utama
-const dashboardVenues = [
-    { id: 1, name: "Stadion Bayuangga Zone", active: true, desc: "Pusat Aktivitas Utama" },
-    { id: 2, name: "Alun-Alun Kota", active: false, desc: "Segera Hadir" },
-    { id: 3, name: "Benteng Mayangan", active: false, desc: "Segera Hadir" },
-    { id: 4, name: "Museum Probolinggo", active: false, desc: "Segera Hadir" },
-    { id: 5, name: "BJBR Mangrove", active: false, desc: "Segera Hadir" }
-];
-
-// Data Warung (Hanya muncul saat Stadion diklik)
-// 'total': Total meja, 'booked': Meja terisi
-let warungData = [
-    { id: 101, name: "Warung Bu Sri", img: "https://images.unsplash.com/photo-1541544744-5e3a01998cd1?q=80&w=200", total: 15, booked: 5, bookings: [] },
-    { id: 102, name: "Kopi Pakde Jono", img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=200", total: 10, booked: 2, bookings: [] },
-    { id: 103, name: "Angkringan Mas Boy", img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=200", total: 20, booked: 18, bookings: [] },
-    { id: 104, name: "Sate Taichan Pro", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=200", total: 12, booked: 12, bookings: [] }, // Penuh
-    { id: 105, name: "Ropang Gaul", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=200", total: 12, booked: 0, bookings: [] },
-    { id: 106, name: "Bakso Cak Man", img: "https://images.unsplash.com/photo-1529042410759-befb1204b468?q=80&w=200", total: 15, booked: 4, bookings: [] }
-];
-
-// Data Top 5 Performer
-const topPerf = [
-    { name: "Rina Violin", img: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=150" },
-    { name: "The Acoustic", img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=150" },
-    { name: "Rock Ballad", img: "https://images.unsplash.com/photo-1526218626217-dc65b9d6e630?q=80&w=150" },
-    { name: "Siti Keroncong", img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150" },
-    { name: "Solo Hudi", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150" }
-];
 
 /* =========================================
    2. SISTEM NAVIGASI HALAMAN
@@ -54,49 +27,81 @@ function showPage(pageId) {
 }
 
 /* =========================================
-   3. LOGIKA DASHBOARD (HOME)
+   3. LOGIKA DASHBOARD (HOME) - VERSI FIREBASE
    ========================================= */
 
-function renderDashboard() {
-    // A. Render 5 Lokasi Angkringan
+async function renderDashboard() {
+    // A. Render Lokasi (Venues) dari Firebase
     const vList = document.getElementById('venues-list');
-    vList.innerHTML = ''; // Bersihkan dulu
-
-    dashboardVenues.forEach(v => {
-        // Tentukan style berdasarkan aktif/tidak
-        let statusHtml = v.active ? `<span class="badge active">BUKA</span>` : `<span class="badge soon">SEGERA HADIR</span>`;
-        let disabledClass = v.active ? '' : 'disabled';
-        let icon = v.active ? 'fa-door-open' : 'fa-lock';
-        
-        // Tentukan aksi klik
-        let clickAction = v.active ? 
-            `onclick="openVenueDetail()"` : 
-            `onclick="alert('Mohon maaf, lokasi ini Segera Hadir / Belum Dibuka!')"`;
-
-        vList.innerHTML += `
-        <div class="venue-card ${disabledClass}" ${clickAction}>
-            <div style="font-size:1.5rem; color:${v.active ? 'var(--primary)' : '#555'}">
-                <i class="fa-solid ${icon}"></i>
-            </div>
-            <div style="flex:1;">
-                <h3 style="margin:0; font-size:1rem;">${v.name} ${statusHtml}</h3>
-                <p style="margin:0; font-size:0.8rem; color:#888;">${v.desc}</p>
-            </div>
-            <i class="fa-solid fa-chevron-right" style="color:#444;"></i>
-        </div>`;
-    });
-
-    // B. Render Top 5 Performers
-    const pList = document.getElementById('top-performers-list');
-    pList.innerHTML = '';
     
-    topPerf.forEach(p => {
-        pList.innerHTML += `
-        <div class="artist-card-ss1">
-            <img src="${p.img}" class="artist-img-ss1">
-            <h4>${p.name}</h4>
-        </div>`;
-    });
+    // Cek dulu apakah elemennya ada di HTML agar tidak error
+    if (vList) {
+        vList.innerHTML = '<p style="text-align:center;">Memuat lokasi...</p>'; // Loading state
+        
+        try {
+            // Ambil data dari koleksi 'venues'
+            const q = query(collection(db, "venues")); 
+            const snapshot = await getDocs(q);
+            
+            vList.innerHTML = ''; // Bersihkan loading
+
+            if(snapshot.empty) {
+                vList.innerHTML = '<p>Belum ada data lokasi.</p>';
+            }
+
+            snapshot.forEach(docSnap => {
+                const v = docSnap.data();
+                const isOpen = v.status === 'open'; // Cek status open/closed
+                
+                // Style berdasarkan status
+                let statusHtml = isOpen ? `<span class="badge active">BUKA</span>` : `<span class="badge soon">TUTUP</span>`;
+                let disabledClass = isOpen ? '' : 'disabled';
+                let icon = isOpen ? 'fa-door-open' : 'fa-lock';
+                
+                // Aksi Klik: Kalau BUKA jalankan fungsi detail, Kalau TUTUP muncul alert
+                let clickAction = isOpen ? 
+                    `onclick="openVenueDetail('${docSnap.id}')"` : 
+                    `onclick="alert('Mohon maaf, lokasi ini sedang Tutup!')"`;
+
+                vList.innerHTML += `
+                <div class="venue-card ${disabledClass}" ${clickAction} style="cursor:pointer;">
+                    <div style="font-size:1.5rem; color:${isOpen ? 'var(--primary)' : '#555'}">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <h3 style="margin:0; font-size:1rem;">${v.name} ${statusHtml}</h3>
+                        <p style="margin:0; font-size:0.8rem; color:#888;">${v.desc || ''}</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="color:#444;"></i>
+                </div>`;
+            });
+        } catch (e) {
+            console.error("Gagal memuat venues:", e);
+        }
+    }
+
+    // B. Render Top Performers dari Firebase
+    const pList = document.getElementById('top-performers-list');
+    if (pList) {
+        try {
+            // Ambil data dari koleksi 'performers'
+            const qPerf = query(collection(db, "performers"));
+            const snapPerf = await getDocs(qPerf);
+            
+            pList.innerHTML = '';
+
+            snapPerf.forEach(docSnap => {
+                const p = docSnap.data();
+                pList.innerHTML += `
+                <div class="artist-card-ss1">
+                    <img src="${p.img || 'https://via.placeholder.com/150'}" class="artist-img-ss1">
+                    <h4>${p.name}</h4>
+                </div>`;
+            });
+        } catch (e) {
+            console.error("Gagal memuat performer:", e);
+        }
+    }
 }
 
 /* =========================================
