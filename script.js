@@ -105,42 +105,68 @@ async function renderDashboard() {
 }
 
 /* =========================================
-   4. LOGIKA HALAMAN DETAIL (VENUES)
+   4. LOGIKA HALAMAN DETAIL (VENUES) - VERSI FIREBASE
    ========================================= */
 
-// Dipanggil saat Angkringan Utama diklik
-function openVenueDetail() {
-    showPage('detail');
-    renderWarungs(); // Render grid warung
+let currentVenueId = null; // Variabel penyimpan ID Venue yang sedang dibuka
+
+// Dipanggil saat Venue di Dashboard diklik
+window.openVenueDetail = function(id) {
+    currentVenueId = id; // Simpan ID biar sistem tahu kita di venue mana
+    showPage('detail');  // Pindah halaman ke detail
+    renderWarungs();     // Panggil fungsi muat data
 }
 
-// Render Grid Warung dan Status Meja
+// Render Grid Warung dan Status Meja (Realtime)
 function renderWarungs() {
     const grid = document.getElementById('warung-grid');
-    grid.innerHTML = ''; // Reset isi grid
-    
-    warungData.forEach(w => {
-        const sisa = w.total - w.booked;
-        const isFull = sisa <= 0;
-        
-        // Tentukan tombol booking
-        let btnHtml = isFull ? 
-            `<button class="btn-book" disabled style="background:#555; cursor:not-allowed;">Penuh</button>` : 
-            `<button class="btn-book" onclick="openBooking(${w.id})">Booking</button>`;
-            
-        let statusClass = isFull ? 'full' : '';
+    if(!grid) return;
 
-        grid.innerHTML += `
-        <div class="warung-card">
-            <img src="${w.img}" class="warung-img">
-            <div style="padding:10px;">
-                <span style="font-weight:bold; display:block; font-size:0.9rem;">${w.name}</span>
-                <span class="table-status ${statusClass}" style="font-size:0.75rem; color:#aaa; display:block; margin:5px 0;">
-                    <b>${isFull ? 0 : sisa}</b> / ${w.total} Meja
-                </span>
-                ${btnHtml}
-            </div>
-        </div>`;
+    grid.innerHTML = '<p style="text-align:center; color:#ccc; width:100%;">Memuat daftar warung...</p>';
+
+    // Ambil data warung secara Realtime (onSnapshot)
+    // Jadi kalau admin update meja, di sini langsung berubah tanpa refresh
+    onSnapshot(collection(db, "warungs"), (snapshot) => {
+        grid.innerHTML = ''; // Bersihkan dulu
+        
+        if(snapshot.empty) {
+            grid.innerHTML = '<p style="text-align:center; color:#ccc; width:100%;">Belum ada warung di lokasi ini.</p>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const w = docSnap.data();
+            const wId = docSnap.id; // ID Dokumen Firebase
+            
+            // Ambil data meja dari database
+            // (Pastikan di database nanti ada field 'totalTables'. Jika 'booked' belum ada, anggap 0)
+            const total = parseInt(w.totalTables) || 0;
+            const booked = parseInt(w.bookedTables) || 0;
+            
+            const sisa = total - booked;
+            const isFull = sisa <= 0;
+            
+            // Atur Tombol: Kalau penuh dimatikan, kalau ada sisa bisa diklik
+            let btnHtml = isFull ? 
+                `<button class="btn-book" disabled style="background:#555; cursor:not-allowed;">Penuh</button>` : 
+                `<button class="btn-book" onclick="openBooking('${wId}')">Booking</button>`;
+                
+            let statusClass = isFull ? 'full' : '';
+            let imgUrl = w.img || "https://via.placeholder.com/200"; // Gambar default jika kosong
+
+            // Render HTML Kartu Warung
+            grid.innerHTML += `
+            <div class="warung-card">
+                <img src="${imgUrl}" class="warung-img">
+                <div style="padding:10px;">
+                    <span style="font-weight:bold; display:block; font-size:0.9rem;">${w.name}</span>
+                    <span class="table-status ${statusClass}" style="font-size:0.75rem; color:#aaa; display:block; margin:5px 0;">
+                        <b>${isFull ? 0 : sisa}</b> / ${total} Meja
+                    </span>
+                    ${btnHtml}
+                </div>
+            </div>`;
+        });
     });
 }
 
