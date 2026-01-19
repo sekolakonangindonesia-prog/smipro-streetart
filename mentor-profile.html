@@ -61,6 +61,15 @@
             font-size: 1rem; cursor: pointer; margin-top: 30px; box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3); text-decoration: none; transition: 0.3s;
         }
         .btn-contact:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5); }
+
+        /* CSS SOSMED MENTOR */
+        .social-links { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; }
+        .social-icon { 
+        width: 40px; height: 40px; border-radius: 50%; background: #222; color: #ccc;
+        display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        text-decoration: none; border: 1px solid #444; transition: 0.3s;
+        }
+        .social-icon:hover { background: #FFD700; color: black; border-color: #FFD700; transform: translateY(-3px); }
         @media (max-width: 768px) {
             .credential-grid { grid-template-columns: 1fr; }
             .profile-hero { height: 300px; padding-bottom: 40px; }
@@ -112,12 +121,18 @@
             <!-- Nanti diisi dinamis, sementara dummy untuk visual -->
             
         </div>
-
-        <div style="text-align:center; margin: 50px 0;">
-            <p style="color:#888;">Ingin mengundang mentor ini untuk pelatihan?</p>
-            <a href="#" id="btn-wa" class="btn-contact"><i class="fa-brands fa-whatsapp"></i> Hubungi Manajemen</a>
-        </div>
-        <br><br>
+   
+            <!-- FOOTER -->
+<div class="footer-action">
+    <p style="color:#888; font-size:0.9rem; margin-bottom:15px;">Ingin mengundang mentor ini untuk pelatihan?</p>
+    
+    <!-- WADAH SOSMED (JS AKAN MENGISI INI) -->
+    <div id="social-container" class="social-links"></div> 
+    
+    <a href="#" id="btn-wa" class="btn-wa">
+        <i class="fa-brands fa-whatsapp"></i> Hubungi Manajemen
+    </a>
+</div>           
     </div>
 
     <!-- MODAL PLAYER UNTUK PENGUNJUNG -->
@@ -237,6 +252,19 @@ window.closePublicPlayer = function() {
     document.getElementById('public-player-content').innerHTML = ''; // Stop video/audio
 }
 
+                // --- 6. TAMPILKAN SOSMED (LOGIKA BARU) ---
+                const socialBox = document.getElementById('social-container');
+                if (socialBox) {
+                    socialBox.innerHTML = ''; // Bersihkan dulu
+
+                    if (data.socials) {
+                        if(data.socials.ig) socialBox.innerHTML += `<a href="${data.socials.ig}" target="_blank" class="social-icon"><i class="fa-brands fa-instagram"></i></a>`;
+                        if(data.socials.tiktok) socialBox.innerHTML += `<a href="${data.socials.tiktok}" target="_blank" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>`;
+                        if(data.socials.yt) socialBox.innerHTML += `<a href="${data.socials.yt}" target="_blank" class="social-icon"><i class="fa-brands fa-youtube"></i></a>`;
+                        if(data.socials.fb) socialBox.innerHTML += `<a href="${data.socials.fb}" target="_blank" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>`;
+                    }
+                }
+                
                 // 4. SETUP TOMBOL WA
                 const text = `Halo Admin SMIPRO, saya tertarik dengan profil mentor *${data.name}* (${data.specialist}). Mohon info lebih lanjut.`;
                 document.getElementById('btn-wa').href = `https://wa.me/6281234567890?text=${encodeURIComponent(text)}`;
