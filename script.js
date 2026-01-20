@@ -112,9 +112,7 @@ let currentVenueId = null; // Variabel penyimpan ID Venue yang sedang dibuka
 
 // Dipanggil saat Venue di Dashboard diklik
 window.openVenueDetail = function(id) {
-    currentVenueId = id; // Simpan ID biar sistem tahu kita di venue mana
-    showPage('detail');  // Pindah halaman ke detail
-    renderWarungs();     // Panggil fungsi muat data
+    window.location.href = 'venue-stadion.html?id=' + id;
 }
 
 // Render Grid Warung dan Status Meja (Realtime)
