@@ -367,23 +367,13 @@
         async function loadVenues() {
             const container = document.getElementById('venue-list-container');
             const userRole = localStorage.getItem('userRole');
-            
-            // Cek apakah Admin
             const isAdmin = userRole === 'admin';
 
             const q = query(collection(db, "venues"), orderBy("order", "asc"));
             
             onSnapshot(q, (snapshot) => {
                 if(snapshot.empty) {
-                    if(isAdmin) {
-                        container.innerHTML = `
-                        <div style="text-align:center; padding:20px; border:1px dashed red; border-radius:10px;">
-                            <p style="color:red;">Data Lokasi Belum Ada!</p>
-                            <button onclick="window.seedVenuesDirect()" style="background:red; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">GENERATE LOKASI</button>
-                        </div>`;
-                    } else {
-                        container.innerHTML = `<p style="text-align:center;color:#666;">Lokasi belum tersedia.</p>`;
-                    }
+                    container.innerHTML = `<p style="text-align:center;color:#666;">Lokasi belum tersedia.</p>`;
                     return;
                 }
 
@@ -395,24 +385,12 @@
                     const badgeClass = isOpen ? 'active' : 'soon';
                     const badgeText = isOpen ? 'BUKA' : 'TUTUP';
                     
-                    // --- PERBAIKAN DI SINI ---
-                    // 1. Tentukan Aksi Klik Kartu
-                    // Admin SELALU bisa masuk (walau tutup). User biasa hanya bisa masuk jika BUKA.
-                    let cardAction = "";
-                    if (isAdmin) {
-                        cardAction = ""; 
-                    } else {
-                        cardAction = isOpen ? `location.href='venue-stadion.html?id=${docSnap.id}'` : `alert('Maaf, lokasi ini sedang tutup/belum beroperasi.')`;
-                    }
-
-                    // 2. Tombol Saklar Admin (PENTING: Tambah event.stopPropagation)
+                    // Tombol Saklar Admin (Tetap Ada)
                     let adminSwitchHTML = "";
                     if (isAdmin) {
                         const toggleColor = isOpen ? '#00ff00' : '#333';
                         const toggleIcon = isOpen ? 'fa-toggle-on' : 'fa-toggle-off';
                         
-                        // Perhatikan: onclick="event.stopPropagation(); window.toggleVenueStatus..."
-                        // Ini mencegah agar saat klik saklar, tidak ikut masuk ke halaman venue.
                         adminSwitchHTML = `
                         <div style="margin-left:10px; text-align:center; z-index:100; cursor:pointer;" 
                              onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
@@ -421,13 +399,20 @@
                         </div>`;
                     }
 
+                    // RENDER HTML (Perhatikan bagian onclick)
+                    // Kita panggil fungsi window.handleVenueClick yang tadi kita buat
                     container.innerHTML += `
-                    <div class="venue-card ${isOpen ? '' : 'disabled'}" onclick="${cardAction}" style="display:flex; align-items:center; cursor:pointer;">
+                    <div class="venue-card ${isOpen ? '' : 'disabled'}" 
+                         onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')" 
+                         style="display:flex; align-items:center; cursor:pointer;">
+                        
                         <div class="icon-box"><i class="fa-solid ${data.icon}"></i></div>
+                        
                         <div style="flex:1;">
                             <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span></h3>
                             <small style="color:#888;">${data.desc}</small>
                         </div>
+                        
                         ${adminSwitchHTML}
                     </div>`;
                 });
@@ -493,7 +478,21 @@
                 await updateDoc(doc(db, "venues", id), { status: newStatus });
             }
         }
-       
+
+        // --- FUNGSI BARU: KLIK VENUE (AMAN DARI ERROR) ---
+window.handleVenueClick = function(id, status) {
+    const userRole = localStorage.getItem('userRole');
+    const isAdmin = userRole === 'admin';
+    const isOpen = status === 'open';
+
+    // Logika: Admin bebas masuk, User biasa harus cek status buka
+    if (isAdmin || isOpen) {
+        window.location.href = `venue-stadion.html?id=${id}`;
+    } else {
+        alert('Maaf, lokasi ini sedang tutup/belum beroperasi.');
+    }
+}
+        
         // ==========================================
         // 4. EKSEKUSI
         // ==========================================
