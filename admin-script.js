@@ -2253,7 +2253,7 @@ window.generateCafePDF = function() {
 }
 
 /* =========================================
-   10. MODUL KONTROL LAYAR & GALERI (NEW)
+   10. MODUL KONTROL LAYAR & GALERI (LENGKAP)
    ========================================= */
 
 // A. NAVIGASI SUB-TAB
@@ -2261,23 +2261,21 @@ window.switchLiveTab = function(tabId, btn) {
     document.querySelectorAll('.live-content').forEach(el => el.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
     
-    // Reset tombol active (Hanya jika btn ada/diklik)
+    // Reset tombol active
     if(btn && btn.parentElement) {
         btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
 
-    // Load Data
-    if(tabId === 'panel-live') loadCurrentLiveLink();
+    // Jika buka tab galeri, muat datanya
     if(tabId === 'panel-galeri') loadGalleryList(); 
 }
 
-/ B. FUNGSI ISI DROPDOWN VENUE (BARU)
+// B. FUNGSI ISI DROPDOWN VENUE (BARU)
 async function populateLiveVenueOptions() {
     const sel = document.getElementById('live-target-venue');
     if(!sel) return;
     
-    // Reset isi dropdown
     sel.innerHTML = '<option value="">-- Pilih Venue --</option>';
     
     try {
@@ -2286,7 +2284,6 @@ async function populateLiveVenueOptions() {
         
         snap.forEach(doc => {
             const d = doc.data();
-            // Masukkan Nama Venue ke Dropdown
             sel.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
         });
     } catch(e) {
@@ -2308,13 +2305,11 @@ window.checkExistingLiveLink = async function() {
         return;
     }
     
-    // Ambil data Venue terpilih
     const docSnap = await getDoc(doc(db, "venues", venueId));
     if(docSnap.exists()) {
         const d = docSnap.data();
-        inputLink.value = d.liveLink || ""; // Isi input dengan link yang ada di database
+        inputLink.value = d.liveLink || ""; 
         
-        // Update Monitor Preview
         if(d.youtubeId) {
             monitor.src = `https://www.youtube.com/embed/${d.youtubeId}?autoplay=0`;
             monitor.style.display = 'block';
@@ -2329,7 +2324,7 @@ window.checkExistingLiveLink = async function() {
 // D. UPDATE LIVE STREAMING (SIMPAN PER VENUE)
 window.updateLiveLink = async function() {
     const url = document.getElementById('main-live-link').value;
-    const venueId = document.getElementById('live-target-venue').value; // Ambil ID dari Dropdown
+    const venueId = document.getElementById('live-target-venue').value; 
     
     if (!venueId) return alert("⚠️ Pilih Lokasi Venue terlebih dahulu!");
     if (!url) return alert("⚠️ Link kosong!");
@@ -2342,7 +2337,6 @@ window.updateLiveLink = async function() {
 
     if (!videoId) return alert("ID Video tidak valid.");
 
-    // SIMPAN KE DOKUMEN VENUE YANG SPESIFIK
     await updateDoc(doc(db, "venues", venueId), {
         liveLink: url,
         youtubeId: videoId,
@@ -2350,13 +2344,11 @@ window.updateLiveLink = async function() {
     });
     
     alert("✅ Layar di Venue tersebut berhasil diupdate!");
-    
-    // Refresh Monitor Admin
     checkExistingLiveLink();
 }
 
+// --- E. MANAJEMEN GALERI VIDEO (INI BAGIAN GALERINYA) ---
 
-// C. MANAJEMEN GALERI VIDEO
 window.saveGalleryVideo = async function() {
     const title = document.getElementById('vid-title').value;
     const creator = document.getElementById('vid-creator').value;
