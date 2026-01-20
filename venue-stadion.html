@@ -275,6 +275,13 @@
                 venueNameGlobal = data.name;
                 document.title = data.name + " - SMIPRO";
 
+                // --- UPDATE TAMPILAN REVIEW (Supaya Gambarnya Sesuai Lokasi) ---
+                const reviewImg = document.querySelector('.venue-photo-review');
+                if (reviewImg) {
+                    // Pakai foto venue, kalau tidak ada pakai placeholder
+                    reviewImg.src = data.img || "https://via.placeholder.com/150";
+                }
+
                 // A. Load Video Live
                 const videoContainer = document.getElementById('main-stage-container');
                 if (data.youtubeId && data.liveLink) {
@@ -611,20 +618,34 @@
         
         if(!name || window.currentVenueRating === 0) return alert("Beri bintang dan nama!");
 
-        await addDoc(collection(db, "venue_reviews"), {
-            venueId: venueId, // Review terikat ke ID Venue
-            name: name,
-            rating: window.currentVenueRating,
-            comment: comment,
-            timestamp: new Date()
-        });
-        alert("Terima kasih ulasannya!");
-        document.getElementById('venue-comment').value = '';
+        try {
+            await addDoc(collection(db, "venue_reviews"), {
+                venueId: venueId, // <--- KUNCI PENTING: ID LOKASI
+                venueName: venueNameGlobal, // Opsional: Biar admin tau nama lokasinya
+                name: name,
+                rating: window.currentVenueRating,
+                comment: comment,
+                timestamp: new Date()
+            });
+            
+            alert("Terima kasih ulasannya!");
+            document.getElementById('venue-comment').value = '';
+            document.getElementById('venue-reviewer-name').value = '';
+            // Reset Bintang
+            window.rateStar('venue', 0);
+            
+        } catch(e) {
+            console.error(e);
+            alert("Gagal kirim ulasan: " + e.message);
+        }
     }
 
     function loadVenueReviews(vId) {
         const list = document.getElementById('venue-reviews-list');
-        const q = query(collection(db, "venue_reviews"), where("venueId", "==", vId), orderBy("timestamp", "desc"));
+        const q = query(collection(db, "venue_reviews"), 
+            where("venueId", "==", vId), 
+            orderBy("timestamp", "desc")
+        );
         
         onSnapshot(q, (snapshot) => {
             list.innerHTML = '';
