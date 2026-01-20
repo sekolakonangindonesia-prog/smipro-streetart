@@ -85,27 +85,23 @@
                 </div>
             </div>
 
-            <div class="live-panel">
-                <div class="live-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:#E50914;">Live Now</h3>
-                    <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold;">ON AIR</span>
-                </div>
+            <div class="live-panel" style="min-height:350px; display:flex; flex-direction:column;">
                 
-                <div class="perf-item">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <img src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=100" style="width:40px; height:40px; border-radius:50%;">
-                        <div><b style="color:white;">Rina Violin</b><br><small style="color:gold;">★ 4.9</small></div>
+                <!-- WADAH JADWAL DINAMIS (Akan diisi otomatis oleh JS) -->
+                <div id="schedule-placeholder" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                    <!-- Tampilan Default Jika Tidak Ada Jadwal -->
+                    <div style="text-align:center;">
+                        <i class="fa-solid fa-music" style="font-size:3rem; color:#333; margin-bottom:10px;"></i>
+                        <h3 style="margin:0; color:#E50914;">Dukung Performer</h3>
+                        <p style="color:#888; font-size:0.9rem;">Kirim salam & request lagu sekarang.</p>
                     </div>
-                    <button onclick="openRatePerformer('Rina Violin')" style="background:none; border:1px solid #555; color:gold; border-radius:50%; width:30px; height:30px; cursor:pointer;"><i class="fa-regular fa-star"></i></button>
                 </div>
 
-                <div class="perf-item">
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100" style="width:40px; height:40px; border-radius:50%;">
-                        <div><b style="color:white;">Acoustic Boys</b><br><small style="color:gold;">★ 4.8</small></div>
-                    </div>
-                    <button onclick="openRatePerformer('Acoustic Boys')" style="background:none; border:1px solid #555; color:gold; border-radius:50%; width:30px; height:30px; cursor:pointer;"><i class="fa-regular fa-star"></i></button>
-                </div>
+                <!-- TOMBOL REQUEST (Selalu Muncul di Bawah) -->
+                <button class="btn-req" onclick="window.openRequestModal()" style="margin-top:auto;">
+                    <i class="fa-solid fa-music"></i> Request Lagu & Sawer
+                </button>
+            </div>
                 
                 <button class="btn-req" onclick="openRequestModal()" style="margin-top:auto;">
                     <i class="fa-solid fa-music"></i> Request Lagu & Sawer
@@ -274,7 +270,7 @@
         window.location.href = 'index.html';
     }
 
-    // --- 2. LOAD DATA VENUE (JUDUL & VIDEO) ---
+  // 2. LOAD DATA VENUE
     async function loadVenueDetails() {
         try {
             const docRef = doc(db, "venues", venueId);
@@ -282,10 +278,10 @@
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                venueNameGlobal = data.name; // Simpan nama untuk filter data lain
-                document.title = data.name + " - SMIPRO"; // Ganti Judul Tab
+                venueNameGlobal = data.name;
+                document.title = data.name + " - SMIPRO";
 
-                // Load Video Live
+                // A. Load Video Live
                 const videoContainer = document.getElementById('main-stage-container');
                 if (data.youtubeId && data.liveLink) {
                     videoContainer.innerHTML = `
@@ -302,9 +298,10 @@
                         </div>`;
                 }
 
-                // Panggil Data Lain
+                // B. Panggil Data Lain (HANYA DI SINI)
                 loadWarungs(data.name);
                 loadVenueReviews(venueId);
+                loadEventSchedule(data.name); // Pastikan nama fungsi ini sesuai
 
             } else {
                 alert("Data Venue Tidak Ditemukan!");
@@ -433,6 +430,59 @@
         }
     }
 
+    // 5. LOAD JADWAL & TOMBOL BINTANG (INTEGRASI PERFORMER)
+    function loadEventSchedule(vName) {
+        const placeholder = document.getElementById('schedule-placeholder');
+        if(!placeholder) return;
+
+        // Query: Cari Event yang lokasinya SAMA dengan Venue ini
+        const q = query(collection(db, "events"), 
+            where("location", "==", vName), 
+            orderBy("date", "desc"), 
+            limit(1)
+        );
+
+        onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) return; // Jika kosong, biarkan tampilan default
+
+            const evt = snapshot.docs[0].data();
+            let htmlList = '';
+
+            // Loop Artis & Buat Tombol Bintang
+            if(evt.performers && evt.performers.length > 0) {
+                evt.performers.forEach(p => {
+                    htmlList += `
+                    <div class="perf-item" style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; margin-bottom:5px; border-radius:5px;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div style="background:#333; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-microphone" style="color:#E50914;"></i>
+                            </div>
+                            <div>
+                                <b style="color:white;">${p.name}</b><br>
+                                <small style="color:gold;">${p.time || 'Live Now'}</small>
+                            </div>
+                        </div>
+                        
+                        <!-- TOMBOL RATING (MENGHUBUNGKAN KE DASHBOARD PERFORMER) -->
+                        <button onclick="window.openRatePerformer('${p.name}')" 
+                            style="background:none; border:1px solid #555; color:gold; border-radius:50%; width:30px; height:30px; cursor:pointer;">
+                            <i class="fa-regular fa-star"></i>
+                        </button>
+                    </div>`;
+                });
+            }
+
+            // Update Tampilan Panel
+            placeholder.innerHTML = `
+                <div style="margin-bottom:15px; border-bottom:1px dashed #444; padding-bottom:10px; text-align:center;">
+                    <h3 style="margin:0; color:#E50914;">${evt.displayDate || 'Live Event'}</h3>
+                    <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">ON AIR</span>
+                </div>
+                ${htmlList}
+            `;
+        });
+    }
+
     // --- 5. SISTEM REQUEST SAWER ---
     window.openRequestModal = function() { document.getElementById('request-modal').style.display = 'flex'; }
     
@@ -519,6 +569,7 @@
 
     // --- EKSEKUSI ---
     loadVenueDetails();
+   
 
 </script>
 </body>
