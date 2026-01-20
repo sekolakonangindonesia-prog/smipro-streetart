@@ -424,93 +424,86 @@
         }
     }
 
-  // 5. LOAD JADWAL (VERSI JEBOL SARIINGAN - PASTI MUNCUL)
+ // 5. LOAD JADWAL (VERSI FINAL - ANTI ERROR INDEX & LIMIT)
     function loadEventSchedule(vName) {
         const placeholder = document.getElementById('schedule-placeholder');
         if(!placeholder) return;
 
-        // --- DEBUGGING START ---
-        console.log("🔥 MEMULAI PENCARIAN JADWAL...");
-        console.log("📍 Lokasi Halaman ini:", vName);
+        console.log("🔥 MEMULAI PENCARIAN JADWAL (SAFE MODE)...");
 
-        // 1. QUERY LEBIH LUAS (Hapus filter 'type')
-        // Kita ambil 5 event terakhir apa saja, nanti kita saring sendiri
-        const q = query(collection(db, "events"), 
-            orderBy("date", "desc"), 
-            limit(5) 
-        );
+        // 1. QUERY POLOS (Hanya ambil collection, tanpa sort/limit di database)
+        // Ini untuk menghindari Error "Index" dan "limit is not defined"
+        const q = query(collection(db, "events"));
 
         onSnapshot(q, (snapshot) => {
-            let matchedEvent = null;
+            let allEvents = [];
 
-            if (snapshot.empty) {
-                console.log("❌ Database Event Kosong!");
-            }
-
-            // 2. FILTER MANUAL YANG LEBIH AGRESIF
+            // 2. AMBIL SEMUA DATA
             snapshot.forEach(doc => {
-                const evt = doc.data();
-                
-                // Normalisasi: Jadikan huruf kecil semua & buang spasi aneh
-                // Contoh: " Stadion " jadi "stadion"
-                const dbLoc = String(evt.location || "").toLowerCase().replace(/\s+/g, ' ').trim();
-                const pageLoc = String(vName || "").toLowerCase().replace(/\s+/g, ' ').trim();
-
-                console.log(`🔎 Cek Jadwal: [${dbLoc}] vs Halaman: [${pageLoc}]`);
-
-                // Logika Pencocokan:
-                // Apakah "stadion bayuangga zone" ada di dalam "stadion"? ATAU sebaliknya?
-                if (dbLoc.includes(pageLoc) || pageLoc.includes(dbLoc)) {
-                    console.log("✅ JADWAL COCOK DITEMUKAN!");
-                    if (!matchedEvent) matchedEvent = evt; // Ambil yang pertama cocok
-                }
+                allEvents.push(doc.data());
             });
 
-            // 3. JIKA TETAP TIDAK ADA
-            if (!matchedEvent) {
-                console.log("⚠️ Tidak ada jadwal yang cocok setelah difilter.");
-                // Tampilan Default
+            // 3. SORTING DI JAVASCRIPT (Mengurutkan tanggal dari yang terbaru)
+            allEvents.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateB - dateA; // Yang paling baru di atas
+            });
+
+            // 4. CARI YANG COCOK DENGAN LOKASI INI
+            let matchedEvent = null;
+            
+            // Bersihkan nama lokasi halaman ini (hapus spasi & huruf kecil)
+            const currentLocation = String(vName || "").toLowerCase().trim();
+
+            for (let evt of allEvents) {
+                const dbLocation = String(evt.location || "").toLowerCase().trim();
+                
+                // Cek kecocokan (menggunakan includes agar lebih fleksibel)
+                if (dbLocation.includes(currentLocation) || currentLocation.includes(dbLocation)) {
+                    matchedEvent = evt;
+                    break; // Ketemu satu, langsung stop
+                }
+            }
+
+            // 5. RENDER TAMPILAN
+            if (matchedEvent) {
+                console.log("✅ Jadwal Ditemukan!", matchedEvent);
+                
+                let htmlList = '';
+                if(matchedEvent.performers && matchedEvent.performers.length > 0) {
+                    matchedEvent.performers.forEach(p => {
+                        htmlList += `
+                        <div class="perf-item" style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; margin-bottom:5px; border-radius:5px;">
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <div style="background:#333; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                    <i class="fa-solid fa-microphone" style="color:#E50914;"></i>
+                                </div>
+                                <div>
+                                    <b style="color:white;">${p.name}</b><br>
+                                    <small style="color:gold;">${p.time || 'Live Now'}</small>
+                                </div>
+                            </div>
+                            
+                            <button onclick="window.openRatePerformer('${p.name}')" 
+                                style="background:none; border:1px solid #555; color:gold; border-radius:50%; width:30px; height:30px; cursor:pointer;">
+                                <i class="fa-regular fa-star"></i>
+                            </button>
+                        </div>`;
+                    });
+                }
+
                 placeholder.innerHTML = `
-                    <div style="text-align:center;">
-                        <i class="fa-solid fa-music" style="font-size:3rem; color:#333; margin-bottom:10px;"></i>
-                        <h3 style="margin:0; color:#E50914;">Dukung Performer</h3>
-                        <p style="color:#888; font-size:0.9rem;">Kirim salam & request lagu sekarang.</p>
-                    </div>`;
-                return;
+                    <div style="margin-bottom:15px; border-bottom:1px dashed #444; padding-bottom:10px; text-align:center;">
+                        <h3 style="margin:0; color:#E50914;">${matchedEvent.displayDate || 'Live Event'}</h3>
+                        <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">ON SCHEDULE</span>
+                    </div>
+                    ${htmlList}
+                `;
+            } else {
+                console.log("⚠️ Tidak ada jadwal untuk lokasi ini.");
+                // Tampilan Default (Biarkan saja)
             }
-
-            // 4. RENDER JADWAL (JIKA KETEMU)
-            let htmlList = '';
-
-            if(matchedEvent.performers && matchedEvent.performers.length > 0) {
-                matchedEvent.performers.forEach(p => {
-                    htmlList += `
-                    <div class="perf-item" style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; margin-bottom:5px; border-radius:5px;">
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <div style="background:#333; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-                                <i class="fa-solid fa-microphone" style="color:#E50914;"></i>
-                            </div>
-                            <div>
-                                <b style="color:white;">${p.name}</b><br>
-                                <small style="color:gold;">${p.time || 'Live Now'}</small>
-                            </div>
-                        </div>
-                        
-                        <button onclick="window.openRatePerformer('${p.name}')" 
-                            style="background:none; border:1px solid #555; color:gold; border-radius:50%; width:30px; height:30px; cursor:pointer;">
-                            <i class="fa-regular fa-star"></i>
-                        </button>
-                    </div>`;
-                });
-            }
-
-            placeholder.innerHTML = `
-                <div style="margin-bottom:15px; border-bottom:1px dashed #444; padding-bottom:10px; text-align:center;">
-                    <h3 style="margin:0; color:#E50914;">${matchedEvent.displayDate || 'Live Event'}</h3>
-                    <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">ON AIR</span>
-                </div>
-                ${htmlList}
-            `;
         });
     }
 
