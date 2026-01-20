@@ -400,9 +400,9 @@
                     // Admin SELALU bisa masuk (walau tutup). User biasa hanya bisa masuk jika BUKA.
                     let cardAction = "";
                     if (isAdmin) {
-                        cardAction = `location.href='venue-stadion.html'`; 
+                        cardAction = ""; 
                     } else {
-                        cardAction = isOpen ? `location.href='venue-stadion.html'` : `alert('Maaf, lokasi ini sedang tutup/belum beroperasi.')`;
+                        cardAction = isOpen ? `location.href='venue-stadion.html?id=${docSnap.id}'` : `alert('Maaf, lokasi ini sedang tutup/belum beroperasi.')`;
                     }
 
                     // 2. Tombol Saklar Admin (PENTING: Tambah event.stopPropagation)
