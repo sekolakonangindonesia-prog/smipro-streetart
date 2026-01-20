@@ -31,11 +31,8 @@ window.showView = function(viewId, btn) {
         if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
     }
      if(viewId === 'live') {
-        loadCurrentLiveLink(); // Fungsi ini akan kita buat di bawah
-        // Default buka tab pertama
-        const btns = document.querySelectorAll('.sub-tab-btn');
-         populateLiveVenueOptions();
-        // Cari tombol Live di dalam view-live (index agak tricky, kita buat fungsi switchLiveTab handle null btn)
+        populateLiveVenueOptions();
+       
         switchLiveTab('panel-live', null);
     }
     
