@@ -534,6 +534,67 @@
         }
     }
 
+    // --- 6. SISTEM RATING PERFORMER (POPUP BINTANG) ---
+    
+    let targetPerformerName = ""; // Variabel global untuk simpan nama artis
+    let currentPerfRating = 0;
+
+    // A. Buka Modal Rating
+    window.openRatePerformer = function(name) {
+        targetPerformerName = name;
+        // Update Judul Modal
+        const titleEl = document.getElementById('rate-target-name');
+        if(titleEl) titleEl.innerText = name;
+        
+        currentPerfRating = 0;
+        // Reset Bintang
+        document.querySelectorAll('#perf-stars i').forEach(s => s.classList.remove('active'));
+        
+        // Tampilkan Modal
+        document.getElementById('rate-perf-modal').style.display = 'flex';
+    }
+
+    // B. Klik Bintang (Bisa dipakai untuk Venue & Performer)
+    window.rateStar = function(type, n) {
+        if(type === 'perf') {
+            currentPerfRating = n;
+            document.querySelectorAll('#perf-stars i').forEach((s, i) => s.classList.toggle('active', i < n));
+        } else if (type === 'venue') {
+            window.currentVenueRating = n;
+            document.querySelectorAll('#venue-stars i').forEach((s, i) => s.classList.toggle('active', i < n));
+        }
+    }
+
+    // C. Kirim Penilaian ke Firebase
+    window.submitPerfRating = async function() {
+        const name = document.getElementById('perf-reviewer-name').value;
+        const comment = document.getElementById('perf-comment').value;
+
+        if (!name || currentPerfRating === 0) return alert("Mohon isi nama & bintang!");
+
+        try {
+            await addDoc(collection(db, "performer_reviews"), {
+                performerName: targetPerformerName,
+                reviewer: name,
+                rating: currentPerfRating,
+                comment: comment,
+                venue: venueNameGlobal, // Info tambahan
+                timestamp: new Date()
+            });
+            
+            alert(`Terima kasih! Penilaian untuk ${targetPerformerName} terkirim.`);
+            window.closeModal('rate-perf-modal');
+            
+            // Reset Form
+            document.getElementById('perf-reviewer-name').value = "";
+            document.getElementById('perf-comment').value = "";
+            
+        } catch(e) {
+            console.error(e);
+            alert("Gagal mengirim: " + e.message);
+        }
+    }
+
     // --- 6. SISTEM REVIEW ---
     window.currentVenueRating = 0;
     
