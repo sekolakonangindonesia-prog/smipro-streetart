@@ -424,41 +424,52 @@
         }
     }
 
-   // 5. LOAD JADWAL & TOMBOL BINTANG (LOGIKA ADAPTASI DARI SCHEDULE.HTML)
+  // 5. LOAD JADWAL (VERSI JEBOL SARIINGAN - PASTI MUNCUL)
     function loadEventSchedule(vName) {
         const placeholder = document.getElementById('schedule-placeholder');
         if(!placeholder) return;
 
-        // 1. QUERY LEBIH UMUM (Ambil event 'main' terbaru)
-        // Kita tidak filter lokasi di database, tapi di Javascript (biar lebih akurat)
+        // --- DEBUGGING START ---
+        console.log("🔥 MEMULAI PENCARIAN JADWAL...");
+        console.log("📍 Lokasi Halaman ini:", vName);
+
+        // 1. QUERY LEBIH LUAS (Hapus filter 'type')
+        // Kita ambil 5 event terakhir apa saja, nanti kita saring sendiri
         const q = query(collection(db, "events"), 
-            where("type", "==", "main"), 
-            orderBy("date", "desc"),
-            limit(10) // Ambil 10 jadwal terakhir untuk dicek
+            orderBy("date", "desc"), 
+            limit(5) 
         );
 
         onSnapshot(q, (snapshot) => {
             let matchedEvent = null;
 
-            // 2. FILTER MANUAL (SEPERTI DI SCHEDULE.HTML)
-            // Kita cari jadwal yang lokasinya COCOK
+            if (snapshot.empty) {
+                console.log("❌ Database Event Kosong!");
+            }
+
+            // 2. FILTER MANUAL YANG LEBIH AGRESIF
             snapshot.forEach(doc => {
                 const evt = doc.data();
                 
-                // Bersihkan tulisan (hapus spasi, jadikan huruf kecil) biar gampang cocok
-                const eventLoc = evt.location ? evt.location.toLowerCase().trim() : "";
-                const currentLoc = vName.toLowerCase().trim();
+                // Normalisasi: Jadikan huruf kecil semua & buang spasi aneh
+                // Contoh: " Stadion " jadi "stadion"
+                const dbLoc = String(evt.location || "").toLowerCase().replace(/\s+/g, ' ').trim();
+                const pageLoc = String(vName || "").toLowerCase().replace(/\s+/g, ' ').trim();
 
-                // Cek apakah cocok? (Pakai logic includes biar fleksibel)
-                if (eventLoc === currentLoc || eventLoc.includes(currentLoc) || currentLoc.includes(eventLoc)) {
-                    // Jika ketemu dan belum ada yang dipilih (ambil yang paling baru)
-                    if (!matchedEvent) matchedEvent = evt;
+                console.log(`🔎 Cek Jadwal: [${dbLoc}] vs Halaman: [${pageLoc}]`);
+
+                // Logika Pencocokan:
+                // Apakah "stadion bayuangga zone" ada di dalam "stadion"? ATAU sebaliknya?
+                if (dbLoc.includes(pageLoc) || pageLoc.includes(dbLoc)) {
+                    console.log("✅ JADWAL COCOK DITEMUKAN!");
+                    if (!matchedEvent) matchedEvent = evt; // Ambil yang pertama cocok
                 }
             });
 
-            // 3. JIKA TIDAK ADA JADWAL YANG COCOK
+            // 3. JIKA TETAP TIDAK ADA
             if (!matchedEvent) {
-                // Tampilkan Default (Dukung Performer)
+                console.log("⚠️ Tidak ada jadwal yang cocok setelah difilter.");
+                // Tampilan Default
                 placeholder.innerHTML = `
                     <div style="text-align:center;">
                         <i class="fa-solid fa-music" style="font-size:3rem; color:#333; margin-bottom:10px;"></i>
@@ -468,7 +479,7 @@
                 return;
             }
 
-            // 4. JIKA ADA JADWAL (RENDER TAMPILAN)
+            // 4. RENDER JADWAL (JIKA KETEMU)
             let htmlList = '';
 
             if(matchedEvent.performers && matchedEvent.performers.length > 0) {
