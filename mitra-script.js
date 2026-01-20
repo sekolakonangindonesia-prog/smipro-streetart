@@ -4,7 +4,14 @@ import {
     doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, increment 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const WARUNG_ID = "warung_smipro"; 
+// --- AMBIL ID DARI LOCALSTORAGE (HASIL LOGIN) ---
+let WARUNG_ID = localStorage.getItem('mitraId');
+
+// PENGAMAN: Jika tidak ada ID (Buka langsung tanpa login), tendang ke Login
+if (!WARUNG_ID) {
+    alert("Sesi habis atau Anda belum login. Silakan login kembali.");
+    window.location.href = 'login.html';
+} 
 
 // Variable Global
 let currentMenuImageBase64 = null; 
@@ -12,18 +19,6 @@ let warungTotalCapacity = 15;
 let currentWarungName = ""; 
 let unsubscribeBooking = null; 
 
-// --- FUNGSI UTAMA: INIT ---
-async function initDatabase() {
-    const docRef = doc(db, "warungs", WARUNG_ID);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-        await setDoc(docRef, { 
-            name: "Warung SMIPRO.ID", status: "open", totalTables: 15, bookedCount: 0,
-            owner: "Admin Simulasi", phone: "08123456789", email: "admin@smipro.id"
-        });
-    }
-}
 
 // --- 1. LISTENER DATA WARUNG (UTAMA) ---
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
@@ -405,4 +400,4 @@ window.cancelBooking = async function(docId, tableQty) {
         alert("Gagal membatalkan: " + e.message);
     }
 }
-initDatabase();
+
