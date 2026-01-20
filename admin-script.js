@@ -2253,7 +2253,7 @@ window.generateCafePDF = function() {
 }
 
 /* =========================================
-   10. MODUL KONTROL LAYAR & GALERI (LENGKAP)
+   10. MODUL KONTROL LAYAR & GALERI (LENGKAP - FIX URL)
    ========================================= */
 
 // A. NAVIGASI SUB-TAB
@@ -2310,6 +2310,7 @@ window.checkExistingLiveLink = async function() {
         const d = docSnap.data();
         inputLink.value = d.liveLink || ""; 
         
+        // --- PERBAIKAN URL DISINI ---
         if(d.youtubeId) {
             monitor.src = `https://www.youtube.com/embed/${d.youtubeId}?autoplay=0`;
             monitor.style.display = 'block';
@@ -2362,6 +2363,7 @@ window.saveGalleryVideo = async function() {
     if (link.includes("v=")) videoId = link.split('v=')[1].split('&')[0];
     else if (link.includes("youtu.be/")) videoId = link.split('youtu.be/')[1];
     
+    // --- PERBAIKAN URL DISINI ---
     const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
     if(confirm("Simpan ke Galeri?")) {
