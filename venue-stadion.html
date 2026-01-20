@@ -424,27 +424,55 @@
         }
     }
 
-    // 5. LOAD JADWAL & TOMBOL BINTANG (INTEGRASI PERFORMER)
+   // 5. LOAD JADWAL & TOMBOL BINTANG (LOGIKA ADAPTASI DARI SCHEDULE.HTML)
     function loadEventSchedule(vName) {
         const placeholder = document.getElementById('schedule-placeholder');
         if(!placeholder) return;
 
-        // Query: Cari Event yang lokasinya SAMA dengan Venue ini
+        // 1. QUERY LEBIH UMUM (Ambil event 'main' terbaru)
+        // Kita tidak filter lokasi di database, tapi di Javascript (biar lebih akurat)
         const q = query(collection(db, "events"), 
-            where("location", "==", vName), 
-            orderBy("date", "desc"), 
-            limit(1)
+            where("type", "==", "main"), 
+            orderBy("date", "desc"),
+            limit(10) // Ambil 10 jadwal terakhir untuk dicek
         );
 
         onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) return; // Jika kosong, biarkan tampilan default
+            let matchedEvent = null;
 
-            const evt = snapshot.docs[0].data();
+            // 2. FILTER MANUAL (SEPERTI DI SCHEDULE.HTML)
+            // Kita cari jadwal yang lokasinya COCOK
+            snapshot.forEach(doc => {
+                const evt = doc.data();
+                
+                // Bersihkan tulisan (hapus spasi, jadikan huruf kecil) biar gampang cocok
+                const eventLoc = evt.location ? evt.location.toLowerCase().trim() : "";
+                const currentLoc = vName.toLowerCase().trim();
+
+                // Cek apakah cocok? (Pakai logic includes biar fleksibel)
+                if (eventLoc === currentLoc || eventLoc.includes(currentLoc) || currentLoc.includes(eventLoc)) {
+                    // Jika ketemu dan belum ada yang dipilih (ambil yang paling baru)
+                    if (!matchedEvent) matchedEvent = evt;
+                }
+            });
+
+            // 3. JIKA TIDAK ADA JADWAL YANG COCOK
+            if (!matchedEvent) {
+                // Tampilkan Default (Dukung Performer)
+                placeholder.innerHTML = `
+                    <div style="text-align:center;">
+                        <i class="fa-solid fa-music" style="font-size:3rem; color:#333; margin-bottom:10px;"></i>
+                        <h3 style="margin:0; color:#E50914;">Dukung Performer</h3>
+                        <p style="color:#888; font-size:0.9rem;">Kirim salam & request lagu sekarang.</p>
+                    </div>`;
+                return;
+            }
+
+            // 4. JIKA ADA JADWAL (RENDER TAMPILAN)
             let htmlList = '';
 
-            // Loop Artis & Buat Tombol Bintang
-            if(evt.performers && evt.performers.length > 0) {
-                evt.performers.forEach(p => {
+            if(matchedEvent.performers && matchedEvent.performers.length > 0) {
+                matchedEvent.performers.forEach(p => {
                     htmlList += `
                     <div class="perf-item" style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:10px; margin-bottom:5px; border-radius:5px;">
                         <div style="display:flex; gap:10px; align-items:center;">
@@ -457,7 +485,6 @@
                             </div>
                         </div>
                         
-                        <!-- TOMBOL RATING (MENGHUBUNGKAN KE DASHBOARD PERFORMER) -->
                         <button onclick="window.openRatePerformer('${p.name}')" 
                             style="background:none; border:1px solid #555; color:gold; border-radius:50%; width:30px; height:30px; cursor:pointer;">
                             <i class="fa-regular fa-star"></i>
@@ -466,10 +493,9 @@
                 });
             }
 
-            // Update Tampilan Panel
             placeholder.innerHTML = `
                 <div style="margin-bottom:15px; border-bottom:1px dashed #444; padding-bottom:10px; text-align:center;">
-                    <h3 style="margin:0; color:#E50914;">${evt.displayDate || 'Live Event'}</h3>
+                    <h3 style="margin:0; color:#E50914;">${matchedEvent.displayDate || 'Live Event'}</h3>
                     <span style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">ON AIR</span>
                 </div>
                 ${htmlList}
