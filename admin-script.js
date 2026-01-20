@@ -34,6 +34,7 @@ window.showView = function(viewId, btn) {
         loadCurrentLiveLink(); // Fungsi ini akan kita buat di bawah
         // Default buka tab pertama
         const btns = document.querySelectorAll('.sub-tab-btn');
+         populateLiveVenueOptions();
         // Cari tombol Live di dalam view-live (index agak tricky, kita buat fungsi switchLiveTab handle null btn)
         switchLiveTab('panel-live', null);
     }
@@ -2271,11 +2272,67 @@ window.switchLiveTab = function(tabId, btn) {
     if(tabId === 'panel-galeri') loadGalleryList(); 
 }
 
-// B. LIVE STREAMING (VENUE)
+/ B. FUNGSI ISI DROPDOWN VENUE (BARU)
+async function populateLiveVenueOptions() {
+    const sel = document.getElementById('live-target-venue');
+    if(!sel) return;
+    
+    // Reset isi dropdown
+    sel.innerHTML = '<option value="">-- Pilih Venue --</option>';
+    
+    try {
+        const q = query(collection(db, "venues"), orderBy("name", "asc"));
+        const snap = await getDocs(q);
+        
+        snap.forEach(doc => {
+            const d = doc.data();
+            // Masukkan Nama Venue ke Dropdown
+            sel.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+        });
+    } catch(e) {
+        console.error("Gagal load dropdown venue:", e);
+    }
+}
+
+// C. FUNGSI CEK LINK SAAT DROPDOWN DIPILIH (BARU)
+window.checkExistingLiveLink = async function() {
+    const venueId = document.getElementById('live-target-venue').value;
+    const inputLink = document.getElementById('main-live-link');
+    const monitor = document.getElementById('admin-monitor-frame');
+    const placeholder = document.getElementById('admin-monitor-placeholder');
+
+    if(!venueId) {
+        inputLink.value = "";
+        monitor.style.display = 'none';
+        placeholder.style.display = 'block';
+        return;
+    }
+    
+    // Ambil data Venue terpilih
+    const docSnap = await getDoc(doc(db, "venues", venueId));
+    if(docSnap.exists()) {
+        const d = docSnap.data();
+        inputLink.value = d.liveLink || ""; // Isi input dengan link yang ada di database
+        
+        // Update Monitor Preview
+        if(d.youtubeId) {
+            monitor.src = `https://www.youtube.com/embed/${d.youtubeId}?autoplay=0`;
+            monitor.style.display = 'block';
+            if(placeholder) placeholder.style.display = 'none';
+        } else {
+            monitor.style.display = 'none';
+            if(placeholder) placeholder.style.display = 'block';
+        }
+    }
+}
+
+// D. UPDATE LIVE STREAMING (SIMPAN PER VENUE)
 window.updateLiveLink = async function() {
     const url = document.getElementById('main-live-link').value;
+    const venueId = document.getElementById('live-target-venue').value; // Ambil ID dari Dropdown
     
-    if (!url) return alert("Link kosong!");
+    if (!venueId) return alert("⚠️ Pilih Lokasi Venue terlebih dahulu!");
+    if (!url) return alert("⚠️ Link kosong!");
     if (!url.includes("youtu")) return alert("Harap masukkan link YouTube!");
 
     let videoId = "";
@@ -2285,32 +2342,19 @@ window.updateLiveLink = async function() {
 
     if (!videoId) return alert("ID Video tidak valid.");
 
-    await setDoc(doc(db, "system", "main_stage"), {
-        youtubeId: videoId, fullUrl: url, updatedAt: new Date()
+    // SIMPAN KE DOKUMEN VENUE YANG SPESIFIK
+    await updateDoc(doc(db, "venues", venueId), {
+        liveLink: url,
+        youtubeId: videoId,
+        updatedAt: new Date()
     });
     
-    // Auto Refresh Monitor Admin
-    loadCurrentLiveLink();
-    alert("Layar Venue Telah Diupdate!");
+    alert("✅ Layar di Venue tersebut berhasil diupdate!");
+    
+    // Refresh Monitor Admin
+    checkExistingLiveLink();
 }
 
-async function loadCurrentLiveLink() {
-    const docSnap = await getDoc(doc(db, "system", "main_stage"));
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        document.getElementById('main-live-link').value = data.fullUrl || "";
-        
-        // Update Monitor Admin
-        const monitor = document.getElementById('admin-monitor-frame');
-        const placeholder = document.getElementById('admin-monitor-placeholder');
-        
-        if(data.youtubeId && monitor) {
-            monitor.src = `https://www.youtube.com/embed/${data.youtubeId}?autoplay=0&mute=0&controls=1&origin=https://smipro-streetart.github.io`;
-            monitor.style.display = 'block';
-            if(placeholder) placeholder.style.display = 'none';
-        }
-    }
-}
 
 // C. MANAJEMEN GALERI VIDEO
 window.saveGalleryVideo = async function() {
