@@ -364,7 +364,7 @@
         }
 
         // VENUES (DENGAN PERBAIKAN ADMIN AKSES)
-        async function loadVenues() {
+       async function loadVenues() {
             const container = document.getElementById('venue-list-container');
             const userRole = localStorage.getItem('userRole');
             const isAdmin = userRole === 'admin';
@@ -385,7 +385,7 @@
                     const badgeClass = isOpen ? 'active' : 'soon';
                     const badgeText = isOpen ? 'BUKA' : 'TUTUP';
                     
-                    // Tombol Saklar Admin (Tetap Ada)
+                    // Tombol Saklar Admin
                     let adminSwitchHTML = "";
                     if (isAdmin) {
                         const toggleColor = isOpen ? '#00ff00' : '#333';
@@ -399,8 +399,7 @@
                         </div>`;
                     }
 
-                    // RENDER HTML (Perhatikan bagian onclick)
-                    // Kita panggil fungsi window.handleVenueClick yang tadi kita buat
+                    // RENDER HTML (Perhatikan onlclick memanggil fungsi yang ada di screenshot Anda)
                     container.innerHTML += `
                     <div class="venue-card ${isOpen ? '' : 'disabled'}" 
                          onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')" 
