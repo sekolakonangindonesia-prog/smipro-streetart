@@ -552,7 +552,16 @@
                 timestamp: new Date()
             });
             alert("Request Terkirim! Mohon tunggu konfirmasi Admin.");
-            window.closeModal('request-modal');
+
+            // --- TUTUP & RESET ---
+            document.getElementById('request-modal').style.display = 'none'; // Tutup Modal
+
+            // Kosongkan Input
+            songEl.value = "";
+            msgEl.value = "";
+            amountEl.value = "";
+            senderEl.value = "";
+                        
         } catch(e) {
             alert("Gagal kirim: " + e.message);
         }
