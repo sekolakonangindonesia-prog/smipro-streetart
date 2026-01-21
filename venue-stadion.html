@@ -363,70 +363,59 @@
         document.getElementById('booking-modal').style.display = 'flex';
     }
 
+    
     // Konfirmasi Booking
-    // --- FUNGSI BOOKING REVISI (AUTO ASSIGN MEJA & FIX WA) ---
+   // --- FUNGSI BOOKING REVISI (FORMAT WA SESUAI SS2 & SS3) ---
     window.confirmBooking = async function() {
         const name = document.getElementById('book-name').value;
-        let wa = document.getElementById('book-wa').value; // Pakai let biar bisa diubah
+        let wa = document.getElementById('book-wa').value;
         const dateVal = document.getElementById('book-date').value;
         
-        // 1. AMBIL JAM SEKARANG (REALTIME SYSTEM)
+        // 1. AMBIL JAM SEKARANG
         const now = new Date();
         const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
         
-        // Hitung Kebutuhan Meja
         const pax = parseInt(document.getElementById('book-pax').value) || 0;
         const qty = Math.ceil(pax / 4); 
 
-        // Validasi
         if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi semua data!");
 
-        // FIX WA: Ubah 08 jadi 628
-        if (wa.startsWith('0')) {
-            wa = '62' + wa.slice(1);
-        }
+        // FIX WA
+        if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
         const warungName = document.getElementById('modal-warung-name').innerText;
         const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+        const fullExpiredTime = `${dateVal}T17:30`; // Batas waktu check-in
 
         try {
-            // === LOGIKA CARI NOMOR MEJA KOSONG ===
-            // 1. Ambil semua booking yang AKTIF di warung ini
+            // A. LOGIKA CARI MEJA KOSONG
             const snapshot = await db.collection("bookings")
                 .where("warungName", "==", warungName)
-                .where("status", "in", ["active", "booked"]) // Hanya yg sedang makan/booking
+                .where("status", "in", ["active", "booked"])
                 .get();
 
             let usedTables = [];
             snapshot.forEach(doc => {
                 const d = doc.data();
-                // Kumpulkan semua nomor meja yang sedang dipakai
-                if(Array.isArray(d.tableNum)) {
-                    usedTables.push(...d.tableNum);
-                } else if (d.tableNum) {
-                    usedTables.push(d.tableNum);
-                }
+                if(Array.isArray(d.tableNum)) usedTables.push(...d.tableNum);
+                else usedTables.push(d.tableNum);
             });
 
-            // 2. Cari angka 1-15 yang belum dipakai
             let assignedTables = [];
-            // Asumsi max meja 15 (atau bisa ambil dari data warung jika ada)
             for(let i = 1; i <= 15; i++) {
                 if(!usedTables.includes(i)) {
                     assignedTables.push(i);
-                    if(assignedTables.length === qty) break; // Sudah cukup
+                    if(assignedTables.length === qty) break;
                 }
             }
 
-            // 3. Cek apakah meja cukup?
             if(assignedTables.length < qty) {
-                return alert(`Mohon maaf, meja penuh! Hanya tersisa ${assignedTables.length} meja.`);
+                return alert(`Mohon maaf, meja penuh! Tersisa ${assignedTables.length} meja.`);
             }
 
-            // Format Nomor Meja untuk WA dan Database (Contoh: "1, 2")
-            const mejaString = assignedTables.join(", "); 
+            const mejaString = assignedTables.join(", "); // Contoh: "1, 2"
 
-            // === SIMPAN KE DATABASE ===
+            // B. SIMPAN KE FIREBASE
             await addDoc(collection(db, "bookings"), {
                 warungName: warungName,
                 venueName: venueNameGlobal, 
@@ -434,40 +423,49 @@
                 customerWA: wa,
                 pax: pax,
                 tablesNeeded: qty,
-                tableNum: assignedTables, // <--- INI PENTING (Simpan Array Nomor Meja)
+                tableNum: assignedTables,
                 bookingDate: dateVal,
                 arrivalTime: jamBooking,
                 bookingCode: kode,
+                expiredTime: fullExpiredTime, // Penting untuk sistem reset otomatis
                 status: 'booked',
                 timestamp: new Date()
             });
 
-            // Update Stok Warung
+            // C. UPDATE STOK
             const wRef = doc(db, "warungs", window.selectedWarungId);
-            await updateDoc(wRef, {
-                bookedTables: increment(qty)
-            });
+            await updateDoc(wRef, { bookedTables: increment(qty) });
 
             window.closeModal('booking-modal');
 
-            // === KIRIM WA (FORMAT BARU) ===
+            // --- D. FORMAT WA (SESUAI SS2 & SS3) ---
             const pesan = `Halo ${name},\n\n` +
-                          `Booking Sukses di *${warungName}* (${venueNameGlobal}).\n` +
-                          `Kode: *${kode}*\n` +
-                          `Jumlah: ${pax} Org (${qty} Meja)\n` +
-                          `Datang: ${jamBooking}\n\n` +
-                          `*MEJA ANDA: NO. ${mejaString}*\n` +
-                          `Tunjukkan chat ini saat kedatangan.`;
+                          `Terima kasih sudah memesan tempat di *${warungName}* pada jam ${jamBooking}\n` +
+                          `Berikut detail pesanan Anda:\n` +
+                          `Tanggal: ${dateVal}\n` +
+                          `Jumlah: ${pax} Orang\n` +
+                          `Kode Tiket: *${kode}*\n` +
+                          `MEJA RESERVASI: No. ${mejaString}\n` +
+                          `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
+                          `PENTING: Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
+                          `Lewat dari jam tersebut, harap hubungi *${warungName}*`;
             
             if(confirm(`Booking Berhasil! Meja No: ${mejaString}\nKirim Tiket ke WA?`)) {
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
+
+            // Reset Form
+            document.getElementById('book-name').value = '';
+            document.getElementById('book-wa').value = '';
+            document.getElementById('book-pax').value = '';
+            document.getElementById('book-qty').value = '0 Meja';
 
         } catch (e) {
             console.error(e);
             alert("Gagal booking: " + e.message);
         }
     }
+    
 
  // 5. LOAD JADWAL (VERSI FINAL - ANTI ERROR INDEX & LIMIT)
     function loadEventSchedule(vName) {
