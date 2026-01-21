@@ -360,14 +360,45 @@
         });
     }
 
- // --- FUNGSI BOOKING REVISI (FIX + SAFETY + FORMAT ASLI) ---
+ // --- 4. SISTEM BOOKING (YANG HILANG & PERBAIKAN) ---
+    
+    // Variabel Global untuk menyimpan ID Warung yang dipilih
+    window.selectedWarungId = null;
+
+    // A. FUNGSI BUKA MODAL (INI YANG TADI HILANG)
+    window.openBooking = function(name, id) {
+        console.log("Membuka booking untuk:", name, "ID:", id);
+        
+        // Simpan Data Warung ke Global
+        window.selectedWarungId = id; 
+        document.getElementById('modal-warung-name').innerText = name;
+        
+        // Reset Form agar bersih saat dibuka
+        document.getElementById('book-name').value = '';
+        document.getElementById('book-wa').value = '';
+        document.getElementById('book-date').value = '';
+        document.getElementById('book-pax').value = '';
+        document.getElementById('book-qty').value = '0 Meja';
+        
+        // Reset Tombol (Jaga-jaga kalau nyangkut di "Memproses")
+        const btnConfirm = document.querySelector('#booking-modal button[onclick="confirmBooking()"]');
+        if(btnConfirm) {
+            btnConfirm.innerText = "Booking";
+            btnConfirm.disabled = false;
+        }
+
+        // Tampilkan Modal
+        document.getElementById('booking-modal').style.display = 'flex';
+    }
+
+    // B. FUNGSI KONFIRMASI BOOKING (AMAN + FORMAT WA ASLI)
     window.confirmBooking = async function() {
         const name = document.getElementById('book-name').value;
         let wa = document.getElementById('book-wa').value;
         const dateVal = document.getElementById('book-date').value;
         const pax = parseInt(document.getElementById('book-pax').value) || 0;
 
-        // PENGAMAN TAMBAHAN: Pastikan ID Warung terbaca
+        // PENGAMAN: Pastikan ID Warung terbaca
         const warungId = window.selectedWarungId; 
         const warungName = document.getElementById('modal-warung-name').innerText;
 
@@ -375,29 +406,28 @@
             return alert("Terjadi kesalahan sistem (ID Warung hilang). Silakan refresh halaman dan coba lagi.");
         }
 
-        // 2. VALIDASI DATA
+        // VALIDASI INPUT
         if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi semua data!");
         
-        // FIX WA
+        // FIX WA (08 -> 62)
         if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-        // 3. HITUNG JUMLAH MEJA (1 Meja = 4 Orang)
+        // HITUNG MEJA (1 Meja = 4 Orang)
         const qty = Math.ceil(pax / 4); 
 
-        // Data Waktu
+        // SETUP DATA
         const now = new Date();
         const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
         const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
 
-        // UI FEEDBACK: Matikan tombol biar gak dobel klik
+        // UI: Ubah tombol jadi Loading
         const btnConfirm = document.querySelector('#booking-modal button[onclick="confirmBooking()"]');
-        const originalText = btnConfirm.innerText; // Simpan teks asli
+        const originalText = btnConfirm.innerText; 
         btnConfirm.innerText = "Memproses...";
         btnConfirm.disabled = true;
 
         try {
-            // 4. CEK MEJA KOSONG DI DATABASE
-            // (CATATAN: Di sini nanti Error Index akan muncul saat pertama kali coba)
+            // CEK MEJA KOSONG (Query ini butuh Index Firebase)
             const q = query(collection(db, "bookings"), 
                 where("warungId", "==", warungId), 
                 where("status", "in", ["booked", "active"])
@@ -413,56 +443,50 @@
                 }
             });
 
-            // Cari angka 1-15 yang tidak ada di usedTables
+            // Cari Meja 1-15 yang kosong
             let assignedTables = [];
             for(let i = 1; i <= 15; i++) {
                 if(!usedTables.includes(i)) {
                     assignedTables.push(i);
-                    if(assignedTables.length === qty) break; // Berhenti jika sudah cukup
+                    if(assignedTables.length === qty) break; 
                 }
             }
 
-            // Jika meja tidak cukup
+            // Jika Penuh
             if(assignedTables.length < qty) {
-                // Balikin tombol
-                btnConfirm.innerText = originalText; 
-                btnConfirm.disabled = false;
+                btnConfirm.innerText = originalText; btnConfirm.disabled = false;
                 return alert(`Maaf, meja penuh! Hanya tersisa ${assignedTables.length} meja.`);
             }
 
-             // Gabungkan nomor meja jadi string (Contoh: "1, 2")
             const mejaString = assignedTables.join(", ");
 
-             // 5. SIMPAN KE FIREBASE
+            // SIMPAN KE FIREBASE
             await addDoc(collection(db, "bookings"), {
                 warungId: warungId,
                 warungName: warungName,
-                venueName: venueNameGlobal, // Penting untuk Laporan Admin
+                venueName: venueNameGlobal, 
                 customerName: name,
                 customerWA: wa,
                 pax: pax,
                 tablesNeeded: qty,
-                tableNum: assignedTables, // SIMPAN NOMOR MEJA (Array)
+                tableNum: assignedTables, 
                 bookingDate: dateVal,
                 arrivalTime: jamBooking,
                 bookingCode: kode,
-                expiredTime: `${dateVal}T17:30`, // Jam Hangus Fixed
+                expiredTime: `${dateVal}T17:30`, 
                 status: 'booked',
                 revenue: 0,
                 timestamp: new Date()
             });
 
-             // 6. UPDATE STOK WARUNG
+            // UPDATE STOK WARUNG
             const wRef = doc(db, "warungs", warungId);
             await updateDoc(wRef, { bookedCount: increment(qty) });
 
             window.closeModal('booking-modal');
-            
-            // Balikin tombol setelah sukses
-            btnConfirm.innerText = originalText; 
-            btnConfirm.disabled = false;
+            btnConfirm.innerText = originalText; btnConfirm.disabled = false;
 
-             // --- D. FORMAT WA (SESUAI PERMINTAAN ASLI) ---
+            // FORMAT WA (SAMA PERSIS PERMINTAAN)
             const pesan = `Halo ${name},\n\n` +
                           `Terima kasih sudah memesan tempat di *${warungName}* pada jam ${jamBooking}\n` +
                           `Berikut detail pesanan Anda:\n` +
@@ -478,7 +502,7 @@
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
             
-             // Reset Form (Persis di akhir seperti kode asli)
+            // RESET FORM
             document.getElementById('book-name').value = '';
             document.getElementById('book-wa').value = '';
             document.getElementById('book-pax').value = '';
@@ -486,12 +510,11 @@
 
         } catch (e) {
             console.error(e);
-            alert("Gagal booking (Cek Console jika pertama kali): " + e.message);
-            // Balikin tombol jika error
+            alert("Gagal booking (Jika pertama kali, Cek Console & Klik Link Index): " + e.message);
             btnConfirm.innerText = originalText; 
             btnConfirm.disabled = false;
         }
-    }     
+    }    
 
       
  // 5. LOAD JADWAL (VERSI FINAL - ANTI ERROR INDEX & LIMIT)
