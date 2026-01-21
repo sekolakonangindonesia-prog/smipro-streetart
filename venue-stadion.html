@@ -365,7 +365,7 @@
 
     
     // Konfirmasi Booking
-   // --- FUNGSI BOOKING REVISI (FORMAT WA SESUAI SS2 & SS3) ---
+   // --- FUNGSI BOOKING REVISI (FIX ERROR db.collection) ---
     window.confirmBooking = async function() {
         const name = document.getElementById('book-name').value;
         let wa = document.getElementById('book-wa').value;
@@ -385,20 +385,23 @@
 
         const warungName = document.getElementById('modal-warung-name').innerText;
         const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
-        const fullExpiredTime = `${dateVal}T17:30`; // Batas waktu check-in
+        const fullExpiredTime = `${dateVal}T17:30`; 
 
         try {
-            // A. LOGIKA CARI MEJA KOSONG
-            const snapshot = await db.collection("bookings")
-                .where("warungName", "==", warungName)
-                .where("status", "in", ["active", "booked"])
-                .get();
+            // === A. LOGIKA CARI MEJA KOSONG (PERBAIKAN DI SINI) ===
+            // Kita pakai 'query' dan 'getDocs' (Gaya Baru)
+            const q = query(collection(db, "bookings"), 
+                where("warungName", "==", warungName),
+                where("status", "in", ["active", "booked"])
+            );
+            
+            const snapshot = await getDocs(q); // <--- INI YANG BENAR
 
             let usedTables = [];
             snapshot.forEach(doc => {
                 const d = doc.data();
                 if(Array.isArray(d.tableNum)) usedTables.push(...d.tableNum);
-                else usedTables.push(d.tableNum);
+                else if (d.tableNum) usedTables.push(d.tableNum);
             });
 
             let assignedTables = [];
@@ -413,9 +416,9 @@
                 return alert(`Mohon maaf, meja penuh! Tersisa ${assignedTables.length} meja.`);
             }
 
-            const mejaString = assignedTables.join(", "); // Contoh: "1, 2"
+            const mejaString = assignedTables.join(", "); 
 
-            // B. SIMPAN KE FIREBASE
+            // === B. SIMPAN KE DATABASE (Gaya Baru) ===
             await addDoc(collection(db, "bookings"), {
                 warungName: warungName,
                 venueName: venueNameGlobal, 
@@ -427,18 +430,20 @@
                 bookingDate: dateVal,
                 arrivalTime: jamBooking,
                 bookingCode: kode,
-                expiredTime: fullExpiredTime, // Penting untuk sistem reset otomatis
+                expiredTime: fullExpiredTime,
                 status: 'booked',
                 timestamp: new Date()
             });
 
-            // C. UPDATE STOK
+            // === C. UPDATE STOK (Gaya Baru) ===
             const wRef = doc(db, "warungs", window.selectedWarungId);
-            await updateDoc(wRef, { bookedTables: increment(qty) });
+            await updateDoc(wRef, { 
+                bookedCount: increment(qty) // Pastikan fieldnya bookedCount sesuai DB
+            });
 
             window.closeModal('booking-modal');
 
-            // --- D. FORMAT WA (SESUAI SS2 & SS3) ---
+            // --- D. FORMAT WA ---
             const pesan = `Halo ${name},\n\n` +
                           `Terima kasih sudah memesan tempat di *${warungName}* pada jam ${jamBooking}\n` +
                           `Berikut detail pesanan Anda:\n` +
@@ -462,7 +467,7 @@
 
         } catch (e) {
             console.error(e);
-            alert("Gagal booking: " + e.message);
+            alert("Gagal booking: " + e.message); // Pesan error asli
         }
     }
     
