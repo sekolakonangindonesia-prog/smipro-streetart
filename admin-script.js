@@ -1429,19 +1429,17 @@ window.generateStudentPDF = async function(studentData, averageScore) {
    ========================================= */
 
 async function loadDashboardOverview() {
-    console.log("Memuat Data Overview...");
+    console.log("🚀 MEMULAI HITUNG ULANG KEUANGAN...");
 
     const notifArea = document.getElementById('admin-notification-area');
     const elMitra = document.getElementById('count-mitra');
     const elPerf = document.getElementById('count-perf');
-    
-    // Elemen Uang
     const elRevTotal = document.getElementById('rev-total');
     const elRevVenue = document.getElementById('rev-venue');
     const elRevCafe = document.getElementById('rev-cafe');
 
     try {
-        // 1. AMBIL SEMUA DATA
+        // 1. AMBIL DATA
         const mitraSnap = await getDocs(collection(db, "warungs"));
         const perfSnap = await getDocs(collection(db, "performers"));
         const mentorSnap = await getDocs(collection(db, "mentors"));
@@ -1453,44 +1451,47 @@ async function loadDashboardOverview() {
         if(elMitra) elMitra.innerText = mitraSnap.size;
         if(elPerf) elPerf.innerText = perfSnap.size;
 
-        // --- 2. LOGIKA UANG (PEMISAHAN CERDAS) ---
-        
-        // A. Ambil Daftar Nama Venue Resmi (Ubah jadi huruf kecil semua biar aman)
+        // 2. CEK DAFTAR VENUE RESMI
         let officialVenues = [];
         venueSnap.forEach(doc => {
             const data = doc.data();
             if (data.name) {
-                // Simpan nama asli (untuk display) dan nama kecil (untuk pencocokan)
+                // Simpan nama venue (huruf kecil semua)
                 officialVenues.push(data.name.trim().toLowerCase());
             }
         });
+        
+        console.log("📋 DAFTAR VENUE RESMI DI DATABASE:", officialVenues);
 
+        // 3. HITUNG UANG
         let sawerVenue = 0;
         let sawerCafe = 0;
 
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // Hitung hanya yang sudah bayar
+            // Cek Status: Hanya yang duitnya sudah masuk
             if (d.status === 'approved' || d.status === 'finished') {
                 const nominal = parseInt(d.amount || 0);
-                
-                // Ambil lokasi transaksi (Bersihkan spasi & huruf kecil)
-                const rawLoc = d.location || "";
+                const rawLoc = d.location || "Tanpa Lokasi";
                 const cleanLoc = rawLoc.trim().toLowerCase();
 
-                // LOGIKA DETEKSI:
-                // Apakah nama lokasi request ini ADA di dalam daftar Venue Resmi?
-                // Kita pakai .some() untuk mencocokkan sebagian kata juga (biar lebih pintar)
+                // LOGIKA PENCOCOKAN
+                // Apakah lokasi transaksi ini ada di daftar resmi?
                 const isVenue = officialVenues.some(v => cleanLoc.includes(v) || v.includes(cleanLoc));
 
+                // --- CCTV: LAPORKAN SETIAP TRANSAKSI ---
                 if (isVenue) {
-                    sawerVenue += nominal; // Masuk Kantong Venue
+                    console.log(`✅ VENUE: Rp ${nominal} dari [${rawLoc}]`);
+                    sawerVenue += nominal;
                 } else {
-                    sawerCafe += nominal;  // Masuk Kantong Cafe
+                    console.log(`☕ CAFE: Rp ${nominal} dari [${rawLoc}] (Tidak cocok dengan daftar venue)`);
+                    sawerCafe += nominal;
                 }
             }
         });
+
+        console.log(`💰 HASIL AKHIR: Venue=${sawerVenue}, Cafe=${sawerCafe}`);
 
         // Tampilkan Hasil
         const totalRev = sawerVenue + sawerCafe;
