@@ -1446,21 +1446,20 @@ async function loadDashboardOverview() {
         const perfSnap = await getDocs(collection(db, "performers"));
         const mentorSnap = await getDocs(collection(db, "mentors")); 
         const siswaSnap = await getDocs(collection(db, "students"));
+        const reqSnap = await getDocs(collection(db, "requests")); // Data Saweran
+        const venueSnap = await getDocs(collection(db, "venues")); // Data Nama Venue Resmi
+
         
         // Update Angka Statistik User
         if(elMitra) elMitra.innerText = mitraSnap.size;
         if(elPerf) elPerf.innerText = perfSnap.size;
 
-        // 2. LOGIKA PEMASUKAN REAL (Request Only)
-        // Kita ambil daftar Venue Resmi dulu
-        const venueSnap = await getDocs(collection(db, "venues"));
+        // Siapkan daftar nama venue resmi (Stadion, TWSL, dll)
         let officialVenues = [];
         venueSnap.forEach(doc => {
             if (doc.data().name) officialVenues.push(doc.data().name.trim());
         });
-
-        // Hitung Uang
-        const reqSnap = await getDocs(collection(db, "requests"));
+                
         let sawerVenue = 0;
         let sawerCafe = 0;
 
@@ -1489,9 +1488,7 @@ async function loadDashboardOverview() {
         if(elRevTotal) elRevTotal.innerText = "Rp " + totalSawer.toLocaleString('id-ID');
 
         // --- BATAS SUCI --- 
-        // Kode di bawah ini (Notifikasi) akan menyambung dengan kode lama Anda 
-        // mulai dari baris 1457 di screenshot.
-
+      
     // 3. MULAI CEK NOTIFIKASI
     if(!notifArea) return; 
     notifArea.innerHTML = ''; 
