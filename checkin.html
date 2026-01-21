@@ -12,7 +12,9 @@
         .checkin-card {
             background: #111; border: 1px solid #333; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px;
             text-align: center; box-shadow: 0 0 30px rgba(229, 9, 20, 0.2); position: relative;
-        }
+            <!-- LOGO KECIL POJOK KIRI -->
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="corner-logo">
+            }
         
         .warung-logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #E50914; margin-bottom: 15px; }
         .table-number { font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
@@ -29,6 +31,12 @@
 
         .suggestion-box { background: #222; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px dashed #555; text-align: left; }
         .free-table-badge { display: inline-block; background: #004d00; color: #00ff00; padding: 3px 8px; border-radius: 5px; margin: 3px; font-weight: bold; font-size: 0.8rem; border: 1px solid #00ff00; }
+
+        /* LOGO POJOK KIRI ATAS */
+        .corner-logo {
+        position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; 
+        border-radius: 50%; border: 2px solid #E50914; object-fit: cover;
+        }
     </style>
 </head>
 <body>
@@ -288,11 +296,16 @@
 
             // Cek Kesesuaian Kode
             // Kode tiket di input HARUS SAMA dengan kode tiket di database (existingBooking)
-            if (inputCode !== existingBooking.bookingCode) {
-                alert("KODE SALAH! Cek kembali WhatsApp Anda.");
-                return;
+            if (!inputCode.startsWith("TIKET-")) {
+                inputCode = "TIKET-" + inputCode;
             }
 
+            // Validasi
+            if (inputCode !== existingBooking.bookingCode) {
+                alert("KODE SALAH!\n\nKode yang anda masukkan: " + inputCode + "\nCek kembali WhatsApp Anda.");
+                return;
+            }
+            
             if(confirm("Kode Benar! Check-In sekarang?")) {
                 try {
                     // Update Status jadi 'active'
