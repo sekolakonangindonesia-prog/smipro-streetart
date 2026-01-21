@@ -66,7 +66,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
 function setupBookingListener(targetName) {
     if (unsubscribeBooking) { unsubscribeBooking(); }
 
-    const qBooking = query(collection(db, "bookings"), where("warungName", "==", targetName));
+    const qBooking = query(collection(db, "bookings"), where("warungId", "==", WARUNG_ID));
 
     unsubscribeBooking = onSnapshot(qBooking, (snapshot) => {
         const bookings = [];
