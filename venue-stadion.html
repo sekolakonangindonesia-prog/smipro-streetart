@@ -349,9 +349,10 @@
     }
 
     // --- 4. SISTEM BOOKING (UPDATE MEJA & WA) ---
-    
+     window.selectedWarungId = null;
     // Buka Modal
     window.openBooking = function(name, id) {
+         console.log("Membuka booking untuk:", name, "ID:", id);
         document.getElementById('modal-warung-name').innerText = name;
         window.selectedWarungId = id; // Simpan ID di window agar bisa dibaca fungsi confirm
         
@@ -367,19 +368,28 @@
     // Konfirmasi Booking
    // --- FUNGSI BOOKING REVISI (FIX ERROR db.collection) ---
     window.confirmBooking = async function() {
+        const warungId = window.selectedWarungId;
+        
+        const warungName = document.getElementById('modal-warung-name').innerText;
         const name = document.getElementById('book-name').value;
         let wa = document.getElementById('book-wa').value;
         const dateVal = document.getElementById('book-date').value;
-        
-        // 1. AMBIL JAM SEKARANG
-        const now = new Date();
-        const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
-        
-        const pax = parseInt(document.getElementById('book-pax').value) || 0;
-        const qty = Math.ceil(pax / 4); 
+                       
+         // Cek Pax
+        const paxInput = document.getElementById('book-pax').value;
+        const pax = parseInt(paxInput) || 0;
 
+        // Validasi
+        if(!warungId) return alert("Error: ID Warung tidak terdeteksi. Silakan refresh halaman.");
         if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi semua data!");
 
+        // Hitung Meja
+        const qty = Math.ceil(pax / 4); 
+        const now = new Date();
+        const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+        const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+        const fullExpiredTime = `${dateVal}T17:30`;
+        
         // FIX WA
         if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
@@ -388,14 +398,19 @@
         const fullExpiredTime = `${dateVal}T17:30`; 
 
         try {
-            // === A. LOGIKA CARI MEJA KOSONG (PERBAIKAN DI SINI) ===
-            // Kita pakai 'query' dan 'getDocs' (Gaya Baru)
-            const q = query(collection(db, "bookings"), 
-                where("warungName", "==", warungName),
+            // 1. CARI MEJA KOSONG
+            const qBooking = query(collection(db, "bookings"), 
+                where("warungId", "==", warungId), // Pakai ID biar akurat
                 where("status", "in", ["active", "booked"])
             );
-            
-            const snapshot = await getDocs(q); // <--- INI YANG BENAR
+            const snapshot = await getDocs(qBooking);
+
+            let usedTables = [];
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if(Array.isArray(d.tableNum)) usedTables.push(...d.tableNum);
+                else if(d.tableNum) usedTables.push(d.tableNum);
+            });
 
             let usedTables = [];
             snapshot.forEach(doc => {
@@ -420,6 +435,7 @@
 
             // === B. SIMPAN KE DATABASE (Gaya Baru) ===
             await addDoc(collection(db, "bookings"), {
+                warungId: warungId,
                 warungName: warungName,
                 venueName: venueNameGlobal, 
                 customerName: name,
@@ -432,13 +448,15 @@
                 bookingCode: kode,
                 expiredTime: fullExpiredTime,
                 status: 'booked',
+                revenue: 0,
                 timestamp: new Date()
             });
 
-            // === C. UPDATE STOK (Gaya Baru) ===
-            const wRef = doc(db, "warungs", window.selectedWarungId);
-            await updateDoc(wRef, { 
-                bookedCount: increment(qty) // Pastikan fieldnya bookedCount sesuai DB
+            // 3. UPDATE STOK WARUNG
+            const wRef = doc(db, "warungs", warungId);
+            await updateDoc(wRef, {
+                bookedTables: increment(qty) // Pastikan fieldnya bookedTables
+                // Kalau di database bapak namanya 'bookedCount', ganti jadi 'bookedCount'
             });
 
             window.closeModal('booking-modal');
