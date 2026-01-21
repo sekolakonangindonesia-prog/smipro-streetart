@@ -154,7 +154,7 @@ onSnapshot(qMenu, (snapshot) => {
     });
 });
 
-// --- RENDER BOOKING CARDS ---
+// --- RENDER BOOKING CARDS (VERSI TAMPILAN JELAS) ---
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
@@ -164,53 +164,80 @@ function renderBookings(bookings) {
         return;
     }
     
+    // Urutkan: Yang Aktif (Makan) di atas, yang Booking di bawah
     bookings.sort((a, b) => (a.status === 'active' ? -1 : 1));
 
     bookings.forEach((b) => {
         let cardHtml = '';
         const qty = b.tablesNeeded || 1;
         
-        let displayMeja = "Belum Assign";
-        if(b.tableNum) {
-            displayMeja = Array.isArray(b.tableNum) ? "MEJA " + b.tableNum.join(", ") : "MEJA " + b.tableNum;
+        // --- LOGIKA NOMOR MEJA (LEBIH PINTAR) ---
+        let nomorMejaTeks = "Belum Ada";
+        
+        if (b.tableNum) {
+            if (Array.isArray(b.tableNum)) {
+                // Jika banyak meja (Contoh: [1, 2]) -> "MEJA 1, 2"
+                nomorMejaTeks = "MEJA " + b.tableNum.join(", ");
+            } else {
+                // Jika satu meja -> "MEJA 1"
+                nomorMejaTeks = "MEJA " + b.tableNum;
+            }
         } else {
-             displayMeja = `${qty} MEJA (Pending)`;
+            // Fallback jika data lama
+             nomorMejaTeks = `${qty} MEJA (Pending)`;
         }
 
         let displayDate = b.bookingDate || "Hari Ini";
-        let displayExpired = b.expiredTime && b.expiredTime.includes('T') ? b.expiredTime.split('T')[1] : (b.expiredTime || "-");
+        let displayTime = b.arrivalTime || "-";
+        
+        // Format Tampilan Jam Hangus (Ambil jamnya saja)
+        let jamHangus = "-";
+        if(b.expiredTime && b.expiredTime.includes('T')) {
+            jamHangus = b.expiredTime.split('T')[1];
+        }
 
         if (b.status === 'booked') {
+            // KARTU STATUS: BOOKING (KUNING)
             cardHtml = `
             <div class="card-booking waiting">
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <span class="table-badge" style="background:#555; font-size:0.9rem;">${displayMeja}</span>
-                    <span style="background:#333; color:gold; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:5px 10px; border-radius:5px; margin-bottom:10px;">
+                    <span style="font-weight:bold; color:#FFD700; font-size:1rem;">${nomorMejaTeks}</span>
+                    <span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
                 </div>
-                <b style="font-size:1.1rem; display:block; margin:5px 0;">${b.customerName}</b>
-                <small><i class="fa-solid fa-calendar"></i> Tgl: <b>${displayDate}</b></small><br>
-                <small><i class="fa-solid fa-clock"></i> Rencana: ${b.arrivalTime}</small><br>
-                <small><i class="fa-solid fa-hourglass-half"></i> Hangus Pukul: <b style="color:#ff4444;">${displayExpired}</b></small><br>
-                <small>Kode: <b style="color:white; letter-spacing:1px;">${b.bookingCode}</b></small>
-                <div class="waiting-text">Menunggu Tamu Check-In...</div>
-                 <div style="display:flex; gap:5px; margin-top:10px;">
+                
+                <b style="font-size:1.2rem; display:block; margin-bottom:5px;">${b.customerName}</b>
+                
+                <div style="font-size:0.85rem; color:#ccc; line-height:1.4;">
+                    <i class="fa-solid fa-calendar"></i> Tgl: <b>${displayDate}</b><br>
+                    <i class="fa-solid fa-clock"></i> Rencana: ${displayTime}<br>
+                    <i class="fa-solid fa-hourglass-half"></i> Hangus Pukul: <b style="color:#ff4444;">${jamHangus}</b><br>
+                    Kode: <b style="color:white; letter-spacing:1px; background:#333; padding:2px 5px; border-radius:3px;">${b.bookingCode}</b>
+                </div>
+
+                <div class="waiting-text" style="margin-top:10px;">Menunggu Tamu Check-In...</div>
+                
+                <div style="display:flex; gap:5px; margin-top:10px;">
                     <button class="btn-delete" onclick="cancelBooking('${b.id}', ${qty})" style="width:100%;">Batalkan</button>
                 </div>
             </div>`;
+            
         } else if (b.status === 'active') {
+            // KARTU STATUS: SEDANG MAKAN (MERAH)
             cardHtml = `
             <div class="card-booking active">
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <span class="table-badge" style="background:#b71c1c;">${displayMeja}</span>
-                     <span style="background:#333; color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:5px 10px; border-radius:5px; margin-bottom:10px;">
+                    <span style="font-weight:bold; color:white; font-size:1rem;">${nomorMejaTeks}</span>
+                    <span style="background:#b71c1c; color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
                 </div>
-                <b>${b.customerName}</b>
-                <br><small>Sedang Makan</small>
-                 <button class="btn-primary" 
-                style="margin-top:10px; background:white; color:red; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;" 
-                onclick="finishBooking('${b.id}', ${qty})"> <!-- PERHATIKAN PARAMETER INI -->
-                Selesai / Bayar
-            </button>
+
+                <b style="font-size:1.2rem; display:block; margin-bottom:5px;">${b.customerName}</b>
+                <small style="color:#ffaaaa;">Sedang Makan</small>
+
+                <button class="btn-primary" 
+                    style="margin-top:15px; background:white; color:#b71c1c; width:100%; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;" 
+                    onclick="finishBooking('${b.id}', ${qty})">
+                    Selesai / Bayar
+                </button>
             </div>`;
         }
         container.innerHTML += cardHtml;
