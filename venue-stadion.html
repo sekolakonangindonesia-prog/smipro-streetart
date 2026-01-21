@@ -535,11 +535,17 @@
     window.openRequestModal = function() { document.getElementById('request-modal').style.display = 'flex'; }
     
     window.sendRequest = async function() {
-        const song = document.getElementById('req-song').value;
-        const msg = document.getElementById('req-msg').value;
-        const target = document.getElementById('req-target').value;
-        const amount = document.getElementById('req-amount').value;
-        const sender = document.getElementById('req-sender').value;
+        const songEl = document.getElementById('req-song');
+        const msgEl = document.getElementById('req-msg');
+        const targetEl = document.getElementById('req-target');
+        const amountEl = document.getElementById('req-amount');
+        const senderEl = document.getElementById('req-sender');
+
+        const song = songEl.value;
+        const msg = msgEl.value;
+        const target = targetEl.value;
+        const amount = amountEl.value;
+        const sender = senderEl.value;
 
         if(!song || !amount || !sender) return alert("Mohon isi Lagu, Nominal, dan Nama!");
 
@@ -563,6 +569,7 @@
             senderEl.value = "";
                         
         } catch(e) {
+            console.error(e);
             alert("Gagal kirim: " + e.message);
         }
     }
