@@ -1626,6 +1626,39 @@ window.openSiswaApproval = async function(id) {
     document.getElementById('modal-approve-siswa').style.display = 'flex';
 }
 
+// 3. FUNGSI BARU: EKSEKUSI KELULUSAN (Menambah ke Performer & Update Siswa)
+window.luluskanSiswa = async function(studentId, name, genre, imgUrl) {
+    if(!confirm(`Yakin meluluskan ${name}? \nAkun Performer akan otomatis dibuat.`)) return;
+
+    try {
+        // A. Buat Akun Baru di Koleksi 'performers'
+        await addDoc(collection(db, "performers"), {
+            name: name,
+            genre: genre,
+            img: imgUrl || "",
+            rating: 5.0, // Rating awal
+            verified: true,
+            joinedAt: new Date(),
+            desc: "Alumni Bengkel SMIPRO"
+        });
+
+        // B. Update Status Siswa jadi 'graduated' (Agar hilang dari notif)
+        await updateDoc(doc(db, "students", studentId), {
+            status: 'graduated'
+        });
+
+        alert("✅ Berhasil! Akun Performer telah diterbitkan.");
+        
+        // C. Tutup Modal & Refresh Dashboard
+        document.getElementById('modal-approve-siswa').style.display = 'none';
+        loadDashboardOverview(); // Refresh agar notifikasi hilang
+
+    } catch (e) {
+        console.error(e);
+        alert("Gagal memproses: " + e.message);
+    }
+}
+
 /* =========================================
    9. MODUL CAFE (MANAJEMEN & LAPORAN FIX)
    ========================================= */
