@@ -326,10 +326,22 @@
                 // Hitung sisa meja (Total - Terpakai)
                 const available = (parseInt(w.totalTables)||0) - (parseInt(w.bookedTables)||0); 
                 const isFull = available <= 0;
+                const isClosed = w.status === 'closed';
+
+                let btnHtml = '';
                 
-                let btnHtml = isFull ? 
-                    `<button class="btn-full-ss3">Penuh</button>` : 
-                    `<button class="btn-book-ss3" onclick="window.openBooking('${w.name}', '${docSnap.id}')">Booking</button>`;
+                 if (isClosed) {
+                     
+                      btnHtml = `<button class="btn-full-ss3" style="background:#222; color:#ff4444; border:1px solid #555;">TUTUP</button>`;
+                } 
+                else if (isFull) {
+                    // KONDISI 2: Jika Buka tapi PENUH
+                    btnHtml = `<button class="btn-full-ss3">Penuh</button>`;
+                } 
+                else {
+                    // KONDISI 3: Jika Buka & Ada Meja -> Muncul Tombol Booking
+                    btnHtml = `<button class="btn-book-ss3" onclick="window.openBooking('${w.name}', '${docSnap.id}')">Booking</button>`;
+                }
                 
                 const imgUrl = w.img || "https://via.placeholder.com/200?text=Warung";
 
@@ -338,7 +350,7 @@
                     <img src="${imgUrl}" class="warung-img">
                     <div class="warung-body">
                         <span class="warung-name">${w.name}</span>
-                        <span class="warung-stats" style="color:${isFull ? 'red':'#00ff00'}">
+                        <span class="warung-stats" style="color:${isFull || isClosed ? 'red' : '#00ff00'}">
                             ${isFull ? 'Full' : available + ' Meja Kosong'}
                         </span>
                         ${btnHtml}
