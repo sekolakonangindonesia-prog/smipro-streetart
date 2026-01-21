@@ -1441,25 +1441,28 @@ async function loadDashboardOverview() {
     const elRevCafe = document.getElementById('rev-cafe');
 
     try {
-        // 1. AMBIL SEMUA DATA (KEMBALIKAN SEPERTI SEMULA)
+        // 1. AMBIL SEMUA DATA
         const mitraSnap = await getDocs(collection(db, "warungs"));
         const perfSnap = await getDocs(collection(db, "performers"));
         const mentorSnap = await getDocs(collection(db, "mentors"));
         const siswaSnap = await getDocs(collection(db, "students"));
-        
-        // Data Khusus Uang
         const reqSnap = await getDocs(collection(db, "requests")); 
         const venueSnap = await getDocs(collection(db, "venues")); 
 
-        // 2. KEMBALIKAN DATA JUMLAH MITRA & PERFORMER
+        // Update Statistik User
         if(elMitra) elMitra.innerText = mitraSnap.size;
         if(elPerf) elPerf.innerText = perfSnap.size;
 
-        // 3. PERBAIKAN LOGIKA UANG (SAWER ONLY)
-        // ---------------------------------------------------------
+        // --- 2. LOGIKA UANG (PEMISAHAN CERDAS) ---
+        
+        // A. Ambil Daftar Nama Venue Resmi (Ubah jadi huruf kecil semua biar aman)
         let officialVenues = [];
         venueSnap.forEach(doc => {
-            if (doc.data().name) officialVenues.push(doc.data().name.trim());
+            const data = doc.data();
+            if (data.name) {
+                // Simpan nama asli (untuk display) dan nama kecil (untuk pencocokan)
+                officialVenues.push(data.name.trim().toLowerCase());
+            }
         });
 
         let sawerVenue = 0;
@@ -1467,22 +1470,29 @@ async function loadDashboardOverview() {
 
         reqSnap.forEach(doc => {
             const d = doc.data();
-            // Hanya hitung request yang sudah 'approved' atau 'finished'
+            
+            // Hitung hanya yang sudah bayar
             if (d.status === 'approved' || d.status === 'finished') {
                 const nominal = parseInt(d.amount || 0);
-                const loc = d.location ? d.location.trim() : "";
+                
+                // Ambil lokasi transaksi (Bersihkan spasi & huruf kecil)
+                const rawLoc = d.location || "";
+                const cleanLoc = rawLoc.trim().toLowerCase();
 
-                // Jika lokasi ada di daftar Venue Resmi -> Masuk Venue
-                // Jika tidak -> Masuk Cafe
-                if (officialVenues.includes(loc)) {
-                    sawerVenue += nominal;
+                // LOGIKA DETEKSI:
+                // Apakah nama lokasi request ini ADA di dalam daftar Venue Resmi?
+                // Kita pakai .some() untuk mencocokkan sebagian kata juga (biar lebih pintar)
+                const isVenue = officialVenues.some(v => cleanLoc.includes(v) || v.includes(cleanLoc));
+
+                if (isVenue) {
+                    sawerVenue += nominal; // Masuk Kantong Venue
                 } else {
-                    sawerCafe += nominal;
+                    sawerCafe += nominal;  // Masuk Kantong Cafe
                 }
             }
         });
 
-        // Tampilkan Hasil Uang
+        // Tampilkan Hasil
         const totalRev = sawerVenue + sawerCafe;
         if(elRevVenue) elRevVenue.innerText = "Rp " + sawerVenue.toLocaleString('id-ID');
         if(elRevCafe) elRevCafe.innerText = "Rp " + sawerCafe.toLocaleString('id-ID');
