@@ -1425,7 +1425,7 @@ window.generateStudentPDF = async function(studentData, averageScore) {
 
 
 /* =========================================
-   8. DASHBOARD OVERVIEW (4 LOGIKA NOTIFIKASI)
+   8. DASHBOARD OVERVIEW (LOGIKA BARU: SAWER VENUE VS CAFE)
    ========================================= */
 
 async function loadDashboardOverview() {
@@ -1434,25 +1434,63 @@ async function loadDashboardOverview() {
     const notifArea = document.getElementById('admin-notification-area');
     const elMitra = document.getElementById('count-mitra');
     const elPerf = document.getElementById('count-perf');
-    const elRev = document.getElementById('total-revenue');
+    
+    // Elemen Uang (Pastikan ID ini ada di HTML Admin Anda)
+    const elRevTotal = document.getElementById('rev-total');
+    const elRevVenue = document.getElementById('rev-venue');
+    const elRevCafe = document.getElementById('rev-cafe');
 
-    // 1. AMBIL DATA DARI DATABASE
-    const mitraSnap = await getDocs(collection(db, "warungs"));
-    const perfSnap = await getDocs(collection(db, "performers"));
-    const mentorSnap = await getDocs(collection(db, "mentors"));
-    const siswaSnap = await getDocs(collection(db, "students"));
-    const reqSnap = await getDocs(collection(db, "requests"));
+    try {
+        // 1. AMBIL SEMUA DATA (PENTING: Mentor & Siswa tetap diambil untuk Notifikasi di bawah)
+        const mitraSnap = await getDocs(collection(db, "warungs"));
+        const perfSnap = await getDocs(collection(db, "performers"));
+        const mentorSnap = await getDocs(collection(db, "mentors")); 
+        const siswaSnap = await getDocs(collection(db, "students"));
+        
+        // Update Angka Statistik User
+        if(elMitra) elMitra.innerText = mitraSnap.size;
+        if(elPerf) elPerf.innerText = perfSnap.size;
 
-    // 2. UPDATE STATISTIK DI KARTU ATAS
-    if(elMitra) elMitra.innerText = mitraSnap.size;
-    if(elPerf) elPerf.innerText = perfSnap.size;
+        // 2. LOGIKA PEMASUKAN REAL (Request Only)
+        // Kita ambil daftar Venue Resmi dulu
+        const venueSnap = await getDocs(collection(db, "venues"));
+        let officialVenues = [];
+        venueSnap.forEach(doc => {
+            if (doc.data().name) officialVenues.push(doc.data().name.trim());
+        });
 
-    // Hitung Uang Pending (Hanya Angka, Tidak ada Notif Kartu)
-    let totalPending = 0;
-    reqSnap.forEach(doc => {
-        if(doc.data().status === 'pending') totalPending += parseInt(doc.data().amount || 0);
-    });
-    if(elRev) elRev.innerText = "Rp " + totalPending.toLocaleString();
+        // Hitung Uang
+        const reqSnap = await getDocs(collection(db, "requests"));
+        let sawerVenue = 0;
+        let sawerCafe = 0;
+
+        reqSnap.forEach(doc => {
+            const d = doc.data();
+            
+            // Syarat: Uang sudah diterima (Status: approved / finished)
+            if (d.status === 'approved' || d.status === 'finished') {
+                const nominal = parseInt(d.amount || 0);
+                const lokasiRequest = d.location ? d.location.trim() : "";
+
+                // Jika lokasi ada di daftar Venue Resmi -> Masuk Venue
+                // Jika tidak -> Masuk Cafe
+                if (officialVenues.includes(lokasiRequest)) {
+                    sawerVenue += nominal;
+                } else {
+                    sawerCafe += nominal;
+                }
+            }
+        });
+
+        // Tampilkan Angka Keuangan
+        const totalSawer = sawerVenue + sawerCafe;
+        if(elRevVenue) elRevVenue.innerText = "Rp " + sawerVenue.toLocaleString('id-ID');
+        if(elRevCafe) elRevCafe.innerText = "Rp " + sawerCafe.toLocaleString('id-ID');
+        if(elRevTotal) elRevTotal.innerText = "Rp " + totalSawer.toLocaleString('id-ID');
+
+        // --- BATAS SUCI --- 
+        // Kode di bawah ini (Notifikasi) akan menyambung dengan kode lama Anda 
+        // mulai dari baris 1457 di screenshot.
 
     // 3. MULAI CEK NOTIFIKASI
     if(!notifArea) return; 
