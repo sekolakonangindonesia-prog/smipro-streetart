@@ -1425,7 +1425,7 @@ window.generateStudentPDF = async function(studentData, averageScore) {
 
 
 /* =========================================
-   8. DASHBOARD OVERVIEW (LOGIKA BARU: SAWER VENUE VS CAFE)
+   8. DASHBOARD OVERVIEW (VERSI STABIL + PERBAIKAN UANG)
    ========================================= */
 
 async function loadDashboardOverview() {
@@ -1435,45 +1435,46 @@ async function loadDashboardOverview() {
     const elMitra = document.getElementById('count-mitra');
     const elPerf = document.getElementById('count-perf');
     
-    // Elemen Uang (Pastikan ID ini ada di HTML Admin Anda)
+    // Elemen Uang
     const elRevTotal = document.getElementById('rev-total');
     const elRevVenue = document.getElementById('rev-venue');
     const elRevCafe = document.getElementById('rev-cafe');
 
     try {
-        // 1. AMBIL SEMUA DATA (PENTING: Mentor & Siswa tetap diambil untuk Notifikasi di bawah)
+        // 1. AMBIL SEMUA DATA (KEMBALIKAN SEPERTI SEMULA)
         const mitraSnap = await getDocs(collection(db, "warungs"));
         const perfSnap = await getDocs(collection(db, "performers"));
-        const mentorSnap = await getDocs(collection(db, "mentors")); 
+        const mentorSnap = await getDocs(collection(db, "mentors"));
         const siswaSnap = await getDocs(collection(db, "students"));
-        const reqSnap = await getDocs(collection(db, "requests")); // Data Saweran
-        const venueSnap = await getDocs(collection(db, "venues")); // Data Nama Venue Resmi
-
         
-        // Update Angka Statistik User
+        // Data Khusus Uang
+        const reqSnap = await getDocs(collection(db, "requests")); 
+        const venueSnap = await getDocs(collection(db, "venues")); 
+
+        // 2. KEMBALIKAN DATA JUMLAH MITRA & PERFORMER
         if(elMitra) elMitra.innerText = mitraSnap.size;
         if(elPerf) elPerf.innerText = perfSnap.size;
 
-        // Siapkan daftar nama venue resmi (Stadion, TWSL, dll)
+        // 3. PERBAIKAN LOGIKA UANG (SAWER ONLY)
+        // ---------------------------------------------------------
         let officialVenues = [];
         venueSnap.forEach(doc => {
             if (doc.data().name) officialVenues.push(doc.data().name.trim());
         });
-                
+
         let sawerVenue = 0;
         let sawerCafe = 0;
 
         reqSnap.forEach(doc => {
             const d = doc.data();
-            
-            // Syarat: Uang sudah diterima (Status: approved / finished)
+            // Hanya hitung request yang sudah 'approved' atau 'finished'
             if (d.status === 'approved' || d.status === 'finished') {
                 const nominal = parseInt(d.amount || 0);
-                const lokasiRequest = d.location ? d.location.trim() : "";
+                const loc = d.location ? d.location.trim() : "";
 
                 // Jika lokasi ada di daftar Venue Resmi -> Masuk Venue
                 // Jika tidak -> Masuk Cafe
-                if (officialVenues.includes(lokasiRequest)) {
+                if (officialVenues.includes(loc)) {
                     sawerVenue += nominal;
                 } else {
                     sawerCafe += nominal;
@@ -1481,109 +1482,95 @@ async function loadDashboardOverview() {
             }
         });
 
-        // Tampilkan Angka Keuangan
-        const totalSawer = sawerVenue + sawerCafe;
+        // Tampilkan Hasil Uang
+        const totalRev = sawerVenue + sawerCafe;
         if(elRevVenue) elRevVenue.innerText = "Rp " + sawerVenue.toLocaleString('id-ID');
         if(elRevCafe) elRevCafe.innerText = "Rp " + sawerCafe.toLocaleString('id-ID');
-        if(elRevTotal) elRevTotal.innerText = "Rp " + totalSawer.toLocaleString('id-ID');
+        if(elRevTotal) elRevTotal.innerText = "Rp " + totalRev.toLocaleString('id-ID');
+        // ---------------------------------------------------------
 
-        // --- BATAS SUCI --- 
-      
-    // 3. MULAI CEK NOTIFIKASI
-    if(!notifArea) return; 
-    notifArea.innerHTML = ''; 
-    let adaNotif = false;
 
-    // --- A. CEK WARUNG (DAFTAR BARU vs REQUEST MEJA > 15) ---
-    mitraSnap.forEach(doc => {
-        const d = doc.data();
-        
-        // Logika: Jika belum diapprove (Baik baru daftar atau habis edit meja > 15)
-        if (!d.adminApproved) {
-            adaNotif = true;
-            let judul = "🆕 Pendaftaran Mitra Baru";
-            let pesan = `<b>${d.name}</b> mendaftar (${d.totalTables || 0} meja).`;
-            let warna = "#FFD700"; // Kuning
+        // 4. KEMBALIKAN NOTIFIKASI (LOGIKA LAMA)
+        if(!notifArea) return; 
+        notifArea.innerHTML = ''; 
+        let adaNotif = false;
 
-            if (d.totalTables > 15) {
-                // KASUS 3: Pengajuan Meja Banyak
-                judul = "⚠️ Pengajuan Meja Ekstrem";
-                pesan = `<b>${d.name}</b> mengajukan <b>${d.totalTables} Meja</b>. Cek kapasitas lokasi!`;
-                warna = "#E50914"; // Merah (Warning Keras)
-            } else {
-                // KASUS 1: Pendaftaran Baru Biasa
-                judul = "🆕 Pendaftaran Mitra Baru";
-                pesan = `<b>${d.name}</b> mendaftar (${d.totalTables} meja).`;
-                warna = "#FFD700"; // Kuning
+        // A. CEK WARUNG
+        mitraSnap.forEach(doc => {
+            const d = doc.data();
+            if (!d.adminApproved) {
+                adaNotif = true;
+                let judul = "🆕 Pendaftaran Mitra Baru";
+                let pesan = `<b>${d.name}</b> mendaftar (${d.totalTables || 0} meja).`;
+                let warna = "#FFD700"; 
+                if (d.totalTables > 15) {
+                    judul = "⚠️ Pengajuan Meja Ekstrem";
+                    warna = "#E50914"; 
+                }
+                notifArea.innerHTML += `
+                <div class="notif-card" style="border-left: 5px solid ${warna}; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="notif-content">
+                        <h4 style="margin:0; color:${warna};">${judul}</h4>
+                        <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;">${pesan}</p>
+                    </div>
+                    <div class="notif-action">
+                        <button class="btn-action btn-view" onclick="openMitraApproval('${doc.id}')" style="background:#00d2ff; color:black; font-weight:bold;">
+                            <i class="fa-solid fa-eye"></i> Lihat Data
+                        </button>
+                    </div>
+                </div>`;
             }
+        });
 
-            notifArea.innerHTML += `
-            <div class="notif-card" style="border-left: 5px solid ${warna}; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <div class="notif-content">
-                    <h4 style="margin:0; color:${warna};">${judul}</h4>
-                    <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;">${pesan}</p>
-                </div>
-                <div class="notif-action">
-                    <button class="btn-action btn-view" onclick="openMitraApproval('${doc.id}')" style="background:#00d2ff; color:black; font-weight:bold;">
-                        <i class="fa-solid fa-eye"></i> Lihat Data
-                    </button>
-                </div>
-            </div>`;
+        // B. CEK MENTOR
+        mentorSnap.forEach(doc => {
+            const d = doc.data();
+            if(d.status === 'pending') {
+                adaNotif = true;
+                notifArea.innerHTML += `
+                <div class="notif-card" style="border-left: 5px solid #00d2ff; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="notif-content">
+                        <h4 style="margin:0; color:#00d2ff;">👔 Pendaftaran Mentor</h4>
+                        <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;"><b>${d.name}</b> (${d.specialist})</p>
+                    </div>
+                    <div class="notif-action">
+                        <button class="btn-action btn-view" onclick="openMitraApproval('${doc.id}')"><i class="fa-solid fa-eye"></i> Lihat Data</button>                   
+                        <button class="btn-action btn-delete" onclick="deleteMentor('${doc.id}')">Tolak</button>
+                    </div>
+                </div>`;
+            }
+        });
+
+        // C. CEK SISWA
+        const totalMentors = mentorSnap.size;
+        siswaSnap.forEach(doc => {
+            const d = doc.data();
+            const scores = Object.values(d.scores || {});
+            const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+            const isCompleted = (totalMentors > 0 && scores.length >= totalMentors);
+
+            if (d.status === 'training' && isCompleted && avg >= 75) {
+                adaNotif = true;
+                notifArea.innerHTML += `
+                <div class="notif-card" style="border-left: 5px solid #2ecc71; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="notif-content">
+                        <h4 style="margin:0; color:#2ecc71;">🎓 Siswa Siap Lulus</h4>
+                        <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;"><b>${d.name}</b> - Rata-rata: ${avg.toFixed(1)}</p>
+                    </div>
+                    <div class="notif-action">
+                        <button class="btn-action btn-view" onclick="openSiswaApproval('${doc.id}')"><i class="fa-solid fa-eye"></i> Lihat Nilai</button>
+                    </div>
+                </div>`;
+            }
+        });
+
+        // KOSONG
+        if(!adaNotif) {
+            notifArea.innerHTML = `<div class="empty-state-box"><p>Semua aman. Tidak ada notifikasi baru.</p></div>`;
         }
-    });
 
-    // --- B. CEK MENTOR BARU (KASUS 2) ---
-    mentorSnap.forEach(doc => {
-        const d = doc.data();
-        if(d.status === 'pending') {
-            adaNotif = true;
-            notifArea.innerHTML += `
-            <div class="notif-card" style="border-left: 5px solid #00d2ff; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <div class="notif-content">
-                    <h4 style="margin:0; color:#00d2ff;">👔 Pendaftaran Mentor</h4>
-                    <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;"><b>${d.name}</b> (${d.specialist})</p>
-                </div>
-                <div class="notif-action">
-                    <button class="btn-action btn-view" onclick="openMitraApproval('${doc.id}')">
-                    <i class="fa-solid fa-eye"></i> Lihat Data
-                    </button>                   
-                    <button class="btn-action btn-delete" onclick="deleteMentor('${doc.id}')">Tolak</button>
-                </div>
-            </div>`;
-        }
-    });
-
-    // --- C. CEK SISWA SIAP LULUS (KASUS 4) ---
-    const totalMentors = mentorSnap.size;
-    siswaSnap.forEach(doc => {
-        const d = doc.data();
-        const scores = Object.values(d.scores || {});
-        // Hitung Rata-rata
-        const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-        
-        // Syarat: Training + Nilai Lengkap dari smua mentor + Rata2 Lulus
-        const isCompleted = (totalMentors > 0 && scores.length >= totalMentors);
-
-        if (d.status === 'training' && isCompleted && avg >= 75) {
-            adaNotif = true;
-            notifArea.innerHTML += `
-            <div class="notif-card" style="border-left: 5px solid #2ecc71; background: #151515; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <div class="notif-content">
-                    <h4 style="margin:0; color:#2ecc71;">🎓 Siswa Siap Lulus</h4>
-                    <p style="margin:5px 0 0; color:#ccc; font-size:0.85rem;"><b>${d.name}</b> - Rata-rata: ${avg.toFixed(1)}</p>
-                </div>
-                <div class="notif-action">
-                    <button class="btn-action btn-view" onclick="openSiswaApproval('${doc.id}')">
-                    <i class="fa-solid fa-eye"></i> Lihat Nilai
-                    </button>
-                </div>
-            </div>`;
-        }
-    });
-
-    // JIKA KOSONG
-    if(!adaNotif) {
-        notifArea.innerHTML = `<div class="empty-state-box"><p>Semua aman. Tidak ada notifikasi baru.</p></div>`;
+    } catch (e) {
+        console.error("Gagal load overview:", e);
     }
 }
 
