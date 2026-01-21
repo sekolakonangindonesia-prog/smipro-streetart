@@ -143,6 +143,7 @@ window.loginAsMitra = function(id, name) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userName', name + " (Mode Admin)");
+        localStorage.setItem('mitraId', id); 
         localStorage.setItem('userLink', 'mitra-dashboard.html');
         localStorage.setItem('adminOrigin', 'true'); 
         localStorage.setItem('adminReturnTab', 'mitra'); 
