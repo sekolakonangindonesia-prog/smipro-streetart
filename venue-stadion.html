@@ -360,32 +360,22 @@
         });
     }
 
-    // --- 4. SISTEM BOOKING (UPDATE MEJA & WA) ---
-     window.selectedWarungId = null;
-    // Buka Modal
-    window.openBooking = function(name, id) {
-         console.log("Membuka booking untuk:", name, "ID:", id);
-        document.getElementById('modal-warung-name').innerText = name;
-        window.selectedWarungId = id; // Simpan ID di window agar bisa dibaca fungsi confirm
-        
-        // Reset form
-        document.getElementById('book-name').value = '';
-        document.getElementById('book-wa').value = '';
-        document.getElementById('book-qty').value = '0 Meja';
-        
-        document.getElementById('booking-modal').style.display = 'flex';
-    }
-
-    
-    // Konfirmasi Booking
-   // --- FUNGSI BOOKING REVISI (FIX ERROR db.collection) ---
+ // --- FUNGSI BOOKING REVISI (FIX + SAFETY + FORMAT ASLI) ---
     window.confirmBooking = async function() {
         const name = document.getElementById('book-name').value;
         let wa = document.getElementById('book-wa').value;
         const dateVal = document.getElementById('book-date').value;
         const pax = parseInt(document.getElementById('book-pax').value) || 0;
 
-         // 2. VALIDASI DATA
+        // PENGAMAN TAMBAHAN: Pastikan ID Warung terbaca
+        const warungId = window.selectedWarungId; 
+        const warungName = document.getElementById('modal-warung-name').innerText;
+
+        if(!warungId) {
+            return alert("Terjadi kesalahan sistem (ID Warung hilang). Silakan refresh halaman dan coba lagi.");
+        }
+
+        // 2. VALIDASI DATA
         if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi semua data!");
         
         // FIX WA
@@ -398,12 +388,16 @@
         const now = new Date();
         const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
         const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
-        const warungName = document.getElementById('modal-warung-name').innerText;
-        const warungId = window.selectedWarungId; // ID Warung dari saat tombol diklik
+
+        // UI FEEDBACK: Matikan tombol biar gak dobel klik
+        const btnConfirm = document.querySelector('#booking-modal button[onclick="confirmBooking()"]');
+        const originalText = btnConfirm.innerText; // Simpan teks asli
+        btnConfirm.innerText = "Memproses...";
+        btnConfirm.disabled = true;
 
         try {
             // 4. CEK MEJA KOSONG DI DATABASE
-            // Ambil semua booking yang sedang aktif di warung ini
+            // (CATATAN: Di sini nanti Error Index akan muncul saat pertama kali coba)
             const q = query(collection(db, "bookings"), 
                 where("warungId", "==", warungId), 
                 where("status", "in", ["booked", "active"])
@@ -430,6 +424,9 @@
 
             // Jika meja tidak cukup
             if(assignedTables.length < qty) {
+                // Balikin tombol
+                btnConfirm.innerText = originalText; 
+                btnConfirm.disabled = false;
                 return alert(`Maaf, meja penuh! Hanya tersisa ${assignedTables.length} meja.`);
             }
 
@@ -460,8 +457,12 @@
             await updateDoc(wRef, { bookedCount: increment(qty) });
 
             window.closeModal('booking-modal');
+            
+            // Balikin tombol setelah sukses
+            btnConfirm.innerText = originalText; 
+            btnConfirm.disabled = false;
 
-             // --- D. FORMAT WA ---
+             // --- D. FORMAT WA (SESUAI PERMINTAAN ASLI) ---
             const pesan = `Halo ${name},\n\n` +
                           `Terima kasih sudah memesan tempat di *${warungName}* pada jam ${jamBooking}\n` +
                           `Berikut detail pesanan Anda:\n` +
@@ -477,7 +478,7 @@
                 window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
             }
             
-             // Reset Form
+             // Reset Form (Persis di akhir seperti kode asli)
             document.getElementById('book-name').value = '';
             document.getElementById('book-wa').value = '';
             document.getElementById('book-pax').value = '';
@@ -485,7 +486,10 @@
 
         } catch (e) {
             console.error(e);
-            alert("Gagal booking: " + e.message);
+            alert("Gagal booking (Cek Console jika pertama kali): " + e.message);
+            // Balikin tombol jika error
+            btnConfirm.innerText = originalText; 
+            btnConfirm.disabled = false;
         }
     }     
 
