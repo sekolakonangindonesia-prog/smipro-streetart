@@ -39,22 +39,68 @@
         .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
         .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
         .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
+        /* --- TAMBAHAN GAYA BARU --- */
+        
+        /* 1. Logo Pojok Kiri */
+        .corner-logo {
+            position: absolute; top: 15px; left: 15px; width: 45px; height: 45px; 
+            border-radius: 50%; border: 2px solid #E50914; object-fit: cover; z-index: 30;
+            background: #000; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* 2. Tombol Kembali (Disesuaikan posisinya di bawah logo) */
+        .btn-back-custom {
+            position: absolute; top: 70px; left: 15px; /* Turun ke bawah logo */
+            background: rgba(0,0,0,0.6); border: 1px solid #555; color: white; 
+            padding: 5px 12px; border-radius: 20px; cursor: pointer; z-index: 20;
+            font-size: 0.8rem; display: flex; align-items: center; gap: 5px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* 3. Rating Bintang */
+        .warung-rating { margin-bottom: 10px; color: gold; font-size: 0.9rem; }
+        .warung-rating span { color: #aaa; font-size: 0.8rem; margin-left: 5px; }
+
+        
     </style>
 </head>
 <body>
 
+    <!-- HEADER GAMBAR -->
     <div class="profile-header">
-        <button onclick="history.back()" style="position:absolute; top:20px; left:20px; background:rgba(0,0,0,0.5); border:none; color:white; padding:8px 15px; border-radius:20px; cursor:pointer; z-index:20;">
+        
+        <!-- 1. LOGO KECIL (BARU) -->
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="corner-logo">
+
+        <!-- 2. TOMBOL KEMBALI (POSISI DIPERBAIKI) -->
+        <button onclick="history.back()" class="btn-back-custom">
             <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
+
         <div class="header-overlay"></div>
     </div>
 
+    <!-- INFO WARUNG -->
     <div class="warung-info-box">
         <img src="" id="w-img" class="warung-avatar" onerror="this.src='https://via.placeholder.com/150'">
+        
         <h2 style="margin:10px 0 5px 0;" id="w-name">Memuat...</h2>
+        
+        <!-- 3. RATING BINTANG (BARU) -->
+        <div class="warung-rating">
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star"></i>
+            <i class="fa-solid fa-star-half-stroke"></i>
+            <span>4.8 / 5.0</span>
+        </div>
+
         <span id="w-status" style="background:#333; padding:3px 10px; border-radius:10px; font-size:0.8rem;">...</span>
     </div>
+
+    <div class="container">
+        <!-- ... (Kode selebihnya biarkan sama) ... -->
 
     <div class="container">
         <h3 style="border-bottom:1px solid #333; padding-bottom:10px; margin-top:30px; color:var(--accent);">Daftar Menu</h3>
