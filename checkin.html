@@ -248,7 +248,7 @@
             el.innerHTML = html || "<span style='color:red'>Penuh Semua</span>";
         }
 
-        // 5. AKSI: WALK-IN (ORANG DATANG LANGSUNG)
+       // 5. AKSI: WALK-IN (ORANG DATANG LANGSUNG)
         window.submitWalkIn = async function() {
             const name = document.getElementById('walkin-name').value;
             const pax = document.getElementById('walkin-pax').value;
@@ -261,7 +261,7 @@
             try {
                 // Simpan Booking Baru
                 await addDoc(collection(db, "bookings"), {
-                    warungId: warungId,          // <--- INI PENAMBAHAN PENTINGNYA
+                    warungId: warungId,          // <--- INI YG KEMARIN HILANG, WAJIB ADA!
                     warungName: warungData.name,
                     venueName: warungData.venueName || "", 
                     customerName: name,
