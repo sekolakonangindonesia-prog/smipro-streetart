@@ -51,7 +51,10 @@
 
         <!-- CONTENT UTAMA -->
         <div id="content-area" style="display:none;">
-            <img src="https://via.placeholder.com/100" class="warung-logo" id="warung-img">
+            <!-- LOGO KECIL -->
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
+             style="position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #E50914;">
+            
             <h3 style="margin:0; color:#ddd;" id="warung-name">Nama Warung</h3>
             
             <div class="table-number" id="table-display">MEJA -</div>
@@ -256,22 +259,23 @@
             btn.innerText = "Memproses..."; btn.disabled = true;
 
             try {
-                // Simpan Booking Baru (Langsung Active)
+                // Simpan Booking Baru
                 await addDoc(collection(db, "bookings"), {
+                    warungId: warungId,          // <--- INI PENAMBAHAN PENTINGNYA
                     warungName: warungData.name,
-                    venueName: warungData.venueName || "", // Penting untuk Laporan Venue
+                    venueName: warungData.venueName || "", 
                     customerName: name,
                     pax: parseInt(pax),
                     tablesNeeded: 1,
-                    tableNum: [tableNum], // Meja ini saja
+                    tableNum: [tableNum], 
                     bookingCode: "WALK-IN",
-                    status: 'active', // Langsung makan
-                    revenue: 0, // Belum bayar
+                    status: 'active', 
+                    revenue: 0, 
                     timestamp: new Date(),
                     checkInTime: new Date()
                 });
 
-                // Update Stok Warung (+1 Terpakai)
+                // Update Stok Warung
                 await updateDoc(doc(db, "warungs", warungId), {
                     bookedCount: increment(1)
                 });
@@ -288,24 +292,24 @@
             }
         }
 
-        // 6. AKSI: VERIFIKASI TIKET (ORANG YANG BOOKING DATANG)
+        // 6. AKSI: VERIFIKASI TIKET (SMART INPUT)
         window.verifyTicket = async function() {
-            const inputCode = document.getElementById('ticket-code').value.trim().toUpperCase();
+            let inputCode = document.getElementById('ticket-code').value.trim().toUpperCase();
             
             if(!inputCode) return alert("Masukkan Kode Tiket!");
 
-            // Cek Kesesuaian Kode
-            // Kode tiket di input HARUS SAMA dengan kode tiket di database (existingBooking)
+            // --- LOGIKA SMART INPUT ---
+            // Jika user tidak mengetik "TIKET-", sistem menambahkannya otomatis
             if (!inputCode.startsWith("TIKET-")) {
                 inputCode = "TIKET-" + inputCode;
             }
 
-            // Validasi
+            // Cek Kesesuaian Kode
             if (inputCode !== existingBooking.bookingCode) {
-                alert("KODE SALAH!\n\nKode yang anda masukkan: " + inputCode + "\nCek kembali WhatsApp Anda.");
+                alert("KODE SALAH!\nSistem membaca: " + inputCode + "\nCek kembali WhatsApp Anda.");
                 return;
             }
-            
+
             if(confirm("Kode Benar! Check-In sekarang?")) {
                 try {
                     // Update Status jadi 'active'
