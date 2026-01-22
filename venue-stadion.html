@@ -353,9 +353,9 @@
 
                 container.innerHTML += `
                 <div class="warung-card">
-                    <img src="${imgUrl}" class="warung-img">
+                    <img src="${imgUrl}" class="warung-img" onclick="window.location.href='warung-profile.html?id=${docSnap.id}'">
                     <div class="warung-body">
-                        <span class="warung-name">${w.name}</span>
+                        <span class="warung-name" onclick="window.location.href='warung-profile.html?id=${docSnap.id}'">${w.name}</span>
                         <span class="warung-stats" style="color:${isFull || isClosed ? 'red' : '#00ff00'}">
                             ${isFull ? 'Full' : available + ' Meja Kosong'}
                         </span>
