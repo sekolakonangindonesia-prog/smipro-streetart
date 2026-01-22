@@ -184,33 +184,51 @@
         </div>
     </div>
 
-    <!-- MENGGUNAKAN FIREBASE VERSI MODULE AGAR SINKRON DENGAN FILE LAIN -->
+    <!-- SCRIPT UPDATE: PERBAIKAN IMPORT & LOGIKA RATING -->
     <script type="module">
         import { db } from './firebase-config.js';
         import { 
-            doc, getDoc, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, increment 
+            doc, getDoc, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, increment, orderBy 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const params = new URLSearchParams(window.location.search);
         const warungId = params.get('id');
         
         let currentWarungName = "";
-        let venueNameGlobal = ""; // Tambahan agar laporan venue lengkap
+        let venueNameGlobal = ""; 
         let totalTables = 0;
+        // Variabel untuk menyimpan rating saat ini agar hitungannya akurat
+        let currentRatingScore = 0; 
+        let currentReviewCount = 0;
 
         if(warungId) {
-            // 1. DATA WARUNG
+            // 1. DATA WARUNG (REALTIME)
             onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
                 if(docSnap.exists()) {
                     const data = docSnap.data();
                     currentWarungName = data.name;
-                    venueNameGlobal = data.venueName || "Stadion Bayuangga"; // Default
+                    venueNameGlobal = data.venueName || "Stadion Bayuangga"; 
                     totalTables = data.totalTables;
+                    
+                    // Simpan data rating lama untuk perhitungan update nanti
+                    currentRatingScore = data.rating || 0; // Misal 4.5
+                    currentReviewCount = data.reviewCount || 0; // Misal 10 ulasan
 
                     document.getElementById('w-name').innerText = data.name;
                     if(data.img) document.getElementById('w-img').src = data.img;
+
+                    // TAMPILKAN RATING DARI DATABASE PUSAT (Agar sinkron dengan SS2)
+                    const ratingBox = document.querySelector('.warung-rating');
+                    if(ratingBox) {
+                        const scoreTampil = currentRatingScore.toFixed(1); // 4.8
+                        ratingBox.innerHTML = `
+                            <i class="fa-solid fa-star"></i> 
+                            <span style="font-size:1.2rem; font-weight:bold; color:white;">${scoreTampil}</span> 
+                            <span style="font-size:0.8rem;">(${currentReviewCount} Ulasan)</span>
+                        `;
+                    }
                     
-                    // PERBAIKAN: Gunakan bookedCount
+                    // LOGIKA STATUS MEJA
                     const available = (parseInt(data.totalTables)||0) - (parseInt(data.bookedCount)||0);
                     const isFull = available <= 0;
                     
@@ -263,22 +281,106 @@
                     </div>`;
                 });
             });
+            
+            // 3. LOAD REVIEW LIST (TAPI HITUNGAN RATA-RATA DIAMBIL DARI DATA WARUNG DIATAS)
+            const qReview = query(collection(db, "warung_reviews"), 
+                where("warungId", "==", warungId),
+                orderBy("timestamp", "desc") // SEKARANG SUDAH BISA JALAN
+            );
+
+            onSnapshot(qReview, (snapshot) => {
+                const list = document.getElementById('warung-reviews-list');
+                list.innerHTML = ''; 
+                
+                if(snapshot.empty) {
+                    list.innerHTML = '<p style="text-align:center; color:#555;">Belum ada ulasan. Jadilah yang pertama!</p>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    let starsHtml = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+                    list.innerHTML += `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <b style="color:white;">${r.name}</b>
+                            <span class="review-stars">${starsHtml}</span>
+                        </div>
+                        <p style="margin:0; color:#ccc; font-size:0.9rem;">"${r.comment}"</p>
+                    </div>`;
+                });
+            });
+
         } else {
             alert("Warung tidak ditemukan!");
             window.location.href = 'index.html';
         }
 
-        // FUNGSI GLOBAL
+        // --- FUNGSI GLOBAL (WINDOW) ---
+
+        // 1. LOGIK BINTANG DIKLIK
+        let selectedRating = 0;
+        window.rateWarung = function(n) {
+            selectedRating = n;
+            document.querySelectorAll('#warung-stars-input i').forEach((s, i) => {
+                // i dimulai dari 0, jadi jika n=3 (bintang ke-3), kita highlight index 0,1,2
+                if (i < n) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+        }
+
+        // 2. KIRIM REVIEW (DAN UPDATE RATING PUSAT)
+        window.submitWarungReview = async function() {
+            const name = document.getElementById('review-name').value;
+            const comment = document.getElementById('review-comment').value;
+
+            if(!name || selectedRating === 0) return alert("Mohon isi Nama dan pilih Bintang!");
+
+            try {
+                // A. Simpan Ulasan ke tabel 'warung_reviews'
+                await addDoc(collection(db, "warung_reviews"), {
+                    warungId: warungId,
+                    warungName: currentWarungName,
+                    name: name,
+                    rating: selectedRating,
+                    comment: comment,
+                    timestamp: new Date()
+                });
+
+                // B. HITUNG RATA-RATA BARU UNTUK UPDATE DATA INDUK
+                // Rumus: ((Rata2 Lama * Jml Lama) + Nilai Baru) / (Jml Lama + 1)
+                const oldTotalScore = currentRatingScore * currentReviewCount;
+                const newTotalScore = oldTotalScore + selectedRating;
+                const newCount = currentReviewCount + 1;
+                const newAverage = newTotalScore / newCount;
+
+                // C. Update Data Warung Utama (Supaya Halaman Depan/SS2 ikut berubah)
+                await updateDoc(doc(db, "warungs", warungId), {
+                    rating: newAverage,
+                    reviewCount: newCount // Kita update jumlah ulasannya juga
+                });
+
+                alert("Terima kasih! Ulasan Anda berhasil dikirim.");
+                
+                // Reset Form
+                document.getElementById('review-name').value = '';
+                document.getElementById('review-comment').value = '';
+                window.rateWarung(0); 
+
+            } catch (e) {
+                console.error(e);
+                alert("Gagal kirim ulasan: " + e.message);
+            }
+        }
+
+        // 3. BOOKING MODAL & LOGIC
         window.openBookingModal = function() {
             document.getElementById('modal-warung-title').innerText = currentWarungName;
-            
-            // Reset Form
             document.getElementById('book-name').value = '';
             document.getElementById('book-wa').value = '';
             document.getElementById('book-date').value = '';
             document.getElementById('book-pax').value = '';
             document.getElementById('book-qty').value = '0 Meja';
-            
             document.getElementById('booking-modal').style.display = 'flex';
         }
 
@@ -290,7 +392,7 @@
 
         window.closeModal = function() { document.getElementById('booking-modal').style.display = 'none'; }
 
-        // LOGIKA BOOKING (SINKRONISASI DENGAN SISTEM UTAMA)
+        // LOGIKA BOOKING (Sesuai kode lama dulu, nanti kita perbaiki di langkah selanjutnya)
         window.confirmBooking = async function() {
             const name = document.getElementById('book-name').value;
             let wa = document.getElementById('book-wa').value;
@@ -305,8 +407,7 @@
             const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
 
-            // LOGIKA AUTO ASSIGN
-            // Mencari meja yang sudah dipakai (booked atau active) di warung ini
+            // Cek Ketersediaan
             const q = query(collection(db, "bookings"), 
                 where("warungId", "==", warungId), 
                 where("status", "in", ["active", "booked"])
@@ -331,11 +432,10 @@
             if (assignedTables.length < qty) return alert("Maaf, meja tidak cukup saat ini.");
 
             try {
-                // SIMPAN KE FIREBASE (Dengan warungId & venueName)
                 await addDoc(collection(db, "bookings"), {
-                    warungId: warungId,           // <--- PENTING!
+                    warungId: warungId,           
                     warungName: currentWarungName,
-                    venueName: venueNameGlobal,   // <--- PENTING!
+                    venueName: venueNameGlobal,   
                     customerName: name, 
                     customerWA: wa,
                     pax: pax, 
@@ -350,130 +450,20 @@
                     timestamp: new Date()
                 });
 
-                // UPDATE STOK WARUNG (Increment)
                 await updateDoc(doc(db, "warungs", warungId), {
                     bookedCount: increment(qty)
                 });
 
                 window.closeModal();
 
-                // FORMAT PESAN WA (SAMA DENGAN CHECKIN)
                 const mejaString = assignedTables.join(", ");
-                const pesan = `Halo ${name},\n\n` +
-                              `Terima kasih sudah memesan tempat di *${currentWarungName}* pada jam ${jamBooking}\n` +
-                              `Berikut detail pesanan Anda:\n` +
-                              `Tanggal: ${dateVal}\n` +
-                              `Jumlah: ${pax} Orang\n` +
-                              `Kode Tiket: *${kode}*\n` +
-                              `MEJA RESERVASI: No. ${mejaString}\n` +
-                              `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
-                              `PENTING: Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
-                              `Lewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
-
+                const pesan = `Halo ${name}, Booking ${currentWarungName} Sukses! Tiket: ${kode}, Meja: ${mejaString}`;
                 if(confirm(`Booking Sukses!\nMeja Anda: ${mejaString}\n\nKirim tiket ke WA?`)) {
                     window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
                 }
-
             } catch (e) {
                 console.error(e);
                 alert("Gagal Booking: " + e.message);
-            }
-        }
-
-        // --- FITUR REVIEW WARUNG ---
-        
-        // 1. Load Review Saat Ini
-        if(warungId) {
-            const qReview = query(collection(db, "warung_reviews"), 
-                where("warungId", "==", warungId),
-                orderBy("timestamp", "desc") // Urutkan dari yang terbaru
-            );
-
-            onSnapshot(qReview, (snapshot) => {
-                const list = document.getElementById('warung-reviews-list');
-                list.innerHTML = ''; // Bersihkan dulu
-                
-                if(snapshot.empty) {
-                    list.innerHTML = '<p style="text-align:center; color:#555;">Belum ada ulasan. Jadilah yang pertama!</p>';
-                    return;
-                }
-
-                // Hitung Rata-Rata Bintang
-                let totalStars = 0;
-                let totalReviewers = 0;
-
-                snapshot.forEach(doc => {
-                    const r = doc.data();
-                    
-                    // Hitung rata-rata
-                    totalStars += r.rating;
-                    totalReviewers++;
-
-                    // Tampilkan Komentar
-                    let starsHtml = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
-                    list.innerHTML += `
-                    <div class="review-card">
-                        <div class="review-header">
-                            <b style="color:white;">${r.name}</b>
-                            <span class="review-stars">${starsHtml}</span>
-                        </div>
-                        <p style="margin:0; color:#ccc; font-size:0.9rem;">"${r.comment}"</p>
-                    </div>`;
-                });
-
-                // Update Tampilan Bintang di Header Atas (Yang static tadi)
-                if (totalReviewers > 0) {
-                    const avg = (totalStars / totalReviewers).toFixed(1);
-                    // Update tampilan HTML rating di atas (Ganti manual via JS)
-                    const ratingBox = document.querySelector('.warung-rating');
-                    if(ratingBox) {
-                        ratingBox.innerHTML = `
-                            <i class="fa-solid fa-star"></i> 
-                            <span style="font-size:1.2rem; font-weight:bold; color:white;">${avg}</span> 
-                            <span style="font-size:0.8rem;">(${totalReviewers} Ulasan)</span>
-                        `;
-                    }
-                }
-            });
-        }
-
-        // 2. Logic Klik Bintang
-        let currentWarungRating = 0;
-        window.rateWarung = function(n) {
-            currentWarungRating = n;
-            document.querySelectorAll('#warung-stars-input i').forEach((s, i) => {
-                if (i < n) s.classList.add('active');
-                else s.classList.remove('active');
-            });
-        }
-
-        // 3. Kirim Review
-        window.submitWarungReview = async function() {
-            const name = document.getElementById('review-name').value;
-            const comment = document.getElementById('review-comment').value;
-
-            if(!name || currentWarungRating === 0) return alert("Mohon isi Nama dan Bintang!");
-
-            try {
-                await addDoc(collection(db, "warung_reviews"), {
-                    warungId: warungId, // Mengikat ulasan ke warung ini
-                    warungName: currentWarungName,
-                    name: name,
-                    rating: currentWarungRating,
-                    comment: comment,
-                    timestamp: new Date()
-                });
-
-                alert("Terima kasih ulasannya!");
-                
-                // Reset Form
-                document.getElementById('review-name').value = '';
-                document.getElementById('review-comment').value = '';
-                window.rateWarung(0); // Reset bintang
-
-            } catch (e) {
-                console.error(e);
-                alert("Gagal kirim ulasan: " + e.message);
             }
         }
     </script>
