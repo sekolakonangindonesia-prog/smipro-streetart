@@ -60,6 +60,14 @@
         /* 3. Rating Bintang */
         .warung-rating { margin-bottom: 10px; color: gold; font-size: 0.9rem; }
         .warung-rating span { color: #aaa; font-size: 0.8rem; margin-left: 5px; }
+        
+        /* GAYA UNTUK ULASAN WARUNG */
+        .review-section { margin-top: 30px; border-top: 1px dashed #333; padding-top: 20px; }
+        .stars-input i { font-size: 1.5rem; color: #444; cursor: pointer; transition: 0.2s; margin-right: 5px; }
+        .stars-input i.active { color: gold; }
+        .review-card { background: #1e1e1e; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--primary); }
+        .review-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .review-stars { color: gold; font-size: 0.8rem; }
 
         
     </style>
@@ -111,6 +119,33 @@
         </div>
     </div>
 
+        <!-- FORMULIR ULASAN -->
+        <div class="review-section">
+            <h3 style="color:var(--accent);">Ulasan Pelanggan</h3>
+            
+            <div style="background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
+                <input type="text" id="review-name" class="input-request" placeholder="Nama Anda">
+                <textarea id="review-comment" class="input-request" style="height:60px;" placeholder="Tulis pengalaman makan disini..."></textarea>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <!-- Bintang yang bisa diklik -->
+                    <div class="stars-input" id="warung-stars-input">
+                        <i class="fa-solid fa-star" onclick="rateWarung(1)"></i>
+                        <i class="fa-solid fa-star" onclick="rateWarung(2)"></i>
+                        <i class="fa-solid fa-star" onclick="rateWarung(3)"></i>
+                        <i class="fa-solid fa-star" onclick="rateWarung(4)"></i>
+                        <i class="fa-solid fa-star" onclick="rateWarung(5)"></i>
+                    </div>
+                    <button class="btn-small" style="width:100px; background:var(--primary); color:white;" onclick="submitWarungReview()">Kirim</button>
+                </div>
+            </div>
+
+            <!-- TEMPAT MUNCULNYA KOMENTAR -->
+            <div id="warung-reviews-list">
+                <p style="text-align:center; color:#555;">Belum ada ulasan.</p>
+            </div>
+        </div>
+        
     <div class="bottom-action">
         <div class="btn-status" id="table-status-display">Cek Status...</div>
         <button id="btn-booking-trigger" class="btn-book-action" onclick="openBookingModal()" disabled>Loading...</button>
@@ -342,6 +377,103 @@
             } catch (e) {
                 console.error(e);
                 alert("Gagal Booking: " + e.message);
+            }
+        }
+
+        // --- FITUR REVIEW WARUNG ---
+        
+        // 1. Load Review Saat Ini
+        if(warungId) {
+            const qReview = query(collection(db, "warung_reviews"), 
+                where("warungId", "==", warungId),
+                orderBy("timestamp", "desc") // Urutkan dari yang terbaru
+            );
+
+            onSnapshot(qReview, (snapshot) => {
+                const list = document.getElementById('warung-reviews-list');
+                list.innerHTML = ''; // Bersihkan dulu
+                
+                if(snapshot.empty) {
+                    list.innerHTML = '<p style="text-align:center; color:#555;">Belum ada ulasan. Jadilah yang pertama!</p>';
+                    return;
+                }
+
+                // Hitung Rata-Rata Bintang
+                let totalStars = 0;
+                let totalReviewers = 0;
+
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    
+                    // Hitung rata-rata
+                    totalStars += r.rating;
+                    totalReviewers++;
+
+                    // Tampilkan Komentar
+                    let starsHtml = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+                    list.innerHTML += `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <b style="color:white;">${r.name}</b>
+                            <span class="review-stars">${starsHtml}</span>
+                        </div>
+                        <p style="margin:0; color:#ccc; font-size:0.9rem;">"${r.comment}"</p>
+                    </div>`;
+                });
+
+                // Update Tampilan Bintang di Header Atas (Yang static tadi)
+                if (totalReviewers > 0) {
+                    const avg = (totalStars / totalReviewers).toFixed(1);
+                    // Update tampilan HTML rating di atas (Ganti manual via JS)
+                    const ratingBox = document.querySelector('.warung-rating');
+                    if(ratingBox) {
+                        ratingBox.innerHTML = `
+                            <i class="fa-solid fa-star"></i> 
+                            <span style="font-size:1.2rem; font-weight:bold; color:white;">${avg}</span> 
+                            <span style="font-size:0.8rem;">(${totalReviewers} Ulasan)</span>
+                        `;
+                    }
+                }
+            });
+        }
+
+        // 2. Logic Klik Bintang
+        let currentWarungRating = 0;
+        window.rateWarung = function(n) {
+            currentWarungRating = n;
+            document.querySelectorAll('#warung-stars-input i').forEach((s, i) => {
+                if (i < n) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+        }
+
+        // 3. Kirim Review
+        window.submitWarungReview = async function() {
+            const name = document.getElementById('review-name').value;
+            const comment = document.getElementById('review-comment').value;
+
+            if(!name || currentWarungRating === 0) return alert("Mohon isi Nama dan Bintang!");
+
+            try {
+                await addDoc(collection(db, "warung_reviews"), {
+                    warungId: warungId, // Mengikat ulasan ke warung ini
+                    warungName: currentWarungName,
+                    name: name,
+                    rating: currentWarungRating,
+                    comment: comment,
+                    timestamp: new Date()
+                });
+
+                alert("Terima kasih ulasannya!");
+                
+                // Reset Form
+                document.getElementById('review-name').value = '';
+                document.getElementById('review-comment').value = '';
+                window.rateWarung(0); // Reset bintang
+
+            } catch (e) {
+                console.error(e);
+                alert("Gagal kirim ulasan: " + e.message);
             }
         }
     </script>
