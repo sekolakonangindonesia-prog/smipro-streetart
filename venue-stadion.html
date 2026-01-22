@@ -330,7 +330,7 @@
             snapshot.forEach(docSnap => {
                 const w = docSnap.data();
                 // Hitung sisa meja (Total - Terpakai)
-                const available = (parseInt(w.totalTables)||0) - (parseInt(w.bookedTables)||0); 
+                const available = (parseInt(w.totalTables)||0) - (parseInt(w.bookedCount)||0); 
                 const isFull = available <= 0;
                 const isClosed = w.status === 'closed';
 
