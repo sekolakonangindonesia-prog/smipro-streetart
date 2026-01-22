@@ -82,9 +82,9 @@
             <label style="color:#aaa; font-size:0.8rem;">WhatsApp (Untuk Tiket)</label>
             <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
             
-            <label style="color:#aaa; font-size:0.8rem;">Rencana Jam Datang</label>
-            <input type="time" id="book-time" class="input-request" style="color-scheme: dark;">
-            
+            <label style="color:#aaa; font-size:0.8rem;">Tanggal Booking</label>
+            <input type="date" id="book-date" class="input-request" style="color-scheme: dark;"> 
+
             <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang</label>
             <input type="number" id="book-pax" class="input-request" placeholder="Total Orang" oninput="hitungMeja()">
             
@@ -92,8 +92,8 @@
             <input type="text" id="book-qty" class="input-request" readonly style="color:#E50914; font-weight:bold; background:#333;" value="0 Meja">
 
             <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
-                <i class="fa-solid fa-triangle-exclamation"></i> <b>SISTEM OTOMATIS:</b><br>
-                Meja akan ditentukan sistem secara otomatis. Nomor meja akan dikirim via WA.
+                <i class="fa-solid fa-clock"></i> <b>ATURAN WAKTU:</b><br>
+                Batas Check-in (Hangus) pukul <b>17:30 WIB</b>.
             </div>
 
             <div style="display:flex; gap:10px;">
@@ -103,38 +103,34 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBZcysu-eljECIpQCG7tBKowuN-H8hIRFk",
-            authDomain: "smipro-app.firebaseapp.com",
-            projectId: "smipro-app",
-            storageBucket: "smipro-app.firebasestorage.app",
-            messagingSenderId: "1052427998270",
-            appId: "1:1052427998270:web:5f70ea06e4b10b50fe2d6f"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    <!-- MENGGUNAKAN FIREBASE VERSI MODULE AGAR SINKRON DENGAN FILE LAIN -->
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { 
+            doc, getDoc, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, increment 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const params = new URLSearchParams(window.location.search);
         const warungId = params.get('id');
         
         let currentWarungName = "";
+        let venueNameGlobal = ""; // Tambahan agar laporan venue lengkap
         let totalTables = 0;
 
         if(warungId) {
-            db.collection("warungs").doc(warungId).onSnapshot((doc) => {
-                if(doc.exists) {
-                    const data = doc.data();
+            // 1. DATA WARUNG
+            onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
+                if(docSnap.exists()) {
+                    const data = docSnap.data();
                     currentWarungName = data.name;
+                    venueNameGlobal = data.venueName || "Stadion Bayuangga"; // Default
                     totalTables = data.totalTables;
 
                     document.getElementById('w-name').innerText = data.name;
                     if(data.img) document.getElementById('w-img').src = data.img;
                     
-                    const available = data.totalTables - (data.bookedCount || 0);
+                    // PERBAIKAN: Gunakan bookedCount
+                    const available = (parseInt(data.totalTables)||0) - (parseInt(data.bookedCount)||0);
                     const isFull = available <= 0;
                     
                     const btnStatus = document.getElementById('table-status-display');
@@ -165,18 +161,20 @@
                 }
             });
 
-            db.collection("menus").where("warungId", "==", warungId).onSnapshot((snapshot) => {
+            // 2. DATA MENU
+            const qMenu = query(collection(db, "menus"), where("warungId", "==", warungId));
+            onSnapshot(qMenu, (snapshot) => {
                 const grid = document.getElementById('menu-grid');
                 grid.innerHTML = '';
                 if(snapshot.empty) {
                     grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Belum ada menu.</p>';
                     return;
                 }
-                snapshot.forEach(doc => {
-                    const m = doc.data();
+                snapshot.forEach(docSnap => {
+                    const m = docSnap.data();
                     grid.innerHTML += `
                     <div class="menu-card">
-                        <img src="${m.img}" class="menu-img">
+                        <img src="${m.img || 'https://via.placeholder.com/150'}" class="menu-img">
                         <div class="menu-info">
                             <span class="menu-title">${m.name}</span>
                             <span class="menu-price">Rp ${parseInt(m.price).toLocaleString()}</span>
@@ -186,53 +184,59 @@
             });
         } else {
             alert("Warung tidak ditemukan!");
-            window.location.href = 'venue-stadion.html';
+            window.location.href = 'index.html';
         }
 
-        function openBookingModal() {
+        // FUNGSI GLOBAL
+        window.openBookingModal = function() {
             document.getElementById('modal-warung-title').innerText = currentWarungName;
-            const now = new Date();
-            const timeString = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
-            document.getElementById('book-time').value = timeString;
+            
+            // Reset Form
+            document.getElementById('book-name').value = '';
+            document.getElementById('book-wa').value = '';
+            document.getElementById('book-date').value = '';
+            document.getElementById('book-pax').value = '';
+            document.getElementById('book-qty').value = '0 Meja';
+            
             document.getElementById('booking-modal').style.display = 'flex';
         }
 
-        function hitungMeja() {
+        window.hitungMeja = function() {
             let orang = parseInt(document.getElementById('book-pax').value) || 0;
             let qty = orang < 1 ? 0 : Math.ceil(orang / 4);
             document.getElementById('book-qty').value = qty + " Meja";
         }
 
-        function closeModal() { document.getElementById('booking-modal').style.display = 'none'; }
+        window.closeModal = function() { document.getElementById('booking-modal').style.display = 'none'; }
 
+        // LOGIKA BOOKING (SINKRONISASI DENGAN SISTEM UTAMA)
         window.confirmBooking = async function() {
             const name = document.getElementById('book-name').value;
             let wa = document.getElementById('book-wa').value;
-            const time = document.getElementById('book-time').value; 
+            const dateVal = document.getElementById('book-date').value; 
             const pax = parseInt(document.getElementById('book-pax').value) || 0;
             const qty = Math.ceil(pax / 4); 
 
-            if(!name || !wa || !time || pax < 1) return alert("Mohon lengkapi data!");
+            if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi data!");
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-            let [hours, minutes] = time.split(':').map(Number);
-            let dateObj = new Date();
-            dateObj.setHours(hours); dateObj.setMinutes(minutes + 30); 
-            let expTime = `${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
-
+            const now = new Date();
+            const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
             const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
 
-            // LOGIKA AUTO ASSIGN (FIXED)
-            const activeBookings = await db.collection("bookings")
-                .where("warungName", "==", currentWarungName)
-                .where("status", "in", ["active", "booked"]) 
-                .get();
+            // LOGIKA AUTO ASSIGN
+            // Mencari meja yang sudah dipakai (booked atau active) di warung ini
+            const q = query(collection(db, "bookings"), 
+                where("warungId", "==", warungId), 
+                where("status", "in", ["active", "booked"])
+            );
+            const snapshot = await getDocs(q);
 
             let usedTables = [];
-            activeBookings.forEach(doc => {
+            snapshot.forEach(doc => {
                 const d = doc.data();
-                if (Array.isArray(d.tableNum)) usedTables = [...usedTables, ...d.tableNum];
-                else if (d.tableNum) usedTables.push(d.tableNum);
+                if (Array.isArray(d.tableNum)) usedTables.push(...d.tableNum);
+                else usedTables.push(d.tableNum);
             });
 
             let assignedTables = [];
@@ -245,27 +249,53 @@
 
             if (assignedTables.length < qty) return alert("Maaf, meja tidak cukup saat ini.");
 
-            // Pastikan format array selalu
-            const finalTableData = assignedTables.length === 1 ? assignedTables[0] : assignedTables;
+            try {
+                // SIMPAN KE FIREBASE (Dengan warungId & venueName)
+                await addDoc(collection(db, "bookings"), {
+                    warungId: warungId,           // <--- PENTING!
+                    warungName: currentWarungName,
+                    venueName: venueNameGlobal,   // <--- PENTING!
+                    customerName: name, 
+                    customerWA: wa,
+                    pax: pax, 
+                    tablesNeeded: qty,
+                    tableNum: assignedTables, 
+                    bookingDate: dateVal,
+                    arrivalTime: jamBooking, 
+                    expiredTime: `${dateVal}T17:30`,
+                    bookingCode: kode, 
+                    status: 'booked', 
+                    revenue: 0,
+                    timestamp: new Date()
+                });
 
-            await db.collection("bookings").add({
-                warungName: currentWarungName, 
-                customerName: name, customerWA: wa,
-                pax: pax, tablesNeeded: qty, arrivalTime: time, expiredTime: expTime,
-                bookingCode: kode, status: 'booked', timestamp: new Date(),
-                tableNum: finalTableData 
-            });
+                // UPDATE STOK WARUNG (Increment)
+                await updateDoc(doc(db, "warungs", warungId), {
+                    bookedCount: increment(qty)
+                });
 
-            closeModal();
+                window.closeModal();
 
-            // FORMAT PESAN WA (FIXED JOIN)
-            // Di sini kuncinya: Array [4, 5] akan jadi string "4, 5"
-            const mejaStr = assignedTables.join(", ");
-            
-            const pesan = `Halo ${name},\n\nBooking Berhasil di *${currentWarungName}*\nKode Tiket: *${kode}*\nJumlah: ${pax} Orang (${qty} Meja)\n\n✅ *ANDA MENDAPATKAN MEJA: No. ${mejaStr}*\n(Datang Pukul ${time})\n\n⚠️ *PENTING:* Hangus jika lewat Pukul ${expTime}\nMohon scan QR Meja saat tiba.`;
+                // FORMAT PESAN WA (SAMA DENGAN CHECKIN)
+                const mejaString = assignedTables.join(", ");
+                const pesan = `Halo ${name},\n\n` +
+                              `Terima kasih sudah memesan tempat di *${currentWarungName}* pada jam ${jamBooking}\n` +
+                              `Berikut detail pesanan Anda:\n` +
+                              `Tanggal: ${dateVal}\n` +
+                              `Jumlah: ${pax} Orang\n` +
+                              `Kode Tiket: *${kode}*\n` +
+                              `MEJA RESERVASI: No. ${mejaString}\n` +
+                              `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
+                              `PENTING: Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
+                              `Lewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
 
-            if(confirm(`Booking Sukses!\nMeja Anda: ${mejaStr}\n\nKirim tiket ke WA?`)) {
-                window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
+                if(confirm(`Booking Sukses!\nMeja Anda: ${mejaString}\n\nKirim tiket ke WA?`)) {
+                    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert("Gagal Booking: " + e.message);
             }
         }
     </script>
