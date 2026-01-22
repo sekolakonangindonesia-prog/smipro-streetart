@@ -282,10 +282,11 @@
                 });
             });
             
-            // 3. LOAD REVIEW LIST (TAPI HITUNGAN RATA-RATA DIAMBIL DARI DATA WARUNG DIATAS)
+           // 3. LOAD REVIEW LIST 
+            // (Kita hapus orderBy sementara agar data mau muncul dulu)
             const qReview = query(collection(db, "warung_reviews"), 
-                where("warungId", "==", warungId),
-                orderBy("timestamp", "desc") // SEKARANG SUDAH BISA JALAN
+                where("warungId", "==", warungId)
+                // orderBy("timestamp", "desc") <--- SAYA MATIKAN DULU INI
             );
 
             onSnapshot(qReview, (snapshot) => {
@@ -309,6 +310,10 @@
                         <p style="margin:0; color:#ccc; font-size:0.9rem;">"${r.comment}"</p>
                     </div>`;
                 });
+            }, (error) => {
+                // Tambahan: Jika masih error, pesan akan muncul
+                console.error("Error ambil data:", error);
+                alert("Gagal ambil ulasan: " + error.message);
             });
 
         } else {
