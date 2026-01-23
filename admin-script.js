@@ -801,131 +801,178 @@ window.openRaport = async function(studentId) {
 }
 
 
-// 1. Fungsi Bantuan: Mengubah URL Gambar ke Base64 (Wajib untuk jsPDF)
+// === KODE CETAK RAPORT DENGAN BACKGROUND & DATA OTOMATIS ===
+
+// 1. Fungsi Bantu: Ubah Gambar ke Base64 (Supaya bisa masuk PDF)
 async function getBase64ImageFromUrl(url) {
     const res = await fetch(url);
     const blob = await res.blob();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
 }
 
-// 2. Fungsi Utama: Membuat PDF dengan Template
-async function generateStudentPDF(sData, avg) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); 
+// 2. FUNGSI UTAMA (Gantikan window.printRaportDirect yang lama dengan ini)
+window.printRaportDirect = async function(id) {
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }    
+    document.body.style.cursor = 'wait';
 
-    // 1. BACKGROUND
-    const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siwa%20SMIPRO.jpg";
-    
     try {
-        const bgData = await getBase64ImageFromUrl(bgUrl);
-        doc.addImage(bgData, 'JPEG', 0, 0, 210, 297);
-    } catch (err) {
-        alert("Gagal memuat template background.");
-    }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4'); // Kertas A4
 
-    // 2. BIODATA & FOTO
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0); 
+        // --- A. AMBIL DATA DARI DATABASE ---
+        
+        // 1. Ambil Data Siswa
+        const studentSnap = await getDoc(doc(db, "students", id));
+        if (!studentSnap.exists()) { throw "Data siswa tidak ditemukan"; }
+        const sData = studentSnap.data();
 
-    let startY = 60; 
-
-    // --- CEK FOTO SISWA ---
-    // Pastikan field di database Anda namanya 'foto_url'
-    // Jika di database namanya 'photoUrl', ganti kode di bawah ini jadi sData.photoUrl
-    const urlFoto = sData.foto_url || sData.photoUrl || sData.foto; 
-    
-    if (urlFoto) { 
+        // 2. Ambil Data Mentor (PENTING: Supaya kode aneh berubah jadi Nama)
+        // Kita ambil semua mentor dulu untuk dicocokkan
+        const mentorMap = {};
         try {
-            console.log("Mencoba ambil foto:", urlFoto); // Cek Console (F12) jika masih gagal
-            const fotoSiswa = await getBase64ImageFromUrl(urlFoto);
-            // Posisi Foto (X=20, Y=startY) Ukuran 30x40mm
-            doc.addImage(fotoSiswa, 'JPEG', 20, startY, 30, 40); 
-        } catch(e) { 
-            console.error("Gagal load foto siswa (Mungkin masalah CORS/Izin):", e);
-            // Opsional: Gambar kotak kosong jika foto gagal
+            const mentorsSnap = await getDocs(collection(db, "mentors")); // Pastikan nama koleksi 'mentors'
+            mentorsSnap.forEach(d => {
+                const m = d.data();
+                // Simpan mapping ID -> Nama
+                mentorMap[d.id] = m.name || m.nama || m.fullname || "Mentor"; 
+            });
+        } catch (err) {
+            console.log("Info: Tidak bisa ambil data mentor otomatis (mungkin beda nama koleksi).");
+        }
+
+        // 3. Hitung Rata-rata
+        const sScores = sData.scores || {};
+        let totalScore = 0;
+        let count = 0;
+        for (let key in sScores) {
+            totalScore += parseInt(sScores[key]);
+            count++;
+        }
+        const avg = count > 0 ? (totalScore / count) : 0;
+
+
+        // --- B. MULAI MEMBUAT PDF (DESAIN BARU) ---
+
+        // 1. Background Template
+        const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siswa%20SMIPRO.jpg";
+        try {
+            const bgData = await getBase64ImageFromUrl(bgUrl);
+            doc.addImage(bgData, 'JPEG', 0, 0, 210, 297);
+        } catch (e) {
+            console.error("Gagal load background");
+        }
+
+        // 2. Foto Siswa & Biodata
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0); // Hitam
+
+        let startY = 60; 
+        
+        // LOGIKA PINTAR MENCARI FOTO
+        // Kode ini akan mencoba semua kemungkinan nama field foto
+        const linkFoto = sData.foto_url || sData.photoUrl || sData.image || sData.foto || sData.url_foto;
+
+        if (linkFoto) {
+            try {
+                const imgData = await getBase64ImageFromUrl(linkFoto);
+                doc.addImage(imgData, 'JPEG', 20, startY, 30, 40); // Foto ukuran 3x4 cm
+            } catch (e) {
+                // Jika foto error (misal karena CORS), buat kotak abu-abu
+                doc.setFillColor(220, 220, 220);
+                doc.rect(20, startY, 30, 40, 'F');
+                doc.setFontSize(8);
+                doc.text("Foto Error", 25, startY + 20);
+            }
+        } else {
+            // Jika tidak ada foto
+            doc.setDrawColor(0);
             doc.rect(20, startY, 30, 40); 
             doc.setFontSize(8);
             doc.text("No Photo", 25, startY + 20);
         }
-    } else {
-        console.log("Data foto tidak ditemukan di database untuk siswa ini.");
-    }
 
-    // Teks Biodata
-    const textX = 60; 
-    doc.setFontSize(14);
-    doc.text(`NAMA: ${sData.name || "Siswa"}`, textX, startY + 10);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(`Genre: ${sData.genre || "-"}`, textX, startY + 20);
-    
-    const today = new Date().toLocaleDateString('id-ID');
-    doc.text(`Tanggal Cetak: ${today}`, textX, startY + 30);
-
-
-    // 3. TABEL NILAI
-    let tableBody = [];
-    const sScores = sData.scores || {};
-    
-    for (let key in sScores) {
-        let nilai = parseInt(sScores[key]);
-        let predikat = nilai >= 85 ? "(Sangat Baik)" : nilai >= 75 ? "(Kompeten)" : "(Cukup)";
+        // Teks Biodata
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text(`NAMA: ${(sData.name || "Siswa").toUpperCase()}`, 60, startY + 10);
         
-        // CATATAN: 'key' saat ini adalah ID Mentor (contoh: vYsb2...). 
-        // Agar muncul nama, Anda perlu mengambil data nama mentor dari database.
-        // Untuk sementara, kita biarkan ID atau ganti labelnya manual jika perlu.
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(`Genre: ${sData.genre || "-"}`, 60, startY + 20);
         
-        tableBody.push([
-            key, // Nanti ini harus diganti Nama Mentor Asli
-            "Umum", 
-            `${nilai} ${predikat}`
-        ]);
+        const today = new Date().toLocaleDateString('id-ID');
+        doc.text(`Tanggal Cetak: ${today}`, 60, startY + 30);
+
+
+        // 3. Tabel Nilai
+        let tableBody = [];
+        for (let key in sScores) {
+            let nilai = parseInt(sScores[key]);
+            let predikat = nilai >= 85 ? "(Sangat Baik)" : nilai >= 75 ? "(Kompeten)" : "(Cukup)";
+            
+            // Cek: Apakah 'key' ini ID atau Nama?
+            // Jika ID, kita ubah pakai mentorMap. Jika tidak ada di map, pakai key aslinya.
+            let namaMentorTampil = mentorMap[key] ? mentorMap[key] : key;
+
+            tableBody.push([
+                namaMentorTampil, // Ini otomatis menampilkan Nama jika datanya ada
+                "Umum", 
+                `${nilai} ${predikat}`
+            ]);
+        }
+
+        doc.autoTable({
+            startY: 110,
+            head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [220, 0, 0], textColor: 255 }, // Merah
+            styles: { fontSize: 10, cellPadding: 3 },
+            margin: { left: 20, right: 20 }
+        });
+
+
+        // 4. Status & Nilai Rata-rata
+        let finalY = doc.lastAutoTable.finalY + 20;
+
+        // Status
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(0,0,0);
+        doc.text("STATUS AKHIR:", 20, finalY);
+        doc.setFontSize(14);
+        doc.text("LULUS / SIAP PERFORM", 20, finalY + 10);
+
+        // KOTAK NILAI (POSISI DIPERBAIKI)
+        const boxX = 145; 
+        const boxY = 225; 
+
+        // Label Rata-rata (Naik sedikit)
+        doc.setFontSize(10);
+        doc.text("NILAI RATA-RATA:", boxX + 15, boxY - 6, { align: 'center' });
+
+        // Angka Rata-rata (Warna Merah & Posisi Naik)
+        doc.setFontSize(24);
+        doc.setTextColor(220, 0, 0);
+        // Angka ini (+2) menentukan tinggi rendahnya angka nilai. 
+        // Makin kecil angkanya, makin naik posisinya.
+        doc.text(avg.toFixed(1), boxX + 15, boxY + 2, { align: 'center' }); 
+
+
+        // 5. Simpan File
+        doc.save(`Raport_${sData.name || "Siswa"}.pdf`);
+
+    } catch (e) {
+        console.error(e);
+        alert("Terjadi kesalahan saat mencetak: " + e.message);
+    } finally {
+        document.body.style.cursor = 'default';
     }
-
-    doc.autoTable({
-        startY: 110, 
-        head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
-        body: tableBody,
-        theme: 'grid', 
-        headStyles: { fillColor: [220, 0, 0] }, 
-        styles: { fontSize: 10, cellPadding: 3 },
-        margin: { left: 20, right: 20 } 
-    });
-
-
-    // 4. BAGIAN BAWAH
-    let finalY = doc.lastAutoTable.finalY + 20;
-
-    // Status
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("STATUS AKHIR:", 20, finalY);
-    doc.setFontSize(14);
-    doc.text("LULUS / SIAP PERFORM", 20, finalY + 10);
-
-    // --- PERBAIKAN POSISI NILAI RATA-RATA ---
-    const boxX = 145; 
-    const boxY = 225; // Koordinat Y Kotak Template
-    
-    doc.setFontSize(10);
-    // Label rata-rata (Geser sedikit ke atas -5)
-    doc.text("NILAI RATA-RATA:", boxX + 15, boxY - 5, { align: 'center' }); 
-
-    doc.setFontSize(24);
-    doc.setTextColor(220, 0, 0); // Merah
-    
-    // PERBAIKAN DISINI: Gunakan +4 (sebelumnya +10) agar teks naik ke tengah
-    doc.text(avg.toFixed(1), boxX + 15, boxY + 4, { align: 'center' }); 
-
-    // Simpan
-    doc.save(`Raport_${sData.name || "Siswa"}.pdf`);
 }
 
 
