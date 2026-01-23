@@ -277,138 +277,242 @@ async function loadWarungStatistics() {
     });
 }
 
-// --- FUNGSI CETAK PDF DETAIL (FIX FINAL: TANPA INDEX ERROR) ---
+// --- FUNGSI CETAK PDF LAPORAN VENUE & WARUNG (VERSI FINAL + LOGO + GROUPING) ---
 window.generateReportPDF = async function() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    // 1. Cek Library
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
     
-    const filter = document.getElementById('report-filter').value;
-    const filterText = document.getElementById('report-filter').options[document.getElementById('report-filter').selectedIndex].text;
+    // 2. Ambil Filter dari Dropdown
+    const filterVenueEl = document.getElementById('filter-stats-venue');
+    const filterTimeEl = document.getElementById('report-filter');
+    
+    // Ambil Value & Text untuk Header PDF
+    const selectedVenueVal = filterVenueEl ? filterVenueEl.value : 'all';
+    const selectedVenueText = filterVenueEl ? filterVenueEl.options[filterVenueEl.selectedIndex].text : 'Semua Venue';
+    const selectedTimeVal = filterTimeEl ? filterTimeEl.value : 'all';
+    const selectedTimeText = filterTimeEl ? filterTimeEl.options[filterTimeEl.selectedIndex].text : 'Semua Waktu';
 
     document.body.style.cursor = 'wait';
 
     try {
-        // 1. QUERY DATABASE (HANYA 'WHERE', TIDAK PAKAI 'ORDERBY')
-        // Ini kuncinya agar tidak error Index
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // --- A. PERSIAPAN LOGO (Base64) ---
+        const getBase64FromUrl = async (url) => {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => resolve(reader.result);
+                });
+            } catch (error) { return null; }
+        };
+
+        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+        const logoBase64 = await getBase64FromUrl(logoUrl);
+
+        // --- B. AMBIL DATA DARI FIREBASE ---
         const q = query(collection(db, "bookings"), where("status", "==", "finished"));
         const snapshot = await getDocs(q);
 
-        // 2. KELOMPOKKAN DATA
-        let groupedData = {};
+        // --- C. LOGIKA FILTER & GROUPING DATA ---
+        // Struktur Data: groupedData[NamaVenue][NamaWarung] = [Array Transaksi]
+        let groupedData = {}; 
         const now = new Date();
-        
+
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
-            // Konversi Timestamp Firebase ke Date Javascript
+            
+            // 1. Normalisasi Tanggal
             const date = d.finishedAt ? d.finishedAt.toDate() : (d.timestamp ? d.timestamp.toDate() : new Date());
+            
+            // 2. Normalisasi Venue (Fallback ke Stadion jika kosong/null)
+            let vName = d.venueName || "Stadion Bayuangga Zone";
+            // Bersihkan nama (trim spasi) agar grouping rapi
+            vName = vName.trim(); 
 
-            // FILTER WAKTU (LOGIC MANUAL)
-            let include = false;
-            if (filter === 'all') include = true;
-            else if (filter === 'month') {
-                if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) include = true;
-            } 
-            else if (filter === 'week') {
-                const oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                if (date >= oneWeekAgo) include = true;
-            }
-            else if (filter === 'today') {
-                 if (date.getDate() === now.getDate() && date.getMonth() === now.getMonth()) include = true;
+            // --- FILTER LOKASI (VENUE) ---
+            // Jika dropdown TIDAK 'all' DAN nama venue TIDAK SAMA dengan dropdown -> SKIP
+            if (selectedVenueVal !== 'all' && vName !== selectedVenueVal) return;
+
+            // --- FILTER WAKTU ---
+            let includeTime = false;
+            if (selectedTimeVal === 'all') includeTime = true;
+            else {
+                // Reset jam ke 00:00 untuk perbandingan tanggal
+                const checkDate = new Date(date); checkDate.setHours(0,0,0,0);
+                const today = new Date(); today.setHours(0,0,0,0);
+                
+                if (selectedTimeVal === 'today') {
+                    if (checkDate.getTime() === today.getTime()) includeTime = true;
+                } else if (selectedTimeVal === 'week') {
+                    const oneWeekAgo = new Date(today); oneWeekAgo.setDate(today.getDate() - 7);
+                    if (checkDate >= oneWeekAgo) includeTime = true;
+                } else if (selectedTimeVal === 'month') {
+                    if (checkDate.getMonth() === today.getMonth() && checkDate.getFullYear() === today.getFullYear()) includeTime = true;
+                }
             }
 
-            if (include) {
-                const wName = d.warungName || "Unknown";
-                if (!groupedData[wName]) groupedData[wName] = [];
-                groupedData[wName].push({
-                    date: date,
-                    table: Array.isArray(d.tableNum) ? d.tableNum.join(",") : d.tableNum,
-                    pax: d.pax,
-                    revenue: parseInt(d.revenue || 0)
-                });
-            }
+            if (!includeTime) return; // Skip jika waktu tidak masuk kriteria
+
+            // --- DATA LOLOS FILTER -> MASUKKAN KE STRUKTUR GROUPING ---
+            const wName = d.warungName || "Unknown Warung";
+
+            // Buat Kunci Venue jika belum ada
+            if (!groupedData[vName]) groupedData[vName] = {};
+            
+            // Buat Kunci Warung di dalam Venue jika belum ada
+            if (!groupedData[vName][wName]) groupedData[vName][wName] = [];
+
+            // Masukkan data transaksi
+            groupedData[vName][wName].push({
+                date: date,
+                table: Array.isArray(d.tableNum) ? d.tableNum.join(",") : d.tableNum,
+                pax: d.pax,
+                revenue: parseInt(d.revenue || 0)
+            });
         });
 
-        // 3. CETAK PDF
-        let y = 20;
-
-        doc.setFontSize(16); doc.setFont("helvetica", "bold");
-        doc.text("LAPORAN DETAIL TRANSAKSI SMIPRO", 105, y, null, null, "center");
-        y += 7;
-        doc.setFontSize(10); doc.setFont("helvetica", "normal");
-        doc.text(`Periode: ${filterText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 105, y, null, null, "center");
-        y += 15;
-
-        let grandTotal = 0;
-
-        // Loop per Warung
-        for (const [warungName, transactions] of Object.entries(groupedData)) {
-            
-            // --- URUTKAN DATA SECARA MANUAL DISINI (JAVASCRIPT SORT) ---
-            transactions.sort((a, b) => a.date - b.date); 
-
-            if (y > 250) { doc.addPage(); y = 20; }
-
-            // Header Warung
-            doc.setFontSize(12); doc.setFont("helvetica", "bold");
-            doc.setFillColor(230, 230, 230);
-            doc.rect(14, y-5, 182, 8, 'F');
-            doc.text(`WARUNG: ${warungName.toUpperCase()}`, 15, y);
-            y += 8;
-
-            // Header Tabel
-            doc.setFontSize(9); doc.setFont("helvetica", "bold");
-            doc.text("Tanggal & Jam", 15, y);
-            doc.text("Meja", 60, y);
-            doc.text("Visitor", 90, y);
-            doc.text("Nominal (Rp)", 160, y);
-            doc.line(15, y+2, 195, y+2);
-            y += 7;
-
-            let subTotal = 0;
-            doc.setFont("helvetica", "normal");
-
-            // Tulis Baris Transaksi
-            transactions.forEach(t => {
-                const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-                
-                doc.text(dateStr, 15, y);
-                doc.text(`No. ${t.table}`, 60, y);
-                doc.text(`${t.pax} Org`, 90, y);
-                doc.text(t.revenue.toLocaleString('id-ID'), 160, y);
-
-                subTotal += t.revenue;
-                y += 6;
-
-                if (y > 270) { 
-                    doc.addPage(); y = 20; 
-                    doc.setFont("helvetica", "bold"); doc.text(`(Lanjutan ${warungName})...`, 15, y);
-                    y += 10; doc.setFont("helvetica", "normal");
-                }
-            });
-
-            // Subtotal
-            y += 2; doc.line(100, y, 195, y); y += 5;
-            doc.setFont("helvetica", "bold");
-            doc.text("SUBTOTAL:", 100, y);
-            doc.text(`Rp ${subTotal.toLocaleString('id-ID')}`, 160, y);
-            
-            grandTotal += subTotal;
-            y += 15;
+        // --- D. CETAK HEADER PDF ---
+        // Gambar Logo (Jika berhasil load)
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 15, 10, 25, 25); // x, y, w, h
         }
 
-        // Grand Total
-        if (y > 250) { doc.addPage(); y = 20; }
-        doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 10;
-        doc.setFontSize(14); doc.text("GRAND TOTAL OMZET:", 100, y);
-        doc.setTextColor(0, 150, 0);
-        doc.text(`Rp ${grandTotal.toLocaleString('id-ID')}`, 195, y, {align: "right"});
-        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        doc.text("LAPORAN DETAIL TRANSAKSI MITRA", 50, 20); // Geser kanan krn ada logo
+        doc.text("ANGKRINGAN SMIPRO", 50, 28);
+        
+        doc.setFontSize(10); doc.setFont("helvetica", "normal");
+        doc.text(`Lokasi: ${selectedVenueText}`, 50, 35);
+        doc.text(`Periode: ${selectedTimeText} | Cetak: ${new Date().toLocaleString('id-ID')}`, 50, 40);
 
-        doc.save(`Laporan_Detail_SMIPRO_${filter}.pdf`);
+        doc.setLineWidth(0.5);
+        doc.line(15, 45, 195, 45); // Garis pemisah header
+        
+        let y = 55; // Posisi awal konten
+        let grandTotal = 0;
+
+        // Cek jika data kosong
+        if (Object.keys(groupedData).length === 0) {
+            doc.text("Tidak ada data transaksi sesuai filter.", 105, 60, null, null, "center");
+            doc.save(`Laporan_Kosong.pdf`);
+            document.body.style.cursor = 'default';
+            return;
+        }
+
+        // --- E. LOOPING CETAK DATA (BERTINGKAT: VENUE -> WARUNG -> TRANSAKSI) ---
+        
+        // Loop Level 1: Venue (Sorted)
+        const sortedVenues = Object.keys(groupedData).sort();
+        
+        for (const venueKey of sortedVenues) {
+            let venueTotal = 0;
+
+            // Cek Page Break (Ganti Halaman jika penuh)
+            if (y > 270) { doc.addPage(); y = 20; }
+
+            // CETAK HEADER VENUE (Hitam Elegan)
+            doc.setFillColor(30, 30, 30); // Hitam
+            doc.rect(15, y, 180, 10, 'F');
+            doc.setTextColor(255, 215, 0); // Emas
+            doc.setFontSize(12); doc.setFont("helvetica", "bold");
+            doc.text(`LOKASI: ${venueKey.toUpperCase()}`, 18, y + 7);
+            doc.setTextColor(0, 0, 0); // Reset Hitam
+            y += 15;
+
+            // Loop Level 2: Warung (Sorted)
+            const warungsInVenue = groupedData[venueKey];
+            const sortedWarungs = Object.keys(warungsInVenue).sort();
+
+            for (const warungKey of sortedWarungs) {
+                const transactions = warungsInVenue[warungKey];
+                
+                // Urutkan Transaksi by Date
+                transactions.sort((a, b) => a.date - b.date);
+
+                if (y > 270) { doc.addPage(); y = 20; }
+
+                // Cetak Nama Warung (Abu-abu)
+                doc.setFillColor(230, 230, 230);
+                doc.rect(15, y, 180, 7, 'F');
+                doc.setFontSize(10); doc.setFont("helvetica", "bold");
+                doc.text(`Warung: ${warungKey}`, 18, y + 5);
+                y += 10;
+
+                // Header Kolom Tabel
+                doc.setFontSize(8); doc.setFont("helvetica", "bold");
+                doc.text("Tgl & Jam", 18, y);
+                doc.text("Meja", 60, y);
+                doc.text("Pax", 90, y);
+                doc.text("Nominal (Rp)", 160, y);
+                doc.line(15, y+2, 195, y+2);
+                y += 5;
+
+                let warungSubtotal = 0;
+                doc.setFont("helvetica", "normal");
+
+                // Loop Level 3: Transaksi
+                transactions.forEach(t => {
+                    if (y > 280) { doc.addPage(); y = 20; } // Cek halaman lagi
+                    
+                    const dateStr = t.date.toLocaleString('id-ID', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    
+                    doc.text(dateStr, 18, y);
+                    doc.text(`No. ${t.table}`, 60, y);
+                    doc.text(`${t.pax}`, 90, y);
+                    doc.text(t.revenue.toLocaleString('id-ID'), 160, y);
+                    
+                    warungSubtotal += t.revenue;
+                    y += 5;
+                });
+
+                // Cetak Subtotal Warung
+                y += 2; 
+                doc.line(100, y, 195, y); // Garis bawah subtotal
+                y += 5;
+                doc.setFont("helvetica", "bold");
+                doc.text(`Total ${warungKey}:`, 100, y);
+                doc.text(`Rp ${warungSubtotal.toLocaleString('id-ID')}`, 160, y);
+                y += 10; // Jarak antar warung
+
+                venueTotal += warungSubtotal;
+            }
+
+            // CETAK TOTAL PER VENUE
+            if (y > 270) { doc.addPage(); y = 20; }
+            doc.setFontSize(11); 
+            doc.setFillColor(255, 248, 220); // Warna krem tipis
+            doc.rect(15, y-5, 180, 10, 'F');
+            doc.text(`TOTAL OMZET ${venueKey.toUpperCase()}`, 18, y+2);
+            doc.text(`Rp ${venueTotal.toLocaleString('id-ID')}`, 160, y+2);
+            y += 15; // Jarak antar Venue
+
+            grandTotal += venueTotal;
+        }
+
+        // --- F. GRAND TOTAL (HALAMAN TERAKHIR) ---
+        if (y > 260) { doc.addPage(); y = 20; }
+        
+        y += 5;
+        doc.setLineWidth(1); doc.line(15, y, 195, y); y += 10;
+        
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text("GRAND TOTAL SEMUA:", 80, y);
+        
+        doc.setTextColor(0, 150, 0); // Hijau Duit
+        doc.text(`Rp ${grandTotal.toLocaleString('id-ID')}`, 195, y, {align: "right"});
+        
+        // Simpan File
+        const fileName = `Laporan_Mitra_${selectedVenueVal === 'all' ? 'SemuaVenue' : selectedVenueText}_${new Date().getTime()}.pdf`;
+        doc.save(fileName);
 
     } catch (error) {
-        console.error(error);
-        alert("Gagal: " + error.message);
+        console.error("PDF Error:", error);
+        alert("Gagal mencetak PDF: " + error.message);
     } finally {
         document.body.style.cursor = 'default';
     }
