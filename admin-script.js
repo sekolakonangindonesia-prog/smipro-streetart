@@ -2463,29 +2463,39 @@ window.generateCafePDF = function() {
 }
 
 /* =========================================
-   11. EKSEKUSI (PENUTUP FILE YANG BENAR)
+   11. EKSEKUSI (PALING BAWAH - FIX FINAL)
    ========================================= */
 window.onload = function() {
-    console.log("System Started...");
-    loadDashboardOverview();
-    
-    // Background Load
+    console.log("System Loading...");
+
+    // 1. Load Dashboard Utama
+    if(typeof loadDashboardOverview === 'function') loadDashboardOverview();
+
+    // 2. Load Data Background
     if(typeof loadMitraData === 'function') loadMitraData();
     if(typeof loadPerformerData === 'function') loadPerformerData();
     if(typeof loadMentorData === 'function') loadMentorData();
-    if(typeof loadStudentData === 'function') loadStudentData(); 
+    if(typeof loadStudentData === 'function') loadStudentData();
     if(typeof loadCafeData === 'function') loadCafeData();
-    
-    if(window.loadVenueManagement) window.loadVenueManagement();
-    if(typeof populateVenueFilters === 'function') populateVenueFilters();     
 
+    // 3. Load Fitur Tambahan (Cek jika fungsi ada)
+    if(window.loadVenueManagement) window.loadVenueManagement();
+    if(typeof populateVenueFilters === 'function') populateVenueFilters();
+
+    // 4. Auto-Click Tab Terakhir (Logic Timeout)
     setTimeout(() => {
         const lastTab = localStorage.getItem('adminReturnTab');
         if (lastTab) {
-            document.querySelectorAll('.menu-item').forEach(btn => {
-                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(lastTab)) btn.click();
+            // Cari tombol menu yang sesuai
+            const allBtns = document.querySelectorAll('.menu-item');
+            allBtns.forEach(btn => {
+                const onclickAttr = btn.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(lastTab)) {
+                    btn.click();
+                }
             });
             localStorage.removeItem('adminReturnTab');
         }
     }, 500);
-};
+
+}; // <--- INI TUTUP KURUNG YANG DICARI-CARI KOMPUTER
