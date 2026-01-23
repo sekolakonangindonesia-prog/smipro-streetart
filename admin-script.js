@@ -2325,184 +2325,167 @@ window.generateCafePDF = function() {
 }
 
 /* =========================================
-   10. MODUL KONTROL LAYAR & GALERI (LENGKAP - FIX URL)
+   PERBAIKAN FUNGSI LAPORAN CAFE & PDF
+   (PASTE INI DI BAGIAN BAWAH FILE)
    ========================================= */
 
-// A. NAVIGASI SUB-TAB
-window.switchLiveTab = function(tabId, btn) {
-    document.querySelectorAll('.live-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-    
-    // Reset tombol active
-    if(btn && btn.parentElement) {
-        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    }
+window.loadCafeReport = async function() {
+    const locInput = document.getElementById('rep-loc').value;
+    const timeInput = document.getElementById('rep-time').value;
+    const artInput = document.getElementById('rep-art').value;
+    const tbody = document.getElementById('rep-detail-body');
 
-    // Jika buka tab galeri, muat datanya
-    if(tabId === 'panel-galeri') loadGalleryList(); 
-}
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
-// B. FUNGSI ISI DROPDOWN VENUE (BARU)
-async function populateLiveVenueOptions() {
-    const sel = document.getElementById('live-target-venue');
-    if(!sel) return;
-    
-    sel.innerHTML = '<option value="">-- Pilih Venue --</option>';
-    
     try {
-        const q = query(collection(db, "venues"), orderBy("name", "asc"));
-        const snap = await getDocs(q);
+        const reqSnap = await getDocs(collection(db, "requests"));
+        let tempList = [];
+        let totalMoney = 0;
+        let totalSongs = 0;
+        let perfCount = {};
         
-        snap.forEach(doc => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const validOptions = Array.from(document.querySelectorAll('#rep-loc option')).map(opt => opt.value.trim().toLowerCase());
+
+        reqSnap.forEach(doc => {
             const d = doc.data();
-            sel.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+            if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
+
+            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
+            let dataLoc = d.location ? d.location : ""; 
+            let locClean = dataLoc.trim().toLowerCase();
+
+            if (locClean.includes("twsl") || locClean.includes("stadion")) return;
+            if (!validOptions.includes(locClean)) return;
+            if (locInput !== 'all' && locClean !== locInput.trim().toLowerCase()) return;
+
+            const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+            if (timeInput === 'today' && dateZero.getTime() !== todayStart.getTime()) return;
+            if (timeInput === 'week') {
+                let weekAgo = new Date(todayStart);
+                weekAgo.setDate(todayStart.getDate() - 7);
+                if(dateZero < weekAgo) return;
+            }
+            if (timeInput === 'month' && (dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear())) return;
+
+            if (artInput !== 'all') {
+                const artistDB = (d.performer || "").toLowerCase().trim();
+                if(artistDB !== artInput.toLowerCase().trim()) return;
+            }
+
+            tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
-    } catch(e) {
-        console.error("Gagal load dropdown venue:", e);
-    }
-}
 
-// C. FUNGSI CEK LINK SAAT DROPDOWN DIPILIH (BARU)
-window.checkExistingLiveLink = async function() {
-    const venueId = document.getElementById('live-target-venue').value;
-    const inputLink = document.getElementById('main-live-link');
-    const monitor = document.getElementById('admin-monitor-frame');
-    const placeholder = document.getElementById('admin-monitor-placeholder');
+        tempList.sort((a,b) => b.dateObj - a.dateObj);
+        window.cafeReportData = tempList;
+        window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
-    if(!venueId) {
-        inputLink.value = "";
-        monitor.style.display = 'none';
-        placeholder.style.display = 'block';
-        return;
-    }
-    
-    const docSnap = await getDoc(doc(db, "venues", venueId));
-    if(docSnap.exists()) {
-        const d = docSnap.data();
-        inputLink.value = d.liveLink || ""; 
-        
-        // --- PERBAIKAN URL DISINI ---
-        if(d.youtubeId) {
-            monitor.src = `https://www.youtube.com/embed/${d.youtubeId}?autoplay=0`;
-            monitor.style.display = 'block';
-            if(placeholder) placeholder.style.display = 'none';
-        } else {
-            monitor.style.display = 'none';
-            if(placeholder) placeholder.style.display = 'block';
+        if(tempList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong.</td></tr>';
+            document.getElementById('rep-total-money').innerText = "Rp 0";
+            document.getElementById('rep-total-song').innerText = "0";
+            document.getElementById('rep-top-artist').innerText = "-";
+            return;
         }
-    }
-}
 
-// D. UPDATE LIVE STREAMING (SIMPAN PER VENUE)
-window.updateLiveLink = async function() {
-    const url = document.getElementById('main-live-link').value;
-    const venueId = document.getElementById('live-target-venue').value; 
-    
-    if (!venueId) return alert("⚠️ Pilih Lokasi Venue terlebih dahulu!");
-    if (!url) return alert("⚠️ Link kosong!");
-    if (!url.includes("youtu")) return alert("Harap masukkan link YouTube!");
+        let html = '';
+        tempList.forEach(d => {
+            totalMoney += d.amount;
+            totalSongs++;
+            let p = d.performer || "Unknown";
+            if(!perfCount[p]) perfCount[p] = 0;
+            perfCount[p] += d.amount;
 
-    let videoId = "";
-    if (url.includes("v=")) videoId = url.split('v=')[1].split('&')[0];
-    else if (url.includes("youtu.be/")) videoId = url.split('youtu.be/')[1];
-    else if (url.includes("live/")) videoId = url.split('live/')[1];
-
-    if (!videoId) return alert("ID Video tidak valid.");
-
-    await updateDoc(doc(db, "venues", venueId), {
-        liveLink: url,
-        youtubeId: videoId,
-        updatedAt: new Date()
-    });
-    
-    alert("✅ Layar di Venue tersebut berhasil diupdate!");
-    checkExistingLiveLink();
-}
-
-// --- E. MANAJEMEN GALERI VIDEO (INI BAGIAN GALERINYA) ---
-
-window.saveGalleryVideo = async function() {
-    const title = document.getElementById('vid-title').value;
-    const creator = document.getElementById('vid-creator').value;
-    const link = document.getElementById('vid-link').value;
-    const category = document.getElementById('vid-category').value;
-    const desc = document.getElementById('vid-desc').value;
-
-    if(!title || !creator || !link) return alert("Data Wajib diisi!");
-
-    let videoId = "";
-    if (link.includes("v=")) videoId = link.split('v=')[1].split('&')[0];
-    else if (link.includes("youtu.be/")) videoId = link.split('youtu.be/')[1];
-    
-    // --- PERBAIKAN URL DISINI ---
-    const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-
-    if(confirm("Simpan ke Galeri?")) {
-        await addDoc(collection(db, "content_gallery"), {
-            title, creator, link, category, description: desc, thumbnail, timestamp: new Date()
-        });
-        alert("Video Masuk Galeri!");
-        // Reset
-        document.getElementById('vid-title').value = "";
-        document.getElementById('vid-link').value = "";
-        loadGalleryList();
-    }
-}
-
-async function loadGalleryList() {
-    const tbody = document.getElementById('gallery-list-body');
-    if(!tbody) return;
-
-    const q = query(collection(db, "content_gallery"), orderBy("timestamp", "desc"));
-    
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" align="center">Kosong.</td></tr>'; return; }
-
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            let catColor = d.category === 'Live Perform' ? '#E50914' : (d.category === 'Podcast' ? '#a855f7' : '#00d2ff');
-
-            tbody.innerHTML += `
-            <tr>
-                <td><img src="${d.thumbnail}" style="width:60px; border-radius:5px;"></td>
-                <td><b>${d.title}</b><br><small style="color:#888;">${d.creator}</small></td>
-                <td><span style="color:${catColor}; font-weight:bold;">${d.category}</span></td>
-                <td><button class="btn-action btn-delete" onclick="deleteGalleryVideo('${doc.id}')">Hapus</button></td>
+            html += `<tr>
+                <td>${d.dateObj.toLocaleDateString()}</td>
+                <td>${d.loc}</td>
+                <td>${d.performer}</td>
+                <td>${d.song}</td>
+                <td style="color:#00ff00">Rp ${d.amount.toLocaleString()}</td>
             </tr>`;
         });
-    });
-}
 
-window.deleteGalleryVideo = async function(id) {
-    if(confirm("Hapus?")) await deleteDoc(doc(db, "content_gallery", id));
+        tbody.innerHTML = html;
+        document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
+        document.getElementById('rep-total-song').innerText = totalSongs;
+        
+        const sortedPerf = Object.entries(perfCount).sort(([,a], [,b]) => b - a);
+        document.getElementById('rep-top-artist').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
+
+    } catch(e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
+    }
+};
+
+window.generateCafePDF = function() {
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
+    const data = window.cafeReportData || [];
+    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
+
+    if (data.length === 0) { alert("Data kosong!"); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Filter: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi} | Periode: ${info.periode}`, 14, 30);
+    doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 35);
+
+    let tableBody = [];
+    let grandTotal = 0;
+
+    data.forEach(d => {
+        tableBody.push([
+            d.dateObj.toLocaleDateString(),
+            d.loc,
+            d.performer,
+            d.song,
+            `Rp ${d.amount.toLocaleString('id-ID')}`
+        ]);
+        grandTotal += d.amount;
+    });
+
+    tableBody.push([{ content: "GRAND TOTAL", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 255, 0] } }]);
+
+    doc.autoTable({
+        startY: 40,
+        head: [['Waktu', 'Lokasi', 'Artis', 'Lagu', 'Sawer']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 100, 200] }
+    });
+
+    doc.save(`Laporan_Cafe_${new Date().getTime()}.pdf`);
 }
 
 /* =========================================
-   11. EKSEKUSI (PALING BAWAH)
+   11. EKSEKUSI (PENUTUP FILE YANG BENAR)
    ========================================= */
 window.onload = function() {
+    console.log("System Started...");
     loadDashboardOverview();
     
     // Background Load
-    loadMitraData();
-    loadPerformerData();
-    loadMentorData();
-    loadStudentData(); 
-    loadCafeData();
+    if(typeof loadMitraData === 'function') loadMitraData();
+    if(typeof loadPerformerData === 'function') loadPerformerData();
+    if(typeof loadMentorData === 'function') loadMentorData();
+    if(typeof loadStudentData === 'function') loadStudentData(); 
+    if(typeof loadCafeData === 'function') loadCafeData();
     
     if(window.loadVenueManagement) window.loadVenueManagement();
-    
-    populateVenueFilters();     
+    if(typeof populateVenueFilters === 'function') populateVenueFilters();     
 
     setTimeout(() => {
         const lastTab = localStorage.getItem('adminReturnTab');
         if (lastTab) {
             document.querySelectorAll('.menu-item').forEach(btn => {
-                if (btn.getAttribute('onclick').includes(lastTab)) btn.click();
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(lastTab)) btn.click();
             });
             localStorage.removeItem('adminReturnTab');
         }
     }, 500);
-}
+};
