@@ -174,16 +174,23 @@
         <button id="btn-booking-trigger" class="btn-book-action" onclick="openBookingModal()" disabled>Loading...</button>
     </div>
 
+    <!-- MODAL BOOKING (STANDARD BARU SS2) -->
     <div id="booking-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="fa-solid fa-xmark close-icon" onclick="closeModal()"></i>
-            <h3 style="margin:0; text-align:center;">Booking Meja</h3>
+            
+             <div style="text-align:center; margin-bottom:10px;">
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
+                     style="width:60px; height:60px; border-radius:50%; border:2px solid #E50914; padding:2px;">
+            </div>
+            
+            <h3 style="margin:0; text-align:center;">Form Booking</h3>
             <p id="modal-warung-title" style="text-align:center; color:#FFD700; margin-bottom:15px; font-weight:bold;">-</p>
             
             <label style="color:#aaa; font-size:0.8rem;">Nama Pemesan</label>
             <input type="text" id="book-name" class="input-request">
             
-            <label style="color:#aaa; font-size:0.8rem;">WhatsApp (Untuk Tiket)</label>
+            <label style="color:#aaa; font-size:0.8rem;">WhatsApp</label>
             <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
             
             <label style="color:#aaa; font-size:0.8rem;">Tanggal Booking</label>
@@ -192,7 +199,7 @@
             <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang</label>
             <input type="number" id="book-pax" class="input-request" placeholder="Total Orang" oninput="hitungMeja()">
             
-            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja</label>
+            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja (1 Meja = 4 Org)</label>
             <input type="text" id="book-qty" class="input-request" readonly style="color:#E50914; font-weight:bold; background:#333;" value="0 Meja">
 
             <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
@@ -202,7 +209,7 @@
 
             <div style="display:flex; gap:10px;">
                 <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal()">Batal</button>
-                <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="confirmBooking()">Pesan Sekarang</button>
+                <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="confirmBooking()">Booking</button>
             </div>
         </div>
     </div>
@@ -420,7 +427,7 @@
 
         window.closeModal = function() { document.getElementById('booking-modal').style.display = 'none'; }
 
-        // LOGIKA BOOKING (Sesuai kode lama dulu, nanti kita perbaiki di langkah selanjutnya)
+        // --- LOGIKA BOOKING UPDATE (SINKRON DENGAN DASHBOARD ADMIN) ---
         window.confirmBooking = async function() {
             const name = document.getElementById('book-name').value;
             let wa = document.getElementById('book-wa').value;
@@ -431,44 +438,57 @@
             if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi data!");
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-            const now = new Date();
-            const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
-            const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
-
-            // Cek Ketersediaan
-            const q = query(collection(db, "bookings"), 
-                where("warungId", "==", warungId), 
-                where("status", "in", ["active", "booked"])
-            );
-            const snapshot = await getDocs(q);
-
-            let usedTables = [];
-            snapshot.forEach(doc => {
-                const d = doc.data();
-                if (Array.isArray(d.tableNum)) usedTables.push(...d.tableNum);
-                else usedTables.push(d.tableNum);
-            });
-
-            let assignedTables = [];
-            for (let i = 1; i <= totalTables; i++) {
-                if (!usedTables.includes(i)) {
-                    assignedTables.push(i);
-                    if (assignedTables.length === qty) break; 
-                }
-            }
-
-            if (assignedTables.length < qty) return alert("Maaf, meja tidak cukup saat ini.");
+            // UI Loading (Biar user gak klik 2 kali)
+            const btnConfirm = document.querySelector('#booking-modal button[onclick="confirmBooking()"]');
+            btnConfirm.innerText = "Memproses...";
+            btnConfirm.disabled = true;
+            btnConfirm.style.background = "#555";
 
             try {
+                // 1. CEK KETERSEDIAAN (DOUBLE CHECK KE DATABASE)
+                // Mengambil data booking terbaru detik ini juga
+                const q = query(collection(db, "bookings"), 
+                    where("warungId", "==", warungId), 
+                    where("status", "in", ["active", "booked"])
+                );
+                const snapshot = await getDocs(q);
+
+                let usedTables = [];
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    if (Array.isArray(d.tableNum)) usedTables.push(...d.tableNum);
+                    else usedTables.push(d.tableNum);
+                });
+
+                // 2. CARI MEJA KOSONG (Looping sesuai jumlah meja WARUNG TERSEBUT)
+                let assignedTables = [];
+                // 'totalTables' diambil dari data warung di script bagian atas (onSnapshot)
+                for (let i = 1; i <= (totalTables || 15); i++) {
+                    if (!usedTables.includes(i)) {
+                        assignedTables.push(i);
+                        if (assignedTables.length === qty) break; 
+                    }
+                }
+
+                // Jika meja kurang
+                if (assignedTables.length < qty) {
+                    throw new Error(`Maaf, meja penuh! Hanya tersisa ${assignedTables.length} meja kosong.`);
+                }
+
+                // 3. SIMPAN KE DATABASE (Format disamakan dengan SS2)
+                const now = new Date();
+                const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+                const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+
                 await addDoc(collection(db, "bookings"), {
                     warungId: warungId,           
                     warungName: currentWarungName,
-                    venueName: venueNameGlobal,   
+                    venueName: venueNameGlobal || "Stadion Bayuangga",   
                     customerName: name, 
                     customerWA: wa,
                     pax: pax, 
                     tablesNeeded: qty,
-                    tableNum: assignedTables, 
+                    tableNum: assignedTables, // Array nomor meja (PENTING UNTUK DASHBOARD)
                     bookingDate: dateVal,
                     arrivalTime: jamBooking, 
                     expiredTime: `${dateVal}T17:30`,
@@ -478,20 +498,38 @@
                     timestamp: new Date()
                 });
 
+                // Update Stok Warung (Increment sesuai jumlah meja yg dipesan)
                 await updateDoc(doc(db, "warungs", warungId), {
                     bookedCount: increment(qty)
                 });
 
                 window.closeModal();
 
+                // 4. FORMAT WA (SAMA PERSIS DENGAN SS2)
                 const mejaString = assignedTables.join(", ");
-                const pesan = `Halo ${name}, Booking ${currentWarungName} Sukses! Tiket: ${kode}, Meja: ${mejaString}`;
-                if(confirm(`Booking Sukses!\nMeja Anda: ${mejaString}\n\nKirim tiket ke WA?`)) {
+                const pesan = `Halo ${name},\n\n` +
+                              `Terima kasih sudah memesan tempat di *${currentWarungName}* pada jam ${jamBooking}\n` +
+                              `Berikut detail pesanan Anda:\n` +
+                              `Tanggal: ${dateVal}\n` +
+                              `Jumlah: ${pax} Orang\n` +
+                              `Kode Tiket: *${kode}*\n` +
+                              `MEJA RESERVASI: No. ${mejaString}\n` +
+                              `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
+                              `PENTING: Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
+                              `Lewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
+
+                if(confirm(`Booking Berhasil! Meja No: ${mejaString}\n\nKirim tiket ke WA?`)) {
                     window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
                 }
+
             } catch (e) {
                 console.error(e);
                 alert("Gagal Booking: " + e.message);
+            } finally {
+                // Kembalikan tombol jadi normal
+                btnConfirm.innerText = "Booking";
+                btnConfirm.disabled = false;
+                btnConfirm.style.background = "var(--green)";
             }
         }
     </script>
