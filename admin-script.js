@@ -801,115 +801,167 @@ window.openRaport = async function(studentId) {
 }
 
 
-// --- FUNGSI GENERATE PDF RAPORT (VERSI TEMPLATE CANVA) ---
-window.generateStudentPDF = async function(studentData, averageScore) {
-    if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang!"); return; }
-    
+// === KODE CETAK RAPORT (VERSI ANTI BENTROK) ===
+
+// 1. Fungsi Bantu
+async function getBase64ImageFromUrl(url) {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+    });
+}
+
+// 2. FUNGSI UTAMA
+window.printRaportDirect = async function(id) {
+    // Cek Library
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }    
     document.body.style.cursor = 'wait';
 
     try {
+        // --- DEBUGGING (Cek di Console) ---
+        // Kita pastikan 'doc' disini adalah fungsi Firebase
+        console.log("Cek Tipe 'doc':", typeof doc); 
+        if (typeof doc !== 'function') {
+            console.error("BAHAYA: Variabel 'doc' bukan fungsi! Cek apakah ada 'const doc = ...' di baris lain.");
+        }
+
+        // --- MULAI ---
         const { jsPDF } = window.jspdf;
-        // Buat PDF ukuran A4
-        const doc = new jsPDF('p', 'mm', 'a4'); 
+        
+        // SAYA GANTI NAMANYA JADI 'myRaportPDF' AGAR TIDAK KONFLIK
+        const myRaportPDF = new jsPDF('p', 'mm', 'a4'); 
 
-        // 1. FUNGSI BANTUAN LOAD GAMBAR
-        const getBase64FromUrl = async (url) => {
-            try {
-                const res = await fetch(url);
-                const blob = await res.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = () => resolve(reader.result);
-                });
-            } catch (error) {
-                console.error("Gagal load gambar:", error);
-                return null;
-            }
-        };
+        // 1. Ambil Data Siswa (Pakai fungsi doc Firebase)
+        const studentSnap = await getDoc(doc(db, "students", id));
+        if (!studentSnap.exists()) { throw "Data siswa tidak ditemukan"; }
+        const sData = studentSnap.data();
 
-        // 2. LOAD BACKGROUND (TEMPLATE CANVA)
-        // Link gambar template Anda
+        // 2. Ambil Data Mentor
+        const mentorMap = {};
+        try {
+            const mentorsSnap = await getDocs(collection(db, "mentors")); 
+            mentorsSnap.forEach(d => {
+                const m = d.data();
+                mentorMap[d.id] = m.name || m.nama || m.fullname || "Mentor"; 
+            });
+        } catch (err) {
+            console.warn("Skip mentor map");
+        }
+
+        // 3. Hitung Rata-rata
+        const sScores = sData.scores || {};
+        let totalScore = 0;
+        let count = 0;
+        for (let key in sScores) {
+            totalScore += parseInt(sScores[key]);
+            count++;
+        }
+        const avg = count > 0 ? (totalScore / count) : 0;
+
+
+        // --- MULAI MENGGAMBAR DI PDF (myRaportPDF) ---
+
+        // Background
         const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siwa%20SMIPRO.jpg";
-        const bgBase64 = await getBase64FromUrl(bgUrl);
-
-        if (bgBase64) {
-            // Pasang gambar memenuhi satu halaman A4 (0,0, 210, 297)
-            doc.addImage(bgBase64, 'JPEG', 0, 0, 210, 297);
+        try {
+            const bgData = await getBase64ImageFromUrl(bgUrl);
+            myRaportPDF.addImage(bgData, 'JPEG', 0, 0, 210, 297);
+        } catch (e) {
+            console.error("Gagal load background");
         }
 
-        // 3. FOTO SISWA (Sesuaikan posisi agar pas di area kiri template)
-        // Estimasi posisi: X=22, Y=70, Ukuran 40x40
-        if(studentData.img && studentData.img.length > 50) {
-            try { 
-                const imgFormat = studentData.img.includes('image/png') ? 'PNG' : 'JPEG';
-                doc.addImage(studentData.img, imgFormat, 22, 70, 45, 45); 
-            } catch(e) { console.error("Foto siswa skip:", e); }
-        }
-        
-        // 4. DATA SISWA (Nama, Genre, Tanggal)
-        // Posisi teks di sebelah kanan foto (Sesuai template)
-        doc.setTextColor(0, 0, 0); // Warna Hitam
-        
-        doc.setFontSize(14); doc.setFont("helvetica", "bold");
-        doc.text(`NAMA: ${studentData.name.toUpperCase()}`, 80, 75);
-        
-        doc.setFontSize(12); doc.setFont("helvetica", "normal");
-        doc.text(`Genre: ${studentData.genre}`, 80, 85);
-        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 80, 95);
+        // Font Setting
+        myRaportPDF.setFont("helvetica", "bold");
+        myRaportPDF.setFontSize(14);
+        myRaportPDF.setTextColor(0, 0, 0); 
 
-        // 5. SIAPKAN DATA TABEL NILAI
-        const mentorSnap = await getDocs(collection(db, "mentors"));
-        let tableBody = [];
-        const scores = studentData.scores || {};
+        let startY = 60; 
+        
+        // Foto Siswa (Otomatis Cari Link)
+        const linkFoto = sData.foto_url || sData.photoUrl || sData.image || sData.foto || sData.url_foto;
 
-        mentorSnap.forEach(docSnap => {
-            const m = docSnap.data();
-            const nilai = scores[docSnap.id]; 
-            
-            if(nilai) {
-                let statusText = parseInt(nilai) >= 75 ? `${nilai} (Kompeten)` : `${nilai} (Remidi)`;
-                tableBody.push([ m.name, m.specialty || "Umum", statusText ]);
+        if (linkFoto) {
+            try {
+                const imgData = await getBase64ImageFromUrl(linkFoto);
+                myRaportPDF.addImage(imgData, 'JPEG', 20, startY, 30, 40); 
+            } catch (e) {
+                myRaportPDF.setFillColor(220);
+                myRaportPDF.rect(20, startY, 30, 40, 'F');
+                myRaportPDF.setFontSize(8);
+                myRaportPDF.text("Foto Error", 25, startY + 20);
             }
-        });
+        } else {
+            myRaportPDF.setDrawColor(0);
+            myRaportPDF.rect(20, startY, 30, 40); 
+            myRaportPDF.setFontSize(8);
+            myRaportPDF.text("No Photo", 25, startY + 20);
+        }
 
-        // 6. RENDER TABEL (Posisi di bawah header)
-        // startY disesuaikan agar tidak menabrak header template (kira-kira di Y=115)
-        doc.autoTable({
-            startY: 115,
-            margin: { left: 20, right: 20 }, // Margin kiri kanan agar rapi
+        // Biodata
+        myRaportPDF.setFontSize(14);
+        myRaportPDF.setFont("helvetica", "bold");
+        myRaportPDF.setTextColor(0,0,0);
+        myRaportPDF.text(`NAMA: ${(sData.name || "Siswa").toUpperCase()}`, 60, startY + 10);
+        
+        myRaportPDF.setFont("helvetica", "normal");
+        myRaportPDF.setFontSize(12);
+        myRaportPDF.text(`Genre: ${sData.genre || "-"}`, 60, startY + 20);
+        
+        const today = new Date().toLocaleDateString('id-ID');
+        myRaportPDF.text(`Tanggal Cetak: ${today}`, 60, startY + 30);
+
+
+        // Tabel
+        let tableBody = [];
+        for (let key in sScores) {
+            let nilai = parseInt(sScores[key]);
+            let predikat = nilai >= 85 ? "(Sangat Baik)" : nilai >= 75 ? "(Kompeten)" : "(Cukup)";
+            let namaMentor = mentorMap[key] ? mentorMap[key] : key;
+
+            tableBody.push([namaMentor, "Umum", `${nilai} ${predikat}`]);
+        }
+
+        myRaportPDF.autoTable({
+            startY: 110,
             head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
             body: tableBody,
             theme: 'grid',
-            headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
-            styles: { fontSize: 11, cellPadding: 3, halign: 'left' }
+            headStyles: { fillColor: [220, 0, 0], textColor: 255 },
+            styles: { fontSize: 10, cellPadding: 3 },
+            margin: { left: 20, right: 20 }
         });
 
-        // 7. HASIL AKHIR (Posisi disesuaikan dengan Kotak di Template)
-        
-        // Status Lulus (Di Kiri Bawah)
-        let finalY = 240; // Koordinat Y area bawah
-        let statusLulus = averageScore >= 75 ? "LULUS / SIAP PERFORM" : "BELUM LULUS";
-        
-        doc.setFontSize(12); doc.setTextColor(0,0,0);
-        doc.text("STATUS AKHIR:", 20, finalY);
-        doc.setFontSize(14); doc.setFont("helvetica", "bold");
-        doc.text(statusLulus, 20, finalY + 10);
 
-        // Nilai Rata-Rata (Di Dalam Kotak Putih Kanan Bawah Template)
-        // Estimasi koordinat kotak putih di template Anda: X=165, Y=245
-        doc.setFontSize(11); doc.setFont("helvetica", "normal");
-        doc.text("NILAI RATA-RATA", 165, finalY - 5, null, null, "center");
-        
-        doc.setFontSize(22); doc.setFont("helvetica", "bold"); doc.setTextColor(229, 9, 20); // Merah
-        doc.text(String(averageScore.toFixed(1)), 165, finalY + 10, null, null, "center");
+        // Footer & Nilai
+        let finalY = myRaportPDF.lastAutoTable.finalY + 20;
 
-        // 8. DOWNLOAD
-        doc.save(`Raport_${studentData.name.replace(/\s+/g, '_')}.pdf`);
+        myRaportPDF.setFont("helvetica", "bold");
+        myRaportPDF.setFontSize(12);
+        myRaportPDF.setTextColor(0,0,0);
+        myRaportPDF.text("STATUS AKHIR:", 20, finalY);
+        myRaportPDF.setFontSize(14);
+        myRaportPDF.text("LULUS / SIAP PERFORM", 20, finalY + 10);
 
-    } catch(e) {
-        console.error("PDF Error:", e);
-        alert("Gagal membuat PDF: " + e.message);
+        // Posisi Nilai
+        const boxX = 145; 
+        const boxY = 225; 
+
+        myRaportPDF.setFontSize(10);
+        myRaportPDF.text("NILAI RATA-RATA:", boxX + 15, boxY - 6, { align: 'center' });
+
+        myRaportPDF.setFontSize(24);
+        myRaportPDF.setTextColor(220, 0, 0);
+        myRaportPDF.text(avg.toFixed(1), boxX + 15, boxY + 2, { align: 'center' }); 
+
+        // Simpan
+        myRaportPDF.save(`Raport_${sData.name || "Siswa"}.pdf`);
+
+    } catch (e) {
+        console.error("ERROR LENGKAP:", e);
+        alert("Terjadi kesalahan: " + e.message);
     } finally {
         document.body.style.cursor = 'default';
     }
