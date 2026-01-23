@@ -816,145 +816,116 @@ async function getBase64ImageFromUrl(url) {
 // 2. Fungsi Utama: Membuat PDF dengan Template
 async function generateStudentPDF(sData, avg) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); // A4 size
+    const doc = new jsPDF('p', 'mm', 'a4'); 
 
-    // --- A. SETUP GAMBAR BACKGROUND ---
-    // URL Template Anda dari GitHub
+    // 1. BACKGROUND
     const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siwa%20SMIPRO.jpg";
     
     try {
-        // Load background dulu
         const bgData = await getBase64ImageFromUrl(bgUrl);
-        // Pasang gambar full satu halaman A4 (210mm x 297mm)
         doc.addImage(bgData, 'JPEG', 0, 0, 210, 297);
     } catch (err) {
-        console.error("Gagal memuat template:", err);
-        alert("Gagal memuat template background. Cek koneksi internet.");
+        alert("Gagal memuat template background.");
     }
 
-    // --- B. SETUP DATA SISWA (POSISI DI ATAS) ---
-    // Sesuaikan koordinat (x, y) agar pas di area putih template
-    
+    // 2. BIODATA & FOTO
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0); // Warna Hitam
+    doc.setTextColor(0, 0, 0); 
 
-    // Contoh Posisi: (X=kiri-kanan, Y=atas-bawah)
-    // Silakan ganti angka ini jika kurang pas posisinya
     let startY = 60; 
 
-    // Jika ada foto siswa (Opsional)
-    if (sData.foto_url) { // Asumsi ada url foto di database
+    // --- CEK FOTO SISWA ---
+    // Pastikan field di database Anda namanya 'foto_url'
+    // Jika di database namanya 'photoUrl', ganti kode di bawah ini jadi sData.photoUrl
+    const urlFoto = sData.foto_url || sData.photoUrl || sData.foto; 
+    
+    if (urlFoto) { 
         try {
-            const fotoSiswa = await getBase64ImageFromUrl(sData.foto_url);
-            doc.addImage(fotoSiswa, 'JPEG', 20, startY, 30, 40); // Foto ukuran 3x4cm
-        } catch(e) { /* Abaikan jika foto gagal */ }
+            console.log("Mencoba ambil foto:", urlFoto); // Cek Console (F12) jika masih gagal
+            const fotoSiswa = await getBase64ImageFromUrl(urlFoto);
+            // Posisi Foto (X=20, Y=startY) Ukuran 30x40mm
+            doc.addImage(fotoSiswa, 'JPEG', 20, startY, 30, 40); 
+        } catch(e) { 
+            console.error("Gagal load foto siswa (Mungkin masalah CORS/Izin):", e);
+            // Opsional: Gambar kotak kosong jika foto gagal
+            doc.rect(20, startY, 30, 40); 
+            doc.setFontSize(8);
+            doc.text("No Photo", 25, startY + 20);
+        }
+    } else {
+        console.log("Data foto tidak ditemukan di database untuk siswa ini.");
     }
 
-    // Teks Biodata (Disebelah kanan foto atau rata kiri)
-    const textX = 60; // Geser ke kanan
+    // Teks Biodata
+    const textX = 60; 
+    doc.setFontSize(14);
     doc.text(`NAMA: ${sData.name || "Siswa"}`, textX, startY + 10);
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
     doc.text(`Genre: ${sData.genre || "-"}`, textX, startY + 20);
     
-    // Tanggal Cetak
     const today = new Date().toLocaleDateString('id-ID');
     doc.text(`Tanggal Cetak: ${today}`, textX, startY + 30);
 
 
-    // --- C. TABEL NILAI ---
-    // Kita ambil data nilai dari object sData.scores
-    // Kita perlu ubah format object ke array untuk AutoTable
+    // 3. TABEL NILAI
     let tableBody = [];
     const sScores = sData.scores || {};
     
-    // Asumsi mapping nama mentor (sesuaikan dengan logic Anda)
-    // Jika di database hanya ada ID, Anda perlu map ID ke Nama Mentor disini
     for (let key in sScores) {
         let nilai = parseInt(sScores[key]);
         let predikat = nilai >= 85 ? "(Sangat Baik)" : nilai >= 75 ? "(Kompeten)" : "(Cukup)";
         
+        // CATATAN: 'key' saat ini adalah ID Mentor (contoh: vYsb2...). 
+        // Agar muncul nama, Anda perlu mengambil data nama mentor dari database.
+        // Untuk sementara, kita biarkan ID atau ganti labelnya manual jika perlu.
+        
         tableBody.push([
-            key, // Nama Mentor / Mapel (sesuaikan key databasenya)
-            "Umum", // Bidang Keahlian (Hardcode atau ambil data)
+            key, // Nanti ini harus diganti Nama Mentor Asli
+            "Umum", 
             `${nilai} ${predikat}`
         ]);
     }
 
-    // Render Tabel
     doc.autoTable({
-        startY: 110, // Mulai tabel di bawah biodata (sesuaikan dengan area putih)
+        startY: 110, 
         head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
         body: tableBody,
-        theme: 'grid', // Tema grid kotak-kotak
-        headStyles: { fillColor: [220, 0, 0] }, // Warna Merah (sesuai tema SMIPRO)
+        theme: 'grid', 
+        headStyles: { fillColor: [220, 0, 0] }, 
         styles: { fontSize: 10, cellPadding: 3 },
-        margin: { left: 20, right: 20 } // Margin kiri kanan agar tidak nabrak background hitam
+        margin: { left: 20, right: 20 } 
     });
 
 
-    // --- D. BAGIAN BAWAH (STATUS & RATA-RATA) ---
-    // Cari posisi Y setelah tabel selesai
+    // 4. BAGIAN BAWAH
     let finalY = doc.lastAutoTable.finalY + 20;
 
-    // Status Kelulusan (Kiri)
+    // Status
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.text("STATUS AKHIR:", 20, finalY);
     doc.setFontSize(14);
     doc.text("LULUS / SIAP PERFORM", 20, finalY + 10);
 
-    // Kotak Nilai Rata-rata (Kanan Bawah - Sesuai kotak template)
-    // Di template SS2, kotak ada di pojok kanan bawah.
-    // Kita kira-kira koordinatnya:
+    // --- PERBAIKAN POSISI NILAI RATA-RATA ---
     const boxX = 145; 
-    const boxY = 225; // Sesuaikan Y ini agar teks masuk tepat di kotak template
+    const boxY = 225; // Koordinat Y Kotak Template
     
-    // Karena kotaknya sudah ada di gambar background, kita tinggal taruh teksnya saja
     doc.setFontSize(10);
-    doc.text("NILAI RATA-RATA:", boxX + 15, boxY - 5, { align: 'center' }); // Label
+    // Label rata-rata (Geser sedikit ke atas -5)
+    doc.text("NILAI RATA-RATA:", boxX + 15, boxY - 5, { align: 'center' }); 
 
     doc.setFontSize(24);
     doc.setTextColor(220, 0, 0); // Merah
-    doc.text(avg.toFixed(1), boxX + 15, boxY + 10, { align: 'center' }); // Angka Nilai
+    
+    // PERBAIKAN DISINI: Gunakan +4 (sebelumnya +10) agar teks naik ke tengah
+    doc.text(avg.toFixed(1), boxX + 15, boxY + 4, { align: 'center' }); 
 
-    // --- E. SIMPAN PDF ---
+    // Simpan
     doc.save(`Raport_${sData.name || "Siswa"}.pdf`);
-}
-
-// 3. UPDATE FUNGSI LAMA (printRaportDirect)
-window.printRaportDirect = async function(id) {
-    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }    
-    document.body.style.cursor = 'wait';
-
-    try {
-        // Ambil Data Siswa (Firebase/DB)
-        const studentSnap = await getDoc(doc(db, "students", id));
-        if (!studentSnap.exists()) { throw "Data siswa tidak ditemukan"; }
-        
-        const sData = studentSnap.data();
-        const sScores = sData.scores || {};
-
-        // Hitung Rata-rata
-        let totalScore = 0;
-        let count = 0;
-        for (let key in sScores) {
-            totalScore += parseInt(sScores[key]);
-            count++;
-        }
-        const avg = count > 0 ? (totalScore / count) : 0;
-
-        // Panggil Fungsi PDF Baru yang ada Backgroundnya
-        await generateStudentPDF(sData, avg);
-
-    } catch (e) {
-        console.error(e);
-        alert("Gagal memproses data PDF: " + e.message);
-    } finally {
-        document.body.style.cursor = 'default';
-    }
 }
 
 
