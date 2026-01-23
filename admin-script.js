@@ -1897,6 +1897,12 @@ window.loadCafeReport = async function() {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+        // --- SOLUSI FINAL: BACA LANGSUNG DARI DROPDOWN HTML ---
+        // Kita ambil semua opsi yang ada di dropdown "Pilih Lokasi"
+        // Karena di dropdown TWSL tidak ada, maka otomatis dia tidak akan lolos.
+        const validOptions = Array.from(document.querySelectorAll('#rep-loc option'))
+            .map(opt => opt.value.trim().toLowerCase());
+
         reqSnap.forEach(doc => {
             const d = doc.data();
             
@@ -1905,25 +1911,22 @@ window.loadCafeReport = async function() {
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             
-            // === LOGIKA KEUANGAN (INI KUNCINYA) ===
-            // Jika lokasi kosong/null, kita paksa jadi "Stadion Bayuangga Zone"
-            // Supaya dia punya identitas, tidak cuma "-"
-            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
-            
-            // Bersihkan hurufnya
+            // Nama Lokasi dari Database
+            let dataLoc = d.location ? d.location : ""; 
             let locClean = dataLoc.trim().toLowerCase();
 
-            // === FILTER BARU: SATPAM CAFE (WHITELIST) ===
-            // Kita cek daftar absen Cafe yang valid
-            const daftarCafeValid = window.listCafeValid || [];
+            // === FILTER SATPAM (WHITELIST) ===
+            // Cek apakah 'locClean' (misal: angkringan twsl) ada di dalam 'validOptions'?
+            // Karena di dropdown cuma ada Cafe Omah Kayu, Kuligastro, dll...
+            // Maka TWSL akan false disini.
+            const isRegistered = validOptions.includes(locClean);
 
-            // Jika nama lokasi transaksi TIDAK ADA di daftar Cafe Resmi...
-            if (!daftarCafeValid.includes(locClean)) {
-                return; // ...TENDANG KELUAR! (Venue TWSL, GOR, Stadion akan hilang disini)
+            if (!isRegistered) {
+                return; // TENDANG KELUAR!
             }
-            // ===============================
+            // =================================
 
-            // 2. Filter Lokasi Dropdown (Pilihan User)
+            // 2. Filter Pilihan User (Jika user pilih spesifik cafe)
             if(locInput !== 'all') {
                 if(locClean !== locInput.trim().toLowerCase()) return;
             }
@@ -1954,12 +1957,11 @@ window.loadCafeReport = async function() {
         // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
         
-        // Simpan PDF Global
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Cafe Partner).</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong.</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
