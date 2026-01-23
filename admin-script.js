@@ -2090,116 +2090,6 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-/* =========================================
-   PERBAIKAN FUNGSI LAPORAN CAFE (BERSIH DARI DUPLIKASI)
-   ========================================= */
-window.loadCafeReport = async function() {
-    const locInput = document.getElementById('rep-loc').value;
-    const timeInput = document.getElementById('rep-time').value;
-    const artInput = document.getElementById('rep-art').value;
-    const tbody = document.getElementById('rep-detail-body');
-
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
-
-    try {
-        const reqSnap = await getDocs(collection(db, "requests"));
-        let tempList = [];
-        let totalMoney = 0;
-        let totalSongs = 0;
-        let perfCount = {};
-        
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        // 1. Validasi Dropdown (Whitelist)
-        const validOptions = Array.from(document.querySelectorAll('#rep-loc option'))
-            .map(opt => opt.value.trim().toLowerCase());
-
-        // 2. LOOPING DATA (HANYA SATU KALI - TIDAK BOLEH DOBEL)
-        reqSnap.forEach(doc => {
-            const d = doc.data();
-            
-            // Cek Status Finished
-            if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
-
-            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            let dataLoc = d.location ? d.location : ""; 
-            let locClean = dataLoc.trim().toLowerCase();
-
-            // FILTER: BLOKIR TWSL & STADION
-            if (locClean.includes("twsl") || locClean.includes("stadion")) return;
-
-            // FILTER: HANYA YANG ADA DI DROPDOWN
-            if (!validOptions.includes(locClean)) return;
-
-            // Filter Lokasi User
-            if(locInput !== 'all' && locClean !== locInput.trim().toLowerCase()) return;
-
-            // Filter Waktu
-            const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-            if(timeInput === 'today' && dateZero.getTime() !== todayStart.getTime()) return;
-            if(timeInput === 'week') {
-                let weekAgo = new Date(todayStart);
-                weekAgo.setDate(todayStart.getDate() - 7);
-                if(dateZero < weekAgo) return;
-            }
-            if(timeInput === 'month' && (dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear())) return;
-
-            // Filter Artis
-            if(artInput !== 'all') {
-                const artistDB = (d.performer || "").toLowerCase().trim();
-                if(artistDB !== artInput.toLowerCase().trim()) return;
-            }
-
-            // Masukkan data valid
-            tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
-        });
-
-        // 3. Urutkan & Render
-        tempList.sort((a,b) => b.dateObj - a.dateObj);
-        
-        window.cafeReportData = tempList;
-        window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
-
-        if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong.</td></tr>';
-            document.getElementById('rep-total-money').innerText = "Rp 0";
-            document.getElementById('rep-total-song').innerText = "0";
-            document.getElementById('rep-top-artist').innerText = "-";
-            return;
-        }
-
-        let html = '';
-        tempList.forEach(d => {
-            totalMoney += d.amount;
-            totalSongs++;
-            let p = d.performer || "Unknown";
-            if(!perfCount[p]) perfCount[p] = 0;
-            perfCount[p] += d.amount;
-
-            html += `<tr>
-                <td>${d.dateObj.toLocaleDateString()}</td>
-                <td>${d.loc}</td>
-                <td>${d.performer}</td>
-                <td>${d.song}</td>
-                <td style="color:#00ff00">Rp ${d.amount.toLocaleString()}</td>
-            </tr>`;
-        });
-
-        tbody.innerHTML = html;
-        document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
-        document.getElementById('rep-total-song').innerText = totalSongs;
-        
-        const sortedPerf = Object.entries(perfCount).sort(([,a], [,b]) => b - a);
-        document.getElementById('rep-top-artist').innerText = sortedPerf.length > 0 ? sortedPerf[0][0] : "-";
-
-    } catch(e) {
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
-    }
-};
-
-
     /* =========================================
    PERBAIKAN FUNGSI LAPORAN CAFE & PDF
    (PASTE INI DI BAGIAN BAWAH FILE)
@@ -2337,6 +2227,132 @@ window.generateCafePDF = function() {
 
     doc.save(`Laporan_Cafe_${new Date().getTime()}.pdf`);
 }
+
+    // 4. GENERATE PDF CAFE (VERSI GROUPING & SUBTOTAL)
+window.generateCafePDF = function() {
+    // Cek Library
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
+    
+    // Ambil Data
+    const data = window.cafeReportData || [];
+    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
+
+    if (data.length === 0) {
+        alert("Tidak ada data untuk dicetak. Silakan filter dulu.");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // -- Header Laporan --
+    doc.setFontSize(16);
+    doc.text("LAPORAN DETAIL TOUR CAFE", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Periode: ${info.periode} | Filter Lokasi: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi}`, 14, 30);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 35);
+
+    // -- LOGIKA GROUPING --
+    
+    // 1. Urutkan data berdasarkan Nama Lokasi (Wajib biar grouping jalan)
+    // Kita copy dulu datanya biar data asli di layar gak keganggu
+    let dataSorted = [...data].sort((a, b) => a.loc.localeCompare(b.loc));
+
+    let tableBody = [];
+    let currentVenue = "";
+    let subTotal = 0;
+    let grandTotal = 0;
+
+    dataSorted.forEach((item, index) => {
+        // Cek apakah Venue berubah? (Ganti Grup)
+        if (currentVenue !== item.loc) {
+            
+            // A. Jika ini bukan baris pertama, berarti kita baru selesai satu grup.
+            // Maka CETAK SUBTOTAL grup sebelumnya.
+            if (currentVenue !== "") {
+                tableBody.push([
+                    { 
+                        content: `SUBTOTAL ${currentVenue.toUpperCase()}`, 
+                        colSpan: 3, 
+                        styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                    },
+                    { 
+                        content: `Rp ${subTotal.toLocaleString('id-ID')}`, 
+                        styles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0,0,0] } 
+                    }
+                ]);
+            }
+
+            // B. Reset untuk Grup Baru
+            currentVenue = item.loc;
+            subTotal = 0;
+
+            // C. Cetak JUDUL CAFE BARU (Header Grup)
+            tableBody.push([
+                { 
+                    content: `CAFE: ${currentVenue.toUpperCase()}`, 
+                    colSpan: 4, 
+                    styles: { fontStyle: 'bold', fillColor: [50, 50, 50], textColor: 255 } // Warna Gelap biar elegan
+                }
+            ]);
+        }
+
+        // Cetak Baris Data
+        let waktu = item.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) + ' (' + item.dateObj.toLocaleDateString('id-ID') + ')';
+        
+        tableBody.push([
+            waktu,
+            item.performer, // Artis
+            item.song,      // Lagu
+            `Rp ${item.amount.toLocaleString('id-ID')}`
+        ]);
+
+        // Akumulasi Total
+        subTotal += item.amount;
+        grandTotal += item.amount;
+
+        // D. Jika ini data TERAKHIR, jangan lupa cetak Subtotal terakhir
+        if (index === dataSorted.length - 1) {
+             tableBody.push([
+                { 
+                    content: `SUBTOTAL ${currentVenue.toUpperCase()}`, 
+                    colSpan: 3, 
+                    styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                },
+                { 
+                    content: `Rp ${subTotal.toLocaleString('id-ID')}`, 
+                    styles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0,0,0] } 
+                }
+            ]);
+        }
+    });
+
+    // -- BARIS GRAND TOTAL --
+    tableBody.push([
+        { 
+            content: "GRAND TOTAL OMZET", 
+            colSpan: 3, 
+            styles: { halign: 'right', fontStyle: 'bold', fontSize: 12, textColor: [0,0,0] } 
+        },
+        { 
+            content: `Rp ${grandTotal.toLocaleString('id-ID')}`, 
+            styles: { fontStyle: 'bold', fontSize: 12, textColor: [0, 200, 0] } // Hijau
+        }
+    ]);
+
+    // Generate Tabel
+    doc.autoTable({
+        startY: 40,
+        head: [['Waktu', 'Artis', 'Lagu', 'Sawer']], // Header Kolom
+        body: tableBody,
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [0, 150, 200] } // Warna Biru Header Kolom
+    });
+
+    doc.save(`Laporan_Tour_Detail_${new Date().getTime()}.pdf`);
+}
+
 
 /* =========================================
    11. EKSEKUSI (PENUTUP FILE YANG BENAR)
