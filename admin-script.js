@@ -2106,13 +2106,28 @@ window.loadCafeReport = async function() {
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             
-            // === LOGIKA KEUANGAN (INI KUNCINYA) ===
-            // Jika lokasi kosong/null, kita paksa jadi "Stadion Bayuangga Zone"
-            // Supaya dia punya identitas, tidak cuma "-"
-            let dataLoc = d.location ? d.location : "Stadion Bayuangga Zone";
+            reqSnap.forEach(doc => {
+            const d = doc.data();
             
-            // Bersihkan hurufnya
+            // 1. Cek Status
+            if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
+
+            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
+            
+            // --- BAGIAN INI YANG BENAR (Hanya satu kali deklarasi) ---
+            // Nama Lokasi dari Database
+            let dataLoc = d.location ? d.location : ""; 
             let locClean = dataLoc.trim().toLowerCase();
+
+            // --- PERBAIKAN: BLOKIR PAKSA TWSL & STADION ---
+            // Ini untuk memastikan 'penyelundup' TWSL benar-benar dibuang
+            if (locClean.includes("twsl") || locClean.includes("stadion")) {
+                return; // TENDANG KELUAR LANGSUNG!
+            }
+            // ----------------------------------------------
+        
+            // === FILTER SATPAM (WHITELIST) ===
+            // ... (lanjutkan kode yang ada sebelumnya) ...
 
             // === FILTER PENGUSIR STADION ===
             // Sekarang, karena yang kosong tadi sudah bernama "stadion...",
