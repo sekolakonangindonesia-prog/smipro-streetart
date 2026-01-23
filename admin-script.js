@@ -2185,49 +2185,6 @@ window.loadCafeReport = async function() {
     }
 };
 
-window.generateCafePDF = function() {
-    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
-    const data = window.cafeReportData || [];
-    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
-
-    if (data.length === 0) { alert("Data kosong!"); return; }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFontSize(16);
-    doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Filter: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi} | Periode: ${info.periode}`, 14, 30);
-    doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 35);
-
-    let tableBody = [];
-    let grandTotal = 0;
-
-    data.forEach(d => {
-        tableBody.push([
-            d.dateObj.toLocaleDateString(),
-            d.loc,
-            d.performer,
-            d.song,
-            `Rp ${d.amount.toLocaleString('id-ID')}`
-        ]);
-        grandTotal += d.amount;
-    });
-
-    tableBody.push([{ content: "GRAND TOTAL", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 255, 0] } }]);
-
-    doc.autoTable({
-        startY: 40,
-        head: [['Waktu', 'Lokasi', 'Artis', 'Lagu', 'Sawer']],
-        body: tableBody,
-        theme: 'grid',
-        headStyles: { fillColor: [0, 100, 200] }
-    });
-
-    doc.save(`Laporan_Cafe_${new Date().getTime()}.pdf`);
-}
-
     // 4. GENERATE PDF CAFE (VERSI GROUPING & SUBTOTAL)
 window.generateCafePDF = function() {
     // Cek Library
@@ -2352,7 +2309,6 @@ window.generateCafePDF = function() {
 
     doc.save(`Laporan_Tour_Detail_${new Date().getTime()}.pdf`);
 }
-
 
 /* =========================================
    11. EKSEKUSI (PENUTUP FILE YANG BENAR)
