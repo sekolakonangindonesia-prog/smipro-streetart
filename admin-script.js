@@ -1879,6 +1879,9 @@ window.generateCafePDF = function() {
 
     doc.setFontSize(16);
     doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);// 2. TAMPILKAN DATA (LOGIKA KEUANGAN: KOSONG = STADION -> BUANG STADION)
+
+    
+    // Awal Fungsi loadCafeReport
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
@@ -1897,41 +1900,41 @@ window.loadCafeReport = async function() {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // --- SOLUSI FINAL: BACA LANGSUNG DARI DROPDOWN HTML ---
-        // Kita ambil semua opsi yang ada di dropdown "Pilih Lokasi"
-        // Karena di dropdown TWSL tidak ada, maka otomatis dia tidak akan lolos.
-        const validOptions = Array.from(document.querySelectorAll('#rep-loc option'))
-            .map(opt => opt.value.trim().toLowerCase());
+        // 1. Ambil Data Cafe Resmi dari Dropdown (Whitelist)
+        const validCafes = Array.from(document.querySelectorAll('#rep-loc option'))
+            .map(opt => opt.value.trim().toLowerCase())
+            .filter(val => val !== 'all'); 
 
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // 1. Cek Status
+            // Cek Status Selesai
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
             
-            // Nama Lokasi dari Database
+            // --- BAGIAN PEMBERSIHAN NAMA LOKASI (HANYA 1 KALI) ---
             let dataLoc = d.location ? d.location : ""; 
             let locClean = dataLoc.trim().toLowerCase();
 
-            // === FILTER SATPAM (WHITELIST) ===
-            // Cek apakah 'locClean' (misal: angkringan twsl) ada di dalam 'validOptions'?
-            // Karena di dropdown cuma ada Cafe Omah Kayu, Kuligastro, dll...
-            // Maka TWSL akan false disini.
-            const isRegistered = validOptions.includes(locClean);
-
-            if (!isRegistered) {
-                return; // TENDANG KELUAR!
+            // --- FILTER 1: BLOKIR PAKSA TWSL & STADION ---
+            if (locClean.includes("twsl") || locClean.includes("stadion")) {
+                return; // Tendang keluar!
             }
-            // =================================
 
-            // 2. Filter Pilihan User (Jika user pilih spesifik cafe)
+            // --- FILTER 2: SATPAM CAFE (WHITELIST) ---
+            // Cek apakah ada di daftar dropdown?
+            const isRegistered = validCafes.includes(locClean);
+            if (!isRegistered) {
+                return; // Tendang jika tidak terdaftar di dropdown
+            }
+
+            // --- FILTER 3: PILIHAN USER (DROPDOWN) ---
             if(locInput !== 'all') {
                 if(locClean !== locInput.trim().toLowerCase()) return;
             }
 
-            // 3. Filter Waktu
+            // --- FILTER 4: WAKTU ---
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
             if(timeInput === 'today') {
                 if(dateZero.getTime() !== todayStart.getTime()) return;
@@ -1943,23 +1946,24 @@ window.loadCafeReport = async function() {
                 if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
 
-            // 4. Filter Artis
+            // --- FILTER 5: ARTIS ---
             if(artInput !== 'all') {
                 const artistDB = (d.performer || "").toLowerCase().trim();
                 const artistFilter = artInput.toLowerCase().trim();
                 if(artistDB !== artistFilter) return;
             }
 
-            // Lolos Seleksi
+            // Lolos Semua Seleksi -> Masukkan ke List
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan
+        // Urutkan Data
         tempList.sort((a,b) => b.dateObj - a.dateObj);
         
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
+        // Render Jika Kosong
         if(tempList.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong.</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
@@ -1968,6 +1972,7 @@ window.loadCafeReport = async function() {
             return;
         }
 
+        // Render Tabel
         let html = '';
         tempList.forEach(d => {
             totalMoney += d.amount;
@@ -1996,7 +2001,9 @@ window.loadCafeReport = async function() {
         console.error(e);
         tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
     }
-}
+}; // AKHIR FUNGSI (Pastikan ada kurung kurawal tutup ini)
+
+    
     doc.setFontSize(10);
     doc.text(`Filter: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi} | Periode: ${info.periode}`, 14, 30);
     doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 35);
