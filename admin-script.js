@@ -2090,7 +2090,9 @@ window.prepareReportFilters = async function() {
     } catch(e) { console.error(e); }
 }
 
-// 2. TAMPILKAN DATA (LOGIKA KEUANGAN: KOSONG = STADION -> BUANG STADION)
+/* =========================================
+   PERBAIKAN FUNGSI LAPORAN CAFE (BERSIH DARI DUPLIKASI)
+   ========================================= */
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
@@ -2109,82 +2111,58 @@ window.loadCafeReport = async function() {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+        // 1. Validasi Dropdown (Whitelist)
+        const validOptions = Array.from(document.querySelectorAll('#rep-loc option'))
+            .map(opt => opt.value.trim().toLowerCase());
+
+        // 2. LOOPING DATA (HANYA SATU KALI - TIDAK BOLEH DOBEL)
         reqSnap.forEach(doc => {
             const d = doc.data();
             
-            // 1. Cek Status
+            // Cek Status Finished
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            
-            reqSnap.forEach(doc => {
-            const d = doc.data();
-            
-            // 1. Cek Status
-            if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
-
-            const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            
-            // --- BAGIAN INI YANG BENAR (Hanya satu kali deklarasi) ---
-            // Nama Lokasi dari Database
             let dataLoc = d.location ? d.location : ""; 
             let locClean = dataLoc.trim().toLowerCase();
 
-            // --- PERBAIKAN: BLOKIR PAKSA TWSL & STADION ---
-            // Ini untuk memastikan 'penyelundup' TWSL benar-benar dibuang
-            if (locClean.includes("twsl") || locClean.includes("stadion")) {
-                return; // TENDANG KELUAR LANGSUNG!
-            }
-            // ----------------------------------------------
-        
-            // === FILTER SATPAM (WHITELIST) ===
-            // ... (lanjutkan kode yang ada sebelumnya) ...
+            // FILTER: BLOKIR TWSL & STADION
+            if (locClean.includes("twsl") || locClean.includes("stadion")) return;
 
-            // === FILTER PENGUSIR STADION ===
-            // Sekarang, karena yang kosong tadi sudah bernama "stadion...",
-            // Kita bisa usir dengan mudah.
-            if (locClean.includes("stadion")) {
-                return; // JANGAN MASUK SINI! INI WILAYAH CAFE!
-            }
-            // ===============================
+            // FILTER: HANYA YANG ADA DI DROPDOWN
+            if (!validOptions.includes(locClean)) return;
 
-            // 2. Filter Lokasi Dropdown (Pilihan User)
-            if(locInput !== 'all') {
-                if(locClean !== locInput.trim().toLowerCase()) return;
-            }
+            // Filter Lokasi User
+            if(locInput !== 'all' && locClean !== locInput.trim().toLowerCase()) return;
 
-            // 3. Filter Waktu
+            // Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-            if(timeInput === 'today') {
-                if(dateZero.getTime() !== todayStart.getTime()) return;
-            } else if(timeInput === 'week') {
+            if(timeInput === 'today' && dateZero.getTime() !== todayStart.getTime()) return;
+            if(timeInput === 'week') {
                 let weekAgo = new Date(todayStart);
                 weekAgo.setDate(todayStart.getDate() - 7);
                 if(dateZero < weekAgo) return;
-            } else if(timeInput === 'month') {
-                if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
+            if(timeInput === 'month' && (dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear())) return;
 
-            // 4. Filter Artis
+            // Filter Artis
             if(artInput !== 'all') {
                 const artistDB = (d.performer || "").toLowerCase().trim();
-                const artistFilter = artInput.toLowerCase().trim();
-                if(artistDB !== artistFilter) return;
+                if(artistDB !== artInput.toLowerCase().trim()) return;
             }
 
-            // Lolos Seleksi
+            // Masukkan data valid
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan
+        // 3. Urutkan & Render
         tempList.sort((a,b) => b.dateObj - a.dateObj);
         
-        // Simpan PDF Global
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
         if(tempList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong (Hanya Cafe Partner).</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong.</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
             document.getElementById('rep-total-song').innerText = "0";
             document.getElementById('rep-top-artist').innerText = "-";
@@ -2219,7 +2197,7 @@ window.loadCafeReport = async function() {
         console.error(e);
         tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
     }
-}
+};
 
 // 4. GENERATE PDF CAFE (VERSI GROUPING & SUBTOTAL)
 window.generateCafePDF = function() {
