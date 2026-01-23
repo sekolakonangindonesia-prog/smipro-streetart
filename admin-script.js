@@ -800,36 +800,158 @@ window.openRaport = async function(studentId) {
     } catch (e) { console.error(e); }
 }
 
-// FUNGSI CETAK LANGSUNG DARI TABEL
+
+// 1. Fungsi Bantuan: Mengubah URL Gambar ke Base64 (Wajib untuk jsPDF)
+async function getBase64ImageFromUrl(url) {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+// 2. Fungsi Utama: Membuat PDF dengan Template
+async function generateStudentPDF(sData, avg) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4'); // A4 size
+
+    // --- A. SETUP GAMBAR BACKGROUND ---
+    // URL Template Anda dari GitHub
+    const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siwa%20SMIPRO.jpg";
+    
+    try {
+        // Load background dulu
+        const bgData = await getBase64ImageFromUrl(bgUrl);
+        // Pasang gambar full satu halaman A4 (210mm x 297mm)
+        doc.addImage(bgData, 'JPEG', 0, 0, 210, 297);
+    } catch (err) {
+        console.error("Gagal memuat template:", err);
+        alert("Gagal memuat template background. Cek koneksi internet.");
+    }
+
+    // --- B. SETUP DATA SISWA (POSISI DI ATAS) ---
+    // Sesuaikan koordinat (x, y) agar pas di area putih template
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0); // Warna Hitam
+
+    // Contoh Posisi: (X=kiri-kanan, Y=atas-bawah)
+    // Silakan ganti angka ini jika kurang pas posisinya
+    let startY = 60; 
+
+    // Jika ada foto siswa (Opsional)
+    if (sData.foto_url) { // Asumsi ada url foto di database
+        try {
+            const fotoSiswa = await getBase64ImageFromUrl(sData.foto_url);
+            doc.addImage(fotoSiswa, 'JPEG', 20, startY, 30, 40); // Foto ukuran 3x4cm
+        } catch(e) { /* Abaikan jika foto gagal */ }
+    }
+
+    // Teks Biodata (Disebelah kanan foto atau rata kiri)
+    const textX = 60; // Geser ke kanan
+    doc.text(`NAMA: ${sData.name || "Siswa"}`, textX, startY + 10);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Genre: ${sData.genre || "-"}`, textX, startY + 20);
+    
+    // Tanggal Cetak
+    const today = new Date().toLocaleDateString('id-ID');
+    doc.text(`Tanggal Cetak: ${today}`, textX, startY + 30);
+
+
+    // --- C. TABEL NILAI ---
+    // Kita ambil data nilai dari object sData.scores
+    // Kita perlu ubah format object ke array untuk AutoTable
+    let tableBody = [];
+    const sScores = sData.scores || {};
+    
+    // Asumsi mapping nama mentor (sesuaikan dengan logic Anda)
+    // Jika di database hanya ada ID, Anda perlu map ID ke Nama Mentor disini
+    for (let key in sScores) {
+        let nilai = parseInt(sScores[key]);
+        let predikat = nilai >= 85 ? "(Sangat Baik)" : nilai >= 75 ? "(Kompeten)" : "(Cukup)";
+        
+        tableBody.push([
+            key, // Nama Mentor / Mapel (sesuaikan key databasenya)
+            "Umum", // Bidang Keahlian (Hardcode atau ambil data)
+            `${nilai} ${predikat}`
+        ]);
+    }
+
+    // Render Tabel
+    doc.autoTable({
+        startY: 110, // Mulai tabel di bawah biodata (sesuaikan dengan area putih)
+        head: [['Nama Mentor', 'Bidang Keahlian', 'Nilai & Predikat']],
+        body: tableBody,
+        theme: 'grid', // Tema grid kotak-kotak
+        headStyles: { fillColor: [220, 0, 0] }, // Warna Merah (sesuai tema SMIPRO)
+        styles: { fontSize: 10, cellPadding: 3 },
+        margin: { left: 20, right: 20 } // Margin kiri kanan agar tidak nabrak background hitam
+    });
+
+
+    // --- D. BAGIAN BAWAH (STATUS & RATA-RATA) ---
+    // Cari posisi Y setelah tabel selesai
+    let finalY = doc.lastAutoTable.finalY + 20;
+
+    // Status Kelulusan (Kiri)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("STATUS AKHIR:", 20, finalY);
+    doc.setFontSize(14);
+    doc.text("LULUS / SIAP PERFORM", 20, finalY + 10);
+
+    // Kotak Nilai Rata-rata (Kanan Bawah - Sesuai kotak template)
+    // Di template SS2, kotak ada di pojok kanan bawah.
+    // Kita kira-kira koordinatnya:
+    const boxX = 145; 
+    const boxY = 225; // Sesuaikan Y ini agar teks masuk tepat di kotak template
+    
+    // Karena kotaknya sudah ada di gambar background, kita tinggal taruh teksnya saja
+    doc.setFontSize(10);
+    doc.text("NILAI RATA-RATA:", boxX + 15, boxY - 5, { align: 'center' }); // Label
+
+    doc.setFontSize(24);
+    doc.setTextColor(220, 0, 0); // Merah
+    doc.text(avg.toFixed(1), boxX + 15, boxY + 10, { align: 'center' }); // Angka Nilai
+
+    // --- E. SIMPAN PDF ---
+    doc.save(`Raport_${sData.name || "Siswa"}.pdf`);
+}
+
+// 3. UPDATE FUNGSI LAMA (printRaportDirect)
 window.printRaportDirect = async function(id) {
     if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }    
     document.body.style.cursor = 'wait';
 
     try {
-        // 1. Ambil Data Siswa
+        // Ambil Data Siswa (Firebase/DB)
         const studentSnap = await getDoc(doc(db, "students", id));
+        if (!studentSnap.exists()) { throw "Data siswa tidak ditemukan"; }
+        
         const sData = studentSnap.data();
         const sScores = sData.scores || {};
 
-        // 2. Hitung Rata-rata Nilai
+        // Hitung Rata-rata
         let totalScore = 0;
         let count = 0;
-        
-        // Kita loop nilai yang ada di siswa saja (karena sudah pasti lengkap/lulus filter)
         for (let key in sScores) {
             totalScore += parseInt(sScores[key]);
             count++;
         }
-
         const avg = count > 0 ? (totalScore / count) : 0;
 
-        // 3. Panggil Fungsi PDF yang sudah ada
-        // (Fungsi generateStudentPDF kan sudah Bapak punya di kode sebelumnya)
-        generateStudentPDF(sData, avg);
+        // Panggil Fungsi PDF Baru yang ada Backgroundnya
+        await generateStudentPDF(sData, avg);
 
     } catch (e) {
         console.error(e);
-        alert("Gagal memproses data PDF.");
+        alert("Gagal memproses data PDF: " + e.message);
     } finally {
         document.body.style.cursor = 'default';
     }
