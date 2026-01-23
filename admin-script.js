@@ -2116,12 +2116,12 @@ window.loadCafeReport = async function() {
     }
 };
 
-    // 4. GENERATE PDF CAFE (VERSI GROUPING & SUBTOTAL)
-window.generateCafePDF = function() {
-    // Cek Library
+   // 4. GENERATE PDF CAFE (VERSI FINAL: LOGO + HEADER BARU + FOOTER)
+window.generateCafePDF = async function() {
+    // 1. Cek Library
     if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
     
-    // Ambil Data
+    // 2. Ambil Data
     const data = window.cafeReportData || [];
     const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
 
@@ -2130,35 +2130,87 @@ window.generateCafePDF = function() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    document.body.style.cursor = 'wait';
 
-    // -- Header Laporan --
-    doc.setFontSize(16);
-    doc.text("LAPORAN DETAIL TOUR CAFE", 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Periode: ${info.periode} | Filter Lokasi: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi}`, 14, 30);
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 35);
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height || 297;
+        const printTime = new Date().toLocaleString('id-ID');
 
-    // -- LOGIKA GROUPING --
-    
-    // 1. Urutkan data berdasarkan Nama Lokasi (Wajib biar grouping jalan)
-    // Kita copy dulu datanya biar data asli di layar gak keganggu
-    let dataSorted = [...data].sort((a, b) => a.loc.localeCompare(b.loc));
+        // --- A. LOAD LOGO ---
+        const getBase64FromUrl = async (url) => {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => resolve(reader.result);
+                });
+            } catch (error) { return null; }
+        };
+        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+        const logoBase64 = await getBase64FromUrl(logoUrl);
 
-    let tableBody = [];
-    let currentVenue = "";
-    let subTotal = 0;
-    let grandTotal = 0;
+        // --- B. LOGIKA GROUPING DATA (Sama seperti sebelumnya - sudah bagus) ---
+        
+        // Urutkan data berdasarkan Nama Lokasi
+        let dataSorted = [...data].sort((a, b) => a.loc.localeCompare(b.loc));
 
-    dataSorted.forEach((item, index) => {
-        // Cek apakah Venue berubah? (Ganti Grup)
-        if (currentVenue !== item.loc) {
-            
-            // A. Jika ini bukan baris pertama, berarti kita baru selesai satu grup.
-            // Maka CETAK SUBTOTAL grup sebelumnya.
-            if (currentVenue !== "") {
+        let tableBody = [];
+        let currentVenue = "";
+        let subTotal = 0;
+        let grandTotal = 0;
+
+        dataSorted.forEach((item, index) => {
+            // Cek apakah Venue berubah?
+            if (currentVenue !== item.loc) {
+                // Cetak Subtotal grup sebelumnya
+                if (currentVenue !== "") {
+                    tableBody.push([
+                        { 
+                            content: `SUBTOTAL ${currentVenue.toUpperCase()}`, 
+                            colSpan: 3, 
+                            styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                        },
+                        { 
+                            content: `Rp ${subTotal.toLocaleString('id-ID')}`, 
+                            styles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0,0,0] } 
+                        }
+                    ]);
+                }
+
+                // Reset untuk Grup Baru
+                currentVenue = item.loc;
+                subTotal = 0;
+
+                // Cetak Judul Cafe Baru
                 tableBody.push([
+                    { 
+                        content: `CAFE: ${currentVenue.toUpperCase()}`, 
+                        colSpan: 4, 
+                        styles: { fontStyle: 'bold', fillColor: [50, 50, 50], textColor: 255 } 
+                    }
+                ]);
+            }
+
+            // Cetak Baris Data
+            let waktu = item.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) + ' (' + item.dateObj.toLocaleDateString('id-ID') + ')';
+            
+            tableBody.push([
+                waktu,
+                item.performer, // Artis
+                item.song,      // Lagu
+                `Rp ${item.amount.toLocaleString('id-ID')}`
+            ]);
+
+            subTotal += item.amount;
+            grandTotal += item.amount;
+
+            // Jika data TERAKHIR, cetak Subtotal terakhir
+            if (index === dataSorted.length - 1) {
+                 tableBody.push([
                     { 
                         content: `SUBTOTAL ${currentVenue.toUpperCase()}`, 
                         colSpan: 3, 
@@ -2170,75 +2222,67 @@ window.generateCafePDF = function() {
                     }
                 ]);
             }
+        });
 
-            // B. Reset untuk Grup Baru
-            currentVenue = item.loc;
-            subTotal = 0;
-
-            // C. Cetak JUDUL CAFE BARU (Header Grup)
-            tableBody.push([
-                { 
-                    content: `CAFE: ${currentVenue.toUpperCase()}`, 
-                    colSpan: 4, 
-                    styles: { fontStyle: 'bold', fillColor: [50, 50, 50], textColor: 255 } // Warna Gelap biar elegan
-                }
-            ]);
-        }
-
-        // Cetak Baris Data
-        let waktu = item.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) + ' (' + item.dateObj.toLocaleDateString('id-ID') + ')';
-        
+        // Baris Grand Total
         tableBody.push([
-            waktu,
-            item.performer, // Artis
-            item.song,      // Lagu
-            `Rp ${item.amount.toLocaleString('id-ID')}`
+            { 
+                content: "GRAND TOTAL OMZET", 
+                colSpan: 3, 
+                styles: { halign: 'right', fontStyle: 'bold', fontSize: 12, textColor: [0,0,0] } 
+            },
+            { 
+                content: `Rp ${grandTotal.toLocaleString('id-ID')}`, 
+                styles: { fontStyle: 'bold', fontSize: 12, textColor: [0, 200, 0] } // Hijau
+            }
         ]);
 
-        // Akumulasi Total
-        subTotal += item.amount;
-        grandTotal += item.amount;
-
-        // D. Jika ini data TERAKHIR, jangan lupa cetak Subtotal terakhir
-        if (index === dataSorted.length - 1) {
-             tableBody.push([
-                { 
-                    content: `SUBTOTAL ${currentVenue.toUpperCase()}`, 
-                    colSpan: 3, 
-                    styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } 
-                },
-                { 
-                    content: `Rp ${subTotal.toLocaleString('id-ID')}`, 
-                    styles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0,0,0] } 
+        // --- C. RENDER TABEL DENGAN HEADER OTOMATIS (didDrawPage) ---
+        
+        doc.autoTable({
+            startY: 50, // Turunkan tabel supaya tidak nabrak Header
+            head: [['Waktu', 'Artis', 'Lagu', 'Sawer']], 
+            body: tableBody,
+            theme: 'grid',
+            styles: { fontSize: 9, cellPadding: 3 },
+            headStyles: { fillColor: [0, 150, 200] },
+            
+            // FUNGSI INI AKAN JALAN DI SETIAP HALAMAN
+            didDrawPage: function (data) {
+                // 1. Gambar Logo
+                if (logoBase64) {
+                    doc.addImage(logoBase64, 'PNG', 15, 10, 18, 18);
                 }
-            ]);
-        }
-    });
 
-    // -- BARIS GRAND TOTAL --
-    tableBody.push([
-        { 
-            content: "GRAND TOTAL OMZET", 
-            colSpan: 3, 
-            styles: { halign: 'right', fontStyle: 'bold', fontSize: 12, textColor: [0,0,0] } 
-        },
-        { 
-            content: `Rp ${grandTotal.toLocaleString('id-ID')}`, 
-            styles: { fontStyle: 'bold', fontSize: 12, textColor: [0, 200, 0] } // Hijau
-        }
-    ]);
+                // 2. Judul Laporan (2 Baris)
+                doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0,0,0);
+                doc.text("LAPORAN DETAIL APRESIASI", 40, 18);
+                doc.text("TOUR MITRA CAFE SMIPRO", 40, 24);
 
-    // Generate Tabel
-    doc.autoTable({
-        startY: 40,
-        head: [['Waktu', 'Artis', 'Lagu', 'Sawer']], // Header Kolom
-        body: tableBody,
-        theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [0, 150, 200] } // Warna Biru Header Kolom
-    });
+                // 3. Info Filter
+                doc.setFontSize(9); doc.setFont("helvetica", "normal");
+                doc.text(`Filter Lokasi: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi}`, 40, 31);
+                doc.text(`Periode: ${info.periode} | Cetak: ${printTime}`, 40, 36);
 
-    doc.save(`Laporan_Tour_Detail_${new Date().getTime()}.pdf`);
+                // 4. Garis Pembatas
+                doc.setLineWidth(0.5); doc.setDrawColor(0,0,0);
+                doc.line(15, 42, 195, 42);
+
+                // 5. Footer (Watermark)
+                doc.setFontSize(8); 
+                doc.setTextColor(150, 150, 150); // Abu-abu samar
+                doc.text("@ Yayasan Sekola Konang Indonesia - SMIPRO StreetArt.id", 105, pageHeight - 10, null, null, "center");
+            }
+        });
+
+        doc.save(`Laporan_Tour_Detail_${new Date().getTime()}.pdf`);
+
+    } catch (error) {
+        console.error("PDF Error:", error);
+        alert("Gagal mencetak PDF: " + error.message);
+    } finally {
+        document.body.style.cursor = 'default';
+    }
 }
 
 /* =========================================
