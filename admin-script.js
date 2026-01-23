@@ -882,7 +882,7 @@ window.printRaportDirect = async function(id) {
         // ==========================================
         
         // A. Background Template
-        const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siwa%20SMIPRO.jpg";
+        const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siswa%20SMIPRO.jpg";
         const bgData = await getBase64ImageFromUrl(bgUrl);
 
         // B. Foto Siswa
