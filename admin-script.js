@@ -1880,16 +1880,17 @@ window.generateCafePDF = function() {
     doc.setFontSize(16);
     doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);// 2. TAMPILKAN DATA (LOGIKA KEUANGAN: KOSONG = STADION -> BUANG STADION)
 
-    /* =========================================
-   PERBAIKAN FUNGSI LAPORAN CAFE (FIX SYNTAX)
+ /* =========================================
+   PERBAIKAN FUNGSI LAPORAN CAFE & PDF
    ========================================= */
+
+// 1. LOAD DATA LAPORAN
 window.loadCafeReport = async function() {
     const locInput = document.getElementById('rep-loc').value;
     const timeInput = document.getElementById('rep-time').value;
     const artInput = document.getElementById('rep-art').value;
     const tbody = document.getElementById('rep-detail-body');
 
-    // Gunakan tanda petik satu biasa disini
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Mengambil data...</td></tr>';
 
     try {
@@ -1902,9 +1903,8 @@ window.loadCafeReport = async function() {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // 1. Dropdown Validation (Whitelist)
-        const validOptions = Array.from(document.querySelectorAll('#rep-loc option'))
-            .map(opt => opt.value.trim().toLowerCase());
+        // Validasi Dropdown
+        const validOptions = Array.from(document.querySelectorAll('#rep-loc option')).map(opt => opt.value.trim().toLowerCase());
 
         reqSnap.forEach(doc => {
             const d = doc.data();
@@ -1913,56 +1913,43 @@ window.loadCafeReport = async function() {
             if(!d.status || d.status.toString().toLowerCase() !== 'finished') return;
 
             const dateObj = d.timestamp ? (d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp)) : new Date();
-            
             let dataLoc = d.location ? d.location : ""; 
             let locClean = dataLoc.trim().toLowerCase();
 
-            // --- FILTER: SATPAM TWSL & STADION ---
-            if (locClean.includes("twsl") || locClean.includes("stadion")) {
-                return; // Tendang data venue
-            }
+            // FILTER: BLOKIR TWSL & STADION DARI SINI
+            if (locClean.includes("twsl") || locClean.includes("stadion")) return;
+            
+            // FILTER: HANYA YANG ADA DI DROPDOWN
+            if (!validOptions.includes(locClean)) return;
 
-            // --- FILTER: SATPAM DROPDOWN ---
-            const isRegistered = validOptions.includes(locClean);
-            if (!isRegistered) {
-                return; // Tendang jika tidak ada di dropdown
-            }
-
-            // Filter Pilihan User
-            if(locInput !== 'all') {
-                if(locClean !== locInput.trim().toLowerCase()) return;
-            }
+            // Filter Lokasi User
+            if(locInput !== 'all' && locClean !== locInput.trim().toLowerCase()) return;
 
             // Filter Waktu
             const dateZero = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-            if(timeInput === 'today') {
-                if(dateZero.getTime() !== todayStart.getTime()) return;
-            } else if(timeInput === 'week') {
+            if(timeInput === 'today' && dateZero.getTime() !== todayStart.getTime()) return;
+            if(timeInput === 'week') {
                 let weekAgo = new Date(todayStart);
                 weekAgo.setDate(todayStart.getDate() - 7);
                 if(dateZero < weekAgo) return;
-            } else if(timeInput === 'month') {
-                if(dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear()) return;
             }
+            if(timeInput === 'month' && (dateObj.getMonth() !== now.getMonth() || dateObj.getFullYear() !== now.getFullYear())) return;
 
             // Filter Artis
             if(artInput !== 'all') {
                 const artistDB = (d.performer || "").toLowerCase().trim();
-                const artistFilter = artInput.toLowerCase().trim();
-                if(artistDB !== artistFilter) return;
+                if(artistDB !== artInput.toLowerCase().trim()) return;
             }
 
-            // Masukkan data valid
             tempList.push({ ...d, dateObj: dateObj, loc: dataLoc, amount: parseInt(d.amount)||0 });
         });
 
-        // Urutkan
         tempList.sort((a,b) => b.dateObj - a.dateObj);
         
+        // SIMPAN DATA UNTUK PDF
         window.cafeReportData = tempList;
         window.cafeReportInfo = { lokasi: locInput, periode: timeInput };
 
-        // Jika Kosong
         if(tempList.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Data Kosong.</td></tr>';
             document.getElementById('rep-total-money').innerText = "Rp 0";
@@ -1971,7 +1958,6 @@ window.loadCafeReport = async function() {
             return;
         }
 
-        // Render Tabel
         let html = '';
         tempList.forEach(d => {
             totalMoney += d.amount;
@@ -1980,9 +1966,7 @@ window.loadCafeReport = async function() {
             if(!perfCount[p]) perfCount[p] = 0;
             perfCount[p] += d.amount;
 
-            // PERHATIKAN: DI BAWAH INI PAKAI BACKTICK (`) BUKAN PETIK (')
-            html += `
-            <tr>
+            html += `<tr>
                 <td>${d.dateObj.toLocaleDateString()}</td>
                 <td>${d.loc}</td>
                 <td>${d.performer}</td>
@@ -1991,7 +1975,6 @@ window.loadCafeReport = async function() {
             </tr>`;
         });
 
-        // Update HTML
         tbody.innerHTML = html;
         document.getElementById('rep-total-money').innerText = "Rp " + totalMoney.toLocaleString();
         document.getElementById('rep-total-song').innerText = totalSongs;
@@ -2003,9 +1986,24 @@ window.loadCafeReport = async function() {
         console.error(e);
         tbody.innerHTML = '<tr><td colspan="5">Gagal mengambil data.</td></tr>';
     }
-}; 
-// ^^^ PASTIKAN ADA KURUNG KURAWAL TUTUP DAN TITIK KOMA DI SINI ^^^
-   
+};
+
+// 2. GENERATE PDF (INI YANG TADI RUSAK/TERCECER)
+window.generateCafePDF = function() {
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
+    
+    // Ambil Data Global
+    const data = window.cafeReportData || [];
+    const info = window.cafeReportInfo || { lokasi: '-', periode: '-' };
+
+    if (data.length === 0) { alert("Data kosong! Load data dulu."); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // MULAI CETAK
+    doc.setFontSize(16);
+    doc.text("LAPORAN TOUR CAFE PARTNER", 14, 20);
     
     doc.setFontSize(10);
     doc.text(`Filter: ${info.lokasi === 'all' ? 'Semua Cafe' : info.lokasi} | Periode: ${info.periode}`, 14, 30);
@@ -2016,8 +2014,11 @@ window.loadCafeReport = async function() {
 
     data.forEach(d => {
         tableBody.push([
-            d.dateObj.toLocaleDateString() + ' ' + d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}),
-            d.loc, d.performer, d.song, `Rp ${d.amount.toLocaleString('id-ID')}`
+            d.dateObj.toLocaleDateString(),
+            d.loc,
+            d.performer,
+            d.song,
+            `Rp ${d.amount.toLocaleString('id-ID')}`
         ]);
         grandTotal += d.amount;
     });
