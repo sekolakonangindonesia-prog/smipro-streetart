@@ -801,13 +801,12 @@ window.openRaport = async function(studentId) {
 }
 
 
-// === KODE CETAK RAPORT (FIX DATA MENTOR & FOTO) ===
+// === KODE CETAK RAPORT (UPDATE BACKGROUND BARU) ===
 
-// 1. Fungsi Load Gambar (Versi Lebih Kuat)
+// 1. Fungsi Load Gambar
 async function getBase64ImageFromUrl(url) {
     if (!url) return null;
     try {
-        // Mode 'cors' penting untuk izin akses gambar dari server lain
         const res = await fetch(url, { method: 'GET', mode: 'cors' });
         if (!res.ok) throw new Error("Gagal download gambar");
         const blob = await res.blob();
@@ -818,93 +817,60 @@ async function getBase64ImageFromUrl(url) {
             reader.readAsDataURL(blob);
         });
     } catch (e) {
-        console.warn("Skip Gambar (Mungkin kena blokir CORS/Rules):", url);
         return null;
     }
 }
 
 // 2. FUNGSI UTAMA
 window.printRaportDirect = async function(id) {
-    // Cek Library PDF
     if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }    
-    
-    // Ubah kursor jadi loading
     document.body.style.cursor = 'wait';
-    const originalText = document.body.innerHTML; // Opsional: Simpan state jika perlu
 
     try {
         const { jsPDF } = window.jspdf;
-        const myPdf = new jsPDF('p', 'mm', 'a4'); // Variabel aman 'myPdf'
+        const myPdf = new jsPDF('p', 'mm', 'a4'); 
 
-        // ==========================================
-        // LANGKAH 1: AMBIL DATA MENTOR (WAJIB DULUAN)
-        // ==========================================
+        // --- A. AMBIL DATA MENTOR ---
         const mentorMap = {};
         try {
-            console.log("Sedang mengambil data mentor...");
-            // Pastikan nama koleksi 'mentors' sesuai screenshot Firebase
             const mentorsCol = collection(db, "mentors"); 
             const mentorsSnap = await getDocs(mentorsCol);
-            
-            if (mentorsSnap.empty) {
-                console.warn("PERINGATAN: Koleksi 'mentors' kosong atau tidak bisa diakses!");
-            }
-
             mentorsSnap.forEach(d => {
                 const m = d.data();
-                // Ambil field 'name' sesuai screenshot Firebase
-                // Jika tidak ada 'name', coba 'nama', 'fullname', atau 'username'
                 const realName = m.name || m.nama || m.fullname || "Tanpa Nama";
-                
-                // Simpan mapping: ID -> Nama Asli
                 mentorMap[d.id] = realName;
             });
-            console.log("Berhasil memuat jumlah mentor:", Object.keys(mentorMap).length);
-
-        } catch (err) {
-            console.error("GAGAL AMBIL MENTOR:", err);
-            alert("Gagal mengambil data mentor. Cek koneksi atau izin Firebase (Rules).");
-        }
+        } catch (err) { console.warn("Gagal ambil mentor"); }
 
 
-        // ==========================================
-        // LANGKAH 2: AMBIL DATA SISWA
-        // ==========================================
+        // --- B. AMBIL DATA SISWA ---
         const studentSnap = await getDoc(doc(db, "students", id));
         if (!studentSnap.exists()) { throw "Data siswa tidak ditemukan"; }
-        
         const sData = studentSnap.data();
-        const sScores = sData.scores || {}; // Nilai siswa
+        const sScores = sData.scores || {};
 
 
-        // ==========================================
-        // LANGKAH 3: SIAPKAN GAMBAR
-        // ==========================================
+        // --- C. LOAD GAMBAR ---
         
-        // A. Background Template
+        // 1. BACKGROUND BARU (Sudah Diupdate ke 'siswa')
         const bgUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Raport%20siswa%20SMIPRO.jpg";
+        
         const bgData = await getBase64ImageFromUrl(bgUrl);
 
-        // B. Foto Siswa
-        // Cek nama field foto. Sesuai screenshot mentor pakai 'img',
-        // mungkin siswa juga pakai 'img'. Kita cek semuanya.
+        // 2. Foto Siswa
         const linkFoto = sData.img || sData.foto || sData.foto_url || sData.photoUrl || sData.url_foto;
-        
         let fotoData = null;
-        if (linkFoto) {
-            fotoData = await getBase64ImageFromUrl(linkFoto);
-        } else {
-            console.log("Link foto tidak ditemukan di data siswa.");
-        }
+        if (linkFoto) fotoData = await getBase64ImageFromUrl(linkFoto);
 
 
-        // ==========================================
-        // LANGKAH 4: MENGGAMBAR PDF
-        // ==========================================
+        // --- D. GAMBAR PDF ---
 
         // 1. Pasang Background
         if (bgData) {
             myPdf.addImage(bgData, 'JPEG', 0, 0, 210, 297);
+        } else {
+            // Jaga-jaga kalau background baru gagal load
+            console.error("Background gagal dimuat. Cek link GitHub.");
         }
 
         // 2. Pasang Foto Siswa
@@ -912,24 +878,15 @@ window.printRaportDirect = async function(id) {
         if (fotoData) {
             myPdf.addImage(fotoData, 'JPEG', 20, startY, 30, 40);
         } else {
-            // Jika foto gagal/tidak ada, gambar kotak kosong
+            // Kotak kosong jika foto tidak ada
             myPdf.setDrawColor(150);
-            myPdf.rect(20, startY, 30, 40); // Kotak 3x4
+            myPdf.rect(20, startY, 30, 40); 
             myPdf.setFontSize(8);
             myPdf.setTextColor(100);
-            myPdf.text("Foto Tidak", 22, startY + 15);
-            myPdf.text("Tersedia", 24, startY + 20);
-            
-            // Debugging info di PDF (biar tau kenapa gagal)
-            if (linkFoto) {
-                myPdf.setFontSize(6);
-                myPdf.text("(Error Akses)", 23, startY + 30);
-            } else {
-                myPdf.text("(Data Kosong)", 23, startY + 30);
-            }
+            myPdf.text("No Photo", 23, startY + 20);
         }
 
-        // 3. Teks Biodata
+        // 3. Biodata
         const textX = 60;
         myPdf.setFont("helvetica", "bold");
         myPdf.setFontSize(14);
@@ -945,7 +902,7 @@ window.printRaportDirect = async function(id) {
         myPdf.text(`Tanggal Cetak: ${today}`, textX, startY + 30);
 
 
-        // 4. Tabel Nilai (DENGAN MAPPING NAMA)
+        // 4. Tabel Nilai
         let tableBody = [];
         let totalScore = 0;
         let count = 0;
@@ -953,19 +910,10 @@ window.printRaportDirect = async function(id) {
         for (let keyID in sScores) {
             let nilai = parseInt(sScores[keyID]);
             let predikat = nilai >= 85 ? "(Sangat Baik)" : nilai >= 75 ? "(Kompeten)" : "(Cukup)";
-            
-            // LOGIKA UTAMA: Ganti ID dengan Nama dari Map
-            let namaMentorFinal = mentorMap[keyID];
-            
-            // Jika nama tidak ketemu di Map, tampilkan ID-nya (buat debug)
-            if (!namaMentorFinal) {
-                namaMentorFinal = keyID; // Tampilkan ID saja dulu
-                console.warn("ID Mentor ini tidak ada di database mentors:", keyID);
-            }
+            let namaMentorFinal = mentorMap[keyID] || keyID;
 
             tableBody.push([namaMentorFinal, "Umum", `${nilai} ${predikat}`]);
             
-            // Hitung rata-rata sekalian
             totalScore += nilai;
             count++;
         }
@@ -1000,15 +948,15 @@ window.printRaportDirect = async function(id) {
         myPdf.text("NILAI RATA-RATA:", boxX + 15, boxY - 6, { align: 'center' });
 
         myPdf.setFontSize(24);
-        myPdf.setTextColor(220, 0, 0); // Merah
+        myPdf.setTextColor(220, 0, 0); 
         myPdf.text(avg.toFixed(1), boxX + 15, boxY + 2, { align: 'center' }); 
 
-        // 6. Simpan File
+        // 6. Simpan
         myPdf.save(`Raport_${sData.name || "Siswa"}.pdf`);
 
     } catch (e) {
-        console.error("ERROR PRINT:", e);
-        alert("Terjadi kesalahan: " + e.message);
+        console.error(e);
+        alert("Gagal: " + e.message);
     } finally {
         document.body.style.cursor = 'default';
     }
