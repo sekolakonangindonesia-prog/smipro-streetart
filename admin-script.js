@@ -1913,11 +1913,13 @@ window.loadCafeReport = async function() {
             // Bersihkan hurufnya
             let locClean = dataLoc.trim().toLowerCase();
 
-            // === FILTER PENGUSIR STADION ===
-            // Sekarang, karena yang kosong tadi sudah bernama "stadion...",
-            // Kita bisa usir dengan mudah.
-            if (locClean.includes("stadion")) {
-                return; // JANGAN MASUK SINI! INI WILAYAH CAFE!
+            // === FILTER BARU: SATPAM CAFE (WHITELIST) ===
+            // Kita cek daftar absen Cafe yang valid
+            const daftarCafeValid = window.listCafeValid || [];
+
+            // Jika nama lokasi transaksi TIDAK ADA di daftar Cafe Resmi...
+            if (!daftarCafeValid.includes(locClean)) {
+                return; // ...TENDANG KELUAR! (Venue TWSL, GOR, Stadion akan hilang disini)
             }
             // ===============================
 
