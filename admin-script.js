@@ -1390,34 +1390,40 @@ window.deleteReq = async function(id) {
 
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI FIX FINAL - DATABASE AUTO & ANTI-DUPLIKAT)
+   B. STATISTIK & LAPORAN (VERSI FINAL - ANTI ERROR)
    ========================================= */
 
 let statsUnsubscribe = null;
 
-// 1. INIT SYSTEM (DENGAN PENGAMAN AGAR TIDAK CRASH)
+// 1. DEFINISI VARIABEL PENTING (JANGAN DIHAPUS, INI NYAWA GRAPH KEUANGAN)
+window.daftarVenueValid = []; 
+
+// 2. INIT SYSTEM
 window.initFinanceSystem = function() {
     console.log("🚀 Memulai Sistem Keuangan...");
     
-    // Cek dulu apakah elemennya ada? Kalau tidak, berhenti (biar gak error layar hitam)
+    // Cek elemen agar tidak error
     const cekElemen = document.getElementById('filter-uang-lokasi');
     if (!cekElemen) return; 
 
     // Jalankan fungsi load
     if (typeof window.loadVenueOptions === 'function') window.loadVenueOptions();
     if (typeof window.renderFinanceData === 'function') window.renderFinanceData();
+    if (typeof listenCommandCenter === 'function') listenCommandCenter();
 }
 
-// 3. ISI DROPDOWN (OTOMATIS DARI DATABASE & BERSIH)
+// 3. ISI DROPDOWN & DATA VALIDASI (OTOMATIS DARI DB)
 window.loadVenueOptions = async function() {
     const locSelect = document.getElementById('filter-uang-lokasi'); 
     if(!locSelect) return;
 
-    // Bersihkan dulu isinya
+    // A. Bersihkan Dropdown Dulu (PENTING BIAR GAK DOBEL)
     locSelect.innerHTML = `<option value="all">Semua Lokasi</option>`;
     
+    // B. Reset Daftar Venue Valid (PENTING BIAR ERROR MERAH HILANG)
+    window.daftarVenueValid = [];
+
     try {
-        // Ambil data langsung dari Database Venue
         const q = query(collection(db, "venues"), orderBy("order", "asc"));
         const snapshot = await getDocs(q);
         
@@ -1425,19 +1431,29 @@ window.loadVenueOptions = async function() {
 
         snapshot.forEach(doc => {
             const d = doc.data();
-            const cleanName = (d.name || "").trim();
+            const cleanName = (d.name || "").trim(); // Hapus spasi aneh
 
-            // Masukkan ke dropdown HANYA JIKA belum ada
+            // Masukkan ke dropdown & daftar valid HANYA JIKA belum ada
             if (cleanName && !seenNames.has(cleanName)) {
+                // 1. Masukkan ke Dropdown HTML
                 const option = document.createElement("option");
                 option.value = cleanName;
                 option.text = cleanName; 
                 locSelect.appendChild(option);
                 
-                seenNames.add(cleanName); // Tandai sudah masuk
+                // 2. Masukkan ke Array Validasi (SOLUSI ERROR MERAH 'some')
+                window.daftarVenueValid.push(cleanName);
+
+                // 3. Catat agar tidak dobel
+                seenNames.add(cleanName); 
             }
         });
-        console.log("✅ Dropdown Keuangan Siap (Database Mode)");
+        
+        // Update data grafik setelah venue dimuat
+        if (typeof window.renderFinanceData === 'function') window.renderFinanceData();
+        
+        console.log("✅ Dropdown & Data Venue Siap (Database Mode)");
+
     } catch (e) {
         console.error("Gagal load venue finance:", e);
     }
@@ -2487,42 +2503,46 @@ window.switchLiveTab = function(tabId, btn) {
     if(tabId === 'panel-live') populateLiveVenueOptions();
 }
 
-// --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: ANTI DUPLIKAT) ---
+// --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: CLEAR DULU BARU ISI) ---
 window.populateLiveVenueOptions = async function() {
     const select = document.getElementById('live-target-venue');
     if(!select) return;
 
-    // 1. Kosongkan dropdown & Log
-    select.innerHTML = '<option value="">-- Pilih Venue --</option>';
-    console.log("🔄 Memuat Venue (Anti-Duplikat)...");
+    // 1. KOSONGKAN TOTAL (Ini Kuncinya agar tidak numpuk)
+    // Kita reset isinya jadi cuma 1 opsi default
+    select.innerHTML = ''; 
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = "";
+    defaultOpt.text = "-- Pilih Venue --";
+    select.appendChild(defaultOpt);
+
+    console.log("🔄 Memuat Venue (Reset & Isi Ulang)...");
 
     try {
-        // 2. Ambil data
         const q = query(collection(db, "venues"), orderBy("order", "asc"));
         const snapshot = await getDocs(q);
 
-        // 3. Siapkan Filter (Set)
-        let seenNames = new Set();
+        let seenNames = new Set(); 
 
         snapshot.forEach(doc => {
             const d = doc.data();
-            // Bersihkan nama (hapus spasi kiri kanan & ubah ke huruf kecil untuk pengecekan)
             const cleanName = (d.name || "").trim();
             const checkName = cleanName.toLowerCase();
 
-            // 4. Cek apakah nama ini sudah pernah dimasukkan?
-            if (!seenNames.has(checkName)) {
-                // Jika belum, masukkan ke dropdown
-                select.innerHTML += `<option value="${doc.id}">${cleanName}</option>`;
-                // Catat nama ini sudah ada
+            // Masukkan jika belum ada (Anti Duplikat Nama)
+            if (cleanName && !seenNames.has(checkName)) {
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.text = cleanName;
+                select.appendChild(opt);
+                
                 seenNames.add(checkName);
             }
         });
-        console.log("✅ Venue berhasil dimuat: " + seenNames.size);
+        console.log("✅ Venue Dimuat: " + seenNames.size);
 
     } catch (e) {
         console.error("Gagal load venue:", e);
-        alert("Gagal memuat data venue: " + e.message);
     }
 }
 
