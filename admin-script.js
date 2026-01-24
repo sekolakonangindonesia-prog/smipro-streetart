@@ -52,14 +52,10 @@ window.showView = function(viewId, btn) {
             if(typeof switchLiveTab === 'function') switchLiveTab('panel-live', null);
         }
         
-        // --- BAGIAN KEUANGAN (SAYA PERBAIKI BIAR GAK BLANK) ---
+      // --- BAGIAN KEUANGAN (VERSI TEGAS) ---
         if(viewId === 'finance') { 
-            if(typeof window.initFinanceSystem === 'function') {
-                window.initFinanceSystem();       
-                listenCommandCenter(); 
-            } else {
-                console.log("Menunggu script keuangan...");
-            }
+        window.initFinanceSystem();       
+        listenCommandCenter(); 
         }
 
     } catch (e) {
