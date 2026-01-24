@@ -4,25 +4,24 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* =========================================
-   0. LOGIKA NAVIGASI (SIDEBAR & TABS) - VERSI FIX
+   0. LOGIKA NAVIGASI (SIDEBAR & TABS) - VERSI AMAN
    ========================================= */
 
 window.showView = function(viewId, btn) {
-    // 1. Sembunyikan semua view
+    // 1. Reset Tampilan
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    
-    // 2. Tampilkan view target (Cek dulu ada gak elemennya)
     const target = document.getElementById('view-' + viewId);
+    
     if(target) {
         target.classList.remove('hidden');
     } else {
-        console.error("View tidak ditemukan: view-" + viewId);
-        return; // Stop jika view error
+        console.error("View tidak ditemukan: " + viewId);
+        return;
     }
     
-    // 3. Eksekusi Script Khusus per Halaman (Pakai Try-Catch biar gak macet)
+    // 2. Load Data Sesuai Halaman
     try {
-        if(viewId === 'dashboard') loadDashboardOverview();   
+        if(viewId === 'dashboard') loadDashboardOverview();       
         if(viewId === 'students') loadStudentData();    
         if(viewId === 'performer') loadPerformerData();
         if(viewId === 'mentor') loadMentorData();      
@@ -35,6 +34,7 @@ window.showView = function(viewId, btn) {
         
         if(viewId === 'cms') { 
             loadArtistDropdowns(); 
+            // Pakai pengaman biar gak error kalau fungsi belum siap
             if(typeof loadMainVenueDropdown === 'function') loadMainVenueDropdown(); 
         }
         
@@ -43,27 +43,30 @@ window.showView = function(viewId, btn) {
             const tabBtn = document.querySelector('.sub-tab-btn');
             if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
         }
-        
+
+        // --- BAGIAN LIVE (SAYA PERBAIKI BIAR GAK DOBEL) ---
         if(viewId === 'live') {
-            populateLiveVenueOptions(); // Ini nanti kita perbaiki di bawah
+            // populateLiveVenueOptions(); <--- SAYA HAPUS INI (Penyebab Dobel)
+            
+            // Cukup panggil ini saja:
             if(typeof switchLiveTab === 'function') switchLiveTab('panel-live', null);
         }
         
-        // --- PERBAIKAN KEUANGAN ---
+        // --- BAGIAN KEUANGAN (SAYA PERBAIKI BIAR GAK BLANK) ---
         if(viewId === 'finance') { 
             if(typeof window.initFinanceSystem === 'function') {
                 window.initFinanceSystem();       
                 listenCommandCenter(); 
             } else {
-                console.warn("Fungsi Keuangan belum siap, coba refresh.");
+                console.log("Menunggu script keuangan...");
             }
         }
 
     } catch (e) {
-        console.error("Error saat pindah tab:", e);
+        console.error("Error navigasi:", e);
     }
 
-    // 4. Update Tombol Menu Aktif
+    // 3. Update Tombol Aktif
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
