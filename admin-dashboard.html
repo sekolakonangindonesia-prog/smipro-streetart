@@ -209,7 +209,7 @@
                 </div>
             </div>      
 
-            <!-- ============================================ -->
+<!-- ============================================ -->
 <!-- MODAL APPROVAL MITRA (WARUNG) -->
 <!-- ============================================ -->
 <div id="modal-approve-mitra" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:4000; align-items:center; justify-content:center; padding:20px;">
@@ -764,7 +764,8 @@
             </div>
         </div>
 
-        <!-- VIEW KHUSUS: KONTROL LAYAR & GALERI -->
+        
+      <!-- VIEW KHUSUS: KONTROL LAYAR & GALERI -->
         <div id="view-live" class="admin-view hidden">
             <div class="section-header">
                 <h2 style="margin:0; color:#00ff00;">📡 Control Room & Media</h2>
@@ -778,7 +779,7 @@
 
             <!-- PANEL 1: LIVE CONTROL (Untuk Layar TV di Lokasi) -->
             <div id="panel-live" class="live-content">
-               <!-- MONITOR PREVIEW (BARU) -->
+               <!-- MONITOR PREVIEW -->
                 <div class="cms-form-group" style="background:#000; border:1px solid #333; text-align:center; padding:0; overflow:hidden; position:relative; aspect-ratio:16/9; max-width:600px; margin:0 auto 20px auto;">
                     <iframe id="admin-monitor-frame" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="display:none;"></iframe>
                     <div id="admin-monitor-placeholder" style="padding-top:20%; color:#555;">
@@ -797,7 +798,7 @@
                     <label class="cms-label">Paste Link YouTube (Live/Rekaman):</label>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="main-live-link" class="cms-input" 
-                               placeholder="https://www.youtube.com/watch?v=..." style="margin:0;">
+                               placeholder="https://youtube.com/..." style="margin:0;">
                         <button class="btn-action btn-view" onclick="updateLiveLink()" 
                                 style="background:#00ff00; color:black; font-weight:bold;">
                             TAYANGKAN
@@ -807,48 +808,78 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MANAJEMEN GALERI (Untuk Website / Podcast) -->
+            <!-- PANEL 2: MANAJEMEN GALERI (PEMBAHARUAN SPOTIFY MODE) -->
             <div id="panel-galeri" class="live-content hidden">
                 <div class="cms-form-group" style="background:#151515; border-left:5px solid #FFD700;">
-                    <h4 style="margin-top:0; color:#FFD700;">Tambah Koleksi Video (Podcast/Lagu)</h4>
+                    <h4 style="margin-top:0; color:#FFD700;">Tambah Koleksi (Video / Musik)</h4>
                     
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                        <div>
-                            <label class="cms-label">Judul Video / Lagu:</label>
-                            <input type="text" id="vid-title" class="cms-input" placeholder="Contoh: Akulah Dia (Cover)">
-                        </div>
-                        <div>
-                            <label class="cms-label">Nama Kreator (Artis/Mentor):</label>
-                            <input type="text" id="vid-creator" class="cms-input" placeholder="Contoh: Acoustic Boys">
+                    <!-- PILIHAN TIPE KONTEN -->
+                    <label class="cms-label">Tipe Konten:</label>
+                    <select id="gallery-type" class="cms-input" onchange="toggleGalleryInput()">
+                        <option value="video">🎬 VIDEO (YouTube)</option>
+                        <option value="audio">🎵 MUSIK / MP3 (Spotify Style)</option>
+                    </select>
+
+                    <hr style="border-color:#333; margin-bottom:15px;">
+
+                    <!-- FORM KHUSUS VIDEO -->
+                    <div id="form-gallery-video">
+                        <label class="cms-label">Link YouTube:</label>
+                        <input type="text" id="vid-link" class="cms-input" placeholder="https://youtube.com/...">
+                        <small style="color:#666; display:block; margin-bottom:10px;">*Thumbnail akan diambil otomatis dari YouTube.</small>
+                        
+                        <label class="cms-label">Nama Kreator (YouTube Channel):</label>
+                        <input type="text" id="vid-creator" class="cms-input" placeholder="Contoh: Acoustic Boys">
+                    </div>
+
+                    <!-- FORM KHUSUS AUDIO (MP3) -->
+                    <div id="form-gallery-audio" style="display:none;">
+                        <label class="cms-label">Link File MP3 (Google Drive / Hosting Lain):</label>
+                        <input type="text" id="audio-link" class="cms-input" placeholder="Paste Link Google Drive di sini...">
+                        
+                        <div style="display:flex; gap:15px; margin-top:10px; align-items:center;">
+                            <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('audio-cover-file').click()">
+                                <img id="audio-cover-preview" src="https://via.placeholder.com/100?text=Cover" style="width:80px; height:80px; object-fit:cover; border-radius:5px; border:1px dashed #555;">
+                                <input type="file" id="audio-cover-file" style="display:none;" accept="image/*" onchange="previewAudioCover(this)">
+                                <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Cover</div>
+                            </div>
+                            <div style="flex:1;">
+                                <label class="cms-label">Nama Artis / Penyanyi:</label>
+                                <input type="text" id="audio-artist" class="cms-input" placeholder="Contoh: The Acoustic Boys">
+                            </div>
                         </div>
                     </div>
 
-                    <label class="cms-label">Link YouTube:</label>
-                    <input type="text" id="vid-link" class="cms-input" placeholder="https://youtube.com/...">
+                    <!-- INPUT UMUM (JUDUL & KATEGORI) -->
+                    <div style="margin-top:10px;">
+                        <label class="cms-label">Judul (Lagu / Video):</label>
+                        <input type="text" id="gallery-title" class="cms-input" placeholder="Judul Karya...">
 
-                    <label class="cms-label">Kategori:</label>
-                    <select id="vid-category" class="cms-input">
-                        <option value="Live Perform">🎤 Live Perform (Konser)</option>
-                        <option value="Podcast">🎙️ Podcast & Talkshow</option>
-                        <option value="Songs">🎵 Lagu-Lagu Hits (Music Video)</option>
-                    </select>
+                        <label class="cms-label">Kategori (Untuk Filter):</label>
+                        <select id="gallery-category" class="cms-input">
+                            <option value="Live Perform">🎤 Live Perform (Konser)</option>
+                            <option value="Musik">🎵 Musik / Single (MP3)</option>
+                            <option value="Podcast">🎙️ Podcast & Talkshow</option>
+                            <option value="Dokumentasi">📷 Dokumentasi Event</option>
+                        </select>
 
-                    <label class="cms-label">Deskripsi Singkat:</label>
-                    <textarea id="vid-desc" class="cms-input" style="height:80px;" placeholder="Ceritakan sedikit tentang video ini..."></textarea>
+                        <label class="cms-label">Deskripsi Singkat:</label>
+                        <textarea id="gallery-desc" class="cms-input" style="height:60px;" placeholder="Keterangan tambahan..."></textarea>
+                    </div>
 
-                    <button class="btn-action btn-edit" style="width:100%; padding:12px; font-weight:bold;" onclick="saveGalleryVideo()">
+                    <button class="btn-action btn-edit" style="width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="saveGalleryItem()">
                         <i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN KE GALERI
                     </button>
                 </div>
 
-                <!-- TABEL LIST VIDEO -->
-                <h4 style="margin-top:20px; color:#aaa;">Daftar Video Tersimpan</h4>
+                <!-- TABEL LIST GALERI -->
+                <h4 style="margin-top:20px; color:#aaa;">Daftar Galeri Tersimpan</h4>
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>Preview</th>
-                            <th>Info Video</th>
-                            <th>Kategori</th>
+                            <th style="width:60px;">Media</th>
+                            <th>Info Karya</th>
+                            <th>Tipe</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -858,6 +889,7 @@
                 </table>
             </div>
         </div>
+
         
         <!-- 7. KEUANGAN & COMMAND CENTER -->
         <div id="view-finance" class="admin-view hidden">
