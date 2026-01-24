@@ -808,11 +808,14 @@
                 </div>
             </div>
 
-            <!-- PANEL 2: MANAJEMEN GALERI (PEMBAHARUAN SPOTIFY MODE) -->
+            <!-- PANEL 2: MANAJEMEN GALERI (UPDATE: FITUR EDIT) -->
             <div id="panel-galeri" class="live-content hidden">
                 <div class="cms-form-group" style="background:#151515; border-left:5px solid #FFD700;">
-                    <h4 style="margin-top:0; color:#FFD700;">Tambah Koleksi (Video / Musik)</h4>
+                    <h4 style="margin-top:0; color:#FFD700;">Kelola Koleksi (Video / Musik)</h4>
                     
+                    <!-- ID UNTUK EDIT (TERSEMBUNYI) -->
+                    <input type="hidden" id="gallery-edit-id">
+
                     <!-- PILIHAN TIPE KONTEN -->
                     <label class="cms-label">Tipe Konten:</label>
                     <select id="gallery-type" class="cms-input" onchange="toggleGalleryInput()">
@@ -826,7 +829,7 @@
                     <div id="form-gallery-video">
                         <label class="cms-label">Link YouTube:</label>
                         <input type="text" id="vid-link" class="cms-input" placeholder="https://youtube.com/...">
-                        <small style="color:#666; display:block; margin-bottom:10px;">*Thumbnail akan diambil otomatis dari YouTube.</small>
+                        <small style="color:#666; display:block; margin-bottom:10px;">*Thumbnail diambil otomatis dari YouTube.</small>
                         
                         <label class="cms-label">Nama Kreator (YouTube Channel):</label>
                         <input type="text" id="vid-creator" class="cms-input" placeholder="Contoh: Acoustic Boys">
@@ -867,9 +870,15 @@
                         <textarea id="gallery-desc" class="cms-input" style="height:60px;" placeholder="Keterangan tambahan..."></textarea>
                     </div>
 
-                    <button class="btn-action btn-edit" style="width:100%; padding:12px; font-weight:bold; margin-top:10px;" onclick="saveGalleryItem()">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN KE GALERI
-                    </button>
+                    <!-- TOMBOL AKSI -->
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button id="btn-save-gallery" class="btn-action btn-edit" style="width:100%; padding:12px; font-weight:bold;" onclick="saveGalleryItem()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN KE GALERI
+                        </button>
+                        <button id="btn-cancel-gallery" class="btn-action btn-delete" style="width:auto; display:none;" onclick="cancelGalleryEdit()">
+                            Batal
+                        </button>
+                    </div>
                 </div>
 
                 <!-- TABEL LIST GALERI -->
@@ -888,7 +897,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
 
         
         <!-- 7. KEUANGAN & COMMAND CENTER -->
