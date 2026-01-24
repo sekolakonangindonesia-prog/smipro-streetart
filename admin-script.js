@@ -1390,52 +1390,57 @@ window.deleteReq = async function(id) {
 
 
 /* =========================================
-   B. STATISTIK & LAPORAN (VERSI FIX FINAL - MANUAL & LENGKAP)
+   B. STATISTIK & LAPORAN (VERSI FIX FINAL - DATABASE AUTO & ANTI-DUPLIKAT)
    ========================================= */
 
 let statsUnsubscribe = null;
 
-// 1. DAFTAR VENUE MANUAL (Biar Dropdown PASTI MUNCUL walau DB Error)
-window.daftarVenueValid = [
-    "Stadion Bayuangga Zone",
-    "Angkringan GOR Mastrip", 
-    "Angkringan TWSL", 
-    "Angkringan Siaman", 
-    "Angkringan A. Yani"
-];
-
-// 2. INIT SYSTEM
+// 1. INIT SYSTEM (DENGAN PENGAMAN AGAR TIDAK CRASH)
 window.initFinanceSystem = function() {
     console.log("🚀 Memulai Sistem Keuangan...");
-    window.loadVenueOptions();   
-    window.renderFinanceData();  
+    
+    // Cek dulu apakah elemennya ada? Kalau tidak, berhenti (biar gak error layar hitam)
+    const cekElemen = document.getElementById('filter-uang-lokasi');
+    if (!cekElemen) return; 
+
+    // Jalankan fungsi load
+    if (typeof window.loadVenueOptions === 'function') window.loadVenueOptions();
+    if (typeof window.renderFinanceData === 'function') window.renderFinanceData();
 }
 
-// 3. ISI DROPDOWN (Manual dari Array di atas)
-window.loadVenueOptions = function() {
+// 3. ISI DROPDOWN (OTOMATIS DARI DATABASE & BERSIH)
+window.loadVenueOptions = async function() {
     const locSelect = document.getElementById('filter-uang-lokasi'); 
     if(!locSelect) return;
 
-    // Reset Dropdown
+    // Bersihkan dulu isinya
     locSelect.innerHTML = `<option value="all">Semua Lokasi</option>`;
-
-    // Masukkan nama-nama venue dari daftar manual
-    window.daftarVenueValid.forEach(venueName => {
-        const option = document.createElement("option");
-        option.value = venueName; 
-        option.text = venueName;
-        locSelect.appendChild(option);
-    });
     
-    // Kita ubah teks "Stadion Bayuangga Zone" jadi "Stadion Pusat" biar enak dilihat (Opsional)
-    // Cari opsinya dan ubah text-nya
-    for (let i = 0; i < locSelect.options.length; i++) {
-        if (locSelect.options[i].value === "Stadion Bayuangga Zone") {
-            locSelect.options[i].text = "Stadion Pusat";
-        }
-    }
+    try {
+        // Ambil data langsung dari Database Venue
+        const q = query(collection(db, "venues"), orderBy("order", "asc"));
+        const snapshot = await getDocs(q);
+        
+        let seenNames = new Set(); // Filter Anti-Dobel
 
-    console.log("✅ Dropdown Terisi Lengkap (Mode Manual).");
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const cleanName = (d.name || "").trim();
+
+            // Masukkan ke dropdown HANYA JIKA belum ada
+            if (cleanName && !seenNames.has(cleanName)) {
+                const option = document.createElement("option");
+                option.value = cleanName;
+                option.text = cleanName; 
+                locSelect.appendChild(option);
+                
+                seenNames.add(cleanName); // Tandai sudah masuk
+            }
+        });
+        console.log("✅ Dropdown Keuangan Siap (Database Mode)");
+    } catch (e) {
+        console.error("Gagal load venue finance:", e);
+    }
 }
 
 // 4. TARIK DATA & FILTER
@@ -2482,33 +2487,42 @@ window.switchLiveTab = function(tabId, btn) {
     if(tabId === 'panel-live') populateLiveVenueOptions();
 }
 
-// B. FUNGSI ISI DROPDOWN VENUE (FIX: ANTI DUPLIKAT)
+// --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: ANTI DUPLIKAT) ---
 window.populateLiveVenueOptions = async function() {
     const select = document.getElementById('live-target-venue');
     if(!select) return;
 
-    // Kosongkan dulu isinya
+    // 1. Kosongkan dropdown & Log
     select.innerHTML = '<option value="">-- Pilih Venue --</option>';
+    console.log("🔄 Memuat Venue (Anti-Duplikat)...");
 
     try {
+        // 2. Ambil data
         const q = query(collection(db, "venues"), orderBy("order", "asc"));
         const snapshot = await getDocs(q);
 
-        // Filter nama yang sama
+        // 3. Siapkan Filter (Set)
         let seenNames = new Set();
 
         snapshot.forEach(doc => {
             const d = doc.data();
-            const cleanName = d.name.trim();
+            // Bersihkan nama (hapus spasi kiri kanan & ubah ke huruf kecil untuk pengecekan)
+            const cleanName = (d.name || "").trim();
+            const checkName = cleanName.toLowerCase();
 
-            // Cek apakah nama sudah pernah muncul?
-            if (!seenNames.has(cleanName)) {
+            // 4. Cek apakah nama ini sudah pernah dimasukkan?
+            if (!seenNames.has(checkName)) {
+                // Jika belum, masukkan ke dropdown
                 select.innerHTML += `<option value="${doc.id}">${cleanName}</option>`;
-                seenNames.add(cleanName); // Tandai nama ini sudah ada
+                // Catat nama ini sudah ada
+                seenNames.add(checkName);
             }
         });
+        console.log("✅ Venue berhasil dimuat: " + seenNames.size);
+
     } catch (e) {
         console.error("Gagal load venue:", e);
+        alert("Gagal memuat data venue: " + e.message);
     }
 }
 
