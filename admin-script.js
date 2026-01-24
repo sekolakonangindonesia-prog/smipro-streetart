@@ -1598,9 +1598,70 @@ window.renderFinanceData = function() {
     });
 }
 
-/* =========================================
-   C. GENERATE PDF (VERSI AMAN - SUBTITLES & TOTAL)
-   ========================================= */
+
+// --- FUNGSI GENERATE PDF KEUANGAN (SAWERAN) ---
+window.generateSawerPDF = function() {
+    // 1. Cek Library & Data
+    if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
+    
+    // Ambil data dari variabel global yang disiapkan di renderFinanceData
+    const data = window.laporanSiapCetak || [];
+    const info = window.infoLaporan || { lokasi: 'Semua', periode: 'Semua' };
+
+    if (data.length === 0) { alert("Data kosong! Tidak ada yang bisa dicetak."); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // 2. HEADER
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.text("LAPORAN KEUANGAN SAWERAN (LIVE)", 105, 20, null, null, "center");
+    
+    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    doc.text(`Lokasi: ${info.lokasi} | Periode: ${info.periode}`, 105, 27, null, null, "center");
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 32, null, null, "center");
+
+    // 3. SUSUN DATA TABEL
+    let tableBody = [];
+    let grandTotal = 0;
+
+    data.forEach(d => {
+        // Format Waktu
+        let waktu = d.dateObj.toLocaleDateString() + ' ' + d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+        
+        tableBody.push([
+            waktu,
+            d.song,
+            d.performer,
+            d.loc,
+            `Rp ${d.amount.toLocaleString('id-ID')}`
+        ]);
+        grandTotal += d.amount;
+    });
+
+    // Baris Total
+    tableBody.push([
+        { content: "TOTAL PENDAPATAN", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 255, 0] } }
+    ]);
+
+    // 4. BUAT TABEL
+    doc.autoTable({
+        startY: 40,
+        head: [['Waktu', 'Judul Lagu', 'Artis/Performer', 'Lokasi', 'Nominal']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
+        styles: { fontSize: 9, cellPadding: 3 }
+    });
+
+    // 5. DOWNLOAD
+    doc.save(`Laporan_Saweran_${new Date().getTime()}.pdf`);
+}
+
+
+
+
 // --- FUNGSI GENERATE PDF RAPORT (FIX LOGO) ---
 window.generateStudentPDF = async function(studentData, averageScore) {
     if (typeof jspdf === 'undefined') { alert("Library PDF belum dipasang!"); return; }
