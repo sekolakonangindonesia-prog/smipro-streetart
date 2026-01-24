@@ -4,48 +4,66 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* =========================================
-   0. LOGIKA NAVIGASI (SIDEBAR & TABS)
+   0. LOGIKA NAVIGASI (SIDEBAR & TABS) - VERSI FIX
    ========================================= */
 
 window.showView = function(viewId, btn) {
+    // 1. Sembunyikan semua view
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
+    
+    // 2. Tampilkan view target (Cek dulu ada gak elemennya)
     const target = document.getElementById('view-' + viewId);
-    if(target) target.classList.remove('hidden');
-    else console.error("View tidak ditemukan: " + viewId);
-    
-    // Auto Load Data Khusus
-    if(viewId === 'dashboard') loadDashboardOverview();       
-    if(viewId === 'students') loadStudentData();    
-    if(viewId === 'performer') loadPerformerData();
-    if(viewId === 'mentor') loadMentorData();      
-    if(viewId === 'venue') loadVenueManagement();
-    
-    if(viewId === 'mitra') { 
-        loadMitraData(); 
-        populateVenueFilters(); 
+    if(target) {
+        target.classList.remove('hidden');
+    } else {
+        console.error("View tidak ditemukan: view-" + viewId);
+        return; // Stop jika view error
     }
     
-    if(viewId === 'cms') { 
-    loadArtistDropdowns(); 
-    loadMainVenueDropdown(); // <--- Tambahkan ini
-    }
-    
-    if(viewId === 'cafe') { 
-        loadCafeData();
-        const tabBtn = document.querySelector('.sub-tab-btn');
-        if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
-    }
-     if(viewId === 'live') {
-        populateLiveVenueOptions();
-       
-        switchLiveTab('panel-live', null);
-    }
-    
-    if(viewId === 'finance') { 
-        window.initFinanceSystem();       
-        listenCommandCenter(); 
+    // 3. Eksekusi Script Khusus per Halaman (Pakai Try-Catch biar gak macet)
+    try {
+        if(viewId === 'dashboard') loadDashboardOverview();   
+        if(viewId === 'students') loadStudentData();    
+        if(viewId === 'performer') loadPerformerData();
+        if(viewId === 'mentor') loadMentorData();      
+        if(viewId === 'venue') loadVenueManagement();
+        
+        if(viewId === 'mitra') { 
+            loadMitraData(); 
+            populateVenueFilters(); 
+        }
+        
+        if(viewId === 'cms') { 
+            loadArtistDropdowns(); 
+            if(typeof loadMainVenueDropdown === 'function') loadMainVenueDropdown(); 
+        }
+        
+        if(viewId === 'cafe') { 
+            loadCafeData();
+            const tabBtn = document.querySelector('.sub-tab-btn');
+            if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
+        }
+        
+        if(viewId === 'live') {
+            populateLiveVenueOptions(); // Ini nanti kita perbaiki di bawah
+            if(typeof switchLiveTab === 'function') switchLiveTab('panel-live', null);
+        }
+        
+        // --- PERBAIKAN KEUANGAN ---
+        if(viewId === 'finance') { 
+            if(typeof window.initFinanceSystem === 'function') {
+                window.initFinanceSystem();       
+                listenCommandCenter(); 
+            } else {
+                console.warn("Fungsi Keuangan belum siap, coba refresh.");
+            }
+        }
+
+    } catch (e) {
+        console.error("Error saat pindah tab:", e);
     }
 
+    // 4. Update Tombol Menu Aktif
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     if(btn) btn.classList.add('active');
 }
@@ -2464,21 +2482,34 @@ window.switchLiveTab = function(tabId, btn) {
     if(tabId === 'panel-live') populateLiveVenueOptions();
 }
 
-// B. FUNGSI ISI DROPDOWN VENUE (FIX: HAPUS DUPLIKAT)
+// B. FUNGSI ISI DROPDOWN VENUE (FIX: ANTI DUPLIKAT)
 window.populateLiveVenueOptions = async function() {
     const select = document.getElementById('live-target-venue');
     if(!select) return;
 
-    // LANGKAH PENTING: Kosongkan dulu isinya sebelum diisi ulang
+    // Kosongkan dulu isinya
     select.innerHTML = '<option value="">-- Pilih Venue --</option>';
 
-    const q = query(collection(db, "venues"), orderBy("order", "asc"));
-    const snapshot = await getDocs(q);
+    try {
+        const q = query(collection(db, "venues"), orderBy("order", "asc"));
+        const snapshot = await getDocs(q);
 
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        select.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
-    });
+        // Filter nama yang sama
+        let seenNames = new Set();
+
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const cleanName = d.name.trim();
+
+            // Cek apakah nama sudah pernah muncul?
+            if (!seenNames.has(cleanName)) {
+                select.innerHTML += `<option value="${doc.id}">${cleanName}</option>`;
+                seenNames.add(cleanName); // Tandai nama ini sudah ada
+            }
+        });
+    } catch (e) {
+        console.error("Gagal load venue:", e);
+    }
 }
 
 // C. LOGIKA TAMPILAN FORM GALERI
