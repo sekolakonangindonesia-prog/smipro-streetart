@@ -2503,43 +2503,53 @@ window.switchLiveTab = function(tabId, btn) {
     if(tabId === 'panel-live') populateLiveVenueOptions();
 }
 
-// --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: CLEAR DULU BARU ISI) ---
+// --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: RESET TOTAL & ANTI DUPLIKAT) ---
 window.populateLiveVenueOptions = async function() {
     const select = document.getElementById('live-target-venue');
+    
+    // Cek elemen ada atau tidak. Kalau tidak ada, stop (biar gak error).
     if(!select) return;
 
-    // 1. KOSONGKAN TOTAL (Ini Kuncinya agar tidak numpuk)
-    // Kita reset isinya jadi cuma 1 opsi default
+    // 1. LANGKAH KUNCI: Kosongkan dropdown sebersih-bersihnya!
     select.innerHTML = ''; 
+
+    // 2. Buat Opsi Default "Pilih Venue"
     const defaultOpt = document.createElement('option');
     defaultOpt.value = "";
     defaultOpt.text = "-- Pilih Venue --";
     select.appendChild(defaultOpt);
 
-    console.log("🔄 Memuat Venue (Reset & Isi Ulang)...");
+    console.log("🔄 Memuat Dropdown Control Room...");
 
     try {
+        // 3. Ambil Data dari Database
         const q = query(collection(db, "venues"), orderBy("order", "asc"));
         const snapshot = await getDocs(q);
 
+        // 4. Siapkan Saringan (Anti Nama Kembar)
         let seenNames = new Set(); 
 
         snapshot.forEach(doc => {
             const d = doc.data();
-            const cleanName = (d.name || "").trim();
-            const checkName = cleanName.toLowerCase();
+            const cleanName = (d.name || "").trim(); // Hapus spasi aneh
+            const checkName = cleanName.toLowerCase(); // Biar huruf besar/kecil dianggap sama
 
-            // Masukkan jika belum ada (Anti Duplikat Nama)
+            // 5. Cek Saringan: Kalau nama ini BELUM ada, baru dimasukkan
             if (cleanName && !seenNames.has(checkName)) {
+                
+                // Buat elemen option baru
                 const opt = document.createElement('option');
                 opt.value = doc.id;
                 opt.text = cleanName;
+                
+                // Masukkan ke dropdown
                 select.appendChild(opt);
                 
+                // Catat nama ini sudah masuk
                 seenNames.add(checkName);
             }
         });
-        console.log("✅ Venue Dimuat: " + seenNames.size);
+        console.log("✅ Dropdown Beres. Total Venue: " + seenNames.size);
 
     } catch (e) {
         console.error("Gagal load venue:", e);
