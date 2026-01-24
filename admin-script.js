@@ -1370,6 +1370,7 @@ window.deleteReq = async function(id) {
     }
 }
 
+
 /* =========================================
    B. STATISTIK & LAPORAN (VERSI FIX FINAL - MANUAL & LENGKAP)
    ========================================= */
@@ -2441,6 +2442,247 @@ window.generateCafePDF = async function() {
         document.body.style.cursor = 'default';
     }
 }
+
+/* =================================================================
+   9. MODUL CONTROL ROOM & GALERI (VERSI FINAL: SUPPORT MP3 & AUTO-SAVE)
+   ================================================================= */
+
+let currentAudioCoverBase64 = null;
+
+// A. FUNGSI PINDAH TAB
+window.switchLiveTab = function(tabId, btn) {
+    document.querySelectorAll('.live-content').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById(tabId);
+    if(target) target.classList.remove('hidden');
+    
+    if(btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    }
+    if(btn) btn.classList.add('active');
+
+    if(tabId === 'panel-galeri') loadGalleryVideos();
+    if(tabId === 'panel-live') populateLiveVenueOptions();
+}
+
+// B. LOGIKA TAMPILAN FORM (VIDEO vs AUDIO)
+window.toggleGalleryInput = function() {
+    const type = document.getElementById('gallery-type').value;
+    if(type === 'video') {
+        document.getElementById('form-gallery-video').style.display = 'block';
+        document.getElementById('form-gallery-audio').style.display = 'none';
+    } else {
+        document.getElementById('form-gallery-video').style.display = 'none';
+        document.getElementById('form-gallery-audio').style.display = 'block';
+    }
+}
+
+// C. PREVIEW COVER ALBUM (MP3)
+window.previewAudioCover = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentAudioCoverBase64 = e.target.result;
+            document.getElementById('audio-cover-preview').src = currentAudioCoverBase64;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// D. SIMPAN GALERI (BISA VIDEO / AUDIO)
+window.saveGalleryItem = async function() {
+    const type = document.getElementById('gallery-type').value;
+    const title = document.getElementById('gallery-title').value;
+    const category = document.getElementById('gallery-category').value;
+    const desc = document.getElementById('gallery-desc').value;
+
+    if(!title) return alert("Judul wajib diisi!");
+
+    let payload = {
+        title: title,
+        category: category,
+        desc: desc,
+        mediaType: type, // 'video' atau 'audio'
+        timestamp: new Date()
+    };
+
+    if (type === 'video') {
+        // --- LOGIKA VIDEO ---
+        const link = document.getElementById('vid-link').value;
+        const creator = document.getElementById('vid-creator').value;
+        if(!link) return alert("Link YouTube wajib diisi!");
+
+        // Ekstrak ID YouTube
+        let videoId = "";
+        if (link.includes("v=")) videoId = link.split("v=")[1].split("&")[0];
+        else if (link.includes("youtu.be/")) videoId = link.split("youtu.be/")[1];
+        else if (link.includes("embed/")) videoId = link.split("embed/")[1];
+        
+        let thumb = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "https://via.placeholder.com/300";
+
+        payload.link = link;
+        payload.youtubeId = videoId;
+        payload.thumb = thumb;
+        payload.host = creator || "Admin"; // Creator video
+
+    } else {
+        // --- LOGIKA AUDIO (MP3) ---
+        const link = document.getElementById('audio-link').value;
+        const artist = document.getElementById('audio-artist').value;
+        
+        if(!link) return alert("Link File MP3 wajib diisi!");
+        
+        // Gunakan Cover Upload atau Default
+        payload.link = link; // Link Google Drive / MP3
+        payload.thumb = currentAudioCoverBase64 || "https://via.placeholder.com/150?text=Music";
+        payload.host = artist || "Unknown Artist"; // Penyanyi
+    }
+
+    try {
+        // Simpan ke koleksi 'podcasts' (Penyimpanan Galeri Utama)
+        await addDoc(collection(db, "podcasts"), payload);
+        alert(`Berhasil! ${type === 'video' ? 'Video' : 'Musik'} tersimpan di Galeri.`);
+        
+        // Reset Form
+        document.getElementById('gallery-title').value = '';
+        document.getElementById('vid-link').value = '';
+        document.getElementById('audio-link').value = '';
+        document.getElementById('gallery-desc').value = '';
+        currentAudioCoverBase64 = null;
+        document.getElementById('audio-cover-preview').src = "https://via.placeholder.com/100?text=Cover";
+        
+        loadGalleryVideos(); 
+
+    } catch(e) {
+        alert("Gagal simpan: " + e.message);
+    }
+}
+
+// E. LOAD LIST GALERI (Update Tampilan Tabel)
+window.loadGalleryVideos = function() {
+    const tbody = document.getElementById('gallery-list-body');
+    if(!tbody) return;
+
+    const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" align="center">Galeri kosong.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            
+            // Ikon Tipe
+            let typeIcon = d.mediaType === 'audio' ? '<i class="fa-solid fa-music" style="color:#1DB954;"></i> MP3' : '<i class="fa-brands fa-youtube" style="color:red;"></i> Video';
+            
+            tbody.innerHTML += `
+            <tr>
+                <td><img src="${d.thumb}" style="width:60px; height:60px; object-fit:cover; border-radius:5px; border:1px solid #333;"></td>
+                <td>
+                    <b>${d.title}</b><br>
+                    <small style="color:#aaa;">${d.host}</small>
+                </td>
+                <td>
+                    <div style="font-size:0.8rem; margin-bottom:5px;">${typeIcon}</div>
+                    <span class="badge" style="background:#333; border:1px solid #555;">${d.category || '-'}</span>
+                </td>
+                <td>
+                    <button class="btn-action btn-delete" onclick="deleteGalleryVideo('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+    });
+}
+
+window.deleteGalleryVideo = async function(id) {
+    if(confirm("Hapus item ini dari galeri?")) await deleteDoc(doc(db, "podcasts", id));
+}
+
+// F. LIVE CONTROL (VENUE) + AUTO SAVE KE GALERI
+window.populateLiveVenueOptions = async function() {
+    const select = document.getElementById('live-target-venue');
+    if(!select) return;
+    select.innerHTML = '<option value="">-- Pilih Venue --</option>';
+    const q = query(collection(db, "venues"), orderBy("order", "asc"));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+        select.innerHTML += `<option value="${doc.id}">${doc.data().name}</option>`;
+    });
+}
+
+window.checkExistingLiveLink = async function() {
+    const venueId = document.getElementById('live-target-venue').value;
+    const inputLink = document.getElementById('main-live-link');
+    const iframe = document.getElementById('admin-monitor-frame');
+    const placeholder = document.getElementById('admin-monitor-placeholder');
+
+    if(!venueId) {
+        iframe.style.display = 'none'; placeholder.style.display = 'block'; inputLink.value = ''; return;
+    }
+    const docSnap = await getDoc(doc(db, "venues", venueId));
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        if(data.liveLink) {
+            inputLink.value = data.liveLink;
+            if(data.youtubeId) {
+                iframe.src = `https://www.youtube.com/embed/${data.youtubeId}?autoplay=0`;
+                iframe.style.display = 'block'; placeholder.style.display = 'none';
+            }
+        } else {
+            inputLink.value = ''; iframe.style.display = 'none'; placeholder.style.display = 'block';
+        }
+    }
+}
+
+window.updateLiveLink = async function() {
+    const venueId = document.getElementById('live-target-venue').value;
+    const fullLink = document.getElementById('main-live-link').value;
+    const venueSelect = document.getElementById('live-target-venue');
+    const venueName = venueSelect.options[venueSelect.selectedIndex].text;
+    
+    if(!venueId) return alert("Pilih Venue dulu!");
+    if(!fullLink) return alert("Link YouTube tidak boleh kosong!");
+
+    let videoId = "";
+    if (fullLink.includes("youtu.be/")) videoId = fullLink.split("youtu.be/")[1].split("?")[0];
+    else if (fullLink.includes("v=")) videoId = fullLink.split("v=")[1].split("&")[0];
+    else if (fullLink.includes("embed/")) videoId = fullLink.split("embed/")[1].split("?")[0];
+
+    if(!videoId) return alert("Link YouTube tidak valid!");
+
+    try {
+        // 1. UPDATE VENUE (TAYANGKAN LIVE)
+        await updateDoc(doc(db, "venues", venueId), {
+            liveLink: fullLink,
+            youtubeId: videoId,
+            isLiveNow: true 
+        });
+        
+        // 2. AUTO-SAVE KE GALERI (SUPAYA TERSIMPAN)
+        // Kita simpan sebagai tipe 'video' di kategori 'Live Perform'
+        const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        await addDoc(collection(db, "podcasts"), {
+            title: `Live Replay: ${venueName}`,
+            host: venueName,
+            link: fullLink,
+            youtubeId: videoId,
+            thumb: thumb,
+            category: "Live Perform",
+            mediaType: "video",
+            desc: `Rekaman tayangan live dari ${venueName}.`,
+            timestamp: new Date()
+        });
+        
+        alert(`✅ SUKSES!\n1. Tayangan Live di ${venueName} dimulai.\n2. Video otomatis disimpan ke Galeri.`);
+        checkExistingLiveLink();
+        
+    } catch(e) {
+        alert("Gagal update: " + e.message);
+    }
+}
+
 
 /* =========================================
    11. EKSEKUSI (PENUTUP FILE YANG BENAR)
