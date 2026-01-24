@@ -14,8 +14,7 @@ window.showView = function(viewId, btn) {
     else console.error("View tidak ditemukan: " + viewId);
     
     // Auto Load Data Khusus
-    if(viewId === 'dashboard') loadDashboardOverview();   
-    if(viewId === 'cms') loadArtistDropdowns(); 
+    if(viewId === 'dashboard') loadDashboardOverview();       
     if(viewId === 'students') loadStudentData();    
     if(viewId === 'performer') loadPerformerData();
     if(viewId === 'mentor') loadMentorData();      
@@ -25,6 +24,12 @@ window.showView = function(viewId, btn) {
         loadMitraData(); 
         populateVenueFilters(); 
     }
+    
+    if(viewId === 'cms') { 
+    loadArtistDropdowns(); 
+    loadMainVenueDropdown(); // <--- Tambahkan ini
+    }
+    
     if(viewId === 'cafe') { 
         loadCafeData();
         const tabBtn = document.querySelector('.sub-tab-btn');
@@ -997,6 +1002,31 @@ window.saveSchedule = async function() {
             type: "main", displayDate, date: realDate, location, performers
         });
         alert("Jadwal Utama Dipublish!");
+    }
+}
+
+// --- FUNGSI BARU: LOAD DROPDOWN LOKASI UTAMA (STADION DLL) ---
+async function loadMainVenueDropdown() {
+    // Target ID dropdown di form Jadwal Utama
+    const select = document.getElementById('sched-location');
+    if(!select) return; 
+
+    // Reset isi dropdown
+    select.innerHTML = '<option value="">-- Pilih Lokasi Utama --</option>';
+
+    // Ambil data dari koleksi 'venues' (bukan venues_partner)
+    // Diurutkan berdasarkan abjad nama
+    try {
+        const q = query(collection(db, "venues"), orderBy("name", "asc"));
+        const snap = await getDocs(q);
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            // Masukkan nama venue ke dalam opsi
+            select.innerHTML += `<option value="${data.name}">${data.name}</option>`;
+        });
+    } catch (error) {
+        console.error("Gagal memuat data venues:", error);
     }
 }
 
