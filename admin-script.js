@@ -2444,7 +2444,7 @@ window.generateCafePDF = async function() {
 }
 
 /* =================================================================
-   9. MODUL CONTROL ROOM & GALERI (VERSI FINAL: SUPPORT MP3 & AUTO-SAVE)
+   9. MODUL CONTROL ROOM & GALERI (FIX: NO DOUBLE VENUE & ADD EDIT)
    ================================================================= */
 
 let currentAudioCoverBase64 = null;
@@ -2464,7 +2464,24 @@ window.switchLiveTab = function(tabId, btn) {
     if(tabId === 'panel-live') populateLiveVenueOptions();
 }
 
-// B. LOGIKA TAMPILAN FORM (VIDEO vs AUDIO)
+// B. FUNGSI ISI DROPDOWN VENUE (FIX: HAPUS DUPLIKAT)
+window.populateLiveVenueOptions = async function() {
+    const select = document.getElementById('live-target-venue');
+    if(!select) return;
+
+    // LANGKAH PENTING: Kosongkan dulu isinya sebelum diisi ulang
+    select.innerHTML = '<option value="">-- Pilih Venue --</option>';
+
+    const q = query(collection(db, "venues"), orderBy("order", "asc"));
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(doc => {
+        const d = doc.data();
+        select.innerHTML += `<option value="${doc.id}">${d.name}</option>`;
+    });
+}
+
+// C. LOGIKA TAMPILAN FORM GALERI
 window.toggleGalleryInput = function() {
     const type = document.getElementById('gallery-type').value;
     if(type === 'video') {
@@ -2476,7 +2493,6 @@ window.toggleGalleryInput = function() {
     }
 }
 
-// C. PREVIEW COVER ALBUM (MP3)
 window.previewAudioCover = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -2488,8 +2504,9 @@ window.previewAudioCover = function(input) {
     }
 }
 
-// D. SIMPAN GALERI (BISA VIDEO / AUDIO)
+// D. SIMPAN / UPDATE GALERI
 window.saveGalleryItem = async function() {
+    const id = document.getElementById('gallery-edit-id').value; // Cek ada ID atau tidak
     const type = document.getElementById('gallery-type').value;
     const title = document.getElementById('gallery-title').value;
     const category = document.getElementById('gallery-category').value;
@@ -2501,17 +2518,15 @@ window.saveGalleryItem = async function() {
         title: title,
         category: category,
         desc: desc,
-        mediaType: type, // 'video' atau 'audio'
-        timestamp: new Date()
+        mediaType: type,
+        timestamp: new Date() // Update waktu
     };
 
     if (type === 'video') {
-        // --- LOGIKA VIDEO ---
         const link = document.getElementById('vid-link').value;
         const creator = document.getElementById('vid-creator').value;
         if(!link) return alert("Link YouTube wajib diisi!");
 
-        // Ekstrak ID YouTube
         let videoId = "";
         if (link.includes("v=")) videoId = link.split("v=")[1].split("&")[0];
         else if (link.includes("youtu.be/")) videoId = link.split("youtu.be/")[1];
@@ -2522,34 +2537,37 @@ window.saveGalleryItem = async function() {
         payload.link = link;
         payload.youtubeId = videoId;
         payload.thumb = thumb;
-        payload.host = creator || "Admin"; // Creator video
+        payload.host = creator || "Admin"; 
 
     } else {
-        // --- LOGIKA AUDIO (MP3) ---
         const link = document.getElementById('audio-link').value;
         const artist = document.getElementById('audio-artist').value;
-        
         if(!link) return alert("Link File MP3 wajib diisi!");
         
-        // Gunakan Cover Upload atau Default
-        payload.link = link; // Link Google Drive / MP3
-        payload.thumb = currentAudioCoverBase64 || "https://via.placeholder.com/150?text=Music";
-        payload.host = artist || "Unknown Artist"; // Penyanyi
+        payload.link = link;
+        // Hanya update cover jika ada upload baru, kalau tidak pakai yg lama/default
+        if(currentAudioCoverBase64) {
+            payload.thumb = currentAudioCoverBase64;
+        } else if (!id) {
+            payload.thumb = "https://via.placeholder.com/150?text=Music"; // Default hanya saat create
+        }
+        payload.host = artist || "Unknown Artist"; 
     }
 
     try {
-        // Simpan ke koleksi 'podcasts' (Penyimpanan Galeri Utama)
-        await addDoc(collection(db, "podcasts"), payload);
-        alert(`Berhasil! ${type === 'video' ? 'Video' : 'Musik'} tersimpan di Galeri.`);
-        
-        // Reset Form
-        document.getElementById('gallery-title').value = '';
-        document.getElementById('vid-link').value = '';
-        document.getElementById('audio-link').value = '';
-        document.getElementById('gallery-desc').value = '';
-        currentAudioCoverBase64 = null;
-        document.getElementById('audio-cover-preview').src = "https://via.placeholder.com/100?text=Cover";
-        
+        if(id) {
+            // MODE UPDATE
+            if(confirm("Simpan perubahan data galeri?")) {
+                await updateDoc(doc(db, "podcasts", id), payload);
+                alert("Data berhasil diperbarui!");
+                cancelGalleryEdit(); // Reset form
+            }
+        } else {
+            // MODE CREATE
+            await addDoc(collection(db, "podcasts"), payload);
+            alert(`Berhasil! ${type === 'video' ? 'Video' : 'Musik'} tersimpan di Galeri.`);
+            cancelGalleryEdit(); // Reset form
+        }
         loadGalleryVideos(); 
 
     } catch(e) {
@@ -2557,7 +2575,60 @@ window.saveGalleryItem = async function() {
     }
 }
 
-// E. LOAD LIST GALERI (Update Tampilan Tabel)
+// E. FUNGSI EDIT & BATAL
+window.editGalleryItem = function(id, type, title, link, host, category, desc, thumb) {
+    // 1. Isi Form
+    document.getElementById('gallery-edit-id').value = id;
+    document.getElementById('gallery-type').value = type;
+    toggleGalleryInput(); // Sesuaikan tampilan form video/audio
+
+    document.getElementById('gallery-title').value = title;
+    document.getElementById('gallery-category').value = category;
+    document.getElementById('gallery-desc').value = desc;
+
+    if(type === 'video') {
+        document.getElementById('vid-link').value = link;
+        document.getElementById('vid-creator').value = host;
+    } else {
+        document.getElementById('audio-link').value = link;
+        document.getElementById('audio-artist').value = host;
+        document.getElementById('audio-cover-preview').src = thumb || "https://via.placeholder.com/100";
+        currentAudioCoverBase64 = null; // Reset buffer, biar kalau ga ganti gambar, pake yg lama
+    }
+
+    // 2. Ubah Tombol
+    const btn = document.getElementById('btn-save-gallery');
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> SIMPAN PERUBAHAN';
+    btn.style.background = "#FFD700";
+    btn.style.color = "black";
+    
+    document.getElementById('btn-cancel-gallery').style.display = "block";
+    window.scrollTo(0,0); // Scroll ke atas biar kelihatan
+}
+
+window.cancelGalleryEdit = function() {
+    // Reset Form Total
+    document.getElementById('gallery-edit-id').value = '';
+    document.getElementById('gallery-title').value = '';
+    document.getElementById('gallery-desc').value = '';
+    document.getElementById('vid-link').value = '';
+    document.getElementById('vid-creator').value = '';
+    document.getElementById('audio-link').value = '';
+    document.getElementById('audio-artist').value = '';
+    
+    document.getElementById('audio-cover-preview').src = "https://via.placeholder.com/100?text=Cover";
+    currentAudioCoverBase64 = null;
+
+    // Balikkan Tombol
+    const btn = document.getElementById('btn-save-gallery');
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN KE GALERI';
+    btn.style.background = "";
+    btn.style.color = "";
+    
+    document.getElementById('btn-cancel-gallery').style.display = "none";
+}
+
+// F. LOAD LIST GALERI (UPDATE: ADA TOMBOL EDIT)
 window.loadGalleryVideos = function() {
     const tbody = document.getElementById('gallery-list-body');
     if(!tbody) return;
@@ -2574,9 +2645,13 @@ window.loadGalleryVideos = function() {
         snapshot.forEach(docSnap => {
             const d = docSnap.data();
             
-            // Ikon Tipe
             let typeIcon = d.mediaType === 'audio' ? '<i class="fa-solid fa-music" style="color:#1DB954;"></i> MP3' : '<i class="fa-brands fa-youtube" style="color:red;"></i> Video';
             
+            // Siapkan Data untuk tombol edit (handle petik satu/dua biar gak error)
+            const safeTitle = (d.title || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const safeDesc = (d.desc || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const safeHost = (d.host || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
             tbody.innerHTML += `
             <tr>
                 <td><img src="${d.thumb}" style="width:60px; height:60px; object-fit:cover; border-radius:5px; border:1px solid #333;"></td>
@@ -2589,7 +2664,12 @@ window.loadGalleryVideos = function() {
                     <span class="badge" style="background:#333; border:1px solid #555;">${d.category || '-'}</span>
                 </td>
                 <td>
-                    <button class="btn-action btn-delete" onclick="deleteGalleryVideo('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-action btn-edit" onclick="editGalleryItem('${docSnap.id}', '${d.mediaType||'video'}', '${safeTitle}', '${d.link}', '${safeHost}', '${d.category}', '${safeDesc}', '${d.thumb}')">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="btn-action btn-delete" onclick="deleteGalleryVideo('${docSnap.id}')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </td>
             </tr>`;
         });
@@ -2600,18 +2680,7 @@ window.deleteGalleryVideo = async function(id) {
     if(confirm("Hapus item ini dari galeri?")) await deleteDoc(doc(db, "podcasts", id));
 }
 
-// F. LIVE CONTROL (VENUE) + AUTO SAVE KE GALERI
-window.populateLiveVenueOptions = async function() {
-    const select = document.getElementById('live-target-venue');
-    if(!select) return;
-    select.innerHTML = '<option value="">-- Pilih Venue --</option>';
-    const q = query(collection(db, "venues"), orderBy("order", "asc"));
-    const snapshot = await getDocs(q);
-    snapshot.forEach(doc => {
-        select.innerHTML += `<option value="${doc.id}">${doc.data().name}</option>`;
-    });
-}
-
+// G. LIVE CONTROL (VENUE)
 window.checkExistingLiveLink = async function() {
     const venueId = document.getElementById('live-target-venue').value;
     const inputLink = document.getElementById('main-live-link');
@@ -2660,8 +2729,7 @@ window.updateLiveLink = async function() {
             isLiveNow: true 
         });
         
-        // 2. AUTO-SAVE KE GALERI (SUPAYA TERSIMPAN)
-        // Kita simpan sebagai tipe 'video' di kategori 'Live Perform'
+        // 2. AUTO-SAVE KE GALERI
         const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         await addDoc(collection(db, "podcasts"), {
             title: `Live Replay: ${venueName}`,
@@ -2677,6 +2745,7 @@ window.updateLiveLink = async function() {
         
         alert(`✅ SUKSES!\n1. Tayangan Live di ${venueName} dimulai.\n2. Video otomatis disimpan ke Galeri.`);
         checkExistingLiveLink();
+        loadGalleryVideos(); 
         
     } catch(e) {
         alert("Gagal update: " + e.message);
