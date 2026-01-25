@@ -3,108 +3,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podcast SMIPRO</title>
+    <title>SMIPRO Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* === BASE STYLE (DARK THEME) === */
+        body { margin: 0; padding: 0; background: #121212; color: white; font-family: 'Segoe UI', sans-serif; padding-bottom: 80px; }
+        
+        /* NAVBAR */
+        .top-nav { padding: 15px; display: flex; align-items: center; gap: 15px; background: #000; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
+        .btn-back { background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        
+        /* === AREA PLAYER (STAGE) === */
+        #player-stage {
+            background: #000;
+            padding: 0;
+            border-bottom: 1px solid #333;
+            min-height: 250px; /* Tinggi minimal */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* 1. TAMPILAN VIDEO PLAYER */
+        .video-wrapper { width: 100%; max-width: 800px; aspect-ratio: 16/9; display: none; margin: 0 auto; }
+        .video-wrapper.active { display: block; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* 2. TAMPILAN MUSIC PLAYER (SPOTIFY STYLE) */
+        .audio-wrapper { 
+            width: 100%; max-width: 600px; padding: 20px; 
+            display: none; flex-direction: row; gap: 20px; align-items: center; 
+        }
+        .audio-wrapper.active { display: flex; }
+        
+        .audio-cover { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,255,0,0.3); }
+        .audio-info { flex: 1; }
+        .audio-title { font-size: 1.2rem; font-weight: bold; margin: 0 0 5px 0; color: white; }
+        .audio-artist { font-size: 0.9rem; color: #b3b3b3; margin: 0 0 15px 0; }
+        
+        /* Custom Audio Control */
+        .custom-audio-ctrl { display: flex; align-items: center; gap: 15px; }
+        .btn-play-audio { 
+            width: 50px; height: 50px; border-radius: 50%; background: #1DB954; color: black; 
+            border: none; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* === FILTER TAB === */
+        .filter-bar { padding: 20px; display: flex; gap: 10px; justify-content: center; position: sticky; top: 60px; background: #121212; z-index: 90; }
+        .filter-btn {
+            background: #333; color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: 0.3s;
+        }
+        .filter-btn.active { background: white; color: black; font-weight: bold; }
+        .filter-btn.video-mode.active { background: #ff0000; color: white; }
+        .filter-btn.audio-mode.active { background: #1DB954; color: white; }
+
+        /* === LIST CONTAINER === */
+        #content-list { padding: 0 20px; max-width: 1000px; margin: 0 auto; }
+
+        /* GAYA 1: YOUTUBE GRID (VIDEO) */
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card-video { background: #181818; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.2s; }
+        .card-video:hover { transform: scale(1.02); }
+        .cv-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .cv-info { padding: 12px; }
+        .cv-title { margin: 0 0 5px 0; font-size: 0.95rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .cv-sub { color: #aaa; font-size: 0.8rem; }
+
+        /* GAYA 2: SPOTIFY LIST (AUDIO) */
+        .list-layout { display: flex; flex-direction: column; gap: 10px; }
+        .row-audio { 
+            display: flex; align-items: center; gap: 15px; padding: 10px; 
+            border-radius: 5px; cursor: pointer; transition: 0.2s; 
+        }
+        .row-audio:hover { background: #2a2a2a; }
+        .ra-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .ra-info { flex: 1; }
+        .ra-title { font-size: 1rem; color: white; margin: 0; }
+        .ra-artist { font-size: 0.85rem; color: #b3b3b3; }
+        .ra-play-icon { color: #1DB954; opacity: 0; transition: 0.2s; }
+        .row-audio:hover .ra-play-icon { opacity: 1; }
+
+        /* Responsive Mobile */
+        @media (max-width: 600px) {
+            .audio-wrapper { flex-direction: column; text-align: center; }
+            .audio-info { width: 100%; }
+            .custom-audio-ctrl { justify-content: center; }
+            .grid-layout { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
 
+    <!-- NAVBAR -->
     <nav class="top-nav">
         <button onclick="location.href='index.html'" class="btn-back">
             <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
-        <span style="font-weight:bold; color:red;">SMIPRO Podcast</span>
+        <span style="font-weight:bold;">Galeri & Media</span>
     </nav>
 
-    <div class="container">
-        
-        <div class="section-title"><i class="fa-brands fa-youtube" style="color:red;"></i> Episode Terbaru</div>
-
-        <!-- WADAH PODCAST DINAMIS -->
-        <div class="podcast-grid" id="podcast-container">
-            <!-- Loading Indicator -->
-            <p style="text-align:center; color:#666; width:100%; grid-column: 1 / -1;">
-                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat video...
-            </p>
+    <!-- PLAYER STAGE (LAYAR PUTAR) -->
+    <div id="player-stage">
+        <!-- Placeholder (Kalau belum milih) -->
+        <div id="player-placeholder" style="text-align:center; color:#555; padding:40px;">
+            <i class="fa-regular fa-circle-play" style="font-size:3rem; margin-bottom:10px;"></i>
+            <p>Pilih konten di bawah untuk memutar</p>
         </div>
 
+        <!-- 1. VIDEO PLAYER (IFRAME) -->
+        <div id="video-player" class="video-wrapper">
+            <iframe id="yt-frame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+
+        <!-- 2. MUSIC PLAYER (SPOTIFY STYLE) -->
+        <div id="audio-player" class="audio-wrapper">
+            <img id="ap-cover" src="" class="audio-cover">
+            <div class="audio-info">
+                <div id="ap-title" class="audio-title">-</div>
+                <div id="ap-artist" class="audio-artist">-</div>
+                <div class="custom-audio-ctrl">
+                    <button class="btn-play-audio" onclick="toggleAudio()">
+                        <i class="fa-solid fa-play" id="ap-icon"></i>
+                    </button>
+                    <!-- Audio Tag Asli (Hidden) -->
+                    <audio id="real-audio" controls style="width:100%; height:30px; margin-left:10px;"></audio>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- SCRIPT FIREBASE -->
+    <!-- FILTER KATEGORI -->
+    <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterContent('all', this)">Semua</button>
+        <button class="filter-btn video-mode" onclick="filterContent('video', this)">Video</button>
+        <button class="filter-btn audio-mode" onclick="filterContent('audio', this)">Musik</button>
+    </div>
+
+    <!-- CONTENT LIST (HYBRID LAYOUT) -->
+    <div id="content-list">
+        <!-- Isi akan di-inject JS -->
+        <p style="text-align:center; color:#888; margin-top:50px;">Memuat koleksi...</p>
+    </div>
+
+    <!-- SCRIPT UTAMA -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, getDocs, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // FUNGSI LOAD DATA
-        async function loadPodcasts() {
-            const container = document.getElementById('podcast-container');
+        let allData = []; // Simpan data dari database
 
-            // Ambil data dari koleksi 'podcasts', urutkan berdasarkan 'order' (1, 2, 3...)
-            const q = query(collection(db, "podcasts"), orderBy("order", "asc"));
-            const querySnapshot = await getDocs(q);
+        // 1. LOAD DATA DARI FIREBASE
+        async function loadContent() {
+            const listContainer = document.getElementById('content-list');
+            
+            try {
+                const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
 
-            // JIKA KOSONG, ISI DATA DUMMY
-            if (querySnapshot.empty) {
-                await seedPodcastData();
-                return loadPodcasts();
+                allData = [];
+                snapshot.forEach(doc => {
+                    allData.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Render Default (Semua)
+                renderList('all');
+
+            } catch (e) {
+                console.error(e);
+                listContainer.innerHTML = '<p style="text-align:center;">Gagal memuat data.</p>';
             }
+        }
 
+        // 2. RENDER LIST (HYBRID LAYOUT)
+        window.filterContent = function(type, btn) {
+            // Update Tombol Aktif
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            renderList(type);
+        }
+
+        function renderList(filterType) {
+            const container = document.getElementById('content-list');
             container.innerHTML = '';
 
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
+            // Tentukan Layout: Grid (Video) atau List (Audio/All)
+            // Kalau All atau Audio -> List Style (Lebih rapi campuran)
+            // Kalau Video Only -> Grid Style
+            
+            let useGridLayout = (filterType === 'video');
+            
+            // Atur Class Container
+            if (useGridLayout) {
+                container.className = 'grid-layout';
+            } else {
+                container.className = 'list-layout';
+            }
+
+            const filteredData = allData.filter(item => filterType === 'all' || item.mediaType === filterType);
+
+            if (filteredData.length === 0) {
+                container.innerHTML = '<p style="text-align:center; width:100%; padding:20px;">Belum ada konten kategori ini.</p>';
+                return;
+            }
+
+            filteredData.forEach(d => {
+                // Siapkan variabel tampilan
+                const isVideo = d.mediaType === 'video';
+                const thumb = d.thumb || "https://via.placeholder.com/300";
+                const title = d.title;
+                const host = d.host || "Admin";
                 
-                // HTML KARTU (SAMA PERSIS DENGAN DESAIN ASLI)
-                container.innerHTML += `
-                <div class="podcast-card" onclick="window.open('${data.link}', '_blank')">
-                    <div style="position:relative;">
-                        <img src="${data.thumb}" class="podcast-thumb">
-                        <i class="fa-solid fa-circle-play play-btn-center"></i>
-                    </div>
-                    <div class="podcast-info">
-                        <h4>${data.title}</h4>
-                        <span><i class="fa-regular fa-clock"></i> ${data.duration} • Host: ${data.host}</span>
-                    </div>
-                </div>`;
+                // DATA STRING UNTUK FUNCTION CLICK (Escape quote biar ga error)
+                const safeTitle = title.replace(/'/g, "\\'");
+                const safeHost = host.replace(/'/g, "\\'");
+                const safeLink = (d.link || "").replace(/'/g, "\\'");
+                const safeThumb = thumb.replace(/'/g, "\\'");
+                const ytId = d.youtubeId || "";
+
+                if (useGridLayout) {
+                    // TAMPILAN KARTU (YOUTUBE STYLE)
+                    container.innerHTML += `
+                    <div class="card-video" onclick="playMedia('${d.mediaType}', '${safeLink}', '${ytId}', '${safeTitle}', '${safeHost}', '${safeThumb}')">
+                        <img src="${thumb}" class="cv-thumb">
+                        <div class="cv-info">
+                            <h4 class="cv-title">${title}</h4>
+                            <div class="cv-sub">${host} • Video</div>
+                        </div>
+                    </div>`;
+                } else {
+                    // TAMPILAN BARIS (SPOTIFY STYLE)
+                    const iconType = isVideo ? '<i class="fa-brands fa-youtube" style="color:red;"></i>' : '<i class="fa-brands fa-spotify" style="color:#1DB954;"></i>';
+                    
+                    container.innerHTML += `
+                    <div class="row-audio" onclick="playMedia('${d.mediaType}', '${safeLink}', '${ytId}', '${safeTitle}', '${safeHost}', '${safeThumb}')">
+                        <img src="${thumb}" class="ra-img">
+                        <div class="ra-info">
+                            <h4 class="ra-title" style="color:${isVideo ? '#aaa' : 'white'}">${title}</h4>
+                            <div class="ra-artist">${iconType} ${host}</div>
+                        </div>
+                        <i class="fa-solid fa-circle-play ra-play-icon"></i>
+                    </div>`;
+                }
             });
         }
 
-        // FUNGSI DATA DUMMY (SESUAI PODCAST.HTML ASLI)
-        async function seedPodcastData() {
-            const podRef = collection(db, "podcasts");
+        // 3. FUNGSI PLAY MEDIA (HATI JANTUNGNYA)
+        window.playMedia = function(type, link, ytId, title, artist, cover) {
+            // Sembunyikan Placeholder
+            document.getElementById('player-placeholder').style.display = 'none';
+            
+            // Ambil Elemen Player
+            const vidPlayer = document.getElementById('video-player');
+            const audPlayer = document.getElementById('audio-player');
+            const ytFrame = document.getElementById('yt-frame');
+            const realAudio = document.getElementById('real-audio');
 
-            // Video 1
-            await addDoc(podRef, {
-                order: 1,
-                title: 'Eps 1: Susahnya Jadi Pengamen di Era Digital',
-                host: 'Dito',
-                duration: '45 Menit',
-                thumb: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=400',
-                link: 'https://youtube.com'
-            });
+            // Reset Dulu
+            ytFrame.src = "";
+            realAudio.pause();
 
-            // Video 2
-            await addDoc(podRef, {
-                order: 2,
-                title: 'Eps 2: Kisah Sukses Warung Bu Sri',
-                host: 'Yuni',
-                duration: '30 Menit',
-                thumb: 'https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=400',
-                link: 'https://youtube.com'
-            });
+            if (type === 'video') {
+                // --- MODE VIDEO ---
+                audPlayer.classList.remove('active');
+                vidPlayer.classList.add('active');
 
-            // Video 3
-            await addDoc(podRef, {
-                order: 3,
-                title: 'Eps 3: Tips Lulus Sertifikasi Attitude',
-                host: 'Admin',
-                duration: '20 Menit',
-                thumb: 'https://images.unsplash.com/photo-1478737270239-2f02b77ac618?q=80&w=400',
-                link: 'https://youtube.com'
-            });
+                // Parse Video ID kalau ytId kosong (jaga-jaga)
+                let videoId = ytId;
+                if(!videoId && link) {
+                    if (link.includes("v=")) videoId = link.split("v=")[1].split("&")[0];
+                    else if (link.includes("youtu.be/")) videoId = link.split("youtu.be/")[1];
+                }
+
+                ytFrame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`; // Auto Play Video
+
+            } else {
+                // --- MODE AUDIO ---
+                vidPlayer.classList.remove('active');
+                audPlayer.classList.add('active');
+
+                // Isi Info
+                document.getElementById('ap-cover').src = cover;
+                document.getElementById('ap-title').innerText = title;
+                document.getElementById('ap-artist').innerText = artist;
+
+                // Set Source & Play
+                realAudio.src = link;
+                realAudio.play();
+                
+                // Ubah Icon jadi Pause
+                document.getElementById('ap-icon').className = "fa-solid fa-pause";
+            }
+            
+            // Scroll ke atas (ke player) dengan smooth
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        loadPodcasts();
+        // 4. AUDIO CONTROL CUSTOM
+        window.toggleAudio = function() {
+            const audio = document.getElementById('real-audio');
+            const icon = document.getElementById('ap-icon');
+            
+            if (audio.paused) {
+                audio.play();
+                icon.className = "fa-solid fa-pause";
+            } else {
+                audio.pause();
+                icon.className = "fa-solid fa-play";
+            }
+        }
+
+        // Jalankan
+        loadContent();
+
     </script>
 
 </body>
