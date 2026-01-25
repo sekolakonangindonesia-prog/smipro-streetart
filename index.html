@@ -80,18 +80,16 @@
 
 </div>
                 
-        <!-- 4. PODCAST HIGHLIGHT -->
+       <!-- 4. PODCAST HIGHLIGHT (SUDAH DINAMIS) -->
         <div class="section-title" style="margin-top: 50px;">
-            <div class="podcast-card" onclick="location.href='podcast.html'">
-                <div style="position:relative;">
-                    <img src="https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=400" class="podcast-thumb">
-                    <i class="fa-solid fa-circle-play play-btn-center"></i>
-                </div>
-                <div class="podcast-info">
-                    <h4>Eps 2: Kisah Sukses Warung Bu Sri</h4>
-                    <span><i class="fa-regular fa-clock"></i> 30 Menit • Host: Yuni</span>
-                </div>
-            </div>
+            <i class="fa-solid fa-photo-film"></i> Galeri & Podcast Terbaru
+        </div>
+
+        <!-- WADAH INI NANTI DIISI OTOMATIS OLEH JAVASCRIPT -->
+        <div id="home-podcast-container" style="margin-bottom: 20px;">
+            <p style="text-align:center; color:#888;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat konten...
+            </p>
         </div>
 
         <!-- 5. DUKUNG KAMI (REVISI) -->
@@ -491,6 +489,59 @@ window.handleVenueClick = function(id, status) {
         alert('Maaf, lokasi ini sedang tutup/belum beroperasi.');
     }
 }
+
+        // --- FUNGSI BARU: LOAD PODCAST HIGHLIGHT ---
+        async function loadPodcastHighlight() {
+            const container = document.getElementById('home-podcast-container');
+            
+            // Ambil 1 data terbaru berdasarkan timestamp
+            const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"), limit(1));
+            const snapshot = await getDocs(q);
+        
+            if (snapshot.empty) {
+                container.innerHTML = `<div class="podcast-card"><div style="padding:20px; text-align:center;">Belum ada konten galeri.</div></div>`;
+                return;
+            }
+        
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                
+                // Cek Tipe: Video atau Audio?
+                const isVideo = d.mediaType === 'video';
+                
+                // Atur Tampilan
+                const typeIcon = isVideo ? 'fa-brands fa-youtube' : 'fa-brands fa-spotify';
+                const typeColor = isVideo ? '#ff0000' : '#1DB954'; 
+                const typeLabel = isVideo ? 'VIDEO TERBARU' : 'AUDIO TERBARU';
+                const thumbImg = d.thumb || "https://via.placeholder.com/400x200?text=No+Cover";
+        
+                // Render Kartu Keren
+                container.innerHTML = `
+                <div class="podcast-card" onclick="location.href='podcast.html'" style="cursor:pointer; border:1px solid #333; overflow:hidden; position:relative;">
+                    
+                    <!-- GAMBAR COVER -->
+                    <div style="position:relative; height:200px; overflow:hidden;">
+                        <img src="${thumbImg}" style="width:100%; height:100%; object-fit:cover; filter: brightness(0.7);">
+                        
+                        <!-- Label Pojok -->
+                        <div style="position:absolute; top:10px; left:10px; background:${typeColor}; color:white; padding:3px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">
+                            <i class="${typeIcon}"></i> ${typeLabel}
+                        </div>
+        
+                        <!-- Tombol Play -->
+                        <i class="fa-solid fa-circle-play play-btn-center" style="font-size:3.5rem; color:white; opacity:0.9; text-shadow: 0 0 10px rgba(0,0,0,0.5);"></i>
+                    </div>
+        
+                    <!-- INFO BAWAH -->
+                    <div class="podcast-info" style="padding:15px; background: linear-gradient(to right, #111, #000);">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size:1.1rem; line-height:1.4;">${d.title}</h4>
+                        <div style="color:#888; font-size:0.85rem;">
+                            <i class="fa-solid fa-user-pen"></i> ${d.host || 'Admin'}
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
         
         // ==========================================
         // 4. EKSEKUSI
@@ -502,6 +553,7 @@ window.handleVenueClick = function(id, status) {
         loadVenues();
         loadTopPerformers();
         loadNews();
+        loadPodcastHighlight();
 
     </script>
 </body>
