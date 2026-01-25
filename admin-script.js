@@ -4,22 +4,28 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* =========================================
-   0. LOGIKA NAVIGASI (SIDEBAR & TABS) - VERSI AMAN
+   0. LOGIKA NAVIGASI (VERSI PAKSA MUNCUL)
    ========================================= */
 
 window.showView = function(viewId, btn) {
-    // 1. Reset Tampilan
+    // 1. Sembunyikan semua halaman dulu
     document.querySelectorAll('.admin-view').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById('view-' + viewId);
     
+    // 2. Tampilkan Halaman Target (DIPAKSA MUNCUL DULUAN)
+    const target = document.getElementById('view-' + viewId);
     if(target) {
-        target.classList.remove('hidden');
+        target.classList.remove('hidden'); // Paksa muncul
     } else {
-        console.error("View tidak ditemukan: " + viewId);
+        console.error("❌ HTML Error: Tidak ada div dengan id='view-" + viewId + "' di file HTML Anda.");
+        alert("Halaman belum dibuat di HTML (id: view-" + viewId + ")");
         return;
     }
     
-    // 2. Load Data Sesuai Halaman
+    // 3. Update Tombol Menu jadi Merah (Aktif)
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+
+    // 4. Baru jalankan logika datanya (Dibungkus Try-Catch agar tidak bikin blank)
     try {
         if(viewId === 'dashboard') loadDashboardOverview();       
         if(viewId === 'students') loadStudentData();    
@@ -28,72 +34,40 @@ window.showView = function(viewId, btn) {
         if(viewId === 'venue') loadVenueManagement();
         
         if(viewId === 'mitra') { 
-            loadMitraData(); 
-            populateVenueFilters(); 
+            if(typeof loadMitraData === 'function') loadMitraData(); 
+            if(typeof populateVenueFilters === 'function') populateVenueFilters(); 
         }
         
         if(viewId === 'cms') { 
-            loadArtistDropdowns(); 
-            // Pakai pengaman biar gak error kalau fungsi belum siap
+            if(typeof loadArtistDropdowns === 'function') loadArtistDropdowns(); 
             if(typeof loadMainVenueDropdown === 'function') loadMainVenueDropdown(); 
         }
         
         if(viewId === 'cafe') { 
-            loadCafeData();
+            if(typeof loadCafeData === 'function') loadCafeData();
             const tabBtn = document.querySelector('.sub-tab-btn');
-            if(tabBtn) switchCafeTab('cafe-data', tabBtn); 
+            if(tabBtn && typeof switchCafeTab === 'function') switchCafeTab('cafe-data', tabBtn); 
         }
 
-        // --- BAGIAN LIVE (SAYA PERBAIKI BIAR GAK DOBEL) ---
+        // BAGIAN LIVE (Hanya panggil switch tab)
         if(viewId === 'live') {
-            // populateLiveVenueOptions(); <--- SAYA HAPUS INI (Penyebab Dobel)
-            
-            // Cukup panggil ini saja:
             if(typeof switchLiveTab === 'function') switchLiveTab('panel-live', null);
         }
         
-      // --- BAGIAN KEUANGAN (VERSI TEGAS) ---
+        // BAGIAN KEUANGAN (Safe Mode)
         if(viewId === 'finance') { 
-        window.initFinanceSystem();       
-        listenCommandCenter(); 
+            console.log("Mencoba memuat data keuangan...");
+            // Cek apakah fungsi ada, kalau tidak ada, DIAM SAJA (Jangan error)
+            if(typeof window.initFinanceSystem === 'function') {
+                window.initFinanceSystem();       
+            }
+            if(typeof listenCommandCenter === 'function') {
+                listenCommandCenter(); 
+            }
         }
 
     } catch (e) {
-        console.error("Error navigasi:", e);
-    }
-
-    // 3. Update Tombol Aktif
-    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-}
-
-window.switchCmsTab = function(tabId, btn) {
-    document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-    
-    if(btn && btn.parentElement) {
-        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
-    }
-    if(btn) btn.classList.add('active');
-
-    if(tabId === 'cms-schedule') loadActiveSchedules();
-    
-    if(tabId === 'cms-radio') {
-        loadRadioSessionData(); 
-        loadAllRadioSchedules();
-    }
-    
-    if(tabId === 'cms-tour') {
-        loadCafeDropdownForSchedule(); 
-        loadActiveTourSchedules();    
-        loadArtistDropdowns();
-    }
-}
-
-window.adminLogout = function() {
-    if(confirm("Keluar dari Panel Admin?")) {
-        localStorage.clear();
-        window.location.href = 'index.html';
+        console.error("⚠️ Ada error kecil di script, tapi halaman tetap terbuka:", e);
     }
 }
 
