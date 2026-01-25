@@ -66,41 +66,53 @@ window.showView = function(viewId, btn) {
             }
         }
 
-        window.switchCmsTab = function(tabId, btn) {
+    } catch (e) {
+        console.error("⚠️ Ada error kecil di script, tapi halaman tetap terbuka:", e);
+    }
+}; // <--- INI TUTUP KURAWAL SHOWVIEW (PENTING)
+
+/* =========================================
+   FUNGSI DI BAWAH INI SEKARANG SUDAH DILUAR
+   JADI BISA DIPANGGIL HTML KAPAN SAJA
+   ========================================= */
+
+window.switchCmsTab = function(tabId, btn) {
+    // 1. Sembunyikan semua konten CMS
     document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
     
+    // 2. Munculkan tab target
+    const target = document.getElementById(tabId);
+    if(target) target.classList.remove('hidden');
+    
+    // 3. Atur tombol aktif
     if(btn && btn.parentElement) {
         btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
     }
     if(btn) btn.classList.add('active');
 
-    if(tabId === 'cms-schedule') loadActiveSchedules();
+    // 4. Load data sesuai tab
+    if(tabId === 'cms-schedule') {
+        if(typeof loadActiveSchedules === 'function') loadActiveSchedules();
+    }
     
     if(tabId === 'cms-radio') {
-        loadRadioSessionData(); 
-        loadAllRadioSchedules();
+        if(typeof loadRadioSessionData === 'function') loadRadioSessionData(); 
+        if(typeof loadAllRadioSchedules === 'function') loadAllRadioSchedules();
     }
     
     if(tabId === 'cms-tour') {
-        loadCafeDropdownForSchedule(); 
-        loadActiveTourSchedules();    
-        loadArtistDropdowns();
+        if(typeof loadCafeDropdownForSchedule === 'function') loadCafeDropdownForSchedule(); 
+        if(typeof loadActiveTourSchedules === 'function') loadActiveTourSchedules();    
+        if(typeof loadArtistDropdowns === 'function') loadArtistDropdowns();
     }
-}
+};
 
 window.adminLogout = function() {
     if(confirm("Keluar dari Panel Admin?")) {
         localStorage.clear();
         window.location.href = 'index.html';
     }
-}
-
-
-    } catch (e) {
-        console.error("⚠️ Ada error kecil di script, tapi halaman tetap terbuka:", e);
-    }
-}
+};
 
 /* =========================================
    1. MANAJEMEN MITRA
