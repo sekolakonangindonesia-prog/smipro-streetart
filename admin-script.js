@@ -33,6 +33,7 @@ window.showView = function(viewId, btn) {
         if(viewId === 'mentor') loadMentorData();      
         if(viewId === 'venue') loadVenueManagement();
         
+        
         if(viewId === 'mitra') { 
             if(typeof loadMitraData === 'function') loadMitraData(); 
             if(typeof populateVenueFilters === 'function') populateVenueFilters(); 
@@ -105,6 +106,7 @@ window.switchCmsTab = function(tabId, btn) {
         if(typeof loadActiveTourSchedules === 'function') loadActiveTourSchedules();    
         if(typeof loadArtistDropdowns === 'function') loadArtistDropdowns();
     }
+    
 };
 
 window.adminLogout = function() {
@@ -2578,6 +2580,7 @@ window.switchLiveTab = function(tabId, btn) {
 
     if(tabId === 'panel-galeri') loadGalleryVideos();
     if(tabId === 'panel-live') populateLiveVenueOptions();
+    if(tabId === 'panel-settings') loadBgmSettings(); 
 }
 
 // --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: RESET TOTAL & ANTI DUPLIKAT) ---
@@ -2904,6 +2907,64 @@ window.updateLiveLink = async function() {
     }
 }
 
+/* =========================================
+   10. PENGATURAN WEB (BGM WELCOME SCREEN)
+   ========================================= */
+
+// Muat Pengaturan Saat Tab Dibuka
+async function loadBgmSettings() {
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "general"));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('bgm-url-input').value = data.bgmUrl || "";
+            document.getElementById('bgm-active-toggle').checked = data.bgmEnabled || false;
+            updateBgmUI(data.bgmEnabled);
+        }
+    } catch (e) { console.error("Gagal load BGM:", e); }
+}
+
+function updateBgmUI(isEnabled) {
+    const text = document.getElementById('bgm-status-text');
+    const slider = document.getElementById('toggle-slider');
+    if(!text || !slider) return;
+
+    if (isEnabled) {
+        text.innerText = "Status: AKTIF (Musik Berbunyi)";
+        text.style.color = "#00ff00";
+        slider.style.background = "#00ff00";
+    } else {
+        text.innerText = "Status: MATI (Tanpa Musik)";
+        text.style.color = "#888";
+        slider.style.background = "#444";
+    }
+}
+
+// Tombol Simpan
+window.saveBgmSettings = async function() {
+    const url = document.getElementById('bgm-url-input').value;
+    const isEnabled = document.getElementById('bgm-active-toggle').checked;
+
+    try {
+        await setDoc(doc(db, "settings", "general"), {
+            bgmUrl: url,
+            bgmEnabled: isEnabled,
+            updatedAt: new Date()
+        }, { merge: true });
+        
+        alert("✅ Pengaturan Berhasil Disimpan!");
+        updateBgmUI(isEnabled);
+    } catch (e) { alert("Gagal: " + e.message); }
+}
+
+// Tombol Hapus
+window.clearBgmSettings = async function() {
+    if(confirm("Hapus lagu utama?")) {
+        document.getElementById('bgm-url-input').value = "";
+        document.getElementById('bgm-active-toggle').checked = false;
+        await saveBgmSettings();
+    }
+}
 
 /* =========================================
    11. EKSEKUSI (PENUTUP FILE YANG BENAR)
