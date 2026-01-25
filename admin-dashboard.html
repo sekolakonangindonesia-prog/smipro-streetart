@@ -775,6 +775,7 @@
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" onclick="switchLiveTab('panel-live', this)">🔴 Live Control (Venue)</button>
                 <button class="sub-tab-btn" onclick="switchLiveTab('panel-galeri', this)">🎬 Manajemen Galeri</button>
+                <button class="sub-tab-btn" onclick="switchLiveTab('panel-settings', this)">⚙️ Pengaturan Web</button>
             </div>
 
             <!-- PANEL 1: LIVE CONTROL (Untuk Layar TV di Lokasi) -->
@@ -852,6 +853,38 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- PANEL 3: PENGATURAN WEB (BGM CONTROL) -->
+<div id="panel-settings" class="live-content hidden">
+    <div class="cms-form-group" style="background:#151515; border-left:5px solid #00d2ff;">
+        <h4 style="margin-top:0; color:#00d2ff;">Konfigurasi Musik Latar (BGM)</h4>
+        <p style="font-size:0.8rem; color:#888;">Lagu ini akan berbunyi otomatis saat pengunjung pertama kali membuka website (Welcome Screen).</p>
+        
+        <label class="cms-label">Link File MP3:</label>
+        <input type="text" id="bgm-url-input" class="cms-input" placeholder="Paste link MP3 di sini...">
+        
+        <div style="background:#222; padding:15px; border-radius:8px; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <b style="color:white; display:block;">Status Welcome Screen</b>
+                <small id="bgm-status-text" style="color:#888;">Saat ini: Memuat...</small>
+            </div>
+            <!-- Toggle ON/OFF -->
+            <label style="position:relative; display:inline-block; width:50px; height:24px;">
+                <input type="checkbox" id="bgm-active-toggle" style="opacity:0; width:0; height:0;">
+                <span style="position:absolute; cursor:pointer; inset:0; background:#444; border-radius:24px; transition:0.4s;" id="toggle-slider"></span>
+            </label>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn-action btn-view" style="flex:1; padding:12px; font-weight:bold;" onclick="saveBgmSettings()">
+                <i class="fa-solid fa-save"></i> SIMPAN PENGATURAN
+            </button>
+            <button class="btn-action btn-delete" style="width:auto; padding:12px;" onclick="clearBgmSettings()">
+                <i class="fa-solid fa-trash"></i> HAPUS LAGU
+            </button>
+        </div>
+    </div>
+</div>
 
                     <!-- INPUT UMUM (JUDUL & KATEGORI) -->
                     <div style="margin-top:10px;">
