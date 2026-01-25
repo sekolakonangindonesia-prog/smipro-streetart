@@ -66,6 +66,37 @@ window.showView = function(viewId, btn) {
             }
         }
 
+        window.switchCmsTab = function(tabId, btn) {
+    document.querySelectorAll('.cms-content').forEach(el => el.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    
+    if(btn && btn.parentElement) {
+        btn.parentElement.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+    }
+    if(btn) btn.classList.add('active');
+
+    if(tabId === 'cms-schedule') loadActiveSchedules();
+    
+    if(tabId === 'cms-radio') {
+        loadRadioSessionData(); 
+        loadAllRadioSchedules();
+    }
+    
+    if(tabId === 'cms-tour') {
+        loadCafeDropdownForSchedule(); 
+        loadActiveTourSchedules();    
+        loadArtistDropdowns();
+    }
+}
+
+window.adminLogout = function() {
+    if(confirm("Keluar dari Panel Admin?")) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+    }
+}
+
+
     } catch (e) {
         console.error("⚠️ Ada error kecil di script, tapi halaman tetap terbuka:", e);
     }
