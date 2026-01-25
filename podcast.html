@@ -191,19 +191,22 @@
     <script type="module">
         ...
 
-    <!-- SCRIPT UTAMA -->
+   <!-- SCRIPT UTAMA (VERSI PERBAIKAN & DIAGNOSA) -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // Hapus 'orderBy' sementara untuk tes
+        import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let allData = []; // Simpan data dari database
+        let allData = [];
 
         // 1. LOAD DATA DARI FIREBASE
         async function loadContent() {
             const listContainer = document.getElementById('content-list');
             
             try {
-                const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"));
+                // KITA AMBIL SEMUA DATA DULU (TANPA SORTIR DATABASE)
+                // Ini untuk menghindari error "Missing Index" atau "Missing Field"
+                const q = query(collection(db, "podcasts"));
                 const snapshot = await getDocs(q);
 
                 allData = [];
@@ -211,11 +214,25 @@
                     allData.push({ id: doc.id, ...doc.data() });
                 });
 
+                // KITA SORTIR MANUAL DI SINI (LEBIH AMAN)
+                // Urutkan dari yang terbaru (timestamp besar di atas)
+                allData.sort((a, b) => {
+                    let timeA = a.timestamp ? a.timestamp.seconds : 0;
+                    let timeB = b.timestamp ? b.timestamp.seconds : 0;
+                    return timeB - timeA;
+                });
+
+                // Render Default (Semua)
                 renderList('all');
 
             } catch (e) {
+                // JIKA ERROR, TAMPILKAN DI LAYAR HP AGAR KITA TAHU
                 console.error(e);
-                listContainer.innerHTML = '<p style="text-align:center;">Gagal memuat data.</p>';
+                listContainer.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:#ff5555; border:1px solid #333;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat data.<br>
+                        <small>${e.message}</small>
+                    </div>`;
             }
         }
 
@@ -232,7 +249,6 @@
 
             let useGridLayout = (filterType === 'video');
             
-            // Atur Class Container
             if (useGridLayout) {
                 container.className = 'grid-layout';
             } else {
@@ -249,7 +265,7 @@
             filteredData.forEach(d => {
                 const isVideo = d.mediaType === 'video';
                 const thumb = d.thumb || "https://via.placeholder.com/300";
-                const title = d.title;
+                const title = d.title || "Tanpa Judul";
                 const host = d.host || "Admin";
                 
                 // DATA STRING SAFE
@@ -289,7 +305,7 @@
             });
         }
 
-        // 3. FUNGSI PLAY (AUTO SCROLL DI HP)
+        // 3. FUNGSI PLAY
         window.playMedia = function(type, link, ytId, title, artist, cover) {
             document.getElementById('player-placeholder').style.display = 'none';
             const vidPlayer = document.getElementById('video-player');
@@ -297,13 +313,11 @@
             const ytFrame = document.getElementById('yt-frame');
             const realAudio = document.getElementById('real-audio');
 
-            // Reset
             ytFrame.src = "";
             realAudio.pause();
             
-            // FAKE PROGRESS ANIMATION
             const fakeProg = document.getElementById('audio-fake-progress');
-            fakeProg.style.width = '0%';
+            if(fakeProg) fakeProg.style.width = '0%';
 
             if (type === 'video') {
                 audPlayer.classList.remove('active');
@@ -329,11 +343,9 @@
                 
                 document.getElementById('ap-icon').className = "fa-solid fa-pause";
                 
-                // Efek Loading Bar
-                setTimeout(() => { fakeProg.style.width = '30%'; }, 500);
+                if(fakeProg) setTimeout(() => { fakeProg.style.width = '30%'; }, 500);
             }
             
-            // SCROLL HALUS KE ATAS (PENTING BUAT HP)
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -350,10 +362,10 @@
             }
         }
         
-        // LISTEN AUDIO ENDED
         document.getElementById('real-audio').onended = function() {
              document.getElementById('ap-icon').className = "fa-solid fa-play";
-             document.getElementById('audio-fake-progress').style.width = '0%';
+             const fakeProg = document.getElementById('audio-fake-progress');
+             if(fakeProg) fakeProg.style.width = '0%';
         };
 
         // Jalankan
