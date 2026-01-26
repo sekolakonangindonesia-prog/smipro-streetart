@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="welcome-overlay" style="display:none; position:fixed; inset:0; background:#000; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+    <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:100px; margin-bottom:20px;">
+    <h2 style="color:white; letter-spacing:4px; font-size:1.2rem;">SMIPRO STREET ART</h2>
+    <p style="color:#555; font-size:0.8rem; margin-bottom:30px;">Digitalizing Street Performance</p>
+    <button id="btn-enter" style="background:#E50914; color:white; border:none; padding:15px 50px; border-radius:40px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow: 0 0 20px rgba(229,9,20,0.4);">
+        MASUK & PLAY
+    </button>
+    <audio id="bgm-player" loop></audio>
+</div>
     <!-- NAVBAR -->
     <nav class="top-nav">
         <a href="index.html" class="logo-container">
@@ -542,6 +551,46 @@ window.handleVenueClick = function(id, status) {
                 </div>`;
             });
         }
+
+        // --- LOGIKA WELCOME SCREEN & BGM (DINAMIS DARI ADMIN) ---
+async function initWelcomeScreen() {
+    const overlay = document.getElementById('welcome-overlay');
+    const player = document.getElementById('bgm-player');
+    const btn = document.getElementById('btn-enter');
+
+    try {
+        // Ambil pengaturan dari Firebase (Koleksi settings, dokumen general)
+        const docSnap = await getDoc(doc(db, "settings", "general"));
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            // JIKA ADMIN MENYALAKAN (ON) & ADA LINK LAGUNYA
+            if (data.bgmEnabled && data.bgmUrl) {
+                overlay.style.display = 'flex'; // Munculkan layar welcome
+                player.src = data.bgmUrl;
+                
+                // Saat tombol diklik
+                btn.onclick = () => {
+                    player.play().catch(e => console.log("Autoplay diblokir browser"));
+                    
+                    // Efek menghilang halus
+                    overlay.style.transition = '0.5s';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 500);
+                };
+            } else {
+                // JIKA ADMIN MATIKAN (OFF)
+                overlay.style.display = 'none'; // Pastikan tetap sembunyi
+            }
+        }
+    } catch (e) { 
+        console.error("Gagal memuat pengaturan BGM:", e);
+        overlay.style.display = 'none'; // Sembunyikan jika error agar web tidak macet
+    }
+}
         
         // ==========================================
         // 4. EKSEKUSI
@@ -554,6 +603,7 @@ window.handleVenueClick = function(id, status) {
         loadTopPerformers();
         loadNews();
         loadPodcastHighlight();
+        initWelcomeScreen(); 
 
     </script>
 </body>
