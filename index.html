@@ -570,7 +570,8 @@ async function initWelcomeScreen() {
             if (data.bgmEnabled && data.bgmUrl) {
                 console.log("Welcome Screen AKTIF. Menampilkan..."); // Laporan 3
                 overlay.style.display = 'flex';
-                player.src = data.bgmUrl;
+                const fileId = data.bgmUrl.includes('/file/d/') ? data.bgmUrl.split('/file/d/')[1].split('/')[0] : data.bgmUrl.split('id=')[1]?.split('&')[0];
+player.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 
                 btn.onclick = () => {
                     player.play();
