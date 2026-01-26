@@ -216,41 +216,54 @@
         }
 
         window.playMedia = function(type, link, ytId, title, artist, cover) {
-            const bgm = document.getElementById('bgm-player');
-            if (bgm) bgm.pause();
-            document.getElementById('player-placeholder').style.display = 'none';
-            const vidPlayer = document.getElementById('video-player');
-            const audPlayer = document.getElementById('audio-player');
-            const ytFrame = document.getElementById('yt-frame');
-            const realAudio = document.getElementById('real-audio');
-
-            ytFrame.src = ""; realAudio.pause();
-            document.getElementById('audio-fake-progress').style.width = '0%';
-
-            if (type === 'video') {
-                audPlayer.classList.remove('active');
-                vidPlayer.classList.add('active');
-                ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
-            } else {
-                vidPlayer.classList.remove('active');
-                audPlayer.classList.add('active');
-                document.getElementById('ap-cover').src = cover;
-                document.getElementById('ap-title').innerText = title;
-                document.getElementById('ap-artist').innerText = artist;
-                realAudio.src = link;
-                realAudio.play();
-                document.getElementById('ap-icon').className = "fa-solid fa-pause";
-                setTimeout(() => { document.getElementById('audio-fake-progress').style.width = '40%'; }, 500);
+    // === KODE AJAIB PENGUBAH LINK GOOGLE DRIVE ===
+    function getDirectLink(url) {
+        if (url.includes('drive.google.com')) {
+            let fileId = "";
+            if (url.includes('/file/d/')) {
+                fileId = url.split('/file/d/')[1].split('/')[0];
+            } else if (url.includes('id=')) {
+                fileId = url.split('id=')[1].split('&')[0];
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return `https://drive.google.com/uc?export=download&id=${fileId}`;
         }
+        return url; // Jika bukan drive, biarkan apa adanya
+    }
+    // =============================================
 
-        window.toggleAudio = function() {
-            const audio = document.getElementById('real-audio');
-            const icon = document.getElementById('ap-icon');
-            if (audio.paused) { audio.play(); icon.className = "fa-solid fa-pause"; }
-            else { audio.pause(); icon.className = "fa-solid fa-play"; }
-        }
+    const bgm = document.getElementById('bgm-player');
+    if (bgm) bgm.pause();
+
+    document.getElementById('player-placeholder').style.display = 'none';
+    const vidPlayer = document.getElementById('video-player');
+    const audPlayer = document.getElementById('audio-player');
+    const ytFrame = document.getElementById('yt-frame');
+    const realAudio = document.getElementById('real-audio');
+
+    ytFrame.src = ""; 
+    realAudio.pause();
+    document.getElementById('audio-fake-progress').style.width = '0%';
+
+    if (type === 'video') {
+        audPlayer.classList.remove('active');
+        vidPlayer.classList.add('active');
+        ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
+    } else {
+        vidPlayer.classList.remove('active');
+        audPlayer.classList.add('active');
+        document.getElementById('ap-cover').src = cover;
+        document.getElementById('ap-title').innerText = title;
+        document.getElementById('ap-artist').innerText = artist;
+
+        // --- PAKAI LINK YANG SUDAH DISULAP ---
+        realAudio.src = getDirectLink(link); 
+        realAudio.play().catch(e => alert("File tidak bisa diputar. Pastikan akses Google Drive sudah disetel ke 'Siapa saja yang memiliki link'"));
+        
+        document.getElementById('ap-icon').className = "fa-solid fa-pause";
+        setTimeout(() => { document.getElementById('audio-fake-progress').style.width = '40%'; }, 500);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
         loadContent();
     </script>
