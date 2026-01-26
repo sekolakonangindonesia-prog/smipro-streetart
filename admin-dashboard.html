@@ -900,46 +900,37 @@
             </div>
             </div>
 
-        <!-- ... baris terakhir Tabel Galeri ... -->
-            </table>
-        </div> <!-- INI PENUTUP panel-galeri (PASTIKAN ADA) -->
-
-       <!-- PANEL 3: PENGATURAN WEB (VERSI RAPI) -->
-<div id="panel-settings" class="live-content hidden" style="padding: 20px 0;">
-    <!-- Kontainer Pembatas agar tidak terlalu lebar -->
-    <div style="max-width: 600px; margin: 0 auto;">
+   <!-- PANEL 3: PENGATURAN WEB (VERSI COMPACT & POSISI ATAS) -->
+<div id="panel-settings" class="live-content hidden" style="margin-top: 10px; padding: 0;">
+    <div style="max-width: 500px; margin: 0 auto;">
         
-        <div class="cms-form-group" style="background:#151515; border-left:5px solid #00d2ff; padding: 25px; border-radius: 10px; border: 1px solid #333;">
-            <h3 style="margin-top:0; color:#00d2ff; display:flex; align-items:center; gap:10px;">
-                <i class="fa-solid fa-gears"></i> Musik Welcome Screen
-            </h3>
-            <p style="font-size:0.85rem; color:#888; margin-bottom: 20px;">
-                Atur lagu yang akan berbunyi saat pengunjung pertama kali membuka website.
-            </p>
+        <div class="cms-form-group" style="background:#111; border:1px solid #333; border-top:4px solid #00d2ff; padding: 20px; border-radius: 8px;">
+            <h4 style="margin: 0 0 15px 0; color:#00d2ff; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-music"></i> Musik Welcome Screen
+            </h4>
             
-            <label class="cms-label">Link File MP3 (Direct Link):</label>
-            <input type="text" id="bgm-url-input" class="cms-input" placeholder="https://domain.com/musik.mp3" style="margin-bottom: 20px;">
+            <label class="cms-label" style="font-size: 0.75rem;">Link File MP3 (Direct URL):</label>
+            <input type="text" id="bgm-url-input" class="cms-input" placeholder="https://..." style="margin-bottom: 15px; font-size: 0.85rem;">
             
-            <div style="background:#000; padding:15px; border-radius:8px; border:1px solid #222; display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+            <div style="background:#1a1a1a; padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border: 1px solid #222;">
                 <div>
-                    <b style="color:white; display:block; font-size:0.9rem;">Status Welcome Screen</b>
-                    <small id="bgm-status-text" style="color:#888;">Memuat status...</small>
+                    <b style="color:white; display:block; font-size:0.85rem;">Aktifkan Welcome Screen</b>
+                    <small id="bgm-status-text" style="color:#666; font-size: 0.7rem;">Status: Memuat...</small>
                 </div>
-                
-                <!-- Toggle Switch -->
-                <label style="position:relative; display:inline-block; width:50px; height:26px;">
+                <!-- Switch Toggle -->
+                <label style="position:relative; display:inline-block; width:44px; height:22px;">
                     <input type="checkbox" id="bgm-active-toggle" style="opacity:0; width:0; height:0;">
-                    <span style="position:absolute; cursor:pointer; inset:0; background:#444; border-radius:24px; transition:0.4s;" id="toggle-slider"></span>
+                    <span style="position:absolute; cursor:pointer; inset:0; background:#333; border-radius:22px; transition:0.4s;" id="toggle-slider"></span>
                 </label>
             </div>
 
             <!-- Tombol Aksi -->
-            <div style="display:flex; gap:12px;">
-                <button class="btn-action btn-view" style="flex:2; padding:12px; font-weight:bold; background:#00d2ff; color:black;" onclick="saveBgmSettings()">
-                    <i class="fa-solid fa-floppy-disk"></i> SIMPAN PENGATURAN
+            <div style="display:flex; gap:10px;">
+                <button class="btn-action btn-view" style="flex:2; padding:10px; font-weight:bold; background:#00d2ff; color:black; border-radius: 4px;" onclick="saveBgmSettings()">
+                    <i class="fa-solid fa-save"></i> SIMPAN
                 </button>
-                <button class="btn-action btn-delete" style="flex:1; padding:12px; font-weight:bold;" onclick="clearBgmSettings()">
-                    <i class="fa-solid fa-eraser"></i> HAPUS
+                <button class="btn-action btn-delete" style="flex:1; padding:10px; font-weight:bold; border-radius: 4px;" onclick="clearBgmSettings()">
+                    HAPUS
                 </button>
             </div>
         </div>
