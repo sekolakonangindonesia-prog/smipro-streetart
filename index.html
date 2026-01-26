@@ -145,7 +145,7 @@
     <script type="module">
         import { db } from './firebase-config.js';
         import { 
-    collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, onSnapshot, where 
+    collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, getDoc, onSnapshot, where 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ==========================================
@@ -554,41 +554,38 @@ window.handleVenueClick = function(id, status) {
 
         // --- LOGIKA WELCOME SCREEN & BGM (DINAMIS DARI ADMIN) ---
 async function initWelcomeScreen() {
+    console.log("Memulai pengecekan Welcome Screen..."); // Laporan 1
+    
     const overlay = document.getElementById('welcome-overlay');
     const player = document.getElementById('bgm-player');
     const btn = document.getElementById('btn-enter');
 
     try {
-        // Ambil pengaturan dari Firebase (Koleksi settings, dokumen general)
         const docSnap = await getDoc(doc(db, "settings", "general"));
         
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
-            // JIKA ADMIN MENYALAKAN (ON) & ADA LINK LAGUNYA
+            console.log("Data Settings Ditemukan:", data); // Laporan 2
+
             if (data.bgmEnabled && data.bgmUrl) {
-                overlay.style.display = 'flex'; // Munculkan layar welcome
+                console.log("Welcome Screen AKTIF. Menampilkan..."); // Laporan 3
+                overlay.style.display = 'flex';
                 player.src = data.bgmUrl;
                 
-                // Saat tombol diklik
                 btn.onclick = () => {
-                    player.play().catch(e => console.log("Autoplay diblokir browser"));
-                    
-                    // Efek menghilang halus
-                    overlay.style.transition = '0.5s';
+                    player.play();
                     overlay.style.opacity = '0';
-                    setTimeout(() => {
-                        overlay.style.display = 'none';
-                    }, 500);
+                    setTimeout(() => overlay.style.display = 'none', 500);
                 };
             } else {
-                // JIKA ADMIN MATIKAN (OFF)
-                overlay.style.display = 'none'; // Pastikan tetap sembunyi
+                console.log("Welcome Screen MATI di settings."); // Laporan 4
+                overlay.style.display = 'none';
             }
+        } else {
+            console.log("Dokumen settings/general tidak ditemukan di Database.");
         }
     } catch (e) { 
-        console.error("Gagal memuat pengaturan BGM:", e);
-        overlay.style.display = 'none'; // Sembunyikan jika error agar web tidak macet
+        console.error("Error saat memuat BGM:", e);
     }
 }
         
