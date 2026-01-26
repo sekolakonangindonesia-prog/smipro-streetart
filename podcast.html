@@ -216,6 +216,8 @@
         }
 
         window.playMedia = function(type, link, ytId, title, artist, cover) {
+            const bgm = document.getElementById('bgm-player');
+            if (bgm) bgm.pause();
             document.getElementById('player-placeholder').style.display = 'none';
             const vidPlayer = document.getElementById('video-player');
             const audPlayer = document.getElementById('audio-player');
