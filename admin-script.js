@@ -2580,7 +2580,9 @@ window.switchLiveTab = function(tabId, btn) {
 
     if(tabId === 'panel-galeri') loadGalleryVideos();
     if(tabId === 'panel-live') populateLiveVenueOptions();
-    if(tabId === 'panel-settings') loadBgmSettings(); 
+    if(tabId === 'panel-settings') {
+        loadBgmSettings(); 
+    }
 }
 
 // --- FUNGSI ISI DROPDOWN VENUE (VERSI FINAL: RESET TOTAL & ANTI DUPLIKAT) ---
@@ -2911,32 +2913,48 @@ window.updateLiveLink = async function() {
    10. PENGATURAN WEB (BGM WELCOME SCREEN)
    ========================================= */
 
-// Muat Pengaturan Saat Tab Dibuka
+// 1. Muat Pengaturan & Aktifkan Tombol
 async function loadBgmSettings() {
     try {
         const docSnap = await getDoc(doc(db, "settings", "general"));
+        
+        // Ambil elemen toggle
+        const toggle = document.getElementById('bgm-active-toggle');
+
         if (docSnap.exists()) {
             const data = docSnap.data();
             document.getElementById('bgm-url-input').value = data.bgmUrl || "";
-            document.getElementById('bgm-active-toggle').checked = data.bgmEnabled || false;
+            toggle.checked = data.bgmEnabled || false;
             updateBgmUI(data.bgmEnabled);
+        } else {
+            updateBgmUI(false); // Default jika data belum ada di DB
         }
-    } catch (e) { console.error("Gagal load BGM:", e); }
+
+        // --- TAMBAHAN PENTING: Agar tombol bisa diklik & respon instan ---
+        toggle.onchange = function() {
+            updateBgmUI(this.checked);
+        };
+
+    } catch (e) { 
+        console.error("Gagal load BGM:", e);
+        document.getElementById('bgm-status-text').innerText = "Status: Error Koneksi";
+    }
 }
 
+// 2. Fungsi Update Tampilan (Warna & Teks)
 function updateBgmUI(isEnabled) {
     const text = document.getElementById('bgm-status-text');
     const slider = document.getElementById('toggle-slider');
     if(!text || !slider) return;
 
     if (isEnabled) {
-        text.innerText = "Status: AKTIF (Musik Berbunyi)";
+        text.innerText = "Status: AKTIF (Welcome Screen Muncul)";
         text.style.color = "#00ff00";
-        slider.style.background = "#00ff00";
+        slider.style.background = "#00ff00"; // Warna Hijau saat ON
     } else {
-        text.innerText = "Status: MATI (Tanpa Musik)";
+        text.innerText = "Status: MATI (Langsung Masuk Web)";
         text.style.color = "#888";
-        slider.style.background = "#444";
+        slider.style.background = "#444"; // Warna Abu saat OFF
     }
 }
 
