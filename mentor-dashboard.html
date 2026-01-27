@@ -191,7 +191,24 @@
         </button>
         <input type="file" id="gal-file-input" style="display:none;" accept="image/*" onchange="previewGalleryImage(this)">
     </div>
+    <!-- TOMBOL AKSI MODAL -->
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <!-- Tombol Batal untuk menutup modal -->
+            <button type="button" 
+                onclick="document.getElementById('modal-add-gallery').style.display='none'" 
+                style="flex:1; padding:12px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer; font-weight:bold;">
+                Batal
+            </button>
+            
+            <!-- Tombol Simpan untuk eksekusi kirim ke Firebase -->
+            <button type="button" 
+                onclick="saveGalleryItem()" 
+                style="flex:1; padding:12px; background:#2ecc71; border:none; color:black; border-radius:5px; cursor:pointer; font-weight:bold;">
+                Simpan Karya
+            </button>
+        </div>
 </div>
+        
 
 <!-- TOMBOL ADMIN -->
 <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
