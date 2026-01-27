@@ -270,8 +270,20 @@
             <label style="color:#aaa; font-size:0.8rem;">Link URL</label>
             <input type="text" id="add-url" placeholder="YouTube / MP3 Link" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
 
-            <label style="color:#aaa; font-size:0.8rem;">Link Thumbnail (Opsional)</label>
-            <input type="text" id="add-thumb" placeholder="https://..." style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:20px; border-radius:5px;">
+            <label style="color:#aaa; font-size:0.8rem;">Foto Cover (Khusus MP3)</label>
+<div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
+    <div onclick="document.getElementById('add-file-input').click()" style="width:80px; height:80px; border:2px dashed #555; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:#111;">
+        <img id="add-preview-img" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+        <i id="add-placeholder-icon" class="fa-solid fa-image" style="color:#444; font-size:1.5rem;"></i>
+    </div>
+    <div style="flex:1;">
+        <button type="button" onclick="document.getElementById('add-file-input').click()" style="background:#333; color:white; border:1px solid #444; padding:8px 12px; border-radius:5px; font-size:0.8rem; cursor:pointer;">
+            Pilih Cover dari HP/Laptop
+        </button>
+        <input type="file" id="add-file-input" style="display:none;" accept="image/*" onchange="window.previewAddImage(this)">
+    </div>
+</div>
+<small style="color:#555; font-size:0.7rem; display:block; margin-top:-10px; margin-bottom:15px;">*Jika Video, thumbnail otomatis ambil dari YouTube.</small>
 
             <div style="display:flex; gap:10px;">
                 <button onclick="document.getElementById('modal-add-gallery').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
@@ -290,6 +302,7 @@
     <script type="module">
         import { db } from './firebase-config.js';
         import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        let currentAddBase64 = null; // Penampung gambar cover baru
         
         // --- IMPORT JSPDF ---
         const { jsPDF } = window.jspdf;
@@ -430,71 +443,122 @@
         }
 
         function renderGallery(data) {
-            galleryData = data;
-            const container = document.getElementById('gallery-container');
-            container.innerHTML = '';
+    galleryData = data;
+    const container = document.getElementById('gallery-container');
+    if(!container) return; 
+    
+    container.innerHTML = '';
+    
+    if(galleryData.length === 0) {
+        container.innerHTML = '<p style="color:#666; text-align:center; width:100%; padding:20px;">Belum ada konten.</p>';
+        return;
+    }
 
-            if(galleryData.length === 0) {
-                container.innerHTML = '<p style="color:#666;">Belum ada konten.</p>';
-                return;
-            }
+    // Link Logo Play Custom
+    const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
+    const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
 
-            galleryData.forEach((item, index) => {
-                let icon = item.type === 'video' ? 'fa-video' : 'fa-music';
-                let typeText = item.type === 'video' ? 'Video' : 'Audio';
-                
-                // Thumbnail Youtube
-                let thumb = "https://via.placeholder.com/300x200?text=Audio"; 
-                if (item.type === 'video' && item.url.includes('embed/')) {
-                    const vidId = item.url.split('embed/')[1].split('?')[0];
-                    thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
-                }
+    // Pisahkan Data Otomatis
+    const videos = galleryData.filter(d => d.type === 'video');
+    const audios = galleryData.filter(d => d.type === 'audio');
 
-                // SIAPKAN TOMBOL HAPUS (Hanya Jika Admin/Mentor)
-                let deleteButtonHTML = '';
-                if (canEdit) {
-                    deleteButtonHTML = `
-                    <button onclick="deleteGalleryItem(${index}); event.stopPropagation();" style="margin-top:5px; background:#b71c1c; color:white; border:none; width:100%; border-radius:3px; cursor:pointer; padding:5px;">
-                        <i class="fa-solid fa-trash"></i> Hapus
-                    </button>`;
-                }
+    // 1. RENDER SEKSI VIDEO (STREET STAGE)
+    if(videos.length > 0) {
+        container.innerHTML += `<div style="grid-column:1/-1; color:var(--accent); font-weight:800; margin-top:10px; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px;">🎬 STREET STAGE</div>`;
+        videos.forEach((item, index) => {
+            // Temukan index asli di galleryData untuk keperluan hapus
+            const originalIdx = galleryData.findIndex(g => g.id === item.id);
+            const thumb = item.youtubeId ? `https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg` : (item.cover || "https://via.placeholder.com/300x168");
+            container.innerHTML += createCardHTML(item, thumb, LOGO_STAGE, originalIdx, 'video');
+        });
+    }
 
-                container.innerHTML += `
-                <div class="track-card" onclick="playMedia('${item.type}', '${item.url}')" style="cursor:pointer;">
-                    <img src="${thumb}" class="track-img">
-                    <div class="play-icon"><i class="fa-solid fa-play"></i></div>
-                    <span class="track-title">${item.title}</span>
-                    <span class="track-type"><i class="fa-solid ${icon}"></i> ${typeText}</span>
-                    ${deleteButtonHTML}
-                </div>`;
-            });
-        }
+    // 2. RENDER SEKSI AUDIO (SMIPRO TUNES)
+    if(audios.length > 0) {
+        container.innerHTML += `<div style="grid-column:1/-1; color:#00d2ff; font-weight:800; margin-top:30px; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px;">🎧 SMIPRO TUNES</div>`;
+        audios.forEach((item, index) => {
+            const originalIdx = galleryData.findIndex(g => g.id === item.id);
+            const thumb = item.cover || "https://via.placeholder.com/300?text=Audio+Cover";
+            container.innerHTML += createCardHTML(item, thumb, LOGO_TUNE, originalIdx, 'audio');
+        });
+    }
+}
+
+// FUNGSI PEMBUAT KARTU (Tetap Menjaga Tombol Hapus Admin)
+function createCardHTML(item, thumb, logo, originalIndex, type) {
+    // Tombol hapus hanya dibuat jika canEdit = true (Admin/Mentor)
+    let deleteBtn = canEdit ? `
+        <button onclick="deleteGalleryItem(${originalIndex}); event.stopPropagation();" style="margin-top:10px; background:#b71c1c; color:white; border:none; width:100%; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
+            <i class="fa-solid fa-trash"></i> Hapus
+        </button>` : '';
+    
+    // Gaya kartu: Video agak lebar, Audio kotak 1:1
+    const aspectRatio = type === 'video' ? '16/9' : '1/1';
+
+    return `
+    <div class="track-card" onclick="playMedia('${item.type}', '${item.url}')" style="background:#111; padding:12px; border-radius:10px; border:1px solid #222;">
+        <div style="position:relative; aspect-ratio:${aspectRatio}; overflow:hidden; border-radius:6px; background:#000;">
+            <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.7;">
+            <div class="play-icon" style="opacity:1; background:none; bottom:8px; right:8px; width:35px; height:35px;">
+                <img src="${logo}" style="width:100%; border-radius:50%; border:1px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.5);">
+            </div>
+        </div>
+        <div style="margin-top:10px; overflow:hidden;">
+            <span class="track-title" style="display:block; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${item.title}</span>
+            <small style="color:#666;">${type === 'video' ? 'Video' : 'MP3'}</small>
+        </div>
+        ${deleteBtn}
+    </div>`;
+}
 
         window.saveGalleryItem = async function() {
-            // Security Check
-            if(!canEdit) return alert("Akses Ditolak! Hanya Admin/Mentor yang bisa menambah konten.");
+    // Cek Hak Akses Lagi (Keamanan)
+    if(!canEdit) return alert("Hanya Admin/Mentor yang bisa menambah konten.");
 
-            const title = document.getElementById('add-title').value;
-            const type = document.getElementById('add-type').value;
-            let url = document.getElementById('add-url').value;
-            const thumb = document.getElementById('add-thumb').value;
+    const title = document.getElementById('add-title').value;
+    const type = document.getElementById('add-type').value;
+    let url = document.getElementById('add-url').value;
 
-            if(!title || !url) return alert("Isi data!");
-            if(type === 'video' && url.includes('watch?v=')) url = url.replace('watch?v=', 'embed/');
-            if(type === 'video' && url.includes('youtu.be/')) {
-                const id = url.split('youtu.be/')[1];
-                url = `https://www.youtube.com/embed/${id}`;
-            }
+    if(!title || !url) return alert("Mohon isi judul dan link media!");
 
-            const newItem = { id: Date.now(), type, title, url, thumb: thumb || 'https://via.placeholder.com/300' };
-            const newGallery = [...galleryData, newItem];
-            
-            await updateDoc(doc(db, "performers", PERF_ID), { gallery: newGallery });
+    // Logika Pembersih Link YouTube
+    let ytId = "";
+    if(type === 'video') {
+        if(url.includes('watch?v=')) ytId = url.split('watch?v=')[1].split('&')[0];
+        else if (url.includes('youtu.be/')) ytId = url.split('youtu.be/')[1];
+        url = `https://www.youtube.com/embed/${ytId}`;
+    }
 
-            alert("Konten Ditambahkan!");
-            document.getElementById('modal-add-gallery').style.display = 'none';
-            loadGallery(); // Reload
-        }
+    // Bungkus data baru
+    const newItem = { 
+        id: Date.now(), 
+        type: type, 
+        title: title, 
+        url: url, 
+        cover: currentAddBase64 || "", // Mengambil gambar Base64 dari upload tadi
+        youtubeId: ytId 
+    };
+
+    // Tambahkan ke daftar galeri yang sudah ada
+    const newGallery = [...galleryData, newItem];
+    
+    try {
+        await updateDoc(doc(db, "performers", PERF_ID), { gallery: newGallery });
+        alert("✅ Konten Berhasil Ditambahkan!");
+        
+        // Reset Form & Tutup Modal
+        document.getElementById('modal-add-gallery').style.display = 'none';
+        document.getElementById('add-title').value = '';
+        document.getElementById('add-url').value = '';
+        document.getElementById('add-preview-img').style.display = 'none';
+        document.getElementById('add-placeholder-icon').style.display = 'block';
+        currentAddBase64 = null; // Kosongkan penampung gambar
+        
+        loadGallery(); // Refresh daftar tampilan
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
+}
 
         window.deleteGalleryItem = async function(index) {
             // Security Check
@@ -544,6 +608,19 @@
             }
         }
 
+        window.previewAddImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentAddBase64 = e.target.result;
+            document.getElementById('add-preview-img').src = e.target.result;
+            document.getElementById('add-preview-img').style.display = 'block';
+            document.getElementById('add-placeholder-icon').style.display = 'none';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+        
         // PDF GENERATOR
         window.generatePDF = async function(type, action) {
             const name = document.querySelector('.perf-info h1').innerText;
@@ -587,13 +664,47 @@
         }
 
         // PLAYER & UI UTILS
-        window.playMedia = function(type, url) {
-            const modal = document.getElementById('modal-player');
-            const content = document.getElementById('player-content');
-            modal.style.display = 'flex';
-            if(type === 'video') content.innerHTML = `<iframe width="100%" height="450" src="${url}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
-            else content.innerHTML = `<div style="background:#222; padding:30px;"><audio controls autoplay src="${url}" style="width:100%"></audio></div>`;
+       window.playMedia = function(type, url) {
+    const modal = document.getElementById('modal-player');
+    const content = document.getElementById('player-content');
+    if(!modal || !content) return;
+
+    // --- MESIN PENYULAP LINK (Agar Dropbox/Drive langsung bunyi) ---
+    function clean(u) {
+        if(!u) return "";
+        if(u.includes('dropbox.com')) return u.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+        if(u.includes('drive.google.com')) {
+            const id = u.includes('/file/d/') ? u.split('/file/d/')[1].split('/')[0] : u.split('id=')[1]?.split('&')[0];
+            return `https://drive.google.com/uc?export=download&id=${id}`;
         }
+        return u;
+    }
+
+    modal.style.display = 'flex';
+    
+    if(type === 'video') {
+        // Pastikan video YouTube otomatis jadi format Embed
+        let finalVidUrl = url;
+        if(url.includes('watch?v=')) {
+            const vidId = url.split('watch?v=')[1].split('&')[0];
+            finalVidUrl = `https://www.youtube.com/embed/${vidId}`;
+        } else if(url.includes('youtu.be/')) {
+            const vidId = url.split('youtu.be/')[1];
+            finalVidUrl = `https://www.youtube.com/embed/${vidId}`;
+        }
+        content.innerHTML = `<iframe width="100%" height="450" src="${finalVidUrl}?autoplay=1" frameborder="0" allowfullscreen style="border-radius:10px;"></iframe>`;
+    } else {
+        // --- TAMPILAN AUDIO PREVIEW (DENGAN LINK YANG SUDAH DISULAP) ---
+        content.innerHTML = `
+            <div style="background:#111; padding:40px; border-radius:15px; border:1px solid #FFD700; box-shadow:0 0 20px rgba(255,215,0,0.2);">
+                <i class="fa-solid fa-compact-disc fa-spin" style="font-size:3rem; color:#FFD700; margin-bottom:20px;"></i>
+                <h3 style="color:white; margin:0 0 15px 0;">Audio Preview</h3>
+                <audio controls autoplay src="${clean(url)}" style="width:100%"></audio>
+                <p style="color:#666; font-size:0.7rem; margin-top:10px;">Direct Streaming Active</p>
+            </div>`;
+    }
+}
+        
         window.closePlayer = function() { document.getElementById('modal-player').style.display = 'none'; document.getElementById('player-content').innerHTML = ''; }
         window.closePdfPreview = function() { document.getElementById('pdf-preview-modal').style.display = 'none'; document.getElementById('pdf-frame').src = ''; }
         
