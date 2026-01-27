@@ -560,9 +560,9 @@ async function initWelcomeScreen() {
     const player = document.getElementById('bgm-player');
     const btn = document.getElementById('btn-enter');
 
-    try {
+   try {
         const docSnap = await getDoc(doc(db, "settings", "general"));
-        
+
         if (docSnap.exists()) {
             const data = docSnap.data();
             console.log("Data Settings Ditemukan:", data); // Laporan 2
@@ -570,27 +570,28 @@ async function initWelcomeScreen() {
             if (data.bgmEnabled && data.bgmUrl) {
                 console.log("Welcome Screen AKTIF. Menampilkan..."); // Laporan 3
                 overlay.style.display = 'flex';
+
                 // --- KODE BARU (Universal Link Cleaner) ---
-let finalUrl = data.bgmUrl;
+                let finalUrl = data.bgmUrl;
 
-if (finalUrl.includes('dropbox.com')) {
-    // Trik paling sakti: Ganti domainnya langsung ke server file mentah
-    finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-    finalUrl = finalUrl.replace('dl=0', 'raw=1'); 
-}
-} else if (finalUrl.includes('drive.google.com')) {
-    // Jika dari Google Drive, bedah ID-nya
-    const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
-    finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-}
+                if (finalUrl.includes('dropbox.com')) {
+                    // Trik paling sakti untuk Dropbox
+                    finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+                } else if (finalUrl.includes('drive.google.com')) {
+                    // Jika dari Google Drive, bedah ID-nya
+                    const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
+                    finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                }
 
-player.src = finalUrl;
-// ------------------------------------------
-                
+                player.src = finalUrl;
+                // ------------------------------------------
+
                 btn.onclick = () => {
-                    player.play();
+                    player.play().catch(err => console.log("Autoplay ditahan browser"));
                     overlay.style.opacity = '0';
-                    setTimeout(() => overlay.style.display = 'none', 500);
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 500);
                 };
             } else {
                 console.log("Welcome Screen MATI di settings."); // Laporan 4
@@ -598,9 +599,11 @@ player.src = finalUrl;
             }
         } else {
             console.log("Dokumen settings/general tidak ditemukan di Database.");
+            overlay.style.display = 'none';
         }
-    } catch (e) { 
+    } catch (e) {
         console.error("Error saat memuat BGM:", e);
+        overlay.style.display = 'none';
     }
 }
         
