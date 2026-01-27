@@ -371,38 +371,40 @@ window.openAddGalleryModal = function() {
 
 // 5. SIMPAN KARYA BARU
 window.saveGalleryItem = async function() {
-    const MENTOR_ID = localStorage.getItem('mentorId');
     const title = document.getElementById('gal-title').value;
     const type = document.getElementById('gal-type').value;
     let url = document.getElementById('gal-url').value;
+    const cover = document.getElementById('gal-cover').value; // Ambil nilai cover
 
     if(!title || !url) return alert("Mohon isi judul dan link!");
 
-    // Konversi Link YouTube Biasa ke Embed agar bisa diplay
+    // Konversi Link YouTube ke Embed
+    let ytId = "";
     if(type === 'video') {
-        if(url.includes('watch?v=')) {
-            const videoId = url.split('watch?v=')[1].split('&')[0];
-            url = `https://www.youtube.com/embed/${videoId}`;
-        } else if (url.includes('youtu.be/')) {
-            const videoId = url.split('youtu.be/')[1];
-            url = `https://www.youtube.com/embed/${videoId}`;
-        }
+        if(url.includes('watch?v=')) ytId = url.split('watch?v=')[1].split('&')[0];
+        else if (url.includes('youtu.be/')) ytId = url.split('youtu.be/')[1];
+        url = `https://www.youtube.com/embed/${ytId}`;
     }
 
-    const newItem = { title, type, url };
-    const newGallery = [...mentorGalleryData, newItem]; // Tambahkan ke array lama
+    const newItem = { 
+        title, 
+        type, 
+        url, 
+        cover: cover || "", // Simpan cover
+        youtubeId: ytId 
+    };
+
+    const newGallery = [...mentorGalleryData, newItem];
 
     try {
-        await updateDoc(doc(db, "mentors", MENTOR_ID), {
-            gallery: newGallery
-        });
+        await updateDoc(doc(db, "mentors", MENTOR_ID), { gallery: newGallery });
         alert("Karya Berhasil Ditambahkan!");
         document.getElementById('modal-add-gallery').style.display = 'none';
+        // Reset form
         document.getElementById('gal-title').value = '';
         document.getElementById('gal-url').value = '';
-    } catch (e) {
-        alert("Gagal menyimpan: " + e.message);
-    }
+        document.getElementById('gal-cover').value = '';
+    } catch (e) { alert("Gagal menyimpan: " + e.message); }
 }
 
 // 6. HAPUS KARYA
