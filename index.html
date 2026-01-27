@@ -574,8 +574,10 @@ async function initWelcomeScreen() {
 let finalUrl = data.bgmUrl;
 
 if (finalUrl.includes('dropbox.com')) {
-    // Jika dari Dropbox, ubah dl=0 menjadi raw=1 agar bunyi
-    finalUrl = finalUrl.replace('dl=0', 'raw=1');
+    // Trik paling sakti: Ganti domainnya langsung ke server file mentah
+    finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+    finalUrl = finalUrl.replace('dl=0', 'raw=1'); 
+}
 } else if (finalUrl.includes('drive.google.com')) {
     // Jika dari Google Drive, bedah ID-nya
     const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
