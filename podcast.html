@@ -216,52 +216,60 @@
         }
 
         window.playMedia = function(type, link, ytId, title, artist, cover) {
-    // === KODE AJAIB PENGUBAH LINK GOOGLE DRIVE ===
+    // === 1. MESIN PENYULAP LINK (DROPBOX & DRIVE) ===
     function getDirectLink(url) {
-        if (url.includes('drive.google.com')) {
-            let fileId = "";
-            if (url.includes('/file/d/')) {
-                fileId = url.split('/file/d/')[1].split('/')[0];
-            } else if (url.includes('id=')) {
-                fileId = url.split('id=')[1].split('&')[0];
-            }
-            return `https://drive.google.com/uc?export=download&id=${fileId}`;
+        if (!url) return "";
+        let finalUrl = url;
+        if (finalUrl.includes('dropbox.com')) {
+            finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+        } else if (finalUrl.includes('drive.google.com')) {
+            const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
+            finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
         }
-        return url; // Jika bukan drive, biarkan apa adanya
+        return finalUrl;
     }
-    // =============================================
 
-    const bgm = document.getElementById('bgm-player');
-    if (bgm) bgm.pause();
-
+    // Sembunyikan Placeholder
     document.getElementById('player-placeholder').style.display = 'none';
+    
     const vidPlayer = document.getElementById('video-player');
     const audPlayer = document.getElementById('audio-player');
     const ytFrame = document.getElementById('yt-frame');
     const realAudio = document.getElementById('real-audio');
 
+    // Matikan semua suara & video yang sedang berjalan
     ytFrame.src = ""; 
     realAudio.pause();
     document.getElementById('audio-fake-progress').style.width = '0%';
 
     if (type === 'video') {
+        // --- MODE STREET STAGE (VIDEO) ---
         audPlayer.classList.remove('active');
         vidPlayer.classList.add('active');
         ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
     } else {
+        // --- MODE SMIPRO TUNES (AUDIO) ---
         vidPlayer.classList.remove('active');
         audPlayer.classList.add('active');
+        
         document.getElementById('ap-cover').src = cover;
         document.getElementById('ap-title').innerText = title;
         document.getElementById('ap-artist').innerText = artist;
 
-        // --- PAKAI LINK YANG SUDAH DISULAP ---
+        // Gunakan link yang sudah disulap
         realAudio.src = getDirectLink(link); 
-        realAudio.play().catch(e => alert("File tidak bisa diputar. Pastikan akses Google Drive sudah disetel ke 'Siapa saja yang memiliki link'"));
+        realAudio.load(); // Paksa browser kenali file baru
         
-        document.getElementById('ap-icon').className = "fa-solid fa-pause";
-        setTimeout(() => { document.getElementById('audio-fake-progress').style.width = '40%'; }, 500);
+        realAudio.play().then(() => {
+            document.getElementById('ap-icon').className = "fa-solid fa-pause";
+            // Animasi progress bar simpel
+            setTimeout(() => { document.getElementById('audio-fake-progress').style.width = '60%'; }, 500);
+        }).catch(err => {
+            console.error("Gagal putar MP3:", err);
+            alert("Gagal memutar audio. Pastikan file di Drive/Dropbox sudah di-set PUBLIC (Siapa saja yang memiliki link).");
+        });
     }
+    // Otomatis scroll ke atas agar player kelihatan (Penting di HP)
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
