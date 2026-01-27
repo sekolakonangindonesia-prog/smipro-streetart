@@ -361,7 +361,7 @@
                 container.innerHTML += `<div class="section-divider">🎬 STREET STAGE</div><div class="gallery-grid video-aspect"></div>`;
                 const vGrid = container.lastElementChild;
                 videos.forEach((v, idx) => {
-                    const thumb = v.youtubeId ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/300x168");
+                   const thumb = v.youtubeId ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/300x168");
                     
                     // KUNCI: Pakai playInside, jangan window.open!
                     vGrid.innerHTML += `
@@ -402,6 +402,8 @@
                 </div>`;
             });
         }
+        }
+        
 
    // --- 3. SMART PLAYER FUNCTIONS ---
     window.playTrack = function(index) {
@@ -583,14 +585,9 @@
         const m = Math.floor(s/60);
         const sec = Math.floor(s%60);
         return `${m}:${sec < 10 ? '0' : ''}${sec}`;
-    }
-
-    // TUTUP FUNGSI loadProfile (Jika tadi Anda membukanya di atas)
-    // loadProfile(); // Panggil fungsi utama
-
-    // Jalankan inisialisasi
+    }   
+   
     loadProfile();
 </script>
-
 </body>
 </html>
