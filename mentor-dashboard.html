@@ -161,22 +161,27 @@
     </div>
 </div>
 
-    <!-- MODAL TAMBAH KARYA -->
+    <!-- MODAL TAMBAH KARYA (DENGAN INPUT COVER) -->
 <div id="modal-add-gallery" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
     <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
         <h3 style="margin-top:0; color:white;">Tambah Karya</h3>
         
         <label style="color:#aaa; font-size:0.8rem;">Judul Karya</label>
-        <input type="text" id="gal-title" class="input-mentor" placeholder="Contoh: Video Klip Terbaru">
+        <input type="text" id="gal-title" class="input-mentor" placeholder="Contoh: Single Hits 2025">
 
         <label style="color:#aaa; font-size:0.8rem;">Tipe Konten</label>
         <select id="gal-type" class="input-mentor">
-            <option value="video">Video (YouTube)</option>
-            <option value="audio">Audio (MP3 Link)</option>
+            <option value="video">Video (STREET STAGE)</option>
+            <option value="audio">Audio (SMIPRO TUNES)</option>
         </select>
 
-        <label style="color:#aaa; font-size:0.8rem;">Link URL</label>
-        <input type="text" id="gal-url" class="input-mentor" placeholder="Paste Link YouTube / MP3 disini">
+        <label style="color:#aaa; font-size:0.8rem;">Link Media (YouTube / MP3)</label>
+        <input type="text" id="gal-url" class="input-mentor" placeholder="Paste Link YouTube / MP3">
+
+        <!-- INPUT BARU: COVER GAMBAR -->
+        <label style="color:#aaa; font-size:0.8rem;">Link Foto Cover (Untuk MP3)</label>
+        <input type="text" id="gal-cover" class="input-mentor" placeholder="Paste Link Gambar Cover">
+        <small style="color:#555; font-size:0.7rem;">*Jika video, thumbnail diambil otomatis dari YouTube.</small>
 
         <div style="display:flex; gap:10px; margin-top:15px;">
             <button onclick="document.getElementById('modal-add-gallery').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
