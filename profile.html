@@ -403,7 +403,7 @@
             });
         }
 
-    // --- 3. SMART PLAYER FUNCTIONS ---
+   // --- 3. SMART PLAYER FUNCTIONS ---
     window.playTrack = function(index) {
         currentIndex = index;
         const track = playlist[index];
@@ -418,37 +418,35 @@
             audio.src = cleanLink(track.url);
             audio.load();
             audio.play().catch(e => console.log("Autoplay blocked"));
-            // --- 3.1 FUNGSI PLAY VIDEO DI DALAM KOTAK (UNTUK SS3) ---
             
-        window.playInside = function(elementId, type, url) {
-            const box = document.getElementById(elementId);
-            const audio = document.getElementById('main-audio');
-            const playerBar = document.getElementById('player-bar');
-
-            // 1. Matikan musik yang sedang jalan agar suara tidak tabrakan
-            if(audio) audio.pause();
-            if(playerBar) playerBar.style.display = 'none';
-
-            // 2. Fungsi penyulap link YouTube biasa ke format Embed
-            function getEmbedUrl(rawUrl) {
-                if (rawUrl.includes('youtube.com/embed/')) return rawUrl;
-                let videoId = "";
-                if (rawUrl.includes('v=')) videoId = rawUrl.split('v=')[1].split('&')[0];
-                else if (rawUrl.includes('youtu.be/')) videoId = rawUrl.split('youtu.be/')[1];
-                return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-            }
-
-            // 3. Ganti Thumbnail dengan Iframe Video (Auto-Play)
-            if(type === 'video') {
-                box.innerHTML = `<iframe width="100%" height="100%" src="${getEmbedUrl(url)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:8px;"></iframe>`;
-            }
-            
-            // Fokuskan layar ke video tersebut
-            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        };
             updateBannerColor(track.cover);
         }
-    };
+    }; // <--- KURUNG INI MENUTUP playTrack DENGAN BENAR
+
+    // --- 3.1 FUNGSI PLAY VIDEO (SEKARANG SUDAH DI LUAR) ---
+    window.playInside = function(elementId, type, url) {
+        const box = document.getElementById(elementId);
+        const audio = document.getElementById('main-audio');
+        const playerBar = document.getElementById('player-bar');
+
+        // Matikan musik jika video diputar
+        if(audio) audio.pause();
+        if(playerBar) playerBar.style.display = 'none';
+
+        function getEmbedUrl(rawUrl) {
+            if (rawUrl.includes('youtube.com/embed/')) return rawUrl;
+            let videoId = "";
+            if (rawUrl.includes('v=')) videoId = rawUrl.split('v=')[1].split('&')[0];
+            else if (rawUrl.includes('youtu.be/')) videoId = rawUrl.split('youtu.be/')[1];
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        }
+
+        if(type === 'video') {
+            box.innerHTML = `<iframe width="100%" height="100%" src="${getEmbedUrl(url)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:8px;"></iframe>`;
+        }
+        
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }; // <--- MENUTUP playInside
 
     window.togglePlay = () => {
         const audio = document.getElementById('main-audio');
@@ -581,12 +579,16 @@
             };
         }
 
-    function formatTime(s) {
+   function formatTime(s) {
         const m = Math.floor(s/60);
         const sec = Math.floor(s%60);
         return `${m}:${sec < 10 ? '0' : ''}${sec}`;
     }
 
+    // TUTUP FUNGSI loadProfile (Jika tadi Anda membukanya di atas)
+    // loadProfile(); // Panggil fungsi utama
+
+    // Jalankan inisialisasi
     loadProfile();
 </script>
 
