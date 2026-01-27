@@ -5,6 +5,7 @@ import {
 
 // --- GLOBAL VARIABLES ---
 const MENTOR_ID = localStorage.getItem('mentorId');
+let currentGalleryBase64 = null; // Menyimpan sementara gambar yang dipilih
 const IS_ADMIN = localStorage.getItem('adminOrigin') === 'true';
 
 // --- 1. INISIALISASI (JALANKAN LANGSUNG) ---
@@ -168,6 +169,25 @@ window.submitScore = async function(studentId) {
         } catch (e) {
             alert("Gagal kirim nilai: " + e.message);
         }
+    }
+}
+
+// Fungsi untuk menampilkan gambar yang dipilih dari HP/Laptop ke kotak kecil di modal
+window.previewGalleryImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentGalleryBase64 = e.target.result; // Simpan data gambar ke variabel tadi
+            const img = document.getElementById('gal-preview-img');
+            const icon = document.getElementById('gal-placeholder-icon');
+            
+            if(img) {
+                img.src = e.target.result;
+                img.style.display = 'block'; // Munculkan gambar
+            }
+            if(icon) icon.style.display = 'none'; // Sembunyikan ikon gambar abu-abu
+        }
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
@@ -374,11 +394,10 @@ window.saveGalleryItem = async function() {
     const title = document.getElementById('gal-title').value;
     const type = document.getElementById('gal-type').value;
     let url = document.getElementById('gal-url').value;
-    const cover = document.getElementById('gal-cover').value; // Ambil nilai cover
 
     if(!title || !url) return alert("Mohon isi judul dan link!");
 
-    // Konversi Link YouTube ke Embed
+    // Logika Youtube tetap sama
     let ytId = "";
     if(type === 'video') {
         if(url.includes('watch?v=')) ytId = url.split('watch?v=')[1].split('&')[0];
@@ -390,7 +409,7 @@ window.saveGalleryItem = async function() {
         title, 
         type, 
         url, 
-        cover: cover || "", // Simpan cover
+        cover: currentGalleryBase64 || "", // Sekarang mengambil dari file upload
         youtubeId: ytId 
     };
 
@@ -399,12 +418,16 @@ window.saveGalleryItem = async function() {
     try {
         await updateDoc(doc(db, "mentors", MENTOR_ID), { gallery: newGallery });
         alert("Karya Berhasil Ditambahkan!");
+        
+        // Reset Modal & Form
         document.getElementById('modal-add-gallery').style.display = 'none';
-        // Reset form
         document.getElementById('gal-title').value = '';
         document.getElementById('gal-url').value = '';
-        document.getElementById('gal-cover').value = '';
-    } catch (e) { alert("Gagal menyimpan: " + e.message); }
+        document.getElementById('gal-preview-img').style.display = 'none';
+        document.getElementById('gal-placeholder-icon').style.display = 'block';
+        currentGalleryBase64 = null;
+        
+    } catch (e) { alert("Gagal: " + e.message); }
 }
 
 // 6. HAPUS KARYA
