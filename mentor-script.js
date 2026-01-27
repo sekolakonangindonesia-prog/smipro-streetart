@@ -343,10 +343,10 @@ window.renderGallery = function(galleryArray) {
     if(!container) return; 
     
     container.innerHTML = '';
-    mentorGalleryData = galleryArray || []; // Simpan ke variabel global
+    mentorGalleryData = galleryArray || [];
 
     if (mentorGalleryData.length === 0) {
-        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada karya. Klik "Tambah Karya" untuk upload.</p>';
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada karya.</p>';
         return;
     }
 
@@ -354,28 +354,31 @@ window.renderGallery = function(galleryArray) {
         let icon = item.type === 'video' ? 'fa-play' : 'fa-music';
         let color = item.type === 'video' ? '#E50914' : '#00d2ff';
         
-        // Thumbnail Youtube Otomatis
-        let thumb = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=400"; // Default Audio
+        // --- LOGIKA PENENTUAN GAMBAR (PENTING) ---
+        let thumb = "";
+        
         if (item.type === 'video' && item.url.includes('embed/')) {
+            // Jika video, ambil thumbnail YouTube
             const vidId = item.url.split('embed/')[1].split('?')[0];
-            thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
+            thumb = `https://img.youtube.com/vi/${vidId}/hqdefault.jpg`;
+        } else if (item.cover && item.cover.length > 10) {
+            // Jika ada foto hasil upload dari HP (Base64), pakai itu
+            thumb = item.cover;
+        } else {
+            // Jika tidak ada keduanya, pakai gambar standar
+            thumb = "https://via.placeholder.com/400x225?text=SMIPRO+Media";
         }
 
         container.innerHTML += `
         <div style="position:relative; background:#111; border-radius:8px; overflow:hidden; border:1px solid #333;">
-            <!-- AREA KLIK UNTUK PLAY -->
             <div onclick="previewDashboardMedia('${item.type}', '${item.url}')" style="cursor:pointer; position:relative; height:120px;">
                 <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.6;">
                 <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
                     <i class="fa-solid ${icon}" style="font-size:2rem; color:${color}; text-shadow:0 0 10px black;"></i>
                 </div>
             </div>
-
-            <!-- AREA JUDUL & HAPUS -->
             <div style="padding:10px; border-top:1px solid #333;">
                 <b style="color:white; font-size:0.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:5px;">${item.title}</b>
-                
-                <!-- TOMBOL HAPUS (FIXED) -->
                 <button onclick="window.deleteGalleryItem(${index})" style="width:100%; background:#b71c1c; color:white; border:none; padding:6px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">
                     <i class="fa-solid fa-trash"></i> Hapus
                 </button>
