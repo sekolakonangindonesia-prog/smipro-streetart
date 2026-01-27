@@ -583,7 +583,24 @@ async function initWelcomeScreen() {
                 player.load();
 
                 btn.onclick = () => {
-                    player.play().catch(e => console.log("Autoplay ditahan browser"));
+                    // Paksa browser mengenali interaksi user
+                    player.muted = false; 
+                    player.volume = 1.0;  
+
+                    // Gunakan janji (Promise) untuk memastikan musik berputar
+                    const playPromise = player.play();
+
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log("🎶 MUSIK SMIPRO BERHASIL DIPUTAR!");
+                        }).catch(error => {
+                            console.error("❌ Browser memblokir suara: ", error);
+                            // Solusi darurat: Jika gagal, coba play lagi setelah overlay hilang
+                        });
+                    }
+
+                    // Hilangkan overlay
+                    overlay.style.transition = 'opacity 0.5s ease';
                     overlay.style.opacity = '0';
                     setTimeout(() => {
                         overlay.style.display = 'none';
