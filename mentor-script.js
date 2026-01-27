@@ -428,23 +428,41 @@ window.deleteGalleryItem = async function(index) {
     }
 }
 
-// --- FUNGSI PREVIEW / PLAY DI DASHBOARD (BARU) ---
+// --- FUNGSI PREVIEW / PLAY DI DASHBOARD (VERSI FIX MP3) ---
 window.previewDashboardMedia = function(type, url) {
     const modal = document.getElementById('dashboard-player-modal');
     const content = document.getElementById('dashboard-player-content');
     
-    if(!modal || !content) return; // Jaga-jaga
+    if(!modal || !content) return;
+
+    // === MESIN PENYULAP LINK (Agar MP3 Drive/Dropbox bisa bunyi) ===
+    function cleanUrl(rawUrl) {
+        if (!rawUrl) return "";
+        let finalUrl = rawUrl;
+        if (finalUrl.includes('dropbox.com')) {
+            finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+        } else if (finalUrl.includes('drive.google.com')) {
+            const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
+            finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        }
+        return finalUrl;
+    }
+    // ==============================================================
 
     modal.style.display = 'flex';
     
     if(type === 'video') {
-        content.innerHTML = `<iframe width="100%" height="400" src="${url}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border:none; border-radius:10px;"></iframe>`;
+        // Untuk video, pastikan URL-nya format EMBED
+        content.innerHTML = `<iframe width="100%" height="400" src="${url}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border:none; border-radius:10px;"></iframe>`;
     } else {
+        // UNTUK AUDIO (PAKAI LINK YANG SUDAH DISULAP)
+        const musicUrl = cleanUrl(url);
         content.innerHTML = `
             <div style="background:#222; padding:40px; border-radius:15px; border:1px solid #444;">
                 <i class="fa-solid fa-music" style="font-size:4rem; color:#00d2ff; margin-bottom:20px;"></i>
                 <h3 style="color:white; margin:0 0 10px 0;">Audio Preview</h3>
-                <audio controls autoplay src="${url}" style="width:100%"></audio>
+                <audio controls autoplay src="${musicUrl}" style="width:100%"></audio>
+                <p style="color:#888; font-size:0.8rem; margin-top:15px;">Jika tidak bunyi, pastikan file di Drive/Dropbox sudah PUBLIC.</p>
             </div>`;
     }
 }
