@@ -552,64 +552,50 @@ window.handleVenueClick = function(id, status) {
             });
         }
 
-        // --- LOGIKA WELCOME SCREEN & BGM (DINAMIS DARI ADMIN) ---
+       // --- LOGIKA WELCOME SCREEN & BGM (VERSI FINAL ANTI-ERROR) ---
 async function initWelcomeScreen() {
-    console.log("Memulai pengecekan Welcome Screen..."); // Laporan 1
-    
     const overlay = document.getElementById('welcome-overlay');
     const player = document.getElementById('bgm-player');
     const btn = document.getElementById('btn-enter');
+    
+    if (!overlay || !player || !btn) return;
 
-   try {
+    try {
         const docSnap = await getDoc(doc(db, "settings", "general"));
-
+        
         if (docSnap.exists()) {
             const data = docSnap.data();
-            console.log("Data Settings Ditemukan:", data); // Laporan 2
-
+            
             if (data.bgmEnabled && data.bgmUrl) {
-                console.log("Welcome Screen AKTIF. Menampilkan..."); // Laporan 3
                 overlay.style.display = 'flex';
                 
-// --- 1. MESIN PENYULAP LINK (Taruh di baris 573) ---
+                // --- PROSES LINK (DROPBOX / DRIVE) ---
                 let finalUrl = data.bgmUrl;
-
                 if (finalUrl.includes('dropbox.com')) {
-                    // Kita sulap www jadi dl, dan dl=0 jadi raw=1
                     finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
-                    console.log("Link Dropbox Berhasil Disulap:", finalUrl); 
                 } else if (finalUrl.includes('drive.google.com')) {
                     const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
                     finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 }
 
                 player.src = finalUrl;
-                player.load(); // Paksa browser untuk mengenali file musiknya
+                player.load();
 
-                // --- 2. LOGIKA TOMBOL PLAY ---
                 btn.onclick = () => {
-                    player.play().then(() => {
-                        console.log("Musik SMIPRO mulai berputar!");
-                    }).catch(err => {
-                        console.error("Browser menahan musik:", err);
-                    });
-                    
-                    overlay.style.transition = '0.5s';
+                    player.play().catch(e => console.log("Autoplay ditahan browser"));
                     overlay.style.opacity = '0';
                     setTimeout(() => {
                         overlay.style.display = 'none';
                     }, 500);
                 };
-            else {
-                console.log("Welcome Screen MATI di settings."); // Laporan 4
+            } else {
                 overlay.style.display = 'none';
             }
         } else {
-            console.log("Dokumen settings/general tidak ditemukan di Database.");
             overlay.style.display = 'none';
         }
     } catch (e) {
-        console.error("Error saat memuat BGM:", e);
+        console.error("Error BGM:", e);
         overlay.style.display = 'none';
     }
 }
