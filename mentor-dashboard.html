@@ -178,15 +178,18 @@
         <label style="color:#aaa; font-size:0.8rem;">Link Media (YouTube / MP3)</label>
         <input type="text" id="gal-url" class="input-mentor" placeholder="Paste Link YouTube / MP3">
 
-        <!-- INPUT BARU: COVER GAMBAR -->
-        <label style="color:#aaa; font-size:0.8rem;">Link Foto Cover (Untuk MP3)</label>
-        <input type="text" id="gal-cover" class="input-mentor" placeholder="Paste Link Gambar Cover">
-        <small style="color:#555; font-size:0.7rem;">*Jika video, thumbnail diambil otomatis dari YouTube.</small>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="document.getElementById('modal-add-gallery').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
-            <button onclick="saveGalleryItem()" style="flex:1; padding:10px; background:var(--green); border:none; color:black; font-weight:bold; border-radius:5px; cursor:pointer;">Simpan</button>
-        </div>
+       <!-- AREA UPLOAD COVER BARU -->
+<label style="color:#aaa; font-size:0.8rem;">Foto Cover (Untuk MP3)</label>
+<div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
+    <div onclick="document.getElementById('gal-file-input').click()" style="width:80px; height:80px; border:2px dashed #555; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:#111;">
+        <img id="gal-preview-img" src="https://via.placeholder.com/80?text=+" style="width:100%; height:100%; object-fit:cover; display:none;">
+        <i id="gal-placeholder-icon" class="fa-solid fa-image" style="color:#444; font-size:1.5rem;"></i>
+    </div>
+    <div style="flex:1;">
+        <button type="button" onclick="document.getElementById('gal-file-input').click()" style="background:#333; color:white; border:1px solid #444; padding:8px 12px; border-radius:5px; font-size:0.8rem; cursor:pointer;">
+            Pilih Foto dari Galeri
+        </button>
+        <input type="file" id="gal-file-input" style="display:none;" accept="image/*" onchange="previewGalleryImage(this)">
     </div>
 </div>
 
