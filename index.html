@@ -577,6 +577,7 @@ async function initWelcomeScreen() {
                 if (finalUrl.includes('dropbox.com')) {
                     // Trik paling sakti untuk Dropbox
                     finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+                     console.log("Link Dropbox Disulap Menjadi:", finalUrl);
                 } else if (finalUrl.includes('drive.google.com')) {
                     // Jika dari Google Drive, bedah ID-nya
                     const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
@@ -586,14 +587,20 @@ async function initWelcomeScreen() {
                 player.src = finalUrl;
                 // ------------------------------------------
 
-                btn.onclick = () => {
-                    player.play().catch(err => console.log("Autoplay ditahan browser"));
+               btn.onclick = () => {
+                    player.load(); // Paksa browser ambil file musiknya
+                    player.play().then(() => {
+                        console.log("Musik berhasil diputar!");
+                    }).catch(err => {
+                        console.error("Gagal putar musik:", err);
+                    });
+
                     overlay.style.opacity = '0';
                     setTimeout(() => {
                         overlay.style.display = 'none';
                     }, 500);
                 };
-            } else {
+            else {
                 console.log("Welcome Screen MATI di settings."); // Laporan 4
                 overlay.style.display = 'none';
             }
