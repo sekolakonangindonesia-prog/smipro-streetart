@@ -194,78 +194,89 @@
                 }
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
 
-                // 5. ISI GALERI KARYA (PLAY DI DALAM KOTAK)
+                // --- 5. RENDER SHOWCASE TERPISAH (STREET STAGE & SMIPRO TUNES) ---
                 const galleryContainer = document.getElementById('gallery-container');
                 galleryContainer.innerHTML = "";
+                galleryContainer.style.display = "block"; // Ubah jadi block agar seksi menumpuk
+
+                const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
+                const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
 
                 if (data.gallery && data.gallery.length > 0) {
-                data.gallery.forEach((item, index) => {
-                let icon = item.type === 'video' ? 'fa-play' : 'fa-music';
-                let color = item.type === 'video' ? '#E50914' : '#00d2ff';
-        
-                // Thumbnail Default
-                let thumb = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=400"; 
-        
-                // Jika Video YouTube, ambil thumbnail aslinya
-                if (item.type === 'video' && item.url.includes('embed/')) {
-                const vidId = item.url.split('embed/')[1].split('?')[0];
-                thumb = `https://img.youtube.com/vi/${vidId}/mqdefault.jpg`;
+                    const videoWorks = data.gallery.filter(i => i.type === 'video');
+                    const audioWorks = data.gallery.filter(i => i.type === 'audio');
+
+                    // A. SEKSI VIDEO (STREET STAGE)
+                    if (videoWorks.length > 0) {
+                        galleryContainer.innerHTML += `<div style="margin:20px 0 15px; color:#FFD700; font-weight:800; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px; letter-spacing:1px;">🎬 STREET STAGE</div>`;
+                        const vGrid = document.createElement('div');
+                        vGrid.className = "gallery-grid";
+                        videoWorks.forEach((v, idx) => {
+                            const vThumb = v.url.includes('embed/') ? `https://img.youtube.com/vi/${v.url.split('embed/')[1].split('?')[0]}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/400x225");
+                            vGrid.innerHTML += `
+                            <div class="gallery-item" onclick="playInside('media-v-${idx}', 'video', '${v.url}')" id="media-v-${idx}">
+                                <img src="${vThumb}" style="width:100%; height:100%; object-fit:cover;">
+                                <div class="gallery-overlay"><img src="${LOGO_STAGE}" style="width:50px; border-radius:50%; border:2px solid white;"></div>
+                                <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.7); padding:5px; font-size:0.8rem; text-align:center;">${v.title}</div>
+                            </div>`;
+                        });
+                        galleryContainer.appendChild(vGrid);
+                    }
+
+                    // B. SEKSI AUDIO (SMIPRO TUNES)
+                    if (audioWorks.length > 0) {
+                        galleryContainer.innerHTML += `<div style="margin:40px 0 15px; color:#00d2ff; font-weight:800; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px; letter-spacing:1px;">🎧 SMIPRO TUNES</div>`;
+                        const aGrid = document.createElement('div');
+                        aGrid.className = "gallery-grid";
+                        audioWorks.forEach((a, idx) => {
+                            const aCover = a.cover || data.img || "https://via.placeholder.com/300?text=SMIPRO+Tune";
+                            aGrid.innerHTML += `
+                            <div class="gallery-item" style="aspect-ratio:1/1;" onclick="playInside('media-a-${idx}', 'audio', '${a.url}', '${aCover}')" id="media-a-${idx}">
+                                <img src="${aCover}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover;">
+                                <div class="gallery-overlay"><img src="${LOGO_TUNE}" style="width:60px; border-radius:50%; border:2px solid white;"></div>
+                                <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:8px; font-size:0.85rem; text-align:center; font-weight:bold;">${a.title}</div>
+                            </div>`;
+                        });
+                        galleryContainer.appendChild(aGrid);
+                    }
+                } else {
+                    galleryContainer.innerHTML = '<p style="color:#666; text-align:center;">Mentor belum menambahkan karya.</p>';
                 }
 
-        // Kita beri ID unik untuk setiap kotak agar bisa diubah isinya
-        const uniqueId = `media-${index}`;
-
-        galleryContainer.innerHTML += `
-        <div class="gallery-item" id="${uniqueId}">
-            <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
-            
-            <div class="gallery-overlay" onclick="playInside('${uniqueId}', '${item.type}', '${item.url}')" style="cursor:pointer;">
-                <i class="fa-solid ${icon}" style="color:white; font-size:3rem; filter:drop-shadow(0 0 5px black); background:rgba(0,0,0,0.5); padding:15px; border-radius:50%; border:2px solid ${color};"></i>
-                <span style="position:absolute; bottom:10px; left:10px; right:10px; text-align:center; color:white; font-weight:bold; background:rgba(0,0,0,0.7); padding:4px; border-radius:4px; font-size:0.8rem;">${item.title}</span>
-            </div>
-        </div>`;
-    });
-} else {
-    galleryContainer.innerHTML = '<p style="color:#666; grid-column:1/-1; text-align:center;">Mentor belum menambahkan karya.</p>';
-}
-
-
-// --- FUNGSI PLAY DI DALAM KOTAK (VERSI FIX MP3 & VIDEO) ---
-window.playInside = function(elementId, type, url) {
+// --- FUNGSI PLAY & GANTI WARNA HEADER ---
+window.playInside = function(elementId, type, url, coverUrl) {
     const box = document.getElementById(elementId);
     if (!box) return;
 
-    // === MESIN PENYULAP LINK (Agar MP3 Drive/Dropbox bisa bunyi) ===
-    function getDirectLink(rawUrl) {
-        if (!rawUrl) return "";
-        let finalUrl = rawUrl;
-        if (finalUrl.includes('dropbox.com')) {
-            // Sulap Dropbox ke mode direct stream
-            finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
-        } else if (finalUrl.includes('drive.google.com')) {
-            // Bedah ID Google Drive
-            const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
-            finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    function getDirectLink(u) {
+        if(u.includes('dropbox.com')) return u.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+        if(u.includes('drive.google.com')) {
+            const id = u.includes('/file/d/') ? u.split('/file/d/')[1].split('/')[0] : u.split('id=')[1]?.split('&')[0];
+            return `https://drive.google.com/uc?export=download&id=${id}`;
         }
-        return finalUrl;
+        return u;
     }
-    // ==============================================================
 
     if(type === 'video') {
-        // Ganti Gambar dengan Iframe YouTube
-        // Pastikan URL video sudah berformat 'embed/' dari Admin
         box.innerHTML = `<iframe width="100%" height="100%" src="${url}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:10px;"></iframe>`;
     } else {
-        // UNTUK AUDIO (PAKAI LINK YANG SUDAH DISULAP)
-        const cleanAudioUrl = getDirectLink(url);
+        // EFEK GANTI BACKGROUND HEADER (Sesuai keinginan Anda)
+        if(coverUrl) {
+            const hero = document.querySelector('.profile-hero');
+            hero.style.transition = "background 1s ease";
+            hero.style.background = `linear-gradient(to bottom, rgba(0,0,0,0.2), #0a0a0a), url('${coverUrl}')`;
+            hero.style.backgroundSize = "cover";
+            hero.style.backgroundPosition = "center";
+        }
         box.innerHTML = `
             <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#111; border-radius:10px; border:1px solid #00d2ff;">
-                <i class="fa-solid fa-compact-disc fa-spin" style="font-size:2rem; color:#00d2ff; margin-bottom:10px;"></i>
-                <audio controls autoplay src="${cleanAudioUrl}" style="width:90%; height:35px;"></audio>
-                <small style="color:#555; font-size:0.6rem; margin-top:5px;">Direct Streaming Active</small>
+                <i class="fa-solid fa-compact-disc fa-spin" style="font-size:2.5rem; color:#00d2ff; margin-bottom:10px;"></i>
+                <audio controls autoplay src="${getDirectLink(url)}" style="width:90%; height:35px;"></audio>
             </div>`;
     }
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+                
 window.closePublicPlayer = function() {
     document.getElementById('public-player-modal').style.display = 'none';
     document.getElementById('public-player-content').innerHTML = ''; // Stop video/audio
