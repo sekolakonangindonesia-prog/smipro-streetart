@@ -570,31 +570,31 @@ async function initWelcomeScreen() {
             if (data.bgmEnabled && data.bgmUrl) {
                 console.log("Welcome Screen AKTIF. Menampilkan..."); // Laporan 3
                 overlay.style.display = 'flex';
-
-                // --- KODE BARU (Universal Link Cleaner) ---
+                
+// --- 1. MESIN PENYULAP LINK (Taruh di baris 573) ---
                 let finalUrl = data.bgmUrl;
 
                 if (finalUrl.includes('dropbox.com')) {
-                    // Trik paling sakti untuk Dropbox
+                    // Kita sulap www jadi dl, dan dl=0 jadi raw=1
                     finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
-                     console.log("Link Dropbox Disulap Menjadi:", finalUrl);
+                    console.log("Link Dropbox Berhasil Disulap:", finalUrl); 
                 } else if (finalUrl.includes('drive.google.com')) {
-                    // Jika dari Google Drive, bedah ID-nya
                     const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
                     finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 }
 
                 player.src = finalUrl;
-                // ------------------------------------------
+                player.load(); // Paksa browser untuk mengenali file musiknya
 
-               btn.onclick = () => {
-                    player.load(); // Paksa browser ambil file musiknya
+                // --- 2. LOGIKA TOMBOL PLAY ---
+                btn.onclick = () => {
                     player.play().then(() => {
-                        console.log("Musik berhasil diputar!");
+                        console.log("Musik SMIPRO mulai berputar!");
                     }).catch(err => {
-                        console.error("Gagal putar musik:", err);
+                        console.error("Browser menahan musik:", err);
                     });
-
+                    
+                    overlay.style.transition = '0.5s';
                     overlay.style.opacity = '0';
                     setTimeout(() => {
                         overlay.style.display = 'none';
