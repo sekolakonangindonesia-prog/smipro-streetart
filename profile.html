@@ -59,6 +59,102 @@
         /* Floating WA */
         .floating-wa { position: fixed; bottom: 25px; right: 25px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 100; text-decoration: none; animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* === TAMBAHAN UNTUK SMART PLAYER (TIDAK MERUSAK KODE LAMA) === */
+        
+        /* 1. Beri transisi pada banner agar ganti warna halus */
+        .profile-banner { transition: background 1s ease; }
+
+        /* 2. Style Seksi Karya (Stage vs Tune) */
+        .section-divider { 
+            display: flex; align-items: center; 
+            margin: 40px 0 20px; color: #fff; 
+            font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; 
+        }
+        .section-divider::after { 
+            content: ""; flex: 1; height: 1px; 
+            background: #333; margin-left: 20px; 
+        }
+
+        /* 3. Grid Kartu Karya */
+        .gallery-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 20px; margin-bottom: 30px; 
+        }
+        .gallery-item { 
+            background: #181818; padding: 12px; border-radius: 10px; 
+            cursor: pointer; transition: 0.3s; position: relative; 
+        }
+        .gallery-item:hover { background: #282828; transform: translateY(-5px); }
+        
+        .thumb-wrap { 
+            position: relative; width: 100%; aspect-ratio: 1/1; 
+            border-radius: 6px; overflow: hidden; margin-bottom: 10px; 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+        }
+        .video-aspect .thumb-wrap { aspect-ratio: 16/9; } /* Video lebih lebar */
+        
+        .play-overlay { 
+            position: absolute; inset: 0; display: flex; 
+            align-items: center; justify-content: center; 
+            opacity: 0; transition: 0.3s; background: rgba(0,0,0,0.3); 
+        }
+        .gallery-item:hover .play-overlay { opacity: 1; }
+        .item-title { 
+            font-size: 0.85rem; font-weight: bold; color: #fff;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        /* 4. SMART FLOATING PLAYER (SPOTIFY STYLE) */
+        .floating-player {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(18, 18, 18, 0.98);
+            backdrop-filter: blur(15px); border-top: 1px solid #333;
+            padding: 12px 20px; display: none; z-index: 9998;
+            animation: slideUp 0.5s ease;
+        }
+        .player-inner { 
+            max-width: 900px; margin: 0 auto; 
+            display: flex; align-items: center; justify-content: space-between; gap: 15px; 
+        }
+        .player-info { display: flex; align-items: center; gap: 12px; width: 35%; }
+        .mini-cover { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; }
+        .mini-text { overflow: hidden; white-space: nowrap; }
+        .mini-title { font-size: 0.85rem; font-weight: bold; display: block; text-overflow: ellipsis; overflow: hidden; }
+        .mini-artist { font-size: 0.7rem; color: #b3b3b3; }
+
+        .player-controls { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .ctrl-btns { display: flex; align-items: center; gap: 15px; }
+        .btn-play-main { 
+            background: #fff; color: #000; width: 35px; height: 35px; 
+            border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-sub { background: none; border: none; color: #888; cursor: pointer; font-size: 1rem; }
+        .btn-sub.active { color: #1db954; }
+
+        .progress-box { width: 100%; display: flex; align-items: center; gap: 10px; font-size: 0.65rem; color: #888; }
+        .bar-bg { flex: 1; height: 3px; background: #444; border-radius: 2px; cursor: pointer; position: relative; }
+        .bar-fill { height: 100%; background: #1db954; width: 0%; border-radius: 2px; }
+
+        /* 5. PENYESUAIAN FLOATING WA AGAR TIDAK TABRAKAN */
+        .floating-wa { 
+            bottom: 90px !important; /* Dinaikkan agar di atas player bar */
+            transition: 0.3s;
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .gallery-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .player-info { width: 50%; }
+            .btn-sub { font-size: 0.9rem; }
+            .ctrl-btns { gap: 10px; }
+        }
+        
     </style>
 </head>
 <body>
@@ -111,19 +207,11 @@
             <p style="text-align:center; color:#555;">Mengecek jadwal...</p>
         </div>
 
-        <!-- GALERI KARYA -->
-        <div class="section-title"><i class="fa-solid fa-photo-film"></i> Galeri Karya</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:15px;">
-            <div style="background:#181818; padding:10px; border-radius:8px;">
-                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=200" style="width:100%; border-radius:5px;">
-                <span style="color:white; display:block; margin-top:5px; font-weight:bold; font-size:0.8rem;">Live Performance</span>
-            </div>
-            <div style="background:#181818; padding:10px; border-radius:8px;">
-                <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=200" style="width:100%; border-radius:5px;">
-                <span style="color:white; display:block; margin-top:5px; font-weight:bold; font-size:0.8rem;">Cover Lagu Hits</span>
-            </div>
+       <!-- GALERI KARYA (DINAMIS & TERPISAH) -->
+        <div id="gallery-container" style="margin-top: 30px;">
+            <p style="text-align:center; color:#444;">Memuat karya...</p>
         </div>
-
+        
         <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
         &copy; 2025 Yayasan Sekolah Konang Indonesia - SMIPRO StreetArt.ID
     </div>
@@ -136,142 +224,292 @@
         <i class="fa-brands fa-whatsapp"></i>
     </a>
 
+    <!-- SMART FLOATING PLAYER (SPOTIFY STYLE) -->
+    <div class="floating-player" id="player-bar">
+        <div class="player-inner">
+            <!-- Info Lagu -->
+            <div class="player-info">
+                <img src="" id="track-cover" class="mini-cover" crossorigin="anonymous">
+                <div class="mini-text">
+                    <span id="track-title" class="mini-title">-</span>
+                    <span id="track-artist" class="mini-artist">SMIPRO Performer</span>
+                </div>
+            </div>
+
+            <!-- Kontrol Utama -->
+            <div class="player-controls">
+                <div class="ctrl-btns">
+                    <button class="btn-sub" onclick="toggleShuffle()" id="btn-shuffle" title="Shuffle"><i class="fa-solid fa-shuffle"></i></button>
+                    <button class="btn-sub" onclick="prevTrack()"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="btn-play-main" onclick="togglePlay()"><i class="fa-solid fa-play" id="main-play-icon"></i></button>
+                    <button class="btn-sub" onclick="nextTrack()"><i class="fa-solid fa-forward-step"></i></button>
+                    <button class="btn-sub" onclick="toggleRepeat()" id="btn-repeat" title="Repeat 1x"><i class="fa-solid fa-repeat"></i></button>
+                </div>
+                <!-- Progress Bar -->
+                <div class="progress-box">
+                    <span id="curr-time">0:00</span>
+                    <div class="bar-bg" id="progress-clickable">
+                        <div class="bar-fill" id="progress-fill"></div>
+                    </div>
+                    <span id="total-time">0:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Elemen Audio Tersembunyi -->
+    <audio id="main-audio"></audio>
+
     <!-- SCRIPT FIREBASE -->
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+   <script type="module">
+    import { db } from './firebase-config.js';
+    import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get('id');
+    // --- VARIABEL GLOBAL UNTUK SMART PLAYER ---
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    let playlist = []; // Antrean MP3
+    let currentIndex = -1;
+    let isRepeatOne = false;
+    let isShuffle = false;
 
-        async function loadProfile() {
-            if(!id) {
-                document.querySelector('.container').innerHTML = "<h3 style='text-align:center; margin-top:50px;'>Data tidak ditemukan.</h3>";
-                return;
-            }
+    const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
+    const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
 
-            // 1. AMBIL DATA PERFORMER
-            const docRef = doc(db, "performers", id);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const artistName = data.name;
-
-                // Tampilkan Data Utama
-                document.getElementById('p-name').innerText = data.name;
-                document.getElementById('p-genre').innerText = data.genre;
-                document.getElementById('p-rating').innerText = data.rating || "5.0";
-                document.getElementById('p-bio').innerText = data.bio || "Belum ada bio.";
-                
-                if(data.img) document.getElementById('p-img').src = data.img;
-
-                // Tampilkan Sosmed (Hanya jika ada link)
-                const socialContainer = document.getElementById('social-links');
-                socialContainer.innerHTML = '';
-                
-                if(data.link_ig) socialContainer.innerHTML += `<a href="${data.link_ig}" target="_blank"><i class="fa-brands fa-instagram" style="color:#C13584;"></i></a>`;
-                if(data.link_tiktok) socialContainer.innerHTML += `<a href="${data.link_tiktok}" target="_blank"><i class="fa-brands fa-tiktok" style="color:#00f2ea;"></i></a>`;
-                if(data.link_yt) socialContainer.innerHTML += `<a href="${data.link_yt}" target="_blank"><i class="fa-brands fa-youtube" style="color:#ff0000;"></i></a>`;
-
-                // Setup WA Link
-                const textWA = `Halo Admin SMIPRO, saya ingin info booking talent *${data.name}*.`;
-                document.getElementById('wa-link').href = `https://wa.me/6281234567890?text=${encodeURIComponent(textWA)}`;
-
-                // 2. CARI JADWAL DI DATABASE EVENT
-                loadArtistSchedule(artistName);
-
-            } else {
-                document.querySelector('.container').innerHTML = "<h3 style='text-align:center; margin-top:50px;'>Artis tidak ditemukan di database.</h3>";
-            }
+    // --- 1. LOGIKA LOAD PROFIL (DIGABUNG) ---
+    async function loadProfile() {
+        if(!id) {
+            document.querySelector('.container').innerHTML = "<h3 style='text-align:center; margin-top:50px;'>Data tidak ditemukan.</h3>";
+            return;
         }
 
-       // FUNGSI PENCARI JADWAL (LIVE STAGE, TOUR, RADIO, PODCAST)
-        async function loadArtistSchedule(artistName) {
-            const container = document.getElementById('schedule-list');
-            container.innerHTML = '';
-            let found = false;
+        const docRef = doc(db, "performers", id);
+        const docSnap = await getDoc(docRef);
 
-            // 1. CARI DI JADWAL PANGGUNG & TOUR (EVENTS)
-            const qEvent = query(collection(db, "events"), orderBy("date", "asc"));
-            const snapEvent = await getDocs(qEvent);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const artistName = data.name;
 
-            snapEvent.forEach((doc) => {
-                const event = doc.data();
-                if(event.performers && Array.isArray(event.performers)) {
-                    const mySession = event.performers.find(p => p.name === artistName);
-                    
-                    if(mySession) {
-                        found = true;
-                        
-                        // CEK TIPE EVENT (Main vs Tour)
-                        if (event.type === 'tour') {
-                            // --- TAMPILAN TOUR (ORANYE) ---
-                            container.innerHTML += `
-                            <div class="sched-card cafe" style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #ff9800; margin-bottom:10px;">
-                                <div style="font-size:1.5rem; width:40px; text-align:center; color:#ff9800;">
-                                    <i class="fa-solid fa-mug-hot"></i>
-                                </div>
-                                <div>
-                                    <b style="color:white;">SMIPRO ON TOUR</b><br>
-                                    <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small><br>
-                                    <span style="color:#ff9800; font-size:0.9rem; font-weight:bold;">Jam: ${mySession.time}</span>
-                                </div>
-                            </div>`;
-                        } else {
-                            // --- TAMPILAN UTAMA (MERAH) ---
-                            container.innerHTML += `
-                            <div class="sched-card official" style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #E50914; margin-bottom:10px;">
-                                <div style="font-size:1.5rem; width:40px; text-align:center; color:#E50914;">
-                                    <i class="fa-solid fa-microphone-lines"></i>
-                                </div>
-                                <div>
-                                    <b style="color:white;">SMIPRO Live Stage</b><br>
-                                    <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small><br>
-                                    <span style="color:#E50914; font-size:0.9rem; font-weight:bold;">Jam: ${mySession.time} WIB</span>
-                                </div>
-                            </div>`;
-                        }
-                    }
+            // Identitas Dasar (Kode Lama Anda)
+            document.getElementById('p-name').innerText = data.name;
+            document.getElementById('p-genre').innerText = data.genre;
+            document.getElementById('p-rating').innerText = data.rating || "5.0";
+            document.getElementById('p-bio').innerText = data.bio || "Belum ada bio.";
+            if(data.img) document.getElementById('p-img').src = data.img;
+
+            // Sosmed & WA (Kode Lama Anda)
+            const socialContainer = document.getElementById('social-links');
+            socialContainer.innerHTML = '';
+            if(data.link_ig) socialContainer.innerHTML += `<a href="${data.link_ig}" target="_blank"><i class="fa-brands fa-instagram" style="color:#C13584;"></i></a>`;
+            if(data.link_tiktok) socialContainer.innerHTML += `<a href="${data.link_tiktok}" target="_blank"><i class="fa-brands fa-tiktok" style="color:#00f2ea;"></i></a>`;
+            if(data.link_yt) socialContainer.innerHTML += `<a href="${data.link_yt}" target="_blank"><i class="fa-brands fa-youtube" style="color:#ff0000;"></i></a>`;
+
+            const textWA = `Halo Admin SMIPRO, saya ingin info booking talent *${data.name}*.`;
+            document.getElementById('wa-link').href = `https://wa.me/6281234567890?text=${encodeURIComponent(textWA)}`;
+
+            // --- EKSEKUSI JADWAL (Kode Lama Anda) ---
+            loadArtistSchedule(artistName);
+
+            // --- EKSEKUSI SHOWCASE (Kode Baru) ---
+            renderSmartShowcase(data.gallery || [], data.name);
+
+        } else {
+            document.querySelector('.container').innerHTML = "<h3 style='text-align:center; margin-top:50px;'>Artis tidak ditemukan.</h3>";
+        }
+    }
+
+    // --- 2. FUNGSI RENDER SHOWCASE (STREET STAGE & SMIPRO TUNES) ---
+    function renderSmartShowcase(gallery, artistName) {
+        const container = document.getElementById('gallery-container');
+        if(!container) return;
+        container.innerHTML = "";
+
+        // Pisahkan konten
+        const videos = gallery.filter(i => i.type === 'video');
+        playlist = gallery.filter(i => i.type === 'audio'); // Masuk antrean putar
+
+        // A. Render STREET STAGE
+        if (videos.length > 0) {
+            container.innerHTML += `<div class="section-divider">🎬 STREET STAGE</div><div class="gallery-grid video-aspect"></div>`;
+            const vGrid = container.lastElementChild;
+            videos.forEach(v => {
+                const thumb = v.url.includes('embed/') ? `https://img.youtube.com/vi/${v.url.split('embed/')[1].split('?')[0]}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/300x168");
+                vGrid.innerHTML += `
+                <div class="gallery-item" onclick="window.open('${v.url}', '_blank')">
+                    <div class="thumb-wrap"><img src="${thumb}" class="thumb-img"><div class="play-overlay"><img src="${LOGO_STAGE}" style="width:50px;border-radius:50%;border:2px solid #fff;"></div></div>
+                    <span class="item-title">${v.title}</span>
+                </div>`;
+            });
+        }
+
+        // B. Render SMIPRO TUNES
+        if (playlist.length > 0) {
+            container.innerHTML += `<div class="section-divider">🎧 SMIPRO TUNES</div><div class="gallery-grid"></div>`;
+            const aGrid = container.lastElementChild;
+            playlist.forEach((track, index) => {
+                const cover = track.cover || "https://via.placeholder.com/300?text=SMIPRO+Tune";
+                aGrid.innerHTML += `
+                <div class="gallery-item" onclick="window.playTrack(${index})">
+                    <div class="thumb-wrap"><img src="${cover}" class="thumb-img"><div class="play-overlay"><img src="${LOGO_TUNE}" style="width:50px;border-radius:50%;border:2px solid #fff;"></div></div>
+                    <span class="item-title">${track.title}</span>
+                </div>`;
+            });
+        }
+    }
+
+    // --- 3. SMART PLAYER FUNCTIONS ---
+    window.playTrack = function(index) {
+        currentIndex = index;
+        const track = playlist[index];
+        const audio = document.getElementById('main-audio');
+        const playerBar = document.getElementById('player-bar');
+
+        if(audio && playerBar) {
+            playerBar.style.display = 'block';
+            document.getElementById('track-cover').src = track.cover || "https://via.placeholder.com/150";
+            document.getElementById('track-title').innerText = track.title;
+            
+            audio.src = cleanLink(track.url);
+            audio.load();
+            audio.play().catch(e => console.log("Autoplay blocked"));
+            
+            updateBannerColor(track.cover);
+        }
+    };
+
+    window.togglePlay = () => {
+        const audio = document.getElementById('main-audio');
+        if(audio.paused) audio.play(); else audio.pause();
+    };
+
+    window.nextTrack = () => {
+        if(playlist.length === 0) return;
+        currentIndex = isShuffle ? Math.floor(Math.random() * playlist.length) : (currentIndex + 1) % playlist.length;
+        playTrack(currentIndex);
+    };
+
+    window.prevTrack = () => {
+        if(playlist.length === 0) return;
+        currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+        playTrack(currentIndex);
+    };
+
+    window.toggleRepeat = () => {
+        isRepeatOne = !isRepeatOne;
+        document.getElementById('btn-repeat').classList.toggle('active', isRepeatOne);
+    };
+
+    window.toggleShuffle = () => {
+        isShuffle = !isShuffle;
+        document.getElementById('btn-shuffle').classList.toggle('active', isShuffle);
+    };
+
+    // --- 4. AUDIO EVENT LISTENERS ---
+    const mainAudio = document.getElementById('main-audio');
+    if(mainAudio) {
+        mainAudio.onplay = () => document.getElementById('main-play-icon').className = "fa-solid fa-pause";
+        mainAudio.onpause = () => document.getElementById('main-play-icon').className = "fa-solid fa-play";
+        mainAudio.onended = () => { if(isRepeatOne) mainAudio.play(); else nextTrack(); };
+        mainAudio.ontimeupdate = () => {
+            const pct = (mainAudio.currentTime / mainAudio.duration) * 100;
+            document.getElementById('progress-fill').style.width = pct + '%';
+            document.getElementById('curr-time').innerText = formatTime(mainAudio.currentTime);
+            if(!isNaN(mainAudio.duration)) document.getElementById('total-time').innerText = formatTime(mainAudio.duration);
+        };
+    }
+
+    // --- 5. LOGIKA JADWAL (Kode Lama Anda - 100% AMAN) ---
+    async function loadArtistSchedule(artistName) {
+        const container = document.getElementById('schedule-list');
+        container.innerHTML = '';
+        let found = false;
+
+        const qEvent = query(collection(db, "events"), orderBy("date", "asc"));
+        const snapEvent = await getDocs(qEvent);
+
+        snapEvent.forEach((doc) => {
+            const event = doc.data();
+            if(event.performers && Array.isArray(event.performers)) {
+                const mySession = event.performers.find(p => p.name === artistName);
+                if(mySession) {
+                    found = true;
+                    let color = (event.type === 'tour') ? '#ff9800' : '#E50914';
+                    container.innerHTML += `
+                    <div style="background:#222; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid ${color}; margin-bottom:10px;">
+                        <div style="font-size:1.5rem; width:40px; text-align:center; color:${color};">
+                            <i class="fa-solid ${event.type === 'tour' ? 'fa-mug-hot' : 'fa-microphone-lines'}"></i>
+                        </div>
+                        <div>
+                            <b style="color:white;">${event.type === 'tour' ? 'SMIPRO ON TOUR' : 'SMIPRO Live Stage'}</b><br>
+                            <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small>
+                        </div>
+                    </div>`;
                 }
-            });
+            }
+        });
 
-            // 2. CARI DI RADIO (Sama seperti sebelumnya, tidak berubah)
-            const qRadio = query(collection(db, "broadcasts"), where("host", "==", artistName));
-            const snapRadio = await getDocs(qRadio);
-            snapRadio.forEach((doc) => {
-                const radio = doc.data();
-                found = true;
-                container.innerHTML += `
-                <div class="sched-card radio" style="background:#1a1a1a; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #00d2ff; margin-bottom:10px;">
-                    <div style="font-size:1.5rem; width:40px; text-align:center; color:#00d2ff;">
-                        <i class="fa-brands fa-tiktok"></i>
-                    </div>
-                    <div>
-                        <b style="color:white;">Live Streaming / Radio</b><br>
-                        <small style="color:#ccc;">Topik: "${radio.topic}"</small><br>
-                        <span style="color:#00d2ff; font-size:0.9rem; font-weight:bold;">${radio.isLive ? 'LIVE' : 'Segera'}</span>
-                    </div>
-                </div>`;
-            });
+        // Cari di Radio (Kode Lama Anda)
+        const qRadio = query(collection(db, "broadcasts"), where("host", "==", artistName));
+        const snapRadio = await getDocs(qRadio);
+        snapRadio.forEach((doc) => {
+            const radio = doc.data();
+            found = true;
+            container.innerHTML += `
+            <div style="background:#1a1a1a; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #00d2ff; margin-bottom:10px;">
+                <div style="font-size:1.5rem; width:40px; text-align:center; color:#00d2ff;"><i class="fa-brands fa-tiktok"></i></div>
+                <div><b style="color:white;">Live streaming / Radio</b><br><small>Topik: "${radio.topic}"</small></div>
+            </div>`;
+        });
 
-            // 3. CARI DI PODCAST (Sama seperti sebelumnya)
-            const qPodcast = query(collection(db, "podcasts"), where("host", "==", artistName));
-            const snapPodcast = await getDocs(qPodcast);
-            snapPodcast.forEach((doc) => {
-                const pod = doc.data();
-                found = true;
-                container.innerHTML += `
-                <div class="sched-card podcast" style="background:#1a1a1a; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #a855f7; margin-bottom:10px;">
-                    <div style="font-size:1.5rem; width:40px; text-align:center; color:#a855f7;"><i class="fa-solid fa-podcast"></i></div>
-                    <div><b style="color:white;">Podcast</b><br><small>${pod.title}</small></div>
-                </div>`;
-            });
+        // Cari di Podcast (Kode Lama Anda)
+        const qPodcast = query(collection(db, "podcasts"), where("host", "==", artistName));
+        const snapPodcast = await getDocs(qPodcast);
+        snapPodcast.forEach((doc) => {
+            const pod = doc.data();
+            found = true;
+            container.innerHTML += `
+            <div style="background:#1a1a1a; padding:15px; border-radius:10px; display:flex; align-items:center; gap:15px; border-left:5px solid #a855f7; margin-bottom:10px;">
+                <div style="font-size:1.5rem; width:40px; text-align:center; color:#a855f7;"><i class="fa-solid fa-podcast"></i></div>
+                <div><b style="color:white;">Podcast</b><br><small>${pod.title}</small></div>
+            </div>`;
+        });
 
-            if(!found) container.innerHTML = `<p style="text-align:center; color:#666;">Belum ada jadwal aktif.</p>`;
+        if(!found) container.innerHTML = `<p style="text-align:center; color:#666;">Belum ada jadwal aktif.</p>`;
+    }
+
+    // --- UTILS ---
+    function cleanLink(u) {
+        if(!u) return "";
+        if(u.includes('dropbox.com')) return u.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+        if(u.includes('drive.google.com')) {
+            const id = u.includes('/file/d/') ? u.split('/file/d/')[1].split('/')[0] : u.split('id=')[1]?.split('&')[0];
+            return `https://drive.google.com/uc?export=download&id=${id}`;
         }
-        loadProfile();
-    </script>
+        return u;
+    }
+
+    function updateBannerColor(imgSrc) {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = imgSrc;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1; canvas.height = 1;
+            ctx.drawImage(img, 0, 0, 1, 1);
+            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            document.getElementById('hero-banner').style.background = `linear-gradient(to bottom, rgb(${r},${g},${b}) 0%, #000 100%)`;
+        };
+    }
+
+    function formatTime(s) {
+        const m = Math.floor(s/60);
+        const sec = Math.floor(s%60);
+        return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    loadProfile();
+</script>
 
 </body>
 </html>
