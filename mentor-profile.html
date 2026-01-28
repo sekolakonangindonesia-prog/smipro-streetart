@@ -265,13 +265,10 @@
                 }          
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
 
-                 renderSmartShowcase(data.gallery || [], data.name);
-
-        } else {
-            // Jika mentor tidak ada di database
-            console.log("Mentor tidak ditemukan");
-        }
-    } 
+                  const galleryContainer = document.getElementById('gallery-container');
+                    galleryContainer.innerHTML = "";
+        } 
+            }
                 
                // --- 2. FUNGSI RENDER SHOWCASE (REVISI: ISI PLAYLIST) ---
                 function renderSmartShowcase(gallery, artistName) {
