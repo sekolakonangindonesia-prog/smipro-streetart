@@ -388,6 +388,12 @@ window.renderGallery = function(galleryArray) {
 }
 
 // 4. BUKA MODAL
+window.openAddGalleryModal = function() {
+    document.getElementById('modal-add-gallery').style.display = 'flex';
+}
+
+
+// 5. SIMPAN KARYA BARU
 window.saveGalleryItem = async function() {
     const title = document.getElementById('gal-title').value;
     const type = document.getElementById('gal-type').value;
