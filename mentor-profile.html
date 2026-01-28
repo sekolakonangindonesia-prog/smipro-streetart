@@ -262,9 +262,16 @@
                 listProf.innerHTML += `<li><i class="fa-solid fa-user-tie"></i> ${item}</li>`;
                     }
                     });
-                }
-                            
+                }          
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
+
+                 renderSmartShowcase(data.gallery || [], data.name);
+
+        } else {
+            // Jika mentor tidak ada di database
+            console.log("Mentor tidak ditemukan");
+        }
+    } 
                 
                // --- 2. FUNGSI RENDER SHOWCASE (REVISI: ISI PLAYLIST) ---
                 function renderSmartShowcase(gallery, artistName) {
@@ -296,9 +303,7 @@
             </div>`;
         });
     }
-    }
-        }
-            }
+                  
 
     if (playlist.length > 0) {
         container.innerHTML += `<div class="section-divider">🎧 SMIPRO TUNES</div><div class="gallery-grid"></div>`;
