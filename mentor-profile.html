@@ -214,7 +214,6 @@
         let currentIndex = -1;
         let isShuffle = false;
         let isRepeatOne = false;
-
         let activeBoxId = null;       
         let activeOriginalHTML = null; 
 
@@ -267,56 +266,56 @@
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
 
                // --- 2. FUNGSI RENDER SHOWCASE (REVISI: ISI PLAYLIST) ---
-function renderSmartShowcase(gallery, artistName) {
+                function renderSmartShowcase(gallery, artistName) {
     const container = document.getElementById('gallery-container');
     if(!container) return;
     container.innerHTML = "";
 
-    // KUNCI: Masukkan semua tipe audio ke daftar putar (Playlist)
     playlist = gallery.filter(i => i.type === 'audio'); 
-
-    const videoWorks = gallery.filter(i => i.type === 'video');
+    const videos = gallery.filter(i => i.type === 'video');
 
     const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
     const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
 
-    // A. RENDER STREET STAGE (VIDEO)
-    if (videoWorks.length > 0) {
-        container.innerHTML += `<div class="section-title" style="color:#FFD700; margin-top:20px; border-bottom:1px solid #333; padding-bottom:10px;">🎬 STREET STAGE</div>`;
-        const vGrid = document.createElement('div');
-        vGrid.className = "gallery-grid"; // Pakai class CSS yang sudah ada
-        
-        videoWorks.forEach((v, idx) => {
-            const vThumb = v.url.includes('embed/') ? `https://img.youtube.com/vi/${v.url.split('embed/')[1].split('?')[0]}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/400x225");
+    if (videos.length > 0) {
+        container.innerHTML += `<div class="section-divider">🎬 STREET STAGE</div><div class="gallery-grid video-aspect"></div>`;
+        const vGrid = container.lastElementChild;
+        videos.forEach((v, idx) => {
+            // FIX LINK YOUTUBE THUMBNAIL
+            const vId = v.url.includes('embed/') ? v.url.split('embed/')[1].split('?')[0] : "";
+            const thumb = vId ? `https://img.youtube.com/vi/${vId}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/300x168");
+            
             vGrid.innerHTML += `
-            <div class="gallery-item" onclick="playInside('media-v-${idx}', 'video', '${v.url}')" id="media-v-${idx}">
-                <img src="${vThumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
-                <div class="gallery-overlay"><img src="${LOGO_STAGE}" style="width:50px; border-radius:50%; border:2px solid white;"></div>
-                <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.7); padding:8px; font-size:0.8rem; text-align:center;">${v.title}</div>
+            <div class="gallery-item" onclick="playInside('v-${idx}', 'video', '${v.url}')" id="v-${idx}">
+                <div class="thumb-wrap">
+                    <img src="${thumb}" class="thumb-img">
+                    <div class="play-overlay"><img src="${LOGO_STAGE}" style="width:50px;border-radius:50%;border:2px solid #fff;"></div>
+                </div>
+                <span class="item-title">${v.title}</span>
             </div>`;
         });
-        container.appendChild(vGrid);
     }
 
-    // B. RENDER SMIPRO TUNES (AUDIO)
     if (playlist.length > 0) {
-        container.innerHTML += `<div class="section-title" style="color:#00d2ff; margin-top:40px; border-bottom:1px solid #333; padding-bottom:10px;">🎧 SMIPRO TUNES</div>`;
-        const aGrid = document.createElement('div');
-        aGrid.className = "gallery-grid";
-        
+        container.innerHTML += `<div class="section-divider">🎧 SMIPRO TUNES</div><div class="gallery-grid"></div>`;
+        const aGrid = container.lastElementChild;
         playlist.forEach((track, index) => {
-            // Jika tidak ada cover, gunakan foto profil mentor
-            const cover = track.cover || document.getElementById('m-img').src;
+            const fallbackImg = document.getElementById('p-img')?.src || "";
+            const cover = (track.cover && track.cover.length > 10) ? track.cover : fallbackImg;
+            playlist[index].cover = cover;
+
             aGrid.innerHTML += `
-            <div class="gallery-item" style="aspect-ratio:1/1;" onclick="window.playTrack(${index})" id="media-a-${index}">
-                <img src="${cover}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover;">
-                <div class="gallery-overlay"><img src="${LOGO_TUNE}" style="width:60px; border-radius:50%; border:2px solid white;"></div>
-                <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:10px; font-size:0.85rem; text-align:center; font-weight:bold;">${track.title}</div>
+            <div class="gallery-item" onclick="window.playTrack(${index})">
+                <div class="thumb-wrap">
+                    <img src="${cover}" class="thumb-img">
+                    <div class="play-overlay"><img src="${LOGO_TUNE}" style="width:50px;border-radius:50%;border:2px solid #fff;"></div>
+                </div>
+                <span class="item-title">${track.title}</span>
             </div>`;
         });
-        container.appendChild(aGrid);
     }
 }
+
 
 /* =========================================
    SISTEM PLAYER MENTOR (VIDEO & PLAYLIST AUDIO)
@@ -353,36 +352,55 @@ window.playInside = function(elementId, type, url) {
 
 // 2. FUNGSI PLAY AUDIO (DI BAR MELAYANG - PLAYLIST MODE)
 window.playTrack = function(index) {
-    // Matikan Video Youtube yang sedang terbuka (Kill Switch)
+    // KILL SWITCH: Matikan video jika sedang nyala
     if (activeBoxId) {
         const oldBox = document.getElementById(activeBoxId);
-        if (oldBox) oldBox.innerHTML = activeOriginalHTML;
+        if (oldBox && activeOriginalHTML) oldBox.innerHTML = activeOriginalHTML;
         activeBoxId = null;
     }
-
-    // Matikan BGM Welcome jika ada
-    const bgm = document.getElementById('bgm-player');
-    if(bgm) bgm.pause();
 
     currentIndex = index;
     const track = playlist[index];
     const audio = document.getElementById('main-audio');
     const playerBar = document.getElementById('player-bar');
 
-    if(!track) return;
+    if(audio && playerBar) {
+        playerBar.style.display = 'block';
+        document.getElementById('track-cover').src = track.cover;
+        document.getElementById('track-title').innerText = track.title;
+        
+        audio.src = cleanLink(track.url);
+        audio.load();
+        audio.play().catch(e => console.log("Autoplay blocked"));
+        updateBannerColor(track.cover);
+    }
+};
 
-    // Tampilkan Bar Player di bawah
-    playerBar.style.display = 'block';
-    document.getElementById('track-cover').src = track.cover || document.getElementById('m-img').src;
-    document.getElementById('track-title').innerText = track.title;
-    
-    // Ganti Warna Banner Header (Efek Elegan)
-    updateBanner(track.cover || document.getElementById('m-img').src);
+// --- FUNGSI PLAY VIDEO (WAJIB ADA AGAR VIDEO BISA DIKLIK) ---
+window.playInside = function(elementId, type, url) {
+    const box = document.getElementById(elementId);
+    const audio = document.getElementById('main-audio');
+    const playerBar = document.getElementById('player-bar');
 
-    // Bersihkan Link & Putar
-    audio.src = cleanLink(track.url);
-    audio.load();
-    audio.play();
+    // Matikan audio bar jika sedang nyala
+    if(audio) audio.pause();
+    if(playerBar) playerBar.style.display = 'none';
+
+    // Reset video sebelumnya
+    if (activeBoxId && activeBoxId !== elementId) {
+        const oldBox = document.getElementById(activeBoxId);
+        if (oldBox) oldBox.innerHTML = activeOriginalHTML;
+    }
+
+    activeOriginalHTML = box.innerHTML;
+    activeBoxId = elementId;
+
+    // YouTube Embed Logic
+    let embedUrl = url;
+    if(url.includes('v=')) embedUrl = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}?autoplay=1`;
+    else if(url.includes('youtu.be/')) embedUrl = `https://www.youtube.com/embed/${url.split('youtu.be/')[1]}?autoplay=1`;
+
+    box.innerHTML = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:10px;"></iframe>`;
 };
 
 // 3. NAVIGASI SMART PLAYER (NEXT, PREV, REPEAT, SHUFFLE)
