@@ -267,51 +267,56 @@
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
 
                // --- 2. FUNGSI RENDER SHOWCASE (REVISI: ISI PLAYLIST) ---
-    function renderSmartShowcase(gallery, artistName) {
-        const container = document.getElementById('gallery-container');
-        if(!container) return;
-        container.innerHTML = "";
+function renderSmartShowcase(gallery, artistName) {
+    const container = document.getElementById('gallery-container');
+    if(!container) return;
+    container.innerHTML = "";
 
-        // PENTING: Isi playlist global dengan lagu tipe audio
-        playlist = gallery.filter(i => i.type === 'audio'); 
+    // KUNCI: Masukkan semua tipe audio ke daftar putar (Playlist)
+    playlist = gallery.filter(i => i.type === 'audio'); 
 
-        const videoWorks = gallery.filter(i => i.type === 'video');
+    const videoWorks = gallery.filter(i => i.type === 'video');
 
-        // A. RENDER STREET STAGE (VIDEO)
-        if (videoWorks.length > 0) {
-            container.innerHTML += `<div style="margin:20px 0 15px; color:#FFD700; font-weight:800; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px; letter-spacing:1px;">🎬 STREET STAGE</div>`;
-            const vGrid = document.createElement('div');
-            vGrid.className = "gallery-grid";
-            videoWorks.forEach((v, idx) => {
-                const vThumb = v.url.includes('embed/') ? `https://img.youtube.com/vi/${v.url.split('embed/')[1].split('?')[0]}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/400x225");
-                vGrid.innerHTML += `
-                <div class="gallery-item" onclick="playInside('media-v-${idx}', 'video', '${v.url}')" id="media-v-${idx}">
-                    <img src="${vThumb}" style="width:100%; height:100%; object-fit:cover;">
-                    <div class="gallery-overlay"><img src="${LOGO_STAGE}" style="width:50px; border-radius:50%; border:2px solid white;"></div>
-                    <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.7); padding:5px; font-size:0.8rem; text-align:center;">${v.title}</div>
-                </div>`;
-            });
-            container.appendChild(vGrid);
-        }
+    const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
+    const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
 
-        // B. RENDER SMIPRO TUNES (AUDIO)
-        if (playlist.length > 0) {
-            container.innerHTML += `<div style="margin:40px 0 15px; color:#00d2ff; font-weight:800; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px; letter-spacing:1px;">🎧 SMIPRO TUNES</div>`;
-            const aGrid = document.createElement('div');
-            aGrid.className = "gallery-grid";
-            
-            playlist.forEach((a, idx) => {
-                const aCover = a.cover || "https://via.placeholder.com/300?text=SMIPRO+Tune";
-                aGrid.innerHTML += `
-                <div class="gallery-item" style="aspect-ratio:1/1;" onclick="window.playTrack(${idx})" id="media-a-${idx}">
-                    <img src="${aCover}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover;">
-                    <div class="gallery-overlay"><img src="${LOGO_TUNE}" style="width:60px; border-radius:50%; border:2px solid white;"></div>
-                    <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:8px; font-size:0.85rem; text-align:center; font-weight:bold;">${a.title}</div>
-                </div>`;
-            });
-            container.appendChild(aGrid);
-        }
+    // A. RENDER STREET STAGE (VIDEO)
+    if (videoWorks.length > 0) {
+        container.innerHTML += `<div class="section-title" style="color:#FFD700; margin-top:20px; border-bottom:1px solid #333; padding-bottom:10px;">🎬 STREET STAGE</div>`;
+        const vGrid = document.createElement('div');
+        vGrid.className = "gallery-grid"; // Pakai class CSS yang sudah ada
+        
+        videoWorks.forEach((v, idx) => {
+            const vThumb = v.url.includes('embed/') ? `https://img.youtube.com/vi/${v.url.split('embed/')[1].split('?')[0]}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/400x225");
+            vGrid.innerHTML += `
+            <div class="gallery-item" onclick="playInside('media-v-${idx}', 'video', '${v.url}')" id="media-v-${idx}">
+                <img src="${vThumb}" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
+                <div class="gallery-overlay"><img src="${LOGO_STAGE}" style="width:50px; border-radius:50%; border:2px solid white;"></div>
+                <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.7); padding:8px; font-size:0.8rem; text-align:center;">${v.title}</div>
+            </div>`;
+        });
+        container.appendChild(vGrid);
     }
+
+    // B. RENDER SMIPRO TUNES (AUDIO)
+    if (playlist.length > 0) {
+        container.innerHTML += `<div class="section-title" style="color:#00d2ff; margin-top:40px; border-bottom:1px solid #333; padding-bottom:10px;">🎧 SMIPRO TUNES</div>`;
+        const aGrid = document.createElement('div');
+        aGrid.className = "gallery-grid";
+        
+        playlist.forEach((track, index) => {
+            // Jika tidak ada cover, gunakan foto profil mentor
+            const cover = track.cover || document.getElementById('m-img').src;
+            aGrid.innerHTML += `
+            <div class="gallery-item" style="aspect-ratio:1/1;" onclick="window.playTrack(${index})" id="media-a-${index}">
+                <img src="${cover}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover;">
+                <div class="gallery-overlay"><img src="${LOGO_TUNE}" style="width:60px; border-radius:50%; border:2px solid white;"></div>
+                <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.8); padding:10px; font-size:0.85rem; text-align:center; font-weight:bold;">${track.title}</div>
+            </div>`;
+        });
+        container.appendChild(aGrid);
+    }
+}
 
 /* =========================================
    SISTEM PLAYER MENTOR (VIDEO & PLAYLIST AUDIO)
