@@ -265,19 +265,16 @@
                 }          
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
 
-                  const galleryContainer = document.getElementById('gallery-container');
-                    galleryContainer.innerHTML = "";
-        } 
-            }
-                
+                                 
                // --- 2. FUNGSI RENDER SHOWCASE (REVISI: ISI PLAYLIST) ---
                 function renderSmartShowcase(gallery, artistName) {
     const container = document.getElementById('gallery-container');
     if(!container) return;
     container.innerHTML = "";
 
-    playlist = gallery.filter(i => i.type === 'audio'); 
-    const videos = gallery.filter(i => i.type === 'video');
+    // Pisahkan konten
+     const videos = gallery.filter(i => i.type === 'video');
+     playlist = gallery.filter(i => i.type === 'audio'); // Masuk antrean putar
 
     const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
     const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
@@ -305,6 +302,7 @@
     if (playlist.length > 0) {
         container.innerHTML += `<div class="section-divider">🎧 SMIPRO TUNES</div><div class="gallery-grid"></div>`;
         const aGrid = container.lastElementChild;
+        
         playlist.forEach((track, index) => {
             const fallbackImg = document.getElementById('p-img')?.src || "";
             const cover = (track.cover && track.cover.length > 10) ? track.cover : fallbackImg;
