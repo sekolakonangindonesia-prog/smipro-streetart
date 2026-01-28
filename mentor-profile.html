@@ -264,6 +264,7 @@
                     });
                 }
                 if (listProf.innerHTML === "") listProf.innerHTML = "<li>-</li>";
+                
 
                // --- 2. FUNGSI RENDER SHOWCASE (REVISI: ISI PLAYLIST) ---
                 function renderSmartShowcase(gallery, artistName) {
@@ -374,33 +375,6 @@ window.playTrack = function(index) {
         audio.play().catch(e => console.log("Autoplay blocked"));
         updateBannerColor(track.cover);
     }
-};
-
-// --- FUNGSI PLAY VIDEO (WAJIB ADA AGAR VIDEO BISA DIKLIK) ---
-window.playInside = function(elementId, type, url) {
-    const box = document.getElementById(elementId);
-    const audio = document.getElementById('main-audio');
-    const playerBar = document.getElementById('player-bar');
-
-    // Matikan audio bar jika sedang nyala
-    if(audio) audio.pause();
-    if(playerBar) playerBar.style.display = 'none';
-
-    // Reset video sebelumnya
-    if (activeBoxId && activeBoxId !== elementId) {
-        const oldBox = document.getElementById(activeBoxId);
-        if (oldBox) oldBox.innerHTML = activeOriginalHTML;
-    }
-
-    activeOriginalHTML = box.innerHTML;
-    activeBoxId = elementId;
-
-    // YouTube Embed Logic
-    let embedUrl = url;
-    if(url.includes('v=')) embedUrl = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}?autoplay=1`;
-    else if(url.includes('youtu.be/')) embedUrl = `https://www.youtube.com/embed/${url.split('youtu.be/')[1]}?autoplay=1`;
-
-    box.innerHTML = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:10px;"></iframe>`;
 };
 
 // 3. NAVIGASI SMART PLAYER (NEXT, PREV, REPEAT, SHUFFLE)
