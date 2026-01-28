@@ -296,6 +296,8 @@
     let currentIndex = -1;
     let isRepeatOne = false;
     let isShuffle = false;
+    let activeVideoWrapper = null; // Menyimpan elemen pembungkus video yang sedang play
+    let activeVideoHTML = '';      // Menyimpan kode HTML asli (gambar thumbnail) sebelum jadi video
 
     const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
     const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
@@ -402,7 +404,22 @@
         
 
    // --- 3. SMART PLAYER FUNCTIONS ---
-    window.playTrack = function(index) {
+   window.playTrack = function(index) {
+        // --- BAGIAN BARU: Matikan Video jika ada yang sedang nyala ---
+        if (activeVideoWrapper) {
+            // Balikin video ke bentuk Gambar Thumbnail (Iframe otomatis terhapus & suara video mati)
+            activeVideoWrapper.innerHTML = activeVideoHTML;
+            
+            // Munculin lagi judul teks di bawahnya (opsional, biar rapi)
+            const parent = activeVideoWrapper.parentElement;
+            if (parent) {
+                const title = parent.querySelector('.item-title');
+                if(title) title.style.display = 'block';
+            }
+
+            // Kosongkan variabel penanda video
+            activeVideoWrapper = null;
+        }
         currentIndex = index;
         const track = playlist[index];
         const audio = document.getElementById('main-audio');
@@ -423,34 +440,44 @@
 
     // --- 3.1 FUNGSI PLAY VIDEO (SEKARANG SUDAH DI LUAR) ---
     window.playInside = function(elementId, type, url) {
-        const box = document.getElementById(elementId);
-        const audio = document.getElementById('main-audio');
-        const playerBar = document.getElementById('player-bar');
+    const box = document.getElementById(elementId);
+    const audio = document.getElementById('main-audio');
+    const playerBar = document.getElementById('player-bar');
 
-        // Matikan musik jika video diputar
-        if(audio) audio.pause();
-        if(playerBar) playerBar.style.display = 'none';
+    // 1. Matikan Audio MP3 jika sedang jalan
+    if(audio && !audio.paused) {
+        audio.pause();
+    }
+    // Sembunyikan player bar musik agar fokus ke video
+    if(playerBar) playerBar.style.display = 'none';
 
-        function getEmbedUrl(rawUrl) {
-            if (rawUrl.includes('youtube.com/embed/')) return rawUrl;
-            let videoId = "";
-            if (rawUrl.includes('v=')) videoId = rawUrl.split('v=')[1].split('&')[0];
-            else if (rawUrl.includes('youtu.be/')) videoId = rawUrl.split('youtu.be/')[1];
-            return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    // 2. Jika ada video LAIN yang sedang jalan, matikan dulu (reset ke gambar)
+    if (activeVideoWrapper && activeVideoWrapper !== box.querySelector('.thumb-wrap')) {
+        activeVideoWrapper.innerHTML = activeVideoHTML;
+        activeVideoWrapper = null;
+    }
+
+    // 3. Logika Memutar Video
+    if(type === 'video') {
+        const wrapper = box.querySelector('.thumb-wrap');
+        
+        // Simpan dulu HTML aslinya (Gambar + Tombol Play) ke variabel
+        if (activeVideoWrapper !== wrapper) {
+            activeVideoHTML = wrapper.innerHTML; 
+            activeVideoWrapper = wrapper;
         }
 
-        if(type === 'video') {
-        // CARA BARU: Kita cari pembungkus di dalamnya, lalu isi videonya di situ
-        const wrapper = box.querySelector('.thumb-wrap');
+        // Ganti isinya dengan Iframe Youtube
         wrapper.innerHTML = `<iframe width="100%" height="100%" src="${getEmbedUrl(url)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:6px;"></iframe>`;
         
-        // Sembunyikan judul agar terlihat bersih (opsional)
+        // Sembunyikan judul kecil di bawahnya (opsional)
         const title = box.querySelector('.item-title');
         if(title) title.style.display = 'none';
     }
-        
-        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }; // <--- MENUTUP playInside
+    
+    // Scroll ke video
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
     window.togglePlay = () => {
         const audio = document.getElementById('main-audio');
