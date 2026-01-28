@@ -209,6 +209,12 @@
         import { db } from './firebase-config.js';
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- VARIABEL PLAYER GLOBAL ---
+        let playlist = [];
+        let currentIndex = -1;
+        let isShuffle = false;
+        let isRepeatOne = false;
+
         let activeBoxId = null;       
         let activeOriginalHTML = null; 
 
@@ -404,7 +410,115 @@ window.closePublicPlayer = function() {
         }
 
         loadProfile();
-        
+
+         // --- 3. FUNGSI PLAYER AUDIO (BARU) ---
+        window.playTrack = function(index) {
+            // KILL SWITCH: Matikan Video Youtube dulu jika ada
+            if (activeBoxId) {
+                const oldBox = document.getElementById(activeBoxId);
+                if (oldBox && activeOriginalHTML) {
+                    oldBox.innerHTML = activeOriginalHTML;
+                }
+                activeBoxId = null;
+            }
+
+            // SETUP PLAYER
+            currentIndex = index;
+            const track = playlist[index];
+            const audio = document.getElementById('main-audio');
+            const playerBar = document.getElementById('player-bar');
+
+            playerBar.style.display = 'block';
+            document.getElementById('track-cover').src = track.cover;
+            document.getElementById('track-title').innerText = track.title;
+            
+            audio.src = cleanLink(track.url);
+            audio.play().catch(e => console.log("Autoplay blocked"));
+
+            // Efek Ganti Banner
+            updateBanner(track.cover);
+        };
+
+        // --- 4. FUNGSI VIDEO YOUTUBE (TETAP DIPERTAHANKAN) ---
+        window.playInside = function(elementId, type, url) {
+            // Matikan Audio Player jika sedang bunyi
+            const audio = document.getElementById('main-audio');
+            const playerBar = document.getElementById('player-bar');
+            if(audio) audio.pause();
+            if(playerBar) playerBar.style.display = 'none';
+
+            // Reset video lain
+            const box = document.getElementById(elementId);
+            if (activeBoxId && activeBoxId !== elementId) {
+                const oldBox = document.getElementById(activeBoxId);
+                if (oldBox) oldBox.innerHTML = activeOriginalHTML;
+            }
+
+            // Simpan state asli
+            if (activeBoxId !== elementId) {
+                activeOriginalHTML = box.innerHTML;
+                activeBoxId = elementId;
+            }
+
+            // Embed Youtube
+            let embedUrl = url;
+            if(url.includes('v=')) embedUrl = `https://www.youtube.com/embed/${url.split('v=')[1].split('&')[0]}?autoplay=1`;
+            else if(url.includes('youtu.be/')) embedUrl = `https://www.youtube.com/embed/${url.split('youtu.be/')[1]}?autoplay=1`;
+
+            box.innerHTML = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:10px;"></iframe>`;
+        };
+
+        // --- 5. NAVIGASI PLAYER ---
+        window.togglePlay = () => {
+            const audio = document.getElementById('main-audio');
+            if(audio.paused) audio.play(); else audio.pause();
+        };
+
+        window.nextTrack = () => {
+            if(playlist.length === 0) return;
+            currentIndex = isShuffle ? Math.floor(Math.random() * playlist.length) : (currentIndex + 1) % playlist.length;
+            playTrack(currentIndex);
+        };
+
+        window.prevTrack = () => {
+            if(playlist.length === 0) return;
+            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+            playTrack(currentIndex);
+        };
+
+        window.toggleShuffle = () => { isShuffle = !isShuffle; document.getElementById('btn-shuffle').classList.toggle('active', isShuffle); };
+        window.toggleRepeat = () => { isRepeatOne = !isRepeatOne; document.getElementById('btn-repeat').classList.toggle('active', isRepeatOne); };
+
+        // HELPER
+        function cleanLink(u) {
+            if(u.includes('dropbox.com')) return u.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+            if(u.includes('drive.google.com')) {
+                const id = u.includes('/file/d/') ? u.split('/file/d/')[1].split('/')[0] : u.split('id=')[1]?.split('&')[0];
+                return `https://drive.google.com/uc?export=download&id=${id}`;
+            }
+            return u;
+        }
+
+        function updateBanner(imgSrc) {
+            const hero = document.querySelector('.profile-hero');
+            hero.style.transition = "background 1s ease";
+            hero.style.background = `linear-gradient(to bottom, rgba(0,0,0,0.2), #0a0a0a), url('${imgSrc}')`;
+            hero.style.backgroundSize = "cover";
+            hero.style.backgroundPosition = "center";
+        }
+
+        // UPDATE ICON PLAY/PAUSE & PROGRESS BAR
+        const mainAudio = document.getElementById('main-audio');
+        if(mainAudio) {
+            mainAudio.onplay = () => document.getElementById('main-play-icon').className = "fa-solid fa-pause";
+            mainAudio.onpause = () => document.getElementById('main-play-icon').className = "fa-solid fa-play";
+            mainAudio.onended = () => { if(isRepeatOne) mainAudio.play(); else nextTrack(); };
+            mainAudio.ontimeupdate = () => {
+                const pct = (mainAudio.currentTime / mainAudio.duration) * 100;
+                document.getElementById('progress-fill').style.width = pct + '%';
+                // (Opsional) Update teks waktu jika mau
+            };
+        }
     </script>
 </body>
 </html>
