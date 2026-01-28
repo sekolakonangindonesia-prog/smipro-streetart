@@ -357,21 +357,13 @@ window.playInside = function(elementId, type, url) {
 
 // 2. FUNGSI PLAY AUDIO (DI BAR MELAYANG - PLAYLIST MODE)
 window.playTrack = function(index) {
-        // --- BAGIAN BARU: Matikan Video jika ada yang sedang nyala ---
-        if (activeVideoWrapper) {
-            // Balikin video ke bentuk Gambar Thumbnail (Iframe otomatis terhapus & suara video mati)
-            activeVideoWrapper.innerHTML = activeVideoHTML;
-            
-            // Munculin lagi judul teks di bawahnya (opsional, biar rapi)
-            const parent = activeVideoWrapper.parentElement;
-            if (parent) {
-                const title = parent.querySelector('.item-title');
-                if(title) title.style.display = 'block';
-            }
+    // KILL SWITCH: Matikan video jika sedang nyala
+    if (activeBoxId) {
+        const oldBox = document.getElementById(activeBoxId);
+        if (oldBox && activeOriginalHTML) oldBox.innerHTML = activeOriginalHTML;
+        activeBoxId = null;
+    }
 
-            // Kosongkan variabel penanda video
-            activeVideoWrapper = null;
-        }
 
     currentIndex = index;
     const track = playlist[index];
