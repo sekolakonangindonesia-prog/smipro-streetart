@@ -388,11 +388,6 @@ window.renderGallery = function(galleryArray) {
 }
 
 // 4. BUKA MODAL
-window.openAddGalleryModal = function() {
-    document.getElementById('modal-add-gallery').style.display = 'flex';
-}
-
-// 5. SIMPAN KARYA BARU
 window.saveGalleryItem = async function() {
     const title = document.getElementById('gal-title').value;
     const type = document.getElementById('gal-type').value;
@@ -400,7 +395,6 @@ window.saveGalleryItem = async function() {
 
     if(!title || !url) return alert("Mohon isi judul dan link!");
 
-    // Logika Youtube tetap sama
     let ytId = "";
     if(type === 'video') {
         if(url.includes('watch?v=')) ytId = url.split('watch?v=')[1].split('&')[0];
@@ -409,18 +403,19 @@ window.saveGalleryItem = async function() {
     }
 
     const newItem = { 
-        title, 
-        type, 
-        url, 
-        cover: currentGalleryBase64 || "", // Sekarang mengambil dari file upload
-        youtubeId: ytId 
+        title: title || "", 
+        type: type || "video", 
+        url: url || "", 
+        cover: currentGalleryBase64 || "", 
+        youtubeId: ytId || "" 
     };
 
-    const newGallery = [...mentorGalleryData, newItem];
+    // Mencegah error jika mentorGalleryData belum ada
+    const newGallery = [...(mentorGalleryData || []), newItem];
 
     try {
         await updateDoc(doc(db, "mentors", MENTOR_ID), { gallery: newGallery });
-        alert("Karya Berhasil Ditambahkan!");
+        alert("✅ Karya Berhasil Ditambahkan!");
         
         // Reset Modal & Form
         document.getElementById('modal-add-gallery').style.display = 'none';
@@ -430,7 +425,10 @@ window.saveGalleryItem = async function() {
         document.getElementById('gal-placeholder-icon').style.display = 'block';
         currentGalleryBase64 = null;
         
-    } catch (e) { alert("Gagal: " + e.message); }
+    } catch (e) { 
+        console.error("Firebase Error:", e);
+        alert("Gagal: " + e.message); 
+    }
 }
 
 // 6. HAPUS KARYA
