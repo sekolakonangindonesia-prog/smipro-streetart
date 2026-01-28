@@ -171,7 +171,7 @@
                 border-radius: 8px;
             }
             /* Teks info & player di bawah */
-            .player-info { width: 60%; }
+            .player-info { width: 35%; }
             .item-title { font-size: 0.8rem !important; }
             .btn-sub { font-size: 0.9rem; }
             .ctrl-btns { gap: 10px; }
@@ -196,7 +196,7 @@
     </nav>
 
     <!-- HEADER BANNER -->
-    <div class="profile-banner">
+    <div class="profile-banner" id="hero-banner">
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="profile-logo-corner" alt="Logo">
         <div class="profile-avatar-container">
             <img src="" id="p-img" class="profile-avatar" onerror="this.src='https://via.placeholder.com/150'">
@@ -444,8 +444,14 @@
         }
 
         if(type === 'video') {
-            box.innerHTML = `<iframe width="100%" height="100%" src="${getEmbedUrl(url)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:8px;"></iframe>`;
-        }
+        // CARA BARU: Kita cari pembungkus di dalamnya, lalu isi videonya di situ
+        const wrapper = box.querySelector('.thumb-wrap');
+        wrapper.innerHTML = `<iframe width="100%" height="100%" src="${getEmbedUrl(url)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="border-radius:6px;"></iframe>`;
+        
+        // Sembunyikan judul agar terlihat bersih (opsional)
+        const title = box.querySelector('.item-title');
+        if(title) title.style.display = 'none';
+    }
         
         box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }; // <--- MENUTUP playInside
