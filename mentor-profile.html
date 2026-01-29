@@ -183,7 +183,7 @@
             <img src="" id="track-cover" class="mini-cover" crossorigin="anonymous">
             <div class="mini-text">
                 <span id="track-title" class="mini-title">-</span>
-                <span id="track-artist" class="mini-artist">SMIPRO Performer</span>
+                <span id="track-artist" class="mini-artist">SMIPRO Mentor</span>
             </div>
         </div>
         <div class="player-controls">
@@ -411,6 +411,7 @@
                 playerBar.style.display = 'block';
                 document.getElementById('track-cover').src = track.cover;
                 document.getElementById('track-title').innerText = track.title;
+                document.getElementById('track-artist').innerText = document.getElementById('m-name').innerText;
                 
                 audio.src = cleanLink(track.url);
                 audio.load();
