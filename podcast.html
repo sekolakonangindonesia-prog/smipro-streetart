@@ -306,40 +306,49 @@
 </div>
 
     <script type="module">
+       <script type="module">
         import { db } from './firebase-config.js';
         import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let currentPlaylist = [];
-        let currentTrackIndex = -1;
-        let isShuffle = false;
-        let isRepeatOne = false;
-
+        // --- 1. DEFINISIKAN SEMUA VARIABEL DI ATAS (AGAR TIDAK ERROR) ---
+        const ra = document.getElementById('real-audio'); // Kabel Utama Audio
         let allData = [];
+        let currentIndex = -1;
+        let isShuffle = false;
+        let isRepeat = false;
+
         const LOGO_TUNE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_SMIPRO_Tune.jpg";
         const LOGO_STAGE = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Play_StreetArt_Stage.jpg";
 
-        // --- FUNGSI WARNA OTOMATIS ---
+        // Fungsi Format Waktu
+        const formatTime = (s) => { 
+            if (!s || isNaN(s)) return "0:00";
+            const m = Math.floor(s/60); 
+            const sec = Math.floor(s%60); 
+            return `${m}:${sec < 10 ? '0' : ''}${sec}`; 
+        };
+
+        // --- 2. FUNGSI WARNA DINAMIS ---
         async function setDynamicBackground(imgSrc) {
             const stage = document.getElementById('player-stage');
             const fullP = document.getElementById('full-player');
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.src = imgSrc;
-            
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 canvas.width = 1; canvas.height = 1;
                 ctx.drawImage(img, 0, 0, 1, 1);
                 const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-                // Gradiasi Spotify: Warna dominan di atas, gelap di bawah
                 const gradient = `linear-gradient(to bottom, rgb(${r},${g},${b}) 0%, #000 100%)`;
                 stage.style.background = gradient;
                 fullP.style.background = gradient;                
             };
-                img.onerror = () => { stage.style.background = "#121212"; fullP.style.background = "#121212"; };
+            img.onerror = () => { stage.style.background = "#121212"; fullP.style.background = "#121212"; };
         }
 
+        // --- 3. AMBIL DATA DARI FIREBASE ---
         async function loadContent() {
             try {
                 const snap = await getDocs(query(collection(db, "podcasts")));
@@ -347,9 +356,10 @@
                 snap.forEach(doc => { allData.push({ id: doc.id, ...doc.data() }); });
                 allData.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderHybridGrid('all');
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Gagal ambil data:", e); }
         }
 
+        // --- 4. RENDER GRID KE HALAMAN ---
         window.filterContent = (type, btn) => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -359,7 +369,6 @@
         function renderHybridGrid(filter) {
             const container = document.getElementById('content-list');
             container.innerHTML = '';
-
             const renderSection = (title, type, logo, cls) => {
                 const items = allData.filter(d => d.mediaType === type);
                 if (items.length > 0 && (filter === 'all' || filter === type)) {
@@ -380,12 +389,12 @@
                     });
                 }
             };
-
             renderSection('🎬 STREET STAGE', 'video', LOGO_STAGE, 'card-video');
             renderSection('🎧 SMIPRO TUNES', 'audio', LOGO_TUNE, 'card-audio');
         }
 
-        window.playMedia = function(type, link, ytId, title, artist, cover) {             
+        // --- 5. LOGIKA PLAY MEDIA UTAMA ---
+        window.playMedia = function(type, link, ytId, title, artist, cover) {
             const vid = document.getElementById('video-player');
             const aud = document.getElementById('audio-player');
             const placeholder = document.getElementById('player-placeholder');
@@ -401,16 +410,15 @@
                 document.getElementById('yt-frame').src = "";
                 vid.classList.remove('active'); aud.classList.add('active');
                 
-                // Update Index untuk Next/Prev
+                // Cari Index untuk tombol Next/Prev
                 const audios = allData.filter(d => d.mediaType === 'audio');
                 currentIndex = audios.findIndex(x => x.title === title);
 
-                // Update UI Banner
+                // Update UI (Banner, Float, Full)
                 document.getElementById('ap-cover').src = cover;
                 document.getElementById('ap-title').innerText = title;
                 document.getElementById('ap-artist').innerText = artist;
 
-                // Update UI Floating & Full Player
                 document.getElementById('float-bar').style.display = 'block';
                 document.getElementById('float-cover').src = cover;
                 document.getElementById('float-title').innerText = title;
@@ -423,21 +431,22 @@
                 document.getElementById('banner-equalizer').style.display = 'flex';
                 
                 setDynamicBackground(cover);
-                ra.src = getLink(link); ra.load(); ra.play();
+                
+                // Proses Link & Putar
+                let finalLink = link;
+                if (link.includes('dropbox.com')) finalLink = link.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+                else if (link.includes('drive.google.com')) {
+                    const dId = link.includes('/file/d/') ? link.split('/file/d/')[1].split('/')[0] : link.split('id=')[1]?.split('&')[0];
+                    finalLink = `https://drive.google.com/uc?export=download&id=${dId}`;
+                }
+                ra.src = finalLink; 
+                ra.load(); 
+                ra.play();
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function getLink(url) {
-            if (url.includes('dropbox.com')) return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
-            if (url.includes('drive.google.com')) {
-                const id = url.includes('/file/d/') ? url.split('/file/d/')[1].split('/')[0] : url.split('id=')[1]?.split('&')[0];
-                return `https://drive.google.com/uc?export=download&id=${id}`;
-            }
-            return url;
-        }
-
-        // --- 6. NAVIGASI & KONTROL ---
+        // --- 6. NAVIGASI TOMBOL ---
         window.toggleAudio = (e) => { 
             if(e) e.stopPropagation(); 
             if (ra.paused) ra.play(); else ra.pause(); 
@@ -446,6 +455,7 @@
         window.nextTrack = (e) => {
             if(e) e.stopPropagation();
             const audios = allData.filter(d => d.mediaType === 'audio');
+            if (audios.length === 0) return;
             if (isShuffle) currentIndex = Math.floor(Math.random() * audios.length);
             else currentIndex = (currentIndex + 1) % audios.length;
             const d = audios[currentIndex];
@@ -455,6 +465,7 @@
         window.prevTrack = (e) => {
             if(e) e.stopPropagation();
             const audios = allData.filter(d => d.mediaType === 'audio');
+            if (audios.length === 0) return;
             currentIndex = (currentIndex - 1 + audios.length) % audios.length;
             const d = audios[currentIndex];
             playMedia('audio', d.link, '', d.title, d.host, d.thumb);
@@ -474,20 +485,20 @@
             document.getElementById('f-rep').classList.toggle('active', isRepeat);
         };
 
-        // --- 7. EVENT LISTENERS AUDIO ---
+        // --- 7. EVENT LISTENERS AUDIO (SINKRONISASI) ---
         ra.onplay = () => {
-            const iconPause = "fa-solid fa-pause";
-            document.getElementById('ap-icon').className = iconPause;
-            document.getElementById('float-play-icon').className = iconPause;
-            document.getElementById('f-play-icon').className = iconPause;
+            const pauseIcon = "fa-solid fa-pause";
+            document.getElementById('ap-icon').className = pauseIcon;
+            document.getElementById('float-play-icon').className = pauseIcon;
+            document.getElementById('f-play-icon').className = pauseIcon;
             document.getElementById('banner-equalizer').style.display = 'flex';
         };
 
         ra.onpause = () => {
-            const iconPlay = "fa-solid fa-play";
-            document.getElementById('ap-icon').className = iconPlay;
-            document.getElementById('float-play-icon').className = iconPlay;
-            document.getElementById('f-play-icon').className = iconPlay;
+            const playIcon = "fa-solid fa-play";
+            document.getElementById('ap-icon').className = playIcon;
+            document.getElementById('float-play-icon').className = playIcon;
+            document.getElementById('f-play-icon').className = playIcon;
             document.getElementById('banner-equalizer').style.display = 'none';
         };
 
@@ -510,16 +521,15 @@
 
         ra.onended = () => { if (isRepeat) { ra.currentTime = 0; ra.play(); } else { nextTrack(); } };
 
-        // --- 8. UI OVERLAY LOGIC ---
+        // --- 8. UI OVERLAY LOGIC (HP) ---
         window.openFullPlayer = (e) => {
             if(window.innerWidth > 600 || e.target.closest('button')) return;
             document.getElementById('full-player').style.display = 'flex';
         };
         window.closeFullPlayer = () => { document.getElementById('full-player').style.display = 'none'; };
 
-        const formatTime = (s) => { const m = Math.floor(s/60); const sec = Math.floor(s%60); return `${m}:${sec<10?'0':''}${sec}`; };
-
-        loadContent();
+        // JALANKAN PERTAMA KALI
+        loadContent();   
     </script>
 </body>
 </html>
