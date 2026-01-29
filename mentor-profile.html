@@ -111,33 +111,41 @@
     .btn-sub:not(#btn-play-main) { font-size: 0.9rem; }
     .ctrl-btns { gap: 12px; }
 }
-        /* === FIX TAMPILAN HP: AUDIO 2 KOLOM, VIDEO 1 KOLOM === */
+       /* === FIX TAMPILAN HP: AUDIO KOTAK (2 KOLOM), VIDEO LEBAR (1 KOLOM) === */
         @media (max-width: 600px) {
-            /* Paksa Grid Audio jadi 2 Kolom (Kiri-Kanan) */
+            
+            /* 1. Atur Grid Audio jadi 2 Kolom */
             .gallery-grid {
                 grid-template-columns: 1fr 1fr !important;
-                gap: 10px !important;
+                gap: 12px !important;
             }
 
-            /* Tapi VIDEO tetap 1 Kolom saja biar gambarnya jelas */
+            /* 2. PENTING: Matikan paksaan rasio 16/9 dari CSS asli */
+            .gallery-item {
+                aspect-ratio: unset !important; /* Hapus rasio persegi panjang */
+                height: auto !important;
+            }
+
+            /* 3. Paksa Gambar Audio jadi KOTAK (Persegi) */
+            .thumb-wrap {
+                aspect-ratio: 1 / 1 !important; /* INI KUNCINYA BIAR KOTAK */
+                width: 100%;
+                object-fit: cover;
+            }
+
+            /* 4. Khusus VIDEO tetap 1 Kolom & Lebar (Persegi Panjang) */
             .gallery-grid.video-aspect {
                 grid-template-columns: 1fr !important; 
             }
+            .video-aspect .thumb-wrap {
+                aspect-ratio: 16 / 9 !important; /* Video tetap lebar */
+            }
 
-            /* Kecilkan sedikit font judul lagu biar muat */
+            /* 5. Rapikan Judul Lagu */
             .item-title {
                 font-size: 0.8rem !important;
-                line-height: 1.2;
-            }
-            
-            /* Atur ulang kotak gambar jadi persegi */
-            .thumb-wrap {
-                aspect-ratio: 1/1; 
-            }
-            
-            /* Kecuali Video tetap persegi panjang */
-            .video-aspect .thumb-wrap {
-                aspect-ratio: 16/9;
+                line-height: 1.3;
+                margin-top: 5px;
             }
         }
     </style>
