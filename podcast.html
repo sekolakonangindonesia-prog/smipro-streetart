@@ -459,10 +459,7 @@
             if(!isNaN(ra.duration)) document.getElementById('time-total').innerText = formatTime(ra.duration);
         };
         const formatTime = (s) => { const m = Math.floor(s/60); const sec = Math.floor(s%60); return `${m}:${sec<10?'0':''}${sec}`; };
-
-        let currentPlaylist = [];
-        let currentTrackIndex = -1;
-
+       
         // Buka Player Full Screen di HP
         window.openFullPlayer = function(e) {
             if(window.innerWidth > 600) return; // Hanya di HP
