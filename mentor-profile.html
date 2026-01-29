@@ -115,47 +115,35 @@
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 @media (max-width: 600px) {
-    .player-info { width: 55%; }
-    .btn-sub:not(#btn-play-main) { font-size: 0.9rem; }
-    .ctrl-btns { gap: 12px; }
-}
-       /* === FIX TAMPILAN HP: AUDIO KOTAK (2 KOLOM), VIDEO LEBAR (1 KOLOM) === */
-        @media (max-width: 600px) {
+            /* Banner di HP jangan terlalu tinggi */
+            .profile-banner { height: 180px !important; }
             
-            /* 1. Atur Grid Audio jadi 2 Kolom */
-            .gallery-grid {
-                grid-template-columns: 1fr 1fr !important;
-                gap: 12px !important;
-            }
+            /* Foto profil & Wadahnya diperkecil agar tidak menutupi layar */
+            .profile-avatar-container { bottom: -50px !important; }
+            .profile-avatar { width: 110px !important; height: 110px !important; }
 
-            /* 2. PENTING: Matikan paksaan rasio 16/9 dari CSS asli */
-            .gallery-item {
-                aspect-ratio: unset !important; /* Hapus rasio persegi panjang */
-                height: auto !important;
-            }
-
-            /* 3. Paksa Gambar Audio jadi KOTAK (Persegi) */
-            .thumb-wrap {
-                aspect-ratio: 1 / 1 !important; /* INI KUNCINYA BIAR KOTAK */
-                width: 100%;
-                object-fit: cover;
-            }
-
-            /* 4. Khusus VIDEO tetap 1 Kolom & Lebar (Persegi Panjang) */
-            .gallery-grid.video-aspect {
+            /* Grid karya jadi 2 kolom rapi */
+            .gallery-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+            /* Khusus Grid Video di HP: Buat 1 kolom besar agar gambar jelas */
+            .gallery-grid.video-aspect { 
                 grid-template-columns: 1fr !important; 
+                gap: 20px !important;
             }
-            .video-aspect .thumb-wrap {
-                aspect-ratio: 16 / 9 !important; /* Video tetap lebar */
+            /* Paksa Iframe YouTube pas dengan layar HP */
+            .gallery-item iframe {
+                width: 100% !important;
+                aspect-ratio: 16/9;
+                border-radius: 8px;
             }
-
-            /* 5. Rapikan Judul Lagu */
-            .item-title {
-                font-size: 0.8rem !important;
-                line-height: 1.3;
-                margin-top: 5px;
-            }
+            /* Teks info & player di bawah */
+            .player-info { width: 35%; }
+            .item-title { font-size: 0.8rem !important; }
+            .btn-sub { font-size: 0.9rem; }
+            .ctrl-btns { gap: 10px; }
         }
+            .thumb-img { width: 100%; height: 100%; object-fit: cover; background: #222; }
+            .video-aspect .thumb-wrap { aspect-ratio: 16/9; }
+            .gallery-item iframe { border: none; background: #000; }
     </style>
 </head>
 <body>
