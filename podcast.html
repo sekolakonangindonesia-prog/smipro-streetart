@@ -337,7 +337,7 @@
                 stage.style.background = gradient;
                 fullP.style.background = gradient;                
             };
-                img.onerror = () => gradient = "#121212";
+                img.onerror = () => { stage.style.background = "#121212"; fullP.style.background = "#121212"; };
         }
 
         async function loadContent() {
@@ -385,142 +385,32 @@
             renderSection('🎧 SMIPRO TUNES', 'audio', LOGO_TUNE, 'card-audio');
         }
 
-        window.playMedia = function(type, link, ytId, title, artist, cover) {
-            function getLink(url) {
-                if (url.includes('dropbox.com')) return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
-                if (url.includes('drive.google.com')) {
-                    const id = url.includes('/file/d/') ? url.split('/file/d/')[1].split('/')[0] : url.split('id=')[1]?.split('&')[0];
-                    return `https://drive.google.com/uc?export=download&id=${id}`;
-                }
-                return url;
-            }
-
-            document.getElementById('player-placeholder').style.display = 'none';
+        window.playMedia = function(type, link, ytId, title, artist, cover) {             
             const vid = document.getElementById('video-player');
             const aud = document.getElementById('audio-player');
-            const ra = document.getElementById('real-audio');
-
-            document.getElementById('yt-frame').src = ""; ra.pause();
+            const placeholder = document.getElementById('player-placeholder');
+            if(placeholder) placeholder.style.display = 'none';
 
             if (type === 'video') {
+                ra.pause();
                 document.getElementById('player-stage').style.background = '#000';
                 aud.classList.remove('active'); vid.classList.add('active');
                 document.getElementById('yt-frame').src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
+                document.getElementById('float-bar').style.display = 'none';
             } else {
+                document.getElementById('yt-frame').src = "";
                 vid.classList.remove('active'); aud.classList.add('active');
+                
+                // Update Index untuk Next/Prev
+                const audios = allData.filter(d => d.mediaType === 'audio');
+                currentIndex = audios.findIndex(x => x.title === title);
 
-                // ISI DATA BANNER BESAR
+                // Update UI Banner
                 document.getElementById('ap-cover').src = cover;
                 document.getElementById('ap-title').innerText = title;
                 document.getElementById('ap-artist').innerText = artist;
 
-                // --- INJECT BARU: ISI DATA FLOATING PLAYER JUGA ---
-                document.getElementById('float-bar').style.display = 'block'; // Munculkan bar bawah
-                document.getElementById('float-cover').src = cover;
-                document.getElementById('float-title').innerText = title;
-                document.getElementById('float-artist').innerText = artist;
-                
-                // Munculkan Equalizer
-                document.getElementById('banner-equalizer').style.display = 'flex';
-
-                setDynamicBackground(cover);
-                ra.src = getLink(link); ra.load(); ra.play();
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        window.toggleAudio = () => {
-            const ra = document.getElementById('real-audio');
-            if (ra.paused) ra.play(); else ra.pause();
-        }
-
-        const ra = document.getElementById('real-audio');
-        const originalPlayMedia = window.playMedia;
-        
-        // SAAT PLAY
-        ra.onplay = () => {
-            const pauseClass = "fa-solid fa-pause";
-            document.getElementById('ap-icon').className = "fa-solid fa-pause"; // Icon Atas
-            document.getElementById('float-play-icon').className = "fa-solid fa-pause"; // Icon Bawah
-            document.getElementById('banner-equalizer').style.display = 'flex'; // Equalizer Goyang
-        };
-        
-        // SAAT PAUSE
-        ra.onpause = () => {
-            document.getElementById('ap-icon').className = "fa-solid fa-play";
-            document.getElementById('float-play-icon').className = "fa-solid fa-play";
-            document.getElementById('f-play-icon').className = playClass;
-            document.getElementById('banner-equalizer').style.display = 'none'; // Equalizer Hilang
-        };
-
-        // SAAT DURASI JALAN (TIME UPDATE)
-        ra.ontimeupdate = () => {
-            const pct = (ra.currentTime / ra.duration) * 100;
-            
-            // Gerakkan Bar Atas
-            document.getElementById('audio-progress-bar').style.width = pct + '%';
-            
-            // Gerakkan Bar Bawah (Floating)
-            document.getElementById('float-progress-fill').style.width = pct + '%';
-            document.getElementById('full-bar').style.width = pct + '%';
-
-            document.getElementById('time-current').innerText = formatTime(ra.currentTime);
-            document.getElementById('f-time-cur').innerText = cur;
-            if(!isNaN(ra.duration)) { 
-                const tot = formatTime(ra.duration);
-                document.getElementById('time-total').innerText = tot;
-                document.getElementById('f-time-tot').innerText = tot;
-                }
-        };
-        const formatTime = (s) => { const m = Math.floor(s/60); const sec = Math.floor(s%60); return `${m}:${sec<10?'0':''}${sec}`; };
-
-        ra.onended = () => {
-        if (isRepeat) { ra.currentTime = 0; ra.play(); }
-        else { nextTrack(); }
-        };
-       
-        // Buka Player Full Screen di HP
-        window.openFullPlayer = function(e) {
-            if(window.innerWidth > 600) return; // Hanya di HP
-            if(e.target.closest('button')) return; // Jangan buka kalau klik tombol kontrol
-            document.getElementById('full-player').style.display = 'flex';
-        }
-
-        window.closeFullPlayer = function() {
-            document.getElementById('full-player').style.display = 'none';
-        };
-
-        // Fungsi Next & Prev
-        window.nextTrack = function(e) {
-            if(e) e.stopPropagation();
-            const audioData = allData.filter(d => d.mediaType === 'audio');
-            currentTrackIndex = (currentTrackIndex + 1) % audioData.length;
-            const t = audioData[currentTrackIndex];
-            playMedia('audio', t.link, '', t.title, t.host, t.thumb);
-        };
-
-        window.prevTrack = function(e) {
-            if(e) e.stopPropagation();
-            const audios = allData.filter(d => d.mediaType === 'audio');
-            currentIndex = (currentIndex - 1 + audios.length) % audios.length;
-            const d = audios[currentIndex];
-            playMedia('audio', d.link, '', d.title, d.host, d.thumb);
-        };
-
-        // Modifikasi Fungsi playMedia Lama (Sinkronkan semua player)
-        const oldPlayMedia = window.playMedia;
-        window.playMedia = function(type, link, ytId, title, artist, cover) {
-            // Update Index buat Next/Prev
-            if(type === 'audio') {
-                const audioData = allData.filter(d => d.mediaType === 'audio');
-                currentTrackIndex = audioData.findIndex(d => d.title === title);
-            }
-
-            // Jalankan fungsi aslinya dulu
-            oldPlayMedia(type, link, ytId, title, artist, cover);
-
-            // Update Semua Komponen Player (Float & Full)
-            if(type === 'audio') {
+                // Update UI Floating & Full Player
                 document.getElementById('float-bar').style.display = 'block';
                 document.getElementById('float-cover').src = cover;
                 document.getElementById('float-title').innerText = title;
@@ -529,79 +419,105 @@
                 document.getElementById('full-cover').src = cover;
                 document.getElementById('full-title').innerText = title;
                 document.getElementById('full-artist').innerText = artist;
+
                 document.getElementById('banner-equalizer').style.display = 'flex';
+                
+                setDynamicBackground(cover);
+                ra.src = getLink(link); ra.load(); ra.play();
             }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Update Progress & Ikon secara bersamaan
-        const realAudio = document.getElementById('real-audio');
-        realAudio.addEventListener('timeupdate', () => {
-            const pct = (realAudio.currentTime / realAudio.duration) * 100;
-            const cur = formatTime(realAudio.currentTime);
-            const tot = formatTime(realAudio.duration || 0);
+        function getLink(url) {
+            if (url.includes('dropbox.com')) return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+            if (url.includes('drive.google.com')) {
+                const id = url.includes('/file/d/') ? url.split('/file/d/')[1].split('/')[0] : url.split('id=')[1]?.split('&')[0];
+                return `https://drive.google.com/uc?export=download&id=${id}`;
+            }
+            return url;
+        }
 
-            // Update Semua Progress Bar
-            document.getElementById('audio-progress-bar').style.width = pct + '%';
-            document.getElementById('float-progress-fill').style.width = pct + '%';
-            document.getElementById('full-progress-bar').style.width = pct + '%';
-            
-            // Update Semua Teks Waktu
-            document.getElementById('time-current').innerText = cur;
-            document.getElementById('full-time-cur').innerText = cur;
-            document.getElementById('time-total').innerText = tot;
-            document.getElementById('full-time-tot').innerText = tot;
-        });
-
-        realAudio.addEventListener('play', () => {
-            document.getElementById('ap-icon').className = "fa-solid fa-pause";
-            document.getElementById('float-play-icon').className = "fa-solid fa-pause";
-            document.getElementById('full-play-icon').className = "fa-solid fa-pause";
-        });
-
-        realAudio.addEventListener('pause', () => {
-            document.getElementById('ap-icon').className = "fa-solid fa-play";
-            document.getElementById('float-play-icon').className = "fa-solid fa-play";
-            document.getElementById('full-play-icon').className = "fa-solid fa-play";
-        });
-
-        window.toggleShuffle = function(e) {
-            if(e) e.stopPropagation();
-            isShuffle = !isShuffle;
-            // Nyalakan warna hijau kalau aktif
-            document.getElementById('btn-shuf').classList.toggle('active', isShuffle);
-            document.getElementById('f-shuf').classList.toggle('active', isShuffle);
+        // --- 6. NAVIGASI & KONTROL ---
+        window.toggleAudio = (e) => { 
+            if(e) e.stopPropagation(); 
+            if (ra.paused) ra.play(); else ra.pause(); 
         };
 
-        window.toggleRepeat = function(e) {
+        window.nextTrack = (e) => {
             if(e) e.stopPropagation();
-            isRepeatOne = !isRepeatOne;
-            // Nyalakan warna hijau kalau aktif
-            document.getElementById('btn-rep').classList.toggle('active', isRepeat);
-            document.getElementById('f-rep').classList.toggle('active', isRepeat);
-        };
-
-        // --- UPDATE FUNGSI NEXT (DENGAN LOGIKA SHUFFLE) ---
-        window.nextTrack = function(e) {
-            if(e) e.stopPropagation();
-            const audioData = allData.filter(d => d.mediaType === 'audio');
+            const audios = allData.filter(d => d.mediaType === 'audio');
             if (isShuffle) currentIndex = Math.floor(Math.random() * audios.length);
             else currentIndex = (currentIndex + 1) % audios.length;
             const d = audios[currentIndex];
             playMedia('audio', d.link, '', d.title, d.host, d.thumb);
         };
 
-        // --- OTOMATIS LANJUT / REPEAT SAAT LAGU HABIS ---
-        const raElement = document.getElementById('real-audio');
-        raElement.onended = () => {
-            if(isRepeatOne) {
-                // Putar ulang lagu yang sama
-                raElement.currentTime = 0;
-                raElement.play();
-            } else {
-                // Lanjut ke lagu berikutnya
-                window.nextTrack();
+        window.prevTrack = (e) => {
+            if(e) e.stopPropagation();
+            const audios = allData.filter(d => d.mediaType === 'audio');
+            currentIndex = (currentIndex - 1 + audios.length) % audios.length;
+            const d = audios[currentIndex];
+            playMedia('audio', d.link, '', d.title, d.host, d.thumb);
+        };
+
+        window.toggleShuffle = (e) => {
+            if(e) e.stopPropagation();
+            isShuffle = !isShuffle;
+            document.getElementById('btn-shuf').classList.toggle('active', isShuffle);
+            document.getElementById('f-shuf').classList.toggle('active', isShuffle);
+        };
+
+        window.toggleRepeat = (e) => {
+            if(e) e.stopPropagation();
+            isRepeat = !isRepeat;
+            document.getElementById('btn-rep').classList.toggle('active', isRepeat);
+            document.getElementById('f-rep').classList.toggle('active', isRepeat);
+        };
+
+        // --- 7. EVENT LISTENERS AUDIO ---
+        ra.onplay = () => {
+            const iconPause = "fa-solid fa-pause";
+            document.getElementById('ap-icon').className = iconPause;
+            document.getElementById('float-play-icon').className = iconPause;
+            document.getElementById('f-play-icon').className = iconPause;
+            document.getElementById('banner-equalizer').style.display = 'flex';
+        };
+
+        ra.onpause = () => {
+            const iconPlay = "fa-solid fa-play";
+            document.getElementById('ap-icon').className = iconPlay;
+            document.getElementById('float-play-icon').className = iconPlay;
+            document.getElementById('f-play-icon').className = iconPlay;
+            document.getElementById('banner-equalizer').style.display = 'none';
+        };
+
+        ra.ontimeupdate = () => {
+            const pct = (ra.currentTime / ra.duration) * 100 || 0;
+            const cur = formatTime(ra.currentTime);
+            
+            document.getElementById('audio-progress-bar').style.width = pct + '%';
+            document.getElementById('float-progress-fill').style.width = pct + '%';
+            document.getElementById('full-bar').style.width = pct + '%';
+
+            document.getElementById('time-current').innerText = cur;
+            document.getElementById('f-time-cur').innerText = cur;
+            if(!isNaN(ra.duration)) { 
+                const tot = formatTime(ra.duration);
+                document.getElementById('time-total').innerText = tot;
+                document.getElementById('f-time-tot').innerText = tot;
             }
         };
+
+        ra.onended = () => { if (isRepeat) { ra.currentTime = 0; ra.play(); } else { nextTrack(); } };
+
+        // --- 8. UI OVERLAY LOGIC ---
+        window.openFullPlayer = (e) => {
+            if(window.innerWidth > 600 || e.target.closest('button')) return;
+            document.getElementById('full-player').style.display = 'flex';
+        };
+        window.closeFullPlayer = () => { document.getElementById('full-player').style.display = 'none'; };
+
+        const formatTime = (s) => { const m = Math.floor(s/60); const sec = Math.floor(s%60); return `${m}:${sec<10?'0':''}${sec}`; };
 
         loadContent();
     </script>
