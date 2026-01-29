@@ -50,11 +50,7 @@
         .golden-list li { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; color: #ccc; font-size: 0.95rem; line-height: 1.4; }
         .golden-list li i { color: #FFD700; margin-top: 4px; font-size: 0.8rem; }
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;}
-        .gallery-item { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 16/9; border: 1px solid #333; background: #000; cursor: pointer; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
-        .gallery-item:hover img { transform: scale(1.1); }
-        .gallery-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; }
-        .gallery-item:hover .gallery-overlay { opacity: 1; }
+        
         .btn-wa {
             display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(45deg, #b99205, #FFD700);
             color: black; font-weight: bold; border: none; padding: 12px 30px; border-radius: 30px;
@@ -68,6 +64,77 @@
         width: 40px; height: 40px; border-radius: 50%; background: #222; color: #ccc;
         display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
         text-decoration: none; border: 1px solid #444; transition: 0.3s;
+        }
+        
+        .gallery-item {
+            aspect-ratio: unset !important; /* Hapus rasio 16:9 bawaan */
+            height: auto !important;
+            background: transparent !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important; /* Gambar di atas, Teks di bawah */
+            overflow: visible !important;
+        }
+
+        /* 2. ATUR GAMBAR (WADAH) */
+        .thumb-wrap {
+            position: relative !important;
+            width: 100%;
+            aspect-ratio: 1 / 1 !important; /* PAKSA KOTAK (SQUARE) UNTUK AUDIO */
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Pengecualian: VIDEO tetap Persegi Panjang (Lebar) */
+        .video-aspect .thumb-wrap {
+            aspect-ratio: 16 / 9 !important;
+        }
+
+        .thumb-img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        
+        /* Efek Zoom saat Hover */
+        .gallery-item:hover .thumb-img { transform: scale(1.1); }
+
+        /* 3. LOGO PLAY DI TENGAH (HOVER EFFECT) */
+        .play-overlay {
+            position: absolute !important;
+            inset: 0 !important;
+            background: rgba(0,0,0,0.4); /* Gelap transparan */
+            display: flex !important;
+            align-items: center; justify-content: center;
+            opacity: 0; /* Sembunyi dulu */
+            transition: all 0.3s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        /* Saat Mouse Masuk (Hover) -> Munculkan Logo */
+        .gallery-item:hover .play-overlay {
+            opacity: 1 !important;
+        }
+
+        /* Logo Play-nya */
+        .play-overlay img {
+            width: 50px !important; height: 50px !important;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            transform: scale(0.8);
+            transition: 0.3s;
+        }
+        .gallery-item:hover .play-overlay img { transform: scale(1); }
+
+        /* 4. ATUR JUDUL (DI BAWAH GAMBAR) */
+        .item-title {
+            margin-top: 10px !important;
+            font-size: 0.9rem !important;
+            color: #fff !important;
+            font-weight: 600;
+            line-height: 1.4;
+            text-align: left;
         }
         .social-icon:hover { background: #FFD700; color: black; border-color: #FFD700; transform: translateY(-3px); }
         @media (max-width: 768px) {
@@ -115,37 +182,64 @@
 
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-@media (max-width: 600px) {
-            /* Banner di HP jangan terlalu tinggi */
-            .profile-banner { height: 180px !important; }
+  @media (max-width: 600px) {
             
-            /* Foto profil & Wadahnya diperkecil agar tidak menutupi layar */
+            /* --- 1. BAGIAN HEADER/BANNER (DARI KODE LAMA) --- */
+            .profile-banner { height: 180px !important; }
             .profile-avatar-container { bottom: -50px !important; }
             .profile-avatar { width: 110px !important; height: 110px !important; }
 
-            /* Grid karya jadi 2 kolom rapi */
-            .gallery-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-            /* Khusus Grid Video di HP: Buat 1 kolom besar agar gambar jelas */
-            .gallery-grid.video-aspect { 
-                grid-template-columns: 1fr !important; 
-                gap: 20px !important;
+            /* --- 2. BAGIAN PLAYER MUSIK (DARI KODE LAMA) --- */
+            .player-info { width: 55%; }
+            .btn-sub:not(#btn-play-main) { font-size: 0.9rem; }
+            .ctrl-btns { gap: 12px; }
+
+            /* --- 3. BAGIAN GALERI KOTAK (DARI KODE BARU - PERBAIKAN) --- */
+            
+            /* Audio: Paksa jadi 2 Kolom & Kotak */
+            .gallery-grid {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 12px !important;
             }
-            /* Paksa Iframe YouTube pas dengan layar HP */
+            
+            /* Gambar Audio: Paksa Persegi (Square) */
+            .thumb-wrap {
+                aspect-ratio: 1 / 1 !important; 
+                width: 100%;
+            }
+
+            /* Video: Tetap 1 Kolom & Lebar */
+            .gallery-grid.video-aspect {
+                grid-template-columns: 1fr !important; 
+            }
+            .video-aspect .thumb-wrap {
+                aspect-ratio: 16 / 9 !important; /* Video jangan dikotakkan */
+            }
+
+            /* HAPUS JUDUL YANG NUMPUK & TURUNKAN KE BAWAH */
+            .item-title {
+                margin-top: 8px !important;
+                font-size: 0.8rem !important;
+                position: relative !important; /* Turun ke bawah, tidak nempel gambar */
+                text-align: left !important;
+                white-space: normal !important; /* Biar judul panjang turun baris */
+            }
+
+            /* ICON PLAY SELALU MUNCUL DI HP */
+            .play-overlay {
+                opacity: 1 !important;
+                background: rgba(0,0,0,0.1) !important; /* Agak bening biar gambar kelihatan */
+            }
+            .play-overlay img {
+                width: 35px !important; height: 35px !important;
+            }
+            
+            /* Fix Ukuran Youtube di HP */
             .gallery-item iframe {
                 width: 100% !important;
                 aspect-ratio: 16/9;
-                border-radius: 8px;
             }
-            /* Teks info & player di bawah */
-            .player-info { width: 35%; }
-            .item-title { font-size: 0.8rem !important; }
-            .btn-sub { font-size: 0.9rem; }
-            .ctrl-btns { gap: 10px; }
         }
-            .thumb-img { width: 100%; height: 100%; object-fit: cover; background: #222; }
-            .video-aspect .thumb-wrap { aspect-ratio: 16/9; }
-            .gallery-item iframe { border: none; background: #000; }
-    </style>
 </head>
 <body>
 
