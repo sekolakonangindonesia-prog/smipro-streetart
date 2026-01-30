@@ -12,11 +12,12 @@
         body { margin: 0; padding: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
         
         /* NAVBAR */
-        .top-nav { padding: 15px; display: flex; align-items: center; background: #000; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #222; }
+        .top-nav { padding: 15px; display: flex; align-items: center; background: #000; position: fixed; top: 0; width: 100%; z-index: 2000; border-bottom: 1px solid #222; }
         .btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; }
         
         /* === PLAYER STAGE (DYNAMIC BACKGROUND) === */
         #player-stage { 
+            margin-top: 60px;
             min-height: 400px; 
             display: flex; align-items: center; justify-content: center; 
             position: relative; 
@@ -92,9 +93,8 @@
             
             /* Mobile Logo Play (Permanen di Pojok) */
             .play-overlay { opacity: 1; background: none; justify-content: flex-end; align-items: flex-end; padding: 8px; }
-            .custom-play-btn { width: 35px; height: 35px; border-width: 2px; }
+            .custom-play-btn { width: 35px; height: 35px; border-width: 2px; }            
             
-            .grid-container { grid-template-columns: 1fr 1fr; gap: 15px; }
         }
 
         @keyframes fadeInUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
