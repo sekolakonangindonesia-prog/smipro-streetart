@@ -167,22 +167,23 @@
     position: fixed; inset: 0; z-index: 10000;
     display: none; flex-direction: column; 
     transition: background 1s ease; /* Biar ganti warna halus */
-    padding: 40px 25px;
+    padding: 20px 25px;
+    overflow: hidden;
 }
-.full-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+.full-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .full-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.full-img-box { width: 85%; aspect-ratio: 1/1; max-width: 300px; margin-bottom: 40px; }
+.full-img-box { width: 80%; aspect-ratio: 1/1; max-width: 250px; margin-bottom: 20px; }
 .full-img-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
 
-.full-info-text { width: 100%; margin-bottom: 30px; }
-.full-info-text h2 { font-size: 1.8rem; margin: 0; font-weight: 900; }
-.full-info-text p { opacity: 0.7; margin: 8px 0; font-size: 1rem; }
+.full-info-text { width: 100%; margin-bottom: 15px; }
+.full-info-text h2 { font-size: 1.8rem; margin: 0; font-weight: 800; }
+.full-info-text p { opacity: 0.7; margin: 5px 0; font-size: 0.9rem; }
 
-.full-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; max-width: 400px; margin: 0 auto; }
-.btn-main-play { width: 70px; height: 70px; background: white; color: black; border-radius: 50%; border: none; font-size: 1.8rem; }
+.full-controls { width: 100%; display: flex; justify-content: space-between; align-items: center; max-width: 400px; margin: 10px auto 20px; }
+.btn-main-play { width: 65px; height: 65px; background: white; color: black; border-radius: 50%; border: none; font-size: 1.6rem; }
 
 /* Progress Bar Full Player */
-.full-progress-container { width: 100%; margin: 20px 0; }
+.full-progress-container { width: 100%; margin: 15px 0; }
 .bar-total { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; }
 .bar-current { height: 100%; background: white; width: 0%; border-radius: 2px; }
         
