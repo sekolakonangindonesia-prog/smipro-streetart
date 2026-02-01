@@ -145,6 +145,11 @@
     .card-media { padding: 5px !important; width: 100% !important; min-width: 0 !important; }
     .thumb-wrap { aspect-ratio: 1/1 !important; width: 100% !important; }
     .audio-title { font-size: 2.2rem !important; }
+
+    .video-wrapper { 
+        aspect-ratio: 1/1 !important; /* INI BIAR VIDEO JADI KOTAK */
+        max-width: 100%;
+    }
 }
 
 /* === 2. FLOATING PLAYER (LAPTOP & HP) === */
@@ -271,10 +276,10 @@
             <button class="btn-mini" onclick="toggleRepeat(event)" id="btn-rep"><i class="fa-solid fa-repeat"></i></button>
         </div>
     </div>
-</div>
 <div style="width:100%; height:2px; background:#333; margin-top:8px;">
     <div id="float-progress-fill" style="width:0%; height:100%; background:#1DB954;"></div>
 </div>
+    </div>
 <!-- FULL PLAYER OVERLAY (SS4 STYLE) -->
 <div id="full-player">
     <div class="full-header">
@@ -512,9 +517,9 @@
             const pct = (ra.currentTime / ra.duration) * 100 || 0;
             const cur = formatTime(ra.currentTime);
             
-            document.getElementById('audio-progress-bar').style.width = pct + '%';
-            document.getElementById('float-progress-fill').style.width = pct + '%';
-            document.getElementById('full-bar').style.width = pct + '%';
+            document.getElementById('audio-progress-bar'); if(b1) b1.style.width = pct + '%';
+            document.getElementById('float-progress-fill'); if(b2) b2.style.width = pct + '%';
+            document.getElementById('full-bar'); if(b3) b3.style.width = pct + '%';
 
             document.getElementById('time-current').innerText = cur;
             document.getElementById('f-time-cur').innerText = cur;
