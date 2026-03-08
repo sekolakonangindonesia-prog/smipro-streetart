@@ -187,6 +187,20 @@
 .full-progress-container { width: 100%; margin: 15px 0; }
 .bar-total { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; }
 .bar-current { height: 100%; background: white; width: 0%; border-radius: 2px; }
+
+/* --- PERBAIKAN WARNA TOMBOL (SHUFFLE & REPEAT) --- */
+    .btn-sub.active, 
+    .btn-mini.active {
+        color: #1DB954 !important; /* Warna Hijau Spotify */
+        text-shadow: 0 0 8px rgba(29, 185, 84, 0.6); /* Efek Bersinar */
+        opacity: 1 !important;
+    }
+
+    /* --- PERBAIKAN PLAYER BAWAH (Agar Rapi) --- */
+    .floating-player {
+        z-index: 99999 !important; /* Paksa paling atas */
+        background: #111 !important; /* Latar belakang gelap */
+    }
         
     </style>
 </head>
@@ -229,7 +243,12 @@
                 </div>
                 </div>
             <div class="sp-controls">
-                <button class="btn-play-main" onclick="toggleAudio()"><i class="fa-solid fa-play" id="ap-icon"></i></button>
+                <button class="btn-sub" onclick="toggleShuffle()" id="ap-shuffle"><i class="fa-solid fa-shuffle"></i></button>
+    
+    <button class="btn-sub" onclick="prevTrack()"><i class="fa-solid fa-backward-step"></i></button>
+    <button class="btn-play-main" onclick="toggleAudio()"><i class="fa-solid fa-play" id="ap-icon"></i></button>
+    <button class="btn-sub" onclick="nextTrack()"><i class="fa-solid fa-forward-step"></i></button>
+    <button class="btn-sub" onclick="toggleRepeat()" id="ap-repeat"><i class="fa-solid fa-repeat"></i></button>                
                 <div class="progress-area" style="flex:1;">
                     <div class="progress-container"><div id="audio-progress-bar"></div></div>
                     <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:8px;">
@@ -445,8 +464,11 @@
                 document.getElementById('ap-title').innerText = title;
                 document.getElementById('ap-artist').innerText = artist;
 
-                if(floatBar) {
-                    floatBar.style.display = 'block'; // Munculkan player bawah
+                 if (window.innerWidth < 768) {
+                floatBar.style.display = 'flex'; 
+            } else {
+                floatBar.style.display = 'none';
+            }
                     document.getElementById('float-cover').src = cover;
                     document.getElementById('float-title').innerText = title;
                     document.getElementById('float-artist').innerText = artist;
@@ -520,17 +542,19 @@
             if(e) e.stopPropagation();
             isShuffle = !isShuffle;
             
-            // Update 2 tombol (Float & Full)
-            const btn1 = document.getElementById('btn-shuf');
-            const btn2 = document.getElementById('f-shuf');
+            // Update SEMUA tombol (Atas, Bawah, Full)
+            const btns = [
+                document.getElementById('ap-shuffle'),   // Tombol Atas
+                document.getElementById('btn-shuf'),     // Tombol Bawah
+                document.getElementById('f-shuf')        // Tombol Full
+            ];
             
-            if(isShuffle) {
-                if(btn1) btn1.classList.add('active');
-                if(btn2) btn2.classList.add('active');
-            } else {
-                if(btn1) btn1.classList.remove('active');
-                if(btn2) btn2.classList.remove('active');
-            }
+            btns.forEach(btn => {
+                if(btn) {
+                    if(isShuffle) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
         };
 
         // Repeat
@@ -538,17 +562,19 @@
             if(e) e.stopPropagation();
             isRepeat = !isRepeat;
             
-            // Update 2 tombol (Float & Full)
-            const btn1 = document.getElementById('btn-rep');
-            const btn2 = document.getElementById('f-rep');
+            // Update SEMUA tombol
+            const btns = [
+                document.getElementById('ap-repeat'),    // Tombol Atas
+                document.getElementById('btn-rep'),      // Tombol Bawah
+                document.getElementById('f-rep')         // Tombol Full
+            ];
             
-            if(isRepeat) {
-                if(btn1) btn1.classList.add('active');
-                if(btn2) btn2.classList.add('active');
-            } else {
-                if(btn1) btn1.classList.remove('active');
-                if(btn2) btn2.classList.remove('active');
-            }
+            btns.forEach(btn => {
+                if(btn) {
+                    if(isRepeat) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
         };
 
         // --- 7. EVENT LISTENERS AUDIO (PERBAIKAN VARIABEL b1, b2, b3) ---
