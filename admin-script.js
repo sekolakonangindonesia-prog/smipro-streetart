@@ -1610,9 +1610,9 @@ window.renderFinanceData = function() {
 }
 
 
-// --- FUNGSI GENERATE PDF KEUANGAN (SAWERAN) ---
-window.generateSawerPDF = function() {
-    // 1. Cek Library & Data
+// --- FUNGSI GENERATE PDF KEUANGAN (VERSI GROUPING + LOGO + FOOTER) ---
+window.generateSawerPDF = async function() {
+    // 1. Cek Library
     if (typeof jspdf === 'undefined') { alert("Library PDF belum siap!"); return; }
     
     // Ambil data dari variabel global yang disiapkan di renderFinanceData
@@ -1621,53 +1621,160 @@ window.generateSawerPDF = function() {
 
     if (data.length === 0) { alert("Data kosong! Tidak ada yang bisa dicetak."); return; }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    document.body.style.cursor = 'wait';
 
-    // 2. HEADER
-    doc.setFontSize(16); doc.setFont("helvetica", "bold");
-    doc.text("LAPORAN KEUANGAN APRESIASI (LIVE)", 105, 20, null, null, "center");
-    
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(`Lokasi: ${info.lokasi} | Periode: ${info.periode}`, 105, 27, null, null, "center");
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 32, null, null, "center");
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height || 297;
+        const printTime = new Date().toLocaleString('id-ID');
 
-    // 3. SUSUN DATA TABEL
-    let tableBody = [];
-    let grandTotal = 0;
+        // --- A. LOAD LOGO SMIPRO ---
+        const getBase64FromUrl = async (url) => {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => resolve(reader.result);
+                });
+            } catch (error) { return null; }
+        };
+        const logoUrl = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+        const logoBase64 = await getBase64FromUrl(logoUrl);
 
-    data.forEach(d => {
-        // Format Waktu
-        let waktu = d.dateObj.toLocaleDateString() + ' ' + d.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-        
+        // --- B. LOGIKA GROUPING (PENGELOMPOKKAN PER VENUE) ---
+        // Urutkan data berdasarkan Nama Lokasi (Venue)
+        let dataSorted = [...data].sort((a, b) => (a.loc || "").localeCompare(b.loc || ""));
+
+        let tableBody = [];
+        let currentVenue = "";
+        let subTotal = 0;
+        let grandTotal = 0;
+
+        dataSorted.forEach((item, index) => {
+            const itemLoc = (item.loc || "Lainnya").toUpperCase();
+
+            // Cek apakah Venue berubah? (Untuk Membuat Header Grup)
+            if (currentVenue !== itemLoc) {
+                // Cetak Subtotal grup sebelumnya (Jika bukan yang pertama)
+                if (currentVenue !== "") {
+                    tableBody.push([
+                        { 
+                            content: `SUBTOTAL ${currentVenue}`, 
+                            colSpan: 4, 
+                            styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                        },
+                        { 
+                            content: `Rp ${subTotal.toLocaleString('id-ID')}`, 
+                            styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                        }
+                    ]);
+                }
+
+                // Reset untuk Grup Baru
+                currentVenue = itemLoc;
+                subTotal = 0;
+
+                // Cetak Judul Venue Baru sebagai Baris Header Tabel
+                tableBody.push([
+                    { 
+                        content: `LOKASI: ${currentVenue}`, 
+                        colSpan: 5, 
+                        styles: { fontStyle: 'bold', fillColor: [40, 40, 40], textColor: 255 } 
+                    }
+                ]);
+            }
+
+            // Susun Baris Data Transaksi
+            let waktu = item.dateObj.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) + ' (' + item.dateObj.toLocaleDateString('id-ID') + ')';
+            
+            tableBody.push([
+                waktu,
+                item.song || "-",
+                item.performer || "-",
+                item.loc || "-",
+                `Rp ${item.amount.toLocaleString('id-ID')}`
+            ]);
+
+            subTotal += item.amount;
+            grandTotal += item.amount;
+
+            // Jika ini data TERAKHIR, cetak Subtotal terakhir
+            if (index === dataSorted.length - 1) {
+                 tableBody.push([
+                    { 
+                        content: `SUBTOTAL ${currentVenue}`, 
+                        colSpan: 4, 
+                        styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                    },
+                    { 
+                        content: `Rp ${subTotal.toLocaleString('id-ID')}`, 
+                        styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } 
+                    }
+                ]);
+            }
+        });
+
+        // Baris GRAND TOTAL PALING BAWAH
         tableBody.push([
-            waktu,
-            d.song,
-            d.performer,
-            d.loc,
-            `Rp ${d.amount.toLocaleString('id-ID')}`
+            { 
+                content: "GRAND TOTAL PENDAPATAN", 
+                colSpan: 4, 
+                styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } 
+            },
+            { 
+                content: `Rp ${grandTotal.toLocaleString('id-ID')}`, 
+                styles: { fontStyle: 'bold', fontSize: 11, fillColor: [0, 255, 0], textColor: [0, 0, 0] } 
+            }
         ]);
-        grandTotal += d.amount;
-    });
 
-    // Baris Total
-    tableBody.push([
-        { content: "TOTAL PENDAPATAN", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: `Rp ${grandTotal.toLocaleString('id-ID')}`, styles: { fontStyle: 'bold', fillColor: [0, 255, 0] } }
-    ]);
+        // --- C. PROSES CETAK PDF ---
+        doc.autoTable({
+            startY: 50,
+            head: [['Waktu', 'Judul Lagu', 'Artis', 'Lokasi', 'Nominal']],
+            body: tableBody,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
+            
+            // FUNGSI UNTUK LOGO & HEADER DI SETIAP HALAMAN
+            didDrawPage: function (data) {
+                // 1. Pasang Logo
+                if (logoBase64) {
+                    doc.addImage(logoBase64, 'PNG', 15, 10, 18, 18);
+                }
 
-    // 4. BUAT TABEL
-    doc.autoTable({
-        startY: 40,
-        head: [['Waktu', 'Judul Lagu', 'Artis/Performer', 'Lokasi', 'Nominal']],
-        body: tableBody,
-        theme: 'grid',
-        headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
-        styles: { fontSize: 9, cellPadding: 3 }
-    });
+                // 2. Judul Laporan
+                doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0,0,0);
+                doc.text("LAPORAN KEUANGAN APRESIASI (LIVE)", 40, 18);
+                
+                // 3. Info Filter
+                doc.setFontSize(9); doc.setFont("helvetica", "normal");
+                doc.text(`Lokasi: ${info.lokasi === 'all' ? 'Semua Lokasi' : info.lokasi}`, 40, 26);
+                doc.text(`Periode: ${info.periode} | Dicetak: ${printTime}`, 40, 31);
 
-    // 5. DOWNLOAD
-    doc.save(`Laporan_Saweran_${new Date().getTime()}.pdf`);
+                // 4. Garis Pembatas Header
+                doc.setLineWidth(0.5); doc.setDrawColor(0,0,0);
+                doc.line(15, 40, 195, 40);
+
+                // 5. FOOTER / MARKER (Watermark SMIPRO)
+                doc.setFontSize(8); 
+                doc.setTextColor(150, 150, 150);
+                doc.text("@ Yayasan Sekola Konang Indonesia - SMIPRO StreetArt.id", 105, pageHeight - 10, null, null, "center");
+            }
+        });
+
+        // Simpan File
+        doc.save(`Laporan_Keuangan_Live_${new Date().getTime()}.pdf`);
+
+    } catch (error) {
+        console.error("PDF Error:", error);
+        alert("Gagal mencetak PDF: " + error.message);
+    } finally {
+        document.body.style.cursor = 'default';
+    }
 }
 
 
