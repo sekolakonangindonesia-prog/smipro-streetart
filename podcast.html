@@ -430,7 +430,7 @@
             renderSection('🎧 SMIPRO TUNES', 'audio', LOGO_TUNE, 'card-audio');
         }
 
-        // --- 5. LOGIKA PLAY MEDIA UTAMA ---
+        // --- 5. LOGIKA PLAY MEDIA UTAMA (FIXED) ---
         window.playMedia = function(type, link, ytId, title, artist, cover) {
             const vid = document.getElementById('video-player');
             const aud = document.getElementById('audio-player');
@@ -448,7 +448,8 @@
                 vid.classList.add('active');
                 
                 if(ytFrame) ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
-                if(floatBar) floatBar.style.display = 'none'; // Sembunyikan player bawah
+                // Sembunyikan player bawah jika nonton video
+                if(floatBar) floatBar.style.display = 'none'; 
             
             } else {
                 if(ytFrame) ytFrame.src = ""; // Matikan video
@@ -459,26 +460,33 @@
                 const audios = allData.filter(d => d.mediaType === 'audio');
                 currentIndex = audios.findIndex(x => x.title === title);
 
-                // Update UI (Banner, Float, Full)
+                // Update UI (Banner)
                 document.getElementById('ap-cover').src = cover;
                 document.getElementById('ap-title').innerText = title;
                 document.getElementById('ap-artist').innerText = artist;
 
-                 if (window.innerWidth < 768) {
-                floatBar.style.display = 'flex'; 
-            } else {
-                floatBar.style.display = 'none';
-            }
+                // --- LOGIKA LAYAR HP VS LAPTOP ---
+                if(floatBar) {
+                    if (window.innerWidth < 768) {
+                        floatBar.style.display = 'flex'; // Muncul di HP
+                    } else {
+                        floatBar.style.display = 'none'; // Sembunyi di Laptop
+                    }
+                    
+                    // Update konten float bar
                     document.getElementById('float-cover').src = cover;
                     document.getElementById('float-title').innerText = title;
                     document.getElementById('float-artist').innerText = artist;
                 }
 
+                // Update Full Player Overlay
                 document.getElementById('full-cover').src = cover;
                 document.getElementById('full-title').innerText = title;
                 document.getElementById('full-artist').innerText = artist;
 
-                document.getElementById('banner-equalizer').style.display = 'flex';
+                if(document.getElementById('banner-equalizer')) {
+                    document.getElementById('banner-equalizer').style.display = 'flex';
+                }
                 
                 setDynamicBackground(cover);
                 
