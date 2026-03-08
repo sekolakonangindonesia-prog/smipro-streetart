@@ -430,7 +430,7 @@
             renderSection('🎧 SMIPRO TUNES', 'audio', LOGO_TUNE, 'card-audio');
         }
 
-        // --- 5. LOGIKA PLAY MEDIA UTAMA (FIXED) ---
+        // --- 5. LOGIKA PLAY MEDIA UTAMA ---
         window.playMedia = function(type, link, ytId, title, artist, cover) {
             const vid = document.getElementById('video-player');
             const aud = document.getElementById('audio-player');
@@ -448,8 +448,7 @@
                 vid.classList.add('active');
                 
                 if(ytFrame) ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
-                // Sembunyikan player bawah jika nonton video
-                if(floatBar) floatBar.style.display = 'none'; 
+                if(floatBar) floatBar.style.display = 'none'; // Sembunyikan player bawah
             
             } else {
                 if(ytFrame) ytFrame.src = ""; // Matikan video
@@ -460,33 +459,23 @@
                 const audios = allData.filter(d => d.mediaType === 'audio');
                 currentIndex = audios.findIndex(x => x.title === title);
 
-                // Update UI (Banner)
+                // Update UI (Banner, Float, Full)
                 document.getElementById('ap-cover').src = cover;
                 document.getElementById('ap-title').innerText = title;
                 document.getElementById('ap-artist').innerText = artist;
 
-                // --- LOGIKA LAYAR HP VS LAPTOP ---
                 if(floatBar) {
-                    if (window.innerWidth < 768) {
-                        floatBar.style.display = 'flex'; // Muncul di HP
-                    } else {
-                        floatBar.style.display = 'none'; // Sembunyi di Laptop
-                    }
-                    
-                    // Update konten float bar
+                    floatBar.style.display = 'block'; // Munculkan player bawah
                     document.getElementById('float-cover').src = cover;
                     document.getElementById('float-title').innerText = title;
                     document.getElementById('float-artist').innerText = artist;
                 }
 
-                // Update Full Player Overlay
                 document.getElementById('full-cover').src = cover;
                 document.getElementById('full-title').innerText = title;
                 document.getElementById('full-artist').innerText = artist;
 
-                if(document.getElementById('banner-equalizer')) {
-                    document.getElementById('banner-equalizer').style.display = 'flex';
-                }
+                document.getElementById('banner-equalizer').style.display = 'flex';
                 
                 setDynamicBackground(cover);
                 
@@ -550,19 +539,17 @@
             if(e) e.stopPropagation();
             isShuffle = !isShuffle;
             
-            // Update SEMUA tombol (Atas, Bawah, Full)
-            const btns = [
-                document.getElementById('ap-shuffle'),   // Tombol Atas
-                document.getElementById('btn-shuf'),     // Tombol Bawah
-                document.getElementById('f-shuf')        // Tombol Full
-            ];
+            // Update 2 tombol (Float & Full)
+            const btn1 = document.getElementById('btn-shuf');
+            const btn2 = document.getElementById('f-shuf');
             
-            btns.forEach(btn => {
-                if(btn) {
-                    if(isShuffle) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                }
-            });
+            if(isShuffle) {
+                if(btn1) btn1.classList.add('active');
+                if(btn2) btn2.classList.add('active');
+            } else {
+                if(btn1) btn1.classList.remove('active');
+                if(btn2) btn2.classList.remove('active');
+            }
         };
 
         // Repeat
@@ -570,19 +557,17 @@
             if(e) e.stopPropagation();
             isRepeat = !isRepeat;
             
-            // Update SEMUA tombol
-            const btns = [
-                document.getElementById('ap-repeat'),    // Tombol Atas
-                document.getElementById('btn-rep'),      // Tombol Bawah
-                document.getElementById('f-rep')         // Tombol Full
-            ];
+            // Update 2 tombol (Float & Full)
+            const btn1 = document.getElementById('btn-rep');
+            const btn2 = document.getElementById('f-rep');
             
-            btns.forEach(btn => {
-                if(btn) {
-                    if(isRepeat) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                }
-            });
+            if(isRepeat) {
+                if(btn1) btn1.classList.add('active');
+                if(btn2) btn2.classList.add('active');
+            } else {
+                if(btn1) btn1.classList.remove('active');
+                if(btn2) btn2.classList.remove('active');
+            }
         };
 
         // --- 7. EVENT LISTENERS AUDIO (PERBAIKAN VARIABEL b1, b2, b3) ---
@@ -658,5 +643,3 @@
         // JALANKAN PERTAMA KALI
         loadContent();   
     </script>
-</body>
-</html>
