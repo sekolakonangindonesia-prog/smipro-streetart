@@ -1318,17 +1318,17 @@ function listenCommandCenter() {
 
         // 3. Render ke Kolom
         requests.forEach(d => {
-            // Format Jam
+            // Format Jam (Tambahkan pengaman jika d.timestamp kosong)
             const timeStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
             
-            // Template HTML Kartu
+            // Template HTML Kartu (Tambahkan pengaman || "" agar tidak error jika data kosong)
             const htmlItem = `
             <div class="req-item ${d.status}">
-                <div class="req-amount">Rp ${parseInt(d.amount).toLocaleString()}</div>
-                <small style="color:#888;">${timeStr} • Dari: <b style="color:#00d2ff;">${d.sender}</b></small>
-                <h4 style="margin:5px 0; color:white;">${d.song}</h4>
-                <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message}"</p>
-                <small style="color:#aaa;">Untuk: ${d.performer}</small>
+                <div class="req-amount">Rp ${parseInt(d.amount || 0).toLocaleString()}</div>
+                <small style="color:#888;">${timeStr} • Dari: <b style="color:#00d2ff;">${d.sender || 'Anonim'}</b></small>
+                <h4 style="margin:5px 0; color:white;">${d.song || 'Tanpa Judul'}</h4>
+                <p style="margin:0; font-size:0.8rem; color:#ccc;">"${d.message || ''}"</p>
+                <small style="color:#aaa;">Untuk: ${d.performer || '-'}</small>
                 
                 <div style="margin-top:10px;">
                     ${d.status === 'pending' ? 
@@ -1369,25 +1369,13 @@ function listenCommandCenter() {
    ========================================= */
 
 // 1. TERIMA DANA (Pindah status: pending -> approved)
-window.approveReq = async function(id) {
-    try {
-        const docRef = doc(db, "requests", id);
-        await updateDoc(docRef, { 
-            status: "approved" 
-        });
-        // Tidak perlu alert, karena layar akan update otomatis (realtime)
-        console.log("✅ Request diterima:", id);
-    } catch (e) {
-        alert("Gagal terima data: " + e.message);
-    }
-}
-
-// C. ACTION BUTTONS (DITEMPEL KE WINDOW AGAR BISA DIKLIK DI HTML)
+// Kode approveReq sudah disatukan (yang versi Confirm) agar tidak dobel.
 window.approveReq = async function(id) {
     if(confirm("Pastikan uang sudah masuk mutasi?")) {
         try {
-            await updateDoc(doc(db, "requests", id), { status: 'approved' });
-            // Tidak perlu alert, karena onSnapshot akan memindahkannya otomatis ke kolom kanan
+            const docRef = doc(db, "requests", id);
+            await updateDoc(docRef, { status: 'approved' });
+            console.log("✅ Request diterima:", id);
         } catch(e) {
             alert("Gagal update: " + e.message);
         }
@@ -1396,13 +1384,21 @@ window.approveReq = async function(id) {
 
 window.finishReq = async function(id) {
     if(confirm("Lagu selesai dinyanyikan? Arsipkan ke laporan?")) {
-        await updateDoc(doc(db, "requests", id), { status: 'finished' });
+        try {
+            await updateDoc(doc(db, "requests", id), { status: 'finished' });
+        } catch(e) {
+            alert("Gagal update: " + e.message);
+        }
     }
 }
 
 window.deleteReq = async function(id) {
     if(confirm("Tolak request ini? Data akan dihapus permanen.")) {
-        await deleteDoc(doc(db, "requests", id));
+        try {
+            await deleteDoc(doc(db, "requests", id));
+        } catch(e) {
+            alert("Gagal hapus: " + e.message);
+        }
     }
 }
 
