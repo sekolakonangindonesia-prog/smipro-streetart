@@ -1626,7 +1626,7 @@ window.generateSawerPDF = function() {
 
     // 2. HEADER
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
-    doc.text("LAPORAN KEUANGAN SAWERAN (LIVE)", 105, 20, null, null, "center");
+    doc.text("LAPORAN KEUANGAN APRESIASI (LIVE)", 105, 20, null, null, "center");
     
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
     doc.text(`Lokasi: ${info.lokasi} | Periode: ${info.periode}`, 105, 27, null, null, "center");
