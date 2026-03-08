@@ -508,24 +508,49 @@
             document.getElementById('banner-equalizer').style.display = 'none';
         };
 
-        ra.ontimeupdate = () => {
+         ra.ontimeupdate = () => {
             const pct = (ra.currentTime / ra.duration) * 100 || 0;
             const cur = formatTime(ra.currentTime);
             
-            document.getElementById('audio-progress-bar'); if(b1) b1.style.width = pct + '%';
-            document.getElementById('float-progress-fill'); if(b2) b2.style.width = pct + '%';
-            document.getElementById('full-bar'); if(b3) b3.style.width = pct + '%';
+            // Definisikan variabel dulu sebelum dipakai
+            const b1 = document.getElementById('audio-progress-bar'); 
+            const b2 = document.getElementById('float-progress-fill'); 
+            const b3 = document.getElementById('full-bar'); 
 
-            document.getElementById('time-current').innerText = cur;
-            document.getElementById('f-time-cur').innerText = cur;
+            if(b1) b1.style.width = pct + '%';
+            if(b2) b2.style.width = pct + '%';
+            if(b3) b3.style.width = pct + '%';
+
+            if(document.getElementById('time-current')) document.getElementById('time-current').innerText = cur;
+            if(document.getElementById('f-time-cur')) document.getElementById('f-time-cur').innerText = cur;
+            
             if(!isNaN(ra.duration)) { 
                 const tot = formatTime(ra.duration);
-                document.getElementById('time-total').innerText = tot;
-                document.getElementById('f-time-tot').innerText = tot;
+                if(document.getElementById('time-total')) document.getElementById('time-total').innerText = tot;
+                if(document.getElementById('f-time-tot')) document.getElementById('f-time-tot').innerText = tot;
             }
         };
 
-        ra.onended = () => { if (isRepeat) { ra.currentTime = 0; ra.play(); } else { nextTrack(); } };
+        ra.onended = () => { 
+            if (isRepeat) { 
+                ra.currentTime = 0; 
+                ra.play(); 
+            } else { 
+                // Cek shuffle saat lagu habis
+                if (isShuffle) {
+                    const audios = allData.filter(d => d.mediaType === 'audio');
+                    let nextIndex = Math.floor(Math.random() * audios.length);
+                    while(nextIndex === currentIndex && audios.length > 1) {
+                        nextIndex = Math.floor(Math.random() * audios.length);
+                    }
+                    currentIndex = nextIndex;
+                    const d = audios[currentIndex];
+                    playMedia('audio', d.link, '', d.title, d.host, d.thumb);
+                } else {
+                    window.nextTrack(); 
+                }
+            } 
+        };
 
         // --- 8. UI OVERLAY LOGIC (HP) ---
         window.openFullPlayer = (e) => {
