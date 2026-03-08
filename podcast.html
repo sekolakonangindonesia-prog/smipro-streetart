@@ -645,11 +645,11 @@
     </div>
 </div>
 
-    <script type="module">      
+   <script type="module">      
         import { db } from './firebase-config.js';
         import { collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- 1. DEFINISIKAN SEMUA VARIABEL DI ATAS (AGAR TIDAK ERROR) ---
+        // --- 1. DEFINISIKAN SEMUA VARIABEL ---
         const ra = document.getElementById('real-audio'); // Kabel Utama Audio
         let allData = [];
         let currentIndex = -1;
@@ -671,6 +671,11 @@
         async function setDynamicBackground(imgSrc) {
             const stage = document.getElementById('player-stage');
             const fullP = document.getElementById('full-player');
+            
+            // Set default dulu biar gak blank
+            if(stage) stage.style.background = "#121212";
+            if(fullP) fullP.style.background = "#121212";
+
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.src = imgSrc;
@@ -681,10 +686,10 @@
                 ctx.drawImage(img, 0, 0, 1, 1);
                 const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
                 const gradient = `linear-gradient(to bottom, rgb(${r},${g},${b}) 0%, #000 100%)`;
-                stage.style.background = gradient;
-                fullP.style.background = gradient;                
+                
+                if(stage) stage.style.background = gradient;
+                if(fullP) fullP.style.background = gradient;                
             };
-            img.onerror = () => { stage.style.background = "#121212"; fullP.style.background = "#121212"; };
         }
 
         // --- 3. AMBIL DATA DARI FIREBASE ---
@@ -693,6 +698,7 @@
                 const snap = await getDocs(query(collection(db, "podcasts")));
                 allData = [];
                 snap.forEach(doc => { allData.push({ id: doc.id, ...doc.data() }); });
+                // Urutkan dari yang terbaru
                 allData.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderHybridGrid('all');
             } catch (e) { console.error("Gagal ambil data:", e); }
@@ -707,15 +713,21 @@
 
         function renderHybridGrid(filter) {
             const container = document.getElementById('content-list');
+            if(!container) return;
             container.innerHTML = '';
+
             const renderSection = (title, type, logo, cls) => {
                 const items = allData.filter(d => d.mediaType === type);
                 if (items.length > 0 && (filter === 'all' || filter === type)) {
                     container.innerHTML += `<div class="section-divider">${title}</div><div class="grid-container ${cls}"></div>`;
                     const grid = container.lastElementChild;
                     items.forEach(d => {
+                        // Escape tanda petik untuk judul/host biar gak error
+                        const safeTitle = d.title.replace(/'/g, "\\'");
+                        const safeHost = d.host.replace(/'/g, "\\'");
+                        
                         grid.innerHTML += `
-                        <div class="card-media ${cls}" onclick="playMedia('${type}', '${d.link}', '${d.youtubeId||''}', '${d.title.replace(/'/g,"\\'")}', '${d.host.replace(/'/g,"\\'")}', '${d.thumb}')">
+                        <div class="card-media ${cls}" onclick="playMedia('${type}', '${d.link}', '${d.youtubeId||''}', '${safeTitle}', '${safeHost}', '${d.thumb}')">
                             <div class="thumb-wrap">
                                 <img src="${d.thumb}" class="thumb-img">
                                 <div class="play-overlay"><img src="${logo}" class="custom-play-btn"></div>
@@ -737,17 +749,25 @@
             const vid = document.getElementById('video-player');
             const aud = document.getElementById('audio-player');
             const placeholder = document.getElementById('player-placeholder');
+            const floatBar = document.getElementById('float-bar');
+            const ytFrame = document.getElementById('yt-frame');
+
             if(placeholder) placeholder.style.display = 'none';
 
             if (type === 'video') {
-                ra.pause();
+                ra.pause(); // Matikan lagu
                 document.getElementById('player-stage').style.background = '#000';
-                aud.classList.remove('active'); vid.classList.add('active');
-                document.getElementById('yt-frame').src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
-                document.getElementById('float-bar').style.display = 'none';
+                
+                aud.classList.remove('active'); 
+                vid.classList.add('active');
+                
+                if(ytFrame) ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1`;
+                if(floatBar) floatBar.style.display = 'none'; // Sembunyikan player bawah
+            
             } else {
-                document.getElementById('yt-frame').src = "";
-                vid.classList.remove('active'); aud.classList.add('active');
+                if(ytFrame) ytFrame.src = ""; // Matikan video
+                vid.classList.remove('active'); 
+                aud.classList.add('active');
                 
                 // Cari Index untuk tombol Next/Prev
                 const audios = allData.filter(d => d.mediaType === 'audio');
@@ -758,10 +778,12 @@
                 document.getElementById('ap-title').innerText = title;
                 document.getElementById('ap-artist').innerText = artist;
 
-                document.getElementById('float-bar').style.display = 'block';
-                document.getElementById('float-cover').src = cover;
-                document.getElementById('float-title').innerText = title;
-                document.getElementById('float-artist').innerText = artist;
+                if(floatBar) {
+                    floatBar.style.display = 'block'; // Munculkan player bawah
+                    document.getElementById('float-cover').src = cover;
+                    document.getElementById('float-title').innerText = title;
+                    document.getElementById('float-artist').innerText = artist;
+                }
 
                 document.getElementById('full-cover').src = cover;
                 document.getElementById('full-title').innerText = title;
@@ -786,82 +808,147 @@
         }
 
         // --- 6. NAVIGASI TOMBOL ---
+        
+        // Play/Pause
         window.toggleAudio = (e) => { 
             if(e) e.stopPropagation(); 
             if (ra.paused) ra.play(); else ra.pause(); 
         };
 
+        // Next
         window.nextTrack = (e) => {
             if(e) e.stopPropagation();
             const audios = allData.filter(d => d.mediaType === 'audio');
             if (audios.length === 0) return;
-            if (isShuffle) currentIndex = Math.floor(Math.random() * audios.length);
-            else currentIndex = (currentIndex + 1) % audios.length;
+            
+            if (isShuffle) {
+                // Pilih acak
+                let nextIndex = Math.floor(Math.random() * audios.length);
+                // Usahakan tidak sama dengan yang sekarang
+                while(nextIndex === currentIndex && audios.length > 1) {
+                    nextIndex = Math.floor(Math.random() * audios.length);
+                }
+                currentIndex = nextIndex;
+            } else {
+                currentIndex = (currentIndex + 1) % audios.length;
+            }
+            
             const d = audios[currentIndex];
             playMedia('audio', d.link, '', d.title, d.host, d.thumb);
         };
 
+        // Prev
         window.prevTrack = (e) => {
             if(e) e.stopPropagation();
             const audios = allData.filter(d => d.mediaType === 'audio');
             if (audios.length === 0) return;
+            
             currentIndex = (currentIndex - 1 + audios.length) % audios.length;
             const d = audios[currentIndex];
             playMedia('audio', d.link, '', d.title, d.host, d.thumb);
         };
 
+        // Shuffle
         window.toggleShuffle = (e) => {
             if(e) e.stopPropagation();
             isShuffle = !isShuffle;
-            document.getElementById('btn-shuf').classList.toggle('active', isShuffle);
-            document.getElementById('f-shuf').classList.toggle('active', isShuffle);
+            
+            // Update 2 tombol (Float & Full)
+            const btn1 = document.getElementById('btn-shuf');
+            const btn2 = document.getElementById('f-shuf');
+            
+            if(isShuffle) {
+                if(btn1) btn1.classList.add('active');
+                if(btn2) btn2.classList.add('active');
+            } else {
+                if(btn1) btn1.classList.remove('active');
+                if(btn2) btn2.classList.remove('active');
+            }
         };
 
+        // Repeat
         window.toggleRepeat = (e) => {
             if(e) e.stopPropagation();
             isRepeat = !isRepeat;
-            document.getElementById('btn-rep').classList.toggle('active', isRepeat);
-            document.getElementById('f-rep').classList.toggle('active', isRepeat);
+            
+            // Update 2 tombol (Float & Full)
+            const btn1 = document.getElementById('btn-rep');
+            const btn2 = document.getElementById('f-rep');
+            
+            if(isRepeat) {
+                if(btn1) btn1.classList.add('active');
+                if(btn2) btn2.classList.add('active');
+            } else {
+                if(btn1) btn1.classList.remove('active');
+                if(btn2) btn2.classList.remove('active');
+            }
         };
 
-        // --- 7. EVENT LISTENERS AUDIO (SINKRONISASI) ---
+        // --- 7. EVENT LISTENERS AUDIO (PERBAIKAN VARIABEL b1, b2, b3) ---
         ra.onplay = () => {
             const pauseIcon = "fa-solid fa-pause";
-            document.getElementById('ap-icon').className = pauseIcon;
-            document.getElementById('float-play-icon').className = pauseIcon;
-            document.getElementById('f-play-icon').className = pauseIcon;
-            document.getElementById('banner-equalizer').style.display = 'flex';
+            if(document.getElementById('ap-icon')) document.getElementById('ap-icon').className = pauseIcon;
+            if(document.getElementById('float-play-icon')) document.getElementById('float-play-icon').className = pauseIcon;
+            if(document.getElementById('f-play-icon')) document.getElementById('f-play-icon').className = pauseIcon;
+            if(document.getElementById('banner-equalizer')) document.getElementById('banner-equalizer').style.display = 'flex';
         };
 
         ra.onpause = () => {
             const playIcon = "fa-solid fa-play";
-            document.getElementById('ap-icon').className = playIcon;
-            document.getElementById('float-play-icon').className = playIcon;
-            document.getElementById('f-play-icon').className = playIcon;
-            document.getElementById('banner-equalizer').style.display = 'none';
+            if(document.getElementById('ap-icon')) document.getElementById('ap-icon').className = playIcon;
+            if(document.getElementById('float-play-icon')) document.getElementById('float-play-icon').className = playIcon;
+            if(document.getElementById('f-play-icon')) document.getElementById('f-play-icon').className = playIcon;
+            if(document.getElementById('banner-equalizer')) document.getElementById('banner-equalizer').style.display = 'none';
         };
 
+        // INI BAGIAN YANG TADI ERROR, SEKARANG SUDAH DIPERBAIKI
         ra.ontimeupdate = () => {
             const pct = (ra.currentTime / ra.duration) * 100 || 0;
             const cur = formatTime(ra.currentTime);
             
-            document.getElementById('audio-progress-bar'); if(b1) b1.style.width = pct + '%';
-            document.getElementById('float-progress-fill'); if(b2) b2.style.width = pct + '%';
-            document.getElementById('full-bar'); if(b3) b3.style.width = pct + '%';
+            // Definisikan variabel dulu sebelum dipakai
+            const b1 = document.getElementById('audio-progress-bar'); 
+            const b2 = document.getElementById('float-progress-fill'); 
+            const b3 = document.getElementById('full-bar'); 
 
-            document.getElementById('time-current').innerText = cur;
-            document.getElementById('f-time-cur').innerText = cur;
+            if(b1) b1.style.width = pct + '%';
+            if(b2) b2.style.width = pct + '%';
+            if(b3) b3.style.width = pct + '%';
+
+            if(document.getElementById('time-current')) document.getElementById('time-current').innerText = cur;
+            if(document.getElementById('f-time-cur')) document.getElementById('f-time-cur').innerText = cur;
+            
             if(!isNaN(ra.duration)) { 
                 const tot = formatTime(ra.duration);
-                document.getElementById('time-total').innerText = tot;
-                document.getElementById('f-time-tot').innerText = tot;
+                if(document.getElementById('time-total')) document.getElementById('time-total').innerText = tot;
+                if(document.getElementById('f-time-tot')) document.getElementById('f-time-tot').innerText = tot;
             }
         };
 
-        ra.onended = () => { if (isRepeat) { ra.currentTime = 0; ra.play(); } else { nextTrack(); } };
+        ra.onended = () => { 
+            if (isRepeat) { 
+                ra.currentTime = 0; 
+                ra.play(); 
+            } else { 
+                // Cek shuffle saat lagu habis
+                if (isShuffle) {
+                    const audios = allData.filter(d => d.mediaType === 'audio');
+                    let nextIndex = Math.floor(Math.random() * audios.length);
+                    while(nextIndex === currentIndex && audios.length > 1) {
+                        nextIndex = Math.floor(Math.random() * audios.length);
+                    }
+                    currentIndex = nextIndex;
+                    const d = audios[currentIndex];
+                    playMedia('audio', d.link, '', d.title, d.host, d.thumb);
+                } else {
+                    window.nextTrack(); 
+                }
+            } 
+        };
 
         // --- 8. UI OVERLAY LOGIC (HP) ---
         window.openFullPlayer = (e) => {
+            // Jangan buka full player jika yang diklik adalah tombol kecil
             if(window.innerWidth > 600 || e.target.closest('button')) return;
             document.getElementById('full-player').style.display = 'flex';
         };
@@ -870,6 +957,3 @@
         // JALANKAN PERTAMA KALI
         loadContent();   
     </script>
-</body>
-</html>
-
