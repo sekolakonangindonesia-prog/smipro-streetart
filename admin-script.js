@@ -155,8 +155,16 @@ async function populateVenueFilters() {
 }
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
+    const filterVenue = document.getElementById('filter-warung-venue').value; // Ambil nilai filter
+    
     if(!tbody) return;
-    const q = query(collection(db, "warungs"));
+
+    let q = query(collection(db, "warungs"));
+    
+    // Tambahkan filter jika user memilih venue tertentu
+    if(filterVenue && filterVenue !== 'all') {
+        q = query(collection(db, "warungs"), where("venueName", "==", filterVenue));
+    }
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
