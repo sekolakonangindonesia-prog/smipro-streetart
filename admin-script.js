@@ -203,6 +203,21 @@ window.loginAsMitra = function(id, name) {
 window.approveTable = async function(id) { if(confirm("Setujui?")) await updateDoc(doc(db, "warungs", id), { adminApproved: true }); }
 window.deleteMitra = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "warungs", id)); }
 
+// Fungsi untuk membuka Pop-up pendaftaran (Memanggil iframe)
+window.openMitraModal = function() {
+    const modal = document.getElementById('modal-external-daftar');
+    if(modal) modal.style.display = 'flex';
+}
+
+// Fungsi untuk menutup Pop-up
+window.closeExternalModal = function() {
+    const modal = document.getElementById('modal-external-daftar');
+    if(modal) modal.style.display = 'none';
+    
+    // Refresh tabel agar mitra yang baru didaftarkan langsung muncul
+    if(typeof loadMitraData === 'function') loadMitraData();
+}
+
 /* =========================================
    2. MODUL LAPORAN STATISTIK WARUNG
    ========================================= */
