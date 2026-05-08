@@ -324,9 +324,10 @@
                 <button class="sub-tab-btn" onclick="switchMitraTab('mitra-stats', this)">Laporan Statistik</button>
             </div>
             
-            <!-- TAB 1: TABEL DAFTAR WARUNG -->
-            <div id="mitra-list" class="mitra-content">
-               <!-- 1. FORMULIR INPUT/EDIT INLINE (MENEMPEL DI ATAS) -->
+          <!-- TAB 1: TABEL DAFTAR WARUNG -->
+<div id="mitra-list" class="mitra-content">
+    
+    <!-- 1. FORMULIR INPUT/EDIT INLINE (MENEMPEL DI ATAS) -->
     <div class="cms-form-group" style="display:flex; gap:20px; align-items:center; background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
         <!-- Upload/Preview Logo -->
         <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('m-file').click()">
@@ -338,12 +339,14 @@
         <!-- Input Data -->
         <div style="flex:1;">
             <h4 id="m-form-title" style="margin-top:0; color:#E50914; margin-bottom:10px;">Tambah Mitra Baru</h4>
-            <input type="hidden" id="m-edit-id"> <!-- ID Tersembunyi untuk edit -->
+            <input type="hidden" id="m-edit-id"> 
             
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
                 <input type="text" id="m-nama" class="cms-input" placeholder="Nama Warung" style="margin:0;">
                 <input type="text" id="m-owner" class="cms-input" placeholder="Nama Pemilik" style="margin:0;">
-                <select id="m-venue" class="cms-input" style="margin:0;"></select> <!-- Dropdown Lokasi -->
+                <select id="m-venue" class="cms-input" style="margin:0;">
+                    <!-- Dropdown Lokasi diisi oleh JS -->
+                </select>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px; margin-bottom:10px;">
@@ -364,6 +367,23 @@
             <option value="all">Semua Venue (Filter Tabel)</option>
         </select>
     </div>
+
+    <!-- 3. TABEL DATA (WAJIB ADA AGAR DATA MUNCUL) -->
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Nama Warung</th>
+                <th>Pemilik</th>
+                <th>Meja</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="mitra-table-body">
+            <!-- Data Mitra akan di-render di sini oleh JavaScript -->
+            <tr><td colspan="5" align="center">Memuat data...</td></tr>
+        </tbody>
+    </table>
 </div>
             
             <!-- TAB 2: STATISTIK & LAPORAN -->
