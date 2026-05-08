@@ -154,11 +154,11 @@ async function populateVenueFilters() {
     });
 }
 /* =========================================
-   1. MANAJEMEN MITRA (VERSI FINAL & FIX FILTER)
+   1. MANAJEMEN MITRA (FIX GLOBAL & FILTER)
    ========================================= */
 
 let currentMitraImgBase64 = null;
-let mitraUnsubscribe = null; // KUNCI UTAMA: Untuk memutus sinyal filter lama
+let mitraUnsubscribe = null; 
 
 // A. Preview Gambar Logo Mitra
 window.previewMitraImg = function(input) {
@@ -170,18 +170,16 @@ window.previewMitraImg = function(input) {
         }
         reader.readAsDataURL(input.files[0]);
     }
-}
+};
 
-// B. ISI SEMUA DROPDOWN (PENTING: Hanya dijalankan jika dropdown masih kosong)
-async function ensureMitraDropdowns() {
+// B. ISI DROPDOWN (Dibuat Global agar bisa dipanggil saat init)
+window.populateMitraFilters = async function() {
+    console.log("🔄 Merefresh Dropdown Lokasi...");
     const formVenueEl = document.getElementById('m-venue');
     const filterEl = document.getElementById('filter-warung-venue');
 
-    // Jika dropdown sudah ada isinya, jangan diisi ulang (biar pilihan user tidak hilang)
-    if (formVenueEl && formVenueEl.options.length > 1) return;
-
     try {
-        const q = query(collection(db, "venues"), orderBy("name", "asc"));
+        const q = query(collection(db, "venues"), orderBy("order", "asc"));
         const snap = await getDocs(q);
         
         let filterOpts = '<option value="all">Semua Venue</option>';
@@ -197,42 +195,38 @@ async function ensureMitraDropdowns() {
 
         if(formVenueEl) formVenueEl.innerHTML = formOpts;
         if(filterEl) filterEl.innerHTML = filterOpts;
-    } catch (e) { console.error("Gagal isi dropdown:", e); }
-}
+        console.log("✅ Dropdown Lokasi Siap.");
+    } catch (e) { console.error("Dropdown Gagal:", e); }
+};
 
-// C. Load Data ke Tabel (DENGAN REVISI FILTER AKURAT)
-async function loadMitraData() {
+// C. LOAD DATA (WAJIB PAKAI window. AGAR HTML BISA PANGGIL)
+window.loadMitraData = async function() {
     const tbody = document.getElementById('mitra-table-body');
     const filterEl = document.getElementById('filter-warung-venue');
     
     if(!tbody) return;
 
-    // 1. Ambil nilai filter saat ini
+    // 1. Ambil nilai filter
     const filterValue = filterEl ? filterEl.value : 'all';
+    console.log("🔍 Memfilter tabel untuk:", filterValue);
 
-    // 2. Pastikan Dropdown terisi minimal sekali
-    await ensureMitraDropdowns();
-
-    // 3. Kembalikan nilai dropdown filter ke pilihan user (agar tidak reset ke 'all')
-    if(filterEl) filterEl.value = filterValue;
-
-    // 4. MATIKAN SINYAL LAMA (Sangat Penting agar filter jalan)
+    // 2. MATIKAN SINYAL LAMA (Sangat Penting agar filter jalan dan data tidak tumpang tindih)
     if (mitraUnsubscribe) {
         mitraUnsubscribe();
         mitraUnsubscribe = null;
     }
 
-    // 5. Bangun Query baru berdasarkan filter
+    // 3. Bangun Query baru
     let q = query(collection(db, "warungs"));
     if(filterValue !== 'all') {
         q = query(collection(db, "warungs"), where("venueName", "==", filterValue));
     }
 
-    // 6. Jalankan Listener baru
+    // 4. Jalankan Listener baru
     mitraUnsubscribe = onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="5" align="center" style="padding:40px; color:#888;">Data warung tidak ditemukan untuk lokasi ini.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" align="center" style="padding:40px; color:#888;">Data tidak ditemukan di lokasi ini.</td></tr>';
             return;
         }
 
@@ -240,9 +234,9 @@ async function loadMitraData() {
             const d = docSnap.data();
             const id = docSnap.id;
 
-            const impersonateBtn = `<button class="btn-action btn-view" title="Masuk Akun" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
-            const editBtn = `<button class="btn-action btn-edit" title="Edit" onclick="startEditMitra('${id}', '${(d.name||'').replace(/'/g,"\\'")}', '${(d.owner||'').replace(/'/g,"\\'")}', '${d.venueName}', '${d.totalTables || 0}', '${d.phone||""}', '${d.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
-            const delBtn = `<button class="btn-action btn-delete" title="Hapus" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
+            const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
+            const editBtn = `<button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${d.name.replace(/'/g,"\\'")}', '${(d.owner||'').replace(/'/g,"\\'")}', '${d.venueName}', '${d.totalTables || 0}', '${d.phone||""}', '${d.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
+            const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
 
             tbody.innerHTML += `
             <tr>
@@ -254,15 +248,15 @@ async function loadMitraData() {
             </tr>`;
         });
     });
-}
+};
 
-// D. Simpan/Update Data
+// D. PASTIKAN FUNGSI LAIN JUGA GLOBAL
 window.saveMitraData = async function() {
     const id = document.getElementById('m-edit-id').value;
     const nameInput = document.getElementById('m-nama').value;
     const venueInput = document.getElementById('m-venue').value;
 
-    if(!nameInput || !venueInput) return alert("Mohon lengkapi Nama Warung dan Lokasi!");
+    if(!nameInput || !venueInput) return alert("Nama dan Lokasi wajib!");
 
     const data = {
         name: nameInput,
@@ -279,35 +273,36 @@ window.saveMitraData = async function() {
     try {
         if(id) {
             await updateDoc(doc(db, "warungs", id), data);
-            alert("✅ Data warung berhasil diperbarui!");
+            alert("Berhasil diupdate!");
         } else {
             data.joinedAt = new Date();
             data.bookedTables = 0;
             await addDoc(collection(db, "warungs"), data);
-            alert("✅ Warung baru berhasil ditambahkan!");
+            alert("Warung Berhasil Ditambahkan!");
         }
         resetMitraForm();
-    } catch(e) { alert("Error: " + e.message); }
-}
+    } catch(e) { alert("Eror: " + e.message); }
+};
 
-// E. Mode Edit & Reset
+// E. Mode Edit & Reset (Wajib Global)
 window.startEditMitra = function(id, nama, owner, venue, meja, phone, img) {
     document.getElementById('m-edit-id').value = id;
     document.getElementById('m-nama').value = nama;
     document.getElementById('m-owner').value = owner;
-    document.getElementById('m-venue').value = venue;
+    document.getElementById('m-m-venue').value = venue; // Pastikan ID select form benar
     document.getElementById('m-meja').value = meja;
     document.getElementById('m-wa').value = phone;
     document.getElementById('m-preview').src = img || "https://placehold.co/100?text=Logo";
     
     document.getElementById('m-form-title').innerText = "Edit Data Warung";
     document.getElementById('m-form-title').style.color = "#FFD700";
-    const btnSave = document.getElementById('btn-save-mitra');
-    btnSave.innerText = "Simpan Perubahan";
-    btnSave.style.background = "#FFD700"; btnSave.style.color = "black";
+    
+    document.getElementById('btn-save-mitra').innerText = "Simpan Perubahan";
+    document.getElementById('btn-save-mitra').style.background = "#FFD700";
+    document.getElementById('btn-save-mitra').style.color = "black";
     document.getElementById('btn-cancel-mitra').style.display = "inline-block";
-    window.scrollTo({ top: 150, behavior: 'smooth' });
-}
+    window.scrollTo({ top: 100, behavior: 'smooth' });
+};
 
 window.resetMitraForm = function() {
     document.getElementById('m-edit-id').value = "";
@@ -319,11 +314,17 @@ window.resetMitraForm = function() {
     currentMitraImgBase64 = null;
     document.getElementById('m-form-title').innerText = "Tambah Mitra Baru";
     document.getElementById('m-form-title').style.color = "#E50914";
-    const btnSave = document.getElementById('btn-save-mitra');
-    btnSave.innerText = "+ Simpan Mitra";
-    btnSave.style.background = ""; btnSave.style.color = "";
+    document.getElementById('btn-save-mitra').innerText = "+ Simpan Mitra";
+    document.getElementById('btn-save-mitra').style.background = "";
+    document.getElementById('btn-save-mitra').style.color = "";
     document.getElementById('btn-cancel-mitra').style.display = "none";
-}
+};
+
+window.deleteMitra = async function(id, nama) {
+    if(confirm(`Hapus warung "${nama}"?`)) {
+        await deleteDoc(doc(db, "warungs", id));
+    }
+};
 
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
@@ -333,14 +334,7 @@ window.loginAsMitra = function(id, name) {
         localStorage.setItem('mitraId', id); 
         window.location.href = 'mitra-dashboard.html';
     }
-}
-
-window.deleteMitra = async function(id, name) {
-    if(confirm(`Hapus warung "${name}"?\nData mitra ini tidak bisa dikembalikan.`)) {
-        await deleteDoc(doc(db, "warungs", id));
-        alert("Berhasil dihapus!");
-    }
-}
+};
 
 /* =========================================
    2. MODUL LAPORAN STATISTIK WARUNG
@@ -3240,9 +3234,13 @@ window.clearBgmSettings = async function() {
 window.onload = function() {
     console.log("System Started...");
     loadDashboardOverview();
+
+      // Panggil fungsi pengisi dropdown agar muncul saat pertama kali buka menu mitra
+    populateMitraFilters(); 
+    loadMitraData(); // Load tabel pertama kali
     
     // Background Load
-    if(typeof loadMitraData === 'function') loadMitraData();
+    
     if(typeof loadPerformerData === 'function') loadPerformerData();
     if(typeof loadMentorData === 'function') loadMentorData();
     if(typeof loadStudentData === 'function') loadStudentData(); 
