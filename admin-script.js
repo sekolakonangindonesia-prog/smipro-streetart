@@ -230,58 +230,86 @@ window.saveMitraData = async function() {
 }
 
 // D. Load Data ke Tabel & Dropdown Otomatis
+// D. Load Data ke Tabel & Dropdown Otomatis
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
-    const filterVenue = document.getElementById('filter-warung-venue').value;
-    const formVenueDropdown = document.getElementById('m-venue');
+    const filterEl = document.getElementById('filter-warung-venue');
+    const formVenueEl = document.getElementById('m-venue');
 
-    if(!tbody) return;
+    if (!tbody) return;
 
-    // Sinkronisasi Dropdown Venue (Form vs Database)
-    const venueSnap = await getDocs(query(collection(db, "venues"), orderBy("name", "asc")));
-    if (formVenueDropdown.innerHTML === "") { // Isi hanya jika kosong
-        let venueOpts = '<option value="">-- Pilih Lokasi --</option>';
-        let filterOpts = '<option value="all">Semua Venue (Filter Tabel)</option>';
-        venueSnap.forEach(vDoc => {
-            const vName = vDoc.data().name;
-            venueOpts += `<option value="${vName}">${vName}</option>`;
-            filterOpts += `<option value="${vName}">${vName}</option>`;
-        });
-        formVenueDropdown.innerHTML = venueOpts;
-        document.getElementById('filter-warung-venue').innerHTML = filterOpts;
-        document.getElementById('filter-warung-venue').value = filterVenue;
-    }
-
-    // Ambil Data Warung
-    let q = query(collection(db, "warungs"), orderBy("name", "asc"));
-    if(filterVenue !== 'all') {
-        q = query(collection(db, "warungs"), where("venueName", "==", filterVenue));
-    }
-
-    onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = '';
-        if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="5" align="center">Tidak ada mitra di lokasi ini.</td></tr>';
-            return;
+    try {
+        // --- 1. ISI SEMUA DROPDOWN (Form & Filter) ---
+        // Kita ambil data dari koleksi 'venues'
+        const venueSnap = await getDocs(query(collection(db, "venues"), orderBy("name", "asc")));
+        
+        // Isi Dropdown di Form Tambah (m-venue) jika masih kosong
+        if (formVenueEl && formVenueEl.innerHTML.trim() === "") {
+            let opts = '<option value="">-- Pilih Lokasi --</option>';
+            venueSnap.forEach(vDoc => {
+                const vName = vDoc.data().name;
+                opts += `<option value="${vName}">${vName}</option>`;
+            });
+            formVenueEl.innerHTML = opts;
         }
-        snapshot.forEach((docSnap) => {
-            const d = docSnap.data();
-            const id = docSnap.id;
 
-            const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
-            const editBtn = `<button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${d.name.replace(/'/g,"\\'")}', '${d.owner.replace(/'/g,"\\'")}', '${d.venueName}', '${d.totalTables}', '${d.phone||""}', '${d.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
-            const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
+        // Isi Dropdown di Filter Tabel jika masih kosong
+        if (filterEl && filterEl.innerHTML.trim() === "" || (filterEl && filterEl.options.length <= 1)) {
+            let fOpts = '<option value="all">Semua Venue</option>';
+            venueSnap.forEach(vDoc => {
+                const vName = vDoc.data().name;
+                fOpts += `<option value="${vName}">${vName}</option>`;
+            });
+            filterEl.innerHTML = fOpts;
+        }
 
-            tbody.innerHTML += `
-            <tr>
-                <td><b>${d.name}</b><br><small style="color:#888;">${d.venueName}</small></td>
-                <td>${d.owner}</td>
-                <td>${d.totalTables}</td>
-                <td><span style="color:#00ff00;">Verified</span></td>
-                <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${delBtn}</div></td>
-            </tr>`;
+        // --- 2. AMBIL DATA TABEL WARUNG ---
+        const currentFilter = filterEl ? filterEl.value : 'all';
+        
+        // Buat Query dasar
+        let q = query(collection(db, "warungs"));
+
+        // Jika filter aktif, tambahkan kondisi WHERE
+        if (currentFilter !== 'all') {
+            q = query(collection(db, "warungs"), where("venueName", "==", currentFilter));
+        }
+
+        // Listener Realtime menggunakan onSnapshot
+        onSnapshot(q, (snapshot) => {
+            tbody.innerHTML = '';
+
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="5" align="center">Data mitra tidak ditemukan.</td></tr>';
+                return;
+            }
+
+            snapshot.forEach((docSnap) => {
+                const d = docSnap.data();
+                const id = docSnap.id;
+
+                // Tombol Aksi
+                const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
+                
+                // Gunakan pengaman || "" agar tidak error jika field kosong
+                const editBtn = `<button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${(d.name || "").replace(/'/g,"\\'")}', '${(d.owner || "").replace(/'/g,"\\'")}', '${d.venueName || ""}', '${d.totalTables || 0}', '${d.phone || ""}', '${d.img || ""}')"><i class="fa-solid fa-pen"></i></button>`;
+                
+                const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${(d.name || "").replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
+
+                tbody.innerHTML += `
+                <tr>
+                    <td><b>${d.name}</b><br><small style="color:#888;">${d.venueName || '-'}</small></td>
+                    <td>${d.owner || '-'}</td>
+                    <td>${d.totalTables || 0}</td>
+                    <td><span style="color:#00ff00;">Verified</span></td>
+                    <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${delBtn}</div></td>
+                </tr>`;
+            });
         });
-    });
+
+    } catch (error) {
+        console.error("Error pada loadMitraData:", error);
+        tbody.innerHTML = '<tr><td colspan="5" align="center" style="color:red;">Gagal memuat data. Cek Console browser.</td></tr>';
+    }
 }
 
 // E. Aktifkan Mode Edit (Naikkan data ke Form)
