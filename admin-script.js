@@ -202,18 +202,25 @@ async function populateMitraDropdowns() {
 }
 
 // C. Load Data ke Tabel
+// D. Load Data ke Tabel & Dropdown
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
     const filterValue = document.getElementById('filter-warung-venue') ? document.getElementById('filter-warung-venue').value : 'all';
     
-    if(!tbody) return;
+    // Debug: Cek apakah elemen ada?
+    if(!tbody) {
+        console.error("EROR: Elemen 'mitra-table-body' tidak ditemukan di HTML!");
+        return;
+    }
 
-    // Pastikan Dropdown terisi minimal sekali
-    if (document.getElementById('m-venue') && document.getElementById('m-venue').innerHTML === "") {
+    // Pastikan Dropdown terisi minimal sekali (Dropdown di form maupun filter)
+    if (document.getElementById('m-venue') && document.getElementById('m-venue').innerHTML.trim() === "") {
         await populateMitraDropdowns();
     }
 
     let q = query(collection(db, "warungs"));
+    
+    // Logika Filter Tabel
     if(filterValue && filterValue !== 'all') {
         q = query(collection(db, "warungs"), where("venueName", "==", filterValue));
     }
@@ -221,25 +228,28 @@ async function loadMitraData() {
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="5" align="center">Belum ada mitra di lokasi ini.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" align="center">Tidak ada mitra di lokasi ini.</td></tr>';
             return;
         }
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
             const id = docSnap.id;
-
-            const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
-            const editBtn = `<button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${d.name.replace(/'/g,"\\'")}', '${(d.owner||'').replace(/'/g,"\\'")}', '${d.venueName}', '${d.totalTables}', '${d.phone||""}', '${d.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
-            const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
-
+            
+            // Render Baris Tabel
             tbody.innerHTML += `
             <tr>
                 <td><b>${d.name}</b><br><small style="color:#888;">${d.venueName || '-'}</small></td>
                 <td>${d.owner || '-'}</td>
                 <td>${d.totalTables || 0}</td>
                 <td><span style="color:#00ff00;">Verified</span></td>
-                <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${delBtn}</div></td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i></button>
+                        <button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${d.name.replace(/'/g,"\\'")}', '${(d.owner || "").replace(/'/g,"\\'")}', '${d.venueName}', '${d.totalTables}', '${d.phone||""}', '${d.img||""}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </td>
             </tr>`;
         });
     });
