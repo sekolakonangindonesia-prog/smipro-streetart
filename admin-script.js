@@ -154,12 +154,12 @@ async function populateVenueFilters() {
     });
 }
 /* =========================================
-   1. MANAJEMEN MITRA (SINKRON DENGAN FORM INLINE)
+   1. MANAJEMEN MITRA (VERSI STABIL & INLINE)
    ========================================= */
 
 let currentMitraImgBase64 = null;
 
-// A. Preview Gambar Logo Mitra
+// A. Preview Gambar Logo
 window.previewMitraImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -171,148 +171,111 @@ window.previewMitraImg = function(input) {
     }
 }
 
-// B. Reset Form Mitra
-window.resetMitraForm = function() {
-    document.getElementById('m-edit-id').value = "";
-    document.getElementById('m-nama').value = "";
-    document.getElementById('m-owner').value = "";
-    document.getElementById('m-meja').value = "";
-    document.getElementById('m-wa').value = "";
-    document.getElementById('m-preview').src = "https://placehold.co/100?text=Logo";
-    currentMitraImgBase64 = null;
+// B. ISI SEMUA DROPDOWN (PENTING: Agar dropdown tidak kosong)
+async function populateMitraDropdowns() {
+    const q = query(collection(db, "venues"), orderBy("name", "asc"));
+    const snap = await getDocs(q);
+    
+    // 1. Opsi untuk Filter Tabel & Filter Statistik
+    let filterOpts = '<option value="all">Semua Venue</option>';
+    filterOpts += '<option value="Stadion Bayuangga Zone">Stadion Bayuangga Zone</option>';
 
-    document.getElementById('m-form-title').innerText = "Tambah Mitra Baru";
-    document.getElementById('m-form-title').style.color = "#E50914";
-    const btnSave = document.getElementById('btn-save-mitra');
-    btnSave.innerText = "+ Simpan Mitra";
-    btnSave.style.background = ""; 
-    btnSave.style.color = "";
-    document.getElementById('btn-cancel-mitra').style.display = "none";
-}
+    // 2. Opsi untuk Form Tambah/Edit (Tanpa 'all')
+    let formOpts = '<option value="">-- Pilih Lokasi --</option>';
 
-// C. Simpan/Update Data ke Firebase
-window.saveMitraData = async function() {
-    const id = document.getElementById('m-edit-id').value;
-    const nama = document.getElementById('m-nama').value;
-    const owner = document.getElementById('m-owner').value;
-    const venue = document.getElementById('m-venue').value;
-    const meja = document.getElementById('m-meja').value;
-    const wa = document.getElementById('m-wa').value;
-
-    if(!nama || !venue || !owner) return alert("Lengkapi Nama Warung, Pemilik, dan Lokasi!");
-
-    const payload = {
-        name: nama,
-        owner: owner,
-        venueName: venue,
-        totalTables: parseInt(meja) || 0,
-        phone: wa,
-        adminApproved: true, 
-        updatedAt: new Date()
-    };
-    if(currentMitraImgBase64) payload.img = currentMitraImgBase64;
-
-    try {
-        if (id) {
-            if(confirm(`Update data "${nama}"?`)) {
-                await updateDoc(doc(db, "warungs", id), payload);
-                alert("Data diperbarui!");
-                resetMitraForm();
-            }
-        } else {
-            payload.joinedAt = new Date();
-            payload.bookedTables = 0;
-            await addDoc(collection(db, "warungs"), payload);
-            alert("Warung berhasil ditambahkan!");
-            resetMitraForm();
+    snap.forEach(doc => {
+        const v = doc.data().name;
+        if(v && v !== "Stadion Bayuangga Zone") {
+            filterOpts += `<option value="${v}">${v}</option>`;
+            formOpts += `<option value="${v}">${v}</option>`;
         }
-    } catch (e) { alert("Error: " + e.message); }
+    });
+
+    // Masukkan ke semua elemen dropdown yang ada di HTML
+    const elFilterTabel = document.getElementById('filter-warung-venue');
+    const elFilterStats = document.getElementById('filter-stats-venue');
+    const elFormTambah = document.getElementById('m-venue');
+
+    if(elFilterTabel) elFilterTabel.innerHTML = filterOpts;
+    if(elFilterStats) elFilterStats.innerHTML = filterOpts;
+    if(elFormTambah) elFormTambah.innerHTML = formOpts;
 }
 
-// D. Load Data ke Tabel & Dropdown Otomatis
-// D. Load Data ke Tabel & Dropdown Otomatis
+// C. Load Data ke Tabel
 async function loadMitraData() {
     const tbody = document.getElementById('mitra-table-body');
-    const filterEl = document.getElementById('filter-warung-venue');
-    const formVenueEl = document.getElementById('m-venue');
+    const filterValue = document.getElementById('filter-warung-venue') ? document.getElementById('filter-warung-venue').value : 'all';
+    
+    if(!tbody) return;
 
-    if (!tbody) return;
-
-    try {
-        // --- 1. ISI SEMUA DROPDOWN (Form & Filter) ---
-        // Kita ambil data dari koleksi 'venues'
-        const venueSnap = await getDocs(query(collection(db, "venues"), orderBy("name", "asc")));
-        
-        // Isi Dropdown di Form Tambah (m-venue) jika masih kosong
-        if (formVenueEl && formVenueEl.innerHTML.trim() === "") {
-            let opts = '<option value="">-- Pilih Lokasi --</option>';
-            venueSnap.forEach(vDoc => {
-                const vName = vDoc.data().name;
-                opts += `<option value="${vName}">${vName}</option>`;
-            });
-            formVenueEl.innerHTML = opts;
-        }
-
-        // Isi Dropdown di Filter Tabel jika masih kosong
-        if (filterEl && filterEl.innerHTML.trim() === "" || (filterEl && filterEl.options.length <= 1)) {
-            let fOpts = '<option value="all">Semua Venue</option>';
-            venueSnap.forEach(vDoc => {
-                const vName = vDoc.data().name;
-                fOpts += `<option value="${vName}">${vName}</option>`;
-            });
-            filterEl.innerHTML = fOpts;
-        }
-
-        // --- 2. AMBIL DATA TABEL WARUNG ---
-        const currentFilter = filterEl ? filterEl.value : 'all';
-        
-        // Buat Query dasar
-        let q = query(collection(db, "warungs"));
-
-        // Jika filter aktif, tambahkan kondisi WHERE
-        if (currentFilter !== 'all') {
-            q = query(collection(db, "warungs"), where("venueName", "==", currentFilter));
-        }
-
-        // Listener Realtime menggunakan onSnapshot
-        onSnapshot(q, (snapshot) => {
-            tbody.innerHTML = '';
-
-            if (snapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="5" align="center">Data mitra tidak ditemukan.</td></tr>';
-                return;
-            }
-
-            snapshot.forEach((docSnap) => {
-                const d = docSnap.data();
-                const id = docSnap.id;
-
-                // Tombol Aksi
-                const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
-                
-                // Gunakan pengaman || "" agar tidak error jika field kosong
-                const editBtn = `<button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${(d.name || "").replace(/'/g,"\\'")}', '${(d.owner || "").replace(/'/g,"\\'")}', '${d.venueName || ""}', '${d.totalTables || 0}', '${d.phone || ""}', '${d.img || ""}')"><i class="fa-solid fa-pen"></i></button>`;
-                
-                const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${(d.name || "").replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
-
-                tbody.innerHTML += `
-                <tr>
-                    <td><b>${d.name}</b><br><small style="color:#888;">${d.venueName || '-'}</small></td>
-                    <td>${d.owner || '-'}</td>
-                    <td>${d.totalTables || 0}</td>
-                    <td><span style="color:#00ff00;">Verified</span></td>
-                    <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${delBtn}</div></td>
-                </tr>`;
-            });
-        });
-
-    } catch (error) {
-        console.error("Error pada loadMitraData:", error);
-        tbody.innerHTML = '<tr><td colspan="5" align="center" style="color:red;">Gagal memuat data. Cek Console browser.</td></tr>';
+    // Pastikan Dropdown terisi minimal sekali
+    if (document.getElementById('m-venue') && document.getElementById('m-venue').innerHTML === "") {
+        await populateMitraDropdowns();
     }
+
+    let q = query(collection(db, "warungs"));
+    if(filterValue && filterValue !== 'all') {
+        q = query(collection(db, "warungs"), where("venueName", "==", filterValue));
+    }
+
+    onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" align="center">Belum ada mitra di lokasi ini.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const d = docSnap.data();
+            const id = docSnap.id;
+
+            const impersonateBtn = `<button class="btn-action btn-view" onclick="loginAsMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
+            const editBtn = `<button class="btn-action btn-edit" onclick="startEditMitra('${id}', '${d.name.replace(/'/g,"\\'")}', '${(d.owner||'').replace(/'/g,"\\'")}', '${d.venueName}', '${d.totalTables}', '${d.phone||""}', '${d.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
+            const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td><b>${d.name}</b><br><small style="color:#888;">${d.venueName || '-'}</small></td>
+                <td>${d.owner || '-'}</td>
+                <td>${d.totalTables || 0}</td>
+                <td><span style="color:#00ff00;">Verified</span></td>
+                <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${delBtn}</div></td>
+            </tr>`;
+        });
+    });
 }
 
-// E. Aktifkan Mode Edit (Naikkan data ke Form)
+// D. Simpan/Update Data
+window.saveMitraData = async function() {
+    const id = document.getElementById('m-edit-id').value;
+    const data = {
+        name: document.getElementById('m-nama').value,
+        owner: document.getElementById('m-owner').value,
+        venueName: document.getElementById('m-venue').value,
+        totalTables: parseInt(document.getElementById('m-meja').value) || 0,
+        phone: document.getElementById('m-wa').value,
+        adminApproved: true,
+        updatedAt: new Date()
+    };
+
+    if(!data.name || !data.venueName) return alert("Nama dan Lokasi wajib diisi!");
+    if(currentMitraImgBase64) data.img = currentMitraImgBase64;
+
+    try {
+        if(id) {
+            await updateDoc(doc(db, "warungs", id), data);
+            alert("Data diperbarui!");
+        } else {
+            data.joinedAt = new Date();
+            data.bookedTables = 0;
+            await addDoc(collection(db, "warungs"), data);
+            alert("Warung ditambahkan!");
+        }
+        resetMitraForm();
+    } catch(e) { alert("Error: " + e.message); }
+}
+
+// E. Mode Edit & Reset
 window.startEditMitra = function(id, nama, owner, venue, meja, phone, img) {
     document.getElementById('m-edit-id').value = id;
     document.getElementById('m-nama').value = nama;
@@ -324,82 +287,42 @@ window.startEditMitra = function(id, nama, owner, venue, meja, phone, img) {
     
     document.getElementById('m-form-title').innerText = "Edit Data Warung";
     document.getElementById('m-form-title').style.color = "#FFD700";
-    
     const btnSave = document.getElementById('btn-save-mitra');
     btnSave.innerText = "Simpan Perubahan";
-    btnSave.style.background = "#FFD700";
-    btnSave.style.color = "black";
+    btnSave.style.background = "#FFD700"; btnSave.style.color = "black";
     document.getElementById('btn-cancel-mitra').style.display = "inline-block";
-    
     window.scrollTo({ top: 300, behavior: 'smooth' });
 }
 
-// F. Aksi Akomodasi (Login & Hapus)
+window.resetMitraForm = function() {
+    document.getElementById('m-edit-id').value = "";
+    document.getElementById('m-nama').value = "";
+    document.getElementById('m-owner').value = "";
+    document.getElementById('m-meja').value = "";
+    document.getElementById('m-wa').value = "";
+    document.getElementById('m-preview').src = "https://placehold.co/100?text=Logo";
+    currentMitraImgBase64 = null;
+    document.getElementById('m-form-title').innerText = "Tambah Mitra Baru";
+    document.getElementById('m-form-title').style.color = "#E50914";
+    const btnSave = document.getElementById('btn-save-mitra');
+    btnSave.innerText = "+ Simpan Mitra";
+    btnSave.style.background = ""; btnSave.style.color = "";
+    document.getElementById('btn-cancel-mitra').style.display = "none";
+}
+
+// F. Tombol Aksi (Impersonate & Delete)
 window.loginAsMitra = function(id, name) {
     if(confirm(`Masuk ke Dashboard ${name}?`)) {
         localStorage.setItem('userLoggedIn', 'true');
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userName', name + " (Admin)");
         localStorage.setItem('mitraId', id); 
-        localStorage.setItem('userLink', 'mitra-dashboard.html');
-        localStorage.setItem('adminOrigin', 'true');
-        localStorage.setItem('adminReturnTab', 'mitra');
         window.location.href = 'mitra-dashboard.html';
     }
 }
 
-window.deleteMitra = async function(id, nama) {
-    if(confirm(`Yakin menghapus "${nama}"?`)) await deleteDoc(doc(db, "warungs", id));
-}
-
-// Fungsi menyiapkan data ke dalam Modal Edit
-window.prepareEditMitra = async function(id, name, owner, venue, tables, phone) {
-    const modal = document.getElementById('modal-edit-mitra');
-    if(!modal) return alert("Modal Edit tidak ditemukan di HTML!");
-
-    document.getElementById('edit-m-id').value = id;
-    document.getElementById('edit-m-nama').value = name;
-    document.getElementById('edit-m-owner').value = owner;
-    document.getElementById('edit-m-tables').value = tables;
-    document.getElementById('edit-m-phone').value = phone;
-
-    // Isi Dropdown Venue di dalam Modal Edit
-    const select = document.getElementById('edit-m-venue');
-    const venueSnap = await getDocs(query(collection(db, "venues"), orderBy("name", "asc")));
-    select.innerHTML = '';
-    venueSnap.forEach(doc => {
-        const v = doc.data().name;
-        const selected = (v === venue) ? 'selected' : '';
-        select.innerHTML += `<option value="${v}" ${selected}>${v}</option>`;
-    });
-
-    modal.style.display = 'flex';
-}
-
-// Fungsi eksekusi Update ke Firebase
-window.updateMitraData = async function() {
-    const id = document.getElementById('edit-m-id').value;
-    const name = document.getElementById('edit-m-nama').value;
-    const owner = document.getElementById('edit-m-owner').value;
-    const tables = parseInt(document.getElementById('edit-m-tables').value);
-    const phone = document.getElementById('edit-m-phone').value;
-    const venue = document.getElementById('edit-m-venue').value;
-
-    if(confirm("Simpan perubahan untuk " + name + "?")) {
-        try {
-            await updateDoc(doc(db, "warungs", id), {
-                name: name,
-                owner: owner,
-                totalTables: tables,
-                phone: phone,
-                venueName: venue
-            });
-            alert("Berhasil diupdate!");
-            document.getElementById('modal-edit-mitra').style.display = 'none';
-        } catch (e) {
-            alert("Gagal update: " + e.message);
-        }
-    }
+window.deleteMitra = async function(id, name) {
+    if(confirm(`Hapus warung "${name}"?`)) await deleteDoc(doc(db, "warungs", id));
 }
 
 /* =========================================
