@@ -161,12 +161,35 @@ let currentMitraImgBase64 = null;
 let mitraUnsubscribe = null; 
 
 // A. Preview Gambar Logo Mitra
+// A. Preview Gambar Logo Mitra (DENGAN AUTO-COMPRESS AGAR TIDAK ERROR)
 window.previewMitraImg = function(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            currentMitraImgBase64 = e.target.result;
-            document.getElementById('m-preview').src = currentMitraImgBase64;
+            const img = new Image();
+            img.onload = function() {
+                // Membuat Canvas untuk mengecilkan foto
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set ukuran maksimal logo (misal: lebar 400px)
+                const MAX_WIDTH = 400;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+
+                // Gambar ulang foto ke ukuran kecil
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // Ubah hasil canvas ke Base64 dengan kualitas 70% (JPEG)
+                // Ini akan membuat file dari 3MB menjadi cuma sekitar 50KB - 100KB
+                currentMitraImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // Tampilkan di preview
+                document.getElementById('m-preview').src = currentMitraImgBase64;
+                console.log("✅ Gambar berhasil dikompres!");
+            }
+            img.src = e.target.result;
         }
         reader.readAsDataURL(input.files[0]);
     }
