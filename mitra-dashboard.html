@@ -67,6 +67,24 @@
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-box { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 100%; max-width: 350px; border: 1px solid #444; }
         .btn-small { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+
+        /* Notifikasi Lonceng di Header */
+.notif-bell { position: relative; cursor: pointer; background: rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.notif-badge { position: absolute; top: -2px; right: -2px; background: var(--primary); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; display: none; }
+
+/* Switch Toggle untuk Aktifkan Order Web */
+.order-toggle-box { background: #252525; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+.switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--green); }
+input:checked + .slider:before { transform: translateX(26px); }
+
+/* Kartu Pesanan Makanan */
+.order-card-web { background: #1a1a1a; border-left: 4px solid var(--gold); padding: 15px; border-radius: 8px; margin-bottom: 10px; animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } }
+        
     </style>
 </head>
 <body>
@@ -86,6 +104,10 @@
         <img src="" class="mitra-profile-pic" id="header-profile-img" onclick="triggerUpload()" onerror="this.src='https://via.placeholder.com/150'">
         
         <div style="position:absolute; top:20px; right:20px; display:flex; gap:10px; z-index:20;">
+            <div class="notif-bell" onclick="switchTab('web-orders')">
+        <i class="fa-solid fa-bell"></i>
+        <span id="web-notif-count" class="notif-badge">0</span>
+        </div>
             <button id="btn-home-nav" onclick="goHome()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:5px 12px; border-radius:5px; cursor:pointer;">
                 <i class="fa-solid fa-house"></i> Home
             </button>
@@ -108,6 +130,7 @@
 
     <div class="mitra-tabs">
         <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> Beranda</button>
+         <button class="tab-btn" onclick="switchTab('web-orders')"><i class="fa-solid fa-utensils"></i> Pesanan Web</button>
         <button class="tab-btn" onclick="switchTab('qr')"><i class="fa-solid fa-print"></i> QR Meja</button>
         <button class="tab-btn" onclick="switchTab('menu')"><i class="fa-solid fa-utensils"></i> Menu</button>
         <button class="tab-btn" onclick="switchTab('profile')"><i class="fa-solid fa-gear"></i> Profil</button>
@@ -134,6 +157,25 @@
             <div class="section-title"><i class="fa-solid fa-list-check"></i> Pesanan Masuk</div>
             <div id="booking-container" class="booking-cards-grid"></div>
         </div>
+
+        <!-- TAB PESANAN WEB -->
+<div id="tab-web-orders" class="tab-content">
+    <!-- Kontrol On/Off Order Web -->
+    <div class="order-toggle-box">
+        <div>
+            <b style="display:block;">Order Lewat Web</b>
+            <small id="order-status-desc" style="color:#888;">Fitur sedang Mati</small>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="toggle-order-web" onchange="updateOrderSystemStatus(this.checked)">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div id="web-orders-container">
+        <p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan aktif saat ini.</p>
+    </div>
+</div>
 
         <!-- TAB 2: QR MEJA -->
         <div id="tab-qr" class="tab-content">
@@ -232,6 +274,72 @@
 
    <!-- SCRIPT KHUSUS LOGIKA ADMIN (TIMPA SCRIPT LAMA DI PALING BAWAH) -->
     <script>
+
+        /* =========================================
+   LOGIKA ORDER WEB & NOTIFIKASI
+   ========================================= */
+
+const orderSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+// 1. Fungsi Mengubah Status Fitur Order (On/Off)
+window.updateOrderSystemStatus = async function(isActive) {
+    const warungId = localStorage.getItem('mitraId');
+    if(!warungId) return;
+
+    try {
+        await updateDoc(doc(db, "warungs", warungId), {
+            enableOrder: isActive // Field ini yang dibaca oleh Profil Warung (Mini-web)
+        });
+        document.getElementById('order-status-desc').innerText = isActive ? 'Fitur sedang Aktif' : 'Fitur sedang Mati';
+        document.getElementById('order-status-desc').style.color = isActive ? '#00ff00' : '#888';
+    } catch (e) { alert("Gagal update status"); }
+}
+
+// 2. Fungsi Mendengarkan Pesanan Baru Secara Realtime
+function listenToWebOrders(myWarungId) {
+    const q = query(
+        collection(db, "warung_orders"), 
+        where("warungId", "==", myWarungId),
+        where("status", "==", "pending")
+    );
+
+    onSnapshot(q, (snapshot) => {
+        const container = document.getElementById('web-orders-container');
+        const badge = document.getElementById('web-notif-count');
+        
+        if (snapshot.empty) {
+            container.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">Menunggu pesanan baru...</p>';
+            badge.style.display = 'none';
+            return;
+        }
+
+        badge.innerText = snapshot.size;
+        badge.style.display = 'block';
+        orderSound.play(); // BUNYI JIKA ADA PESANAN MASUK
+
+        container.innerHTML = '<h3 style="margin-top:0;">Daftar Pesanan Baru</h3>';
+        snapshot.forEach(docSnap => {
+            const order = docSnap.data();
+            const id = docSnap.id;
+
+            container.innerHTML += `
+                <div class="order-card-web">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <b>📦 No. Meja: ${order.tableNum || 'Take Away'}</b>
+                        <small style="color:#aaa;">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
+                    </div>
+                    <div style="margin-bottom:15px; border-top:1px solid #333; padding-top:10px;">
+                        ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="handleOrder('${id}', 'diproses')" style="flex:1; background:var(--green); color:black; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">TERIMA & MASAK</button>
+                        <button onclick="handleOrder('${id}', 'ditolak')" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">TOLAK</button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+}
         // Cek apakah user ini adalah Admin yang sedang menyamar?
         if (localStorage.getItem('adminOrigin') === 'true') {
             
