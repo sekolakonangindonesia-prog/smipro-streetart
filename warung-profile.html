@@ -7,98 +7,86 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: #121212; color: white; padding-bottom: 80px; }
-        .profile-header {
-            height: 200px;
-            background: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Bener%20Dasboard3.jpg') center/cover;
-            position: relative;
-        }
-        .header-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #121212); }
-        .warung-info-box { text-align: center; margin-top: -50px; position: relative; z-index: 10; padding: 0 20px; }
-        .warung-avatar {
-            width: 100px; height: 100px; border-radius: 50%;
-            border: 3px solid var(--primary); object-fit: cover; background: #000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        .menu-grid { 
-            display: grid; 
-            /* Default HP: 2 Kolom */
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-            padding: 20px; 
-        }
+    :root { --primary: #E50914; --gold: #FFD700; --dark-bg: #121212; --card-bg: #1e1e1e; }
+    body { background: var(--dark-bg); color: white; padding-bottom: 100px; font-family: 'Segoe UI', sans-serif; margin: 0; }
 
-        /* --- TAMBAHAN KHUSUS LAPTOP/TABLET --- */
-        @media (min-width: 768px) {
-            .menu-grid {
-                /* Di Laptop jadi 4 Kolom biar rapi */
-                grid-template-columns: repeat(4, 1fr); 
-                gap: 20px;
-            }
-            .menu-card {
-                /* Efek bayangan saat mouse diarahkan (opsional) */
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            }
-            .menu-img {
-                /* Sedikit lebih tinggi di laptop biar jelas */
-                height: 150px; 
-            }
-        }
-        .menu-card { background: #1e1e1e; border-radius: 10px; overflow: hidden; border: 1px solid #333; transition: 0.3s; }
-        .menu-img { width: 100%; height: 120px; object-fit: cover; }
-        .menu-info { padding: 10px; }
-        .menu-title { font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 5px; }
-        .menu-price { color: gold; font-size: 0.9rem; }
-        .bottom-action {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #1a1a1a; border-top: 1px solid #333;
-            padding: 15px; box-sizing: border-box; display: flex; gap: 10px; z-index: 100;
-        }
-        .btn-status { flex: 1; text-align: center; padding: 12px; font-weight: bold; border-radius: 5px; background: #333; color: #aaa; cursor: default; }
-        .btn-book-action { flex: 2; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-book-action:disabled { background: #555; cursor: not-allowed; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px; }
-        .modal-box { background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative; max-height: 90vh; overflow-y: auto; }
-        .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
-        .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
-        /* --- TAMBAHAN GAYA BARU --- */
-        
-        /* 1. Logo Pojok Kiri */
-        .corner-logo {
-            position: absolute; top: 15px; left: 15px; width: 45px; height: 45px; 
-            border-radius: 50%; border: 2px solid #E50914; object-fit: cover; z-index: 30;
-            background: #000; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
+    /* 1. HEADER BANNER DINAMIS */
+    .profile-header {
+        height: 220px;
+        background-color: #222;
+        background-position: center;
+        background-size: cover;
+        position: relative;
+        transition: 0.5s;
+    }
+    .header-overlay { 
+        position: absolute; inset: 0; 
+        background: linear-gradient(to bottom, rgba(0,0,0,0.3), var(--dark-bg)); 
+    }
 
-        /* 2. Tombol Kembali (Disesuaikan posisinya di bawah logo) */
-        .btn-back-custom {
-            position: absolute; top: 70px; left: 15px; /* Turun ke bawah logo */
-            background: rgba(0,0,0,0.6); border: 1px solid #555; color: white; 
-            padding: 5px 12px; border-radius: 20px; cursor: pointer; z-index: 20;
-            font-size: 0.8rem; display: flex; align-items: center; gap: 5px;
-            backdrop-filter: blur(5px);
-        }
+    /* 2. IDENTITY (LOGO & TOMBOL) */
+    .corner-logo {
+        position: absolute; top: 15px; left: 15px; width: 45px; height: 45px; 
+        border-radius: 50%; border: 2px solid var(--primary); z-index: 30;
+        background: #000; box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
+    }
+    .btn-back-custom {
+        position: absolute; top: 70px; left: 15px;
+        background: rgba(0,0,0,0.6); border: 1px solid #444; color: white; 
+        padding: 6px 15px; border-radius: 20px; cursor: pointer; z-index: 20;
+        font-size: 0.8rem; backdrop-filter: blur(8px);
+    }
 
-        /* 3. Rating Bintang */
-        .warung-rating { margin-bottom: 10px; color: gold; font-size: 0.9rem; }
-        .warung-rating span { color: #aaa; font-size: 0.8rem; margin-left: 5px; }
-        
-        /* GAYA UNTUK ULASAN WARUNG */
-        .review-section { margin-top: 30px; border-top: 1px dashed #333; padding-top: 20px; }
-        .stars-input i { font-size: 1.5rem; color: #444; cursor: pointer; transition: 0.2s; margin-right: 5px; }
-        .stars-input i.active { color: gold; }
-        .review-card { background: #1e1e1e; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--primary); }
-        .review-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .review-stars { color: gold; font-size: 0.8rem; }
+    /* 3. WARUNG INFO STACKED (OVERLAP) */
+    .warung-info-box { text-align: center; margin-top: -65px; position: relative; z-index: 10; padding: 0 20px; }
+    .warung-avatar {
+        width: 120px; height: 120px; border-radius: 50%;
+        border: 4px solid var(--dark-bg); object-fit: cover; background: #000;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    }
+    .warung-name { margin: 10px 0 5px 0; font-weight: 800; font-size: 1.8rem; }
+    .warung-rating { color: var(--gold); margin-bottom: 10px; font-size: 0.9rem; }
 
-        
+    /* 4. MENU GRID GAYA BARU */
+    .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px; }
+    @media (min-width: 768px) { .menu-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+
+    .menu-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid #333; transition: 0.3s; }
+    .menu-card:hover { transform: translateY(-5px); border-color: #555; }
+    .menu-img { width: 100%; height: 130px; object-fit: cover; }
+    .menu-info { padding: 12px; }
+    .menu-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; display: block; }
+    .menu-price { color: var(--gold); font-weight: 700; font-size: 0.9rem; }
+
+    .btn-order-add {
+        margin-top: 10px; width: 100%; padding: 8px; background: #333;
+        color: white; border: 1px solid #444; border-radius: 6px;
+        font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+    }
+    .btn-order-add:hover { background: var(--primary); }
+
+    /* 5. CART FLOAT */
+    .cart-summary {
+        position: fixed; bottom: 85px; left: 20px; right: 20px;
+        background: var(--gold); color: black; padding: 12px 20px;
+        border-radius: 30px; display: none; /* Muncul lewat JS */
+        justify-content: space-between; align-items: center;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.6); z-index: 1000; font-weight: bold;
+    }
+
+    /* 6. BOTTOM NAVIGATION (BOOKING) */
+    .bottom-action {
+        position: fixed; bottom: 0; left: 0; width: 100%;
+        background: #1a1a1a; border-top: 1px solid #333;
+        padding: 15px; display: flex; gap: 10px; z-index: 100;
+    }
+      
     </style>
 </head>
 <body>
 
     <!-- HEADER GAMBAR -->
-    <div class="profile-header">
+    <div class="profile-header" id="banner-bg">
         
         <!-- 1. LOGO KECIL (BARU) -->
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="corner-logo">
@@ -168,7 +156,11 @@
                 <p style="text-align:center; color:#555;">Belum ada ulasan.</p>
             </div>
         </div>
-        
+       
+<div id="cart-float" class="cart-summary">
+    <span><i class="fa-solid fa-cart-shopping"></i> <span id="cart-count">0</span> Item Pesanan</span>
+    <span id="cart-total">Rp 0</span>
+</div>
     <div class="bottom-action">
         <div class="btn-status" id="table-status-display">Cek Status...</div>
         <button id="btn-booking-trigger" class="btn-book-action" onclick="openBookingModal()" disabled>Loading...</button>
