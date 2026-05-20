@@ -275,28 +275,50 @@ input:checked + .slider:before { transform: translateX(26px); }
    <!-- SCRIPT KHUSUS LOGIKA ADMIN (TIMPA SCRIPT LAMA DI PALING BAWAH) -->
     <script>
 
-        /* =========================================
-   LOGIKA ORDER WEB & NOTIFIKASI
+ /* =========================================
+   LOGIKA ORDER WEB & NOTIFIKASI (FIXED)
    ========================================= */
 
 const orderSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
 // 1. Fungsi Mengubah Status Fitur Order (On/Off)
+// Pastikan db, doc, updateDoc di-import di mitra-script.js atau tersedia secara global
 window.updateOrderSystemStatus = async function(isActive) {
-    const warungId = localStorage.getItem('mitraId');
-    if(!warungId) return;
+    const warungId = localStorage.getItem('mitraId'); 
+    if(!warungId) return alert("ID Warung tidak ditemukan, silakan login ulang.");
 
     try {
+        // Update ke Firebase
         await updateDoc(doc(db, "warungs", warungId), {
-            enableOrder: isActive // Field ini yang dibaca oleh Profil Warung (Mini-web)
+            enableOrder: isActive
         });
-        document.getElementById('order-status-desc').innerText = isActive ? 'Fitur sedang Aktif' : 'Fitur sedang Mati';
-        document.getElementById('order-status-desc').style.color = isActive ? '#00ff00' : '#888';
-    } catch (e) { alert("Gagal update status"); }
+
+        // Update Teks Deskripsi di bawah tombol
+        const desc = document.getElementById('order-status-desc');
+        if(desc) {
+            desc.innerText = isActive ? 'Fitur sedang Aktif' : 'Fitur sedang Mati';
+            desc.style.color = isActive ? '#00ff00' : '#888';
+        }
+    } catch (e) { 
+        console.error(e);
+        alert("Gagal update status database."); 
+        document.getElementById('toggle-order-web').checked = !isActive;
+    }
 }
 
-// 2. Fungsi Mendengarkan Pesanan Baru Secara Realtime
-function listenToWebOrders(myWarungId) {
+// 2. Fungsi Menangani Pesanan (Terima/Tolak)
+window.handleOrder = async function(orderId, statusBaru) {
+    if(!confirm(`Pindahkan pesanan ke status ${statusBaru}?`)) return;
+    try {
+        await updateDoc(doc(db, "warung_orders", orderId), { 
+            status: statusBaru 
+        });
+        alert("Pesanan diperbarui!");
+    } catch (e) { alert("Gagal update pesanan"); }
+}
+
+// 3. Fungsi Mendengarkan Pesanan Baru Secara Realtime
+window.listenToWebOrders = function(myWarungId) {
     const q = query(
         collection(db, "warung_orders"), 
         where("warungId", "==", myWarungId),
@@ -308,76 +330,40 @@ function listenToWebOrders(myWarungId) {
         const badge = document.getElementById('web-notif-count');
         
         if (snapshot.empty) {
-            container.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">Menunggu pesanan baru...</p>';
-            badge.style.display = 'none';
+            if(container) container.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan aktif saat ini.</p>';
+            if(badge) badge.style.display = 'none';
             return;
         }
 
-        badge.innerText = snapshot.size;
-        badge.style.display = 'block';
-        orderSound.play(); // BUNYI JIKA ADA PESANAN MASUK
-
-        container.innerHTML = '<h3 style="margin-top:0;">Daftar Pesanan Baru</h3>';
-        snapshot.forEach(docSnap => {
-            const order = docSnap.data();
-            const id = docSnap.id;
-
-            container.innerHTML += `
-                <div class="order-card-web">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <b>📦 No. Meja: ${order.tableNum || 'Take Away'}</b>
-                        <small style="color:#aaa;">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
-                    </div>
-                    <div style="margin-bottom:15px; border-top:1px solid #333; padding-top:10px;">
-                        ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="handleOrder('${id}', 'diproses')" style="flex:1; background:var(--green); color:black; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">TERIMA & MASAK</button>
-                        <button onclick="handleOrder('${id}', 'ditolak')" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">TOLAK</button>
-                    </div>
-                </div>
-            `;
-        });
-    });
-}
-        // Cek apakah user ini adalah Admin yang sedang menyamar?
-        if (localStorage.getItem('adminOrigin') === 'true') {
-            
-            // 1. Tampilkan Tombol Floating "Kembali ke Admin"
-            const floatBtn = document.getElementById('admin-floating-btn');
-            if(floatBtn) floatBtn.style.display = 'block';
-
-            // 2. PERBAIKAN TOMBOL HOME (Agar balik jadi Admin saat klik Home)
-            const homeBtn = document.getElementById('btn-home-nav');
-            if (homeBtn) {
-                // Matikan fungsi goHome() bawaan mitra
-                homeBtn.removeAttribute("onclick");
-                
-                // Pasang fungsi baru khusus Admin
-                homeBtn.addEventListener('click', function() {
-                    if(confirm("Kembali ke Home sebagai SUPER ADMIN?")) {
-                        // KEMBALIKAN IDENTITAS ADMIN
-                        localStorage.setItem('userRole', 'admin');
-                        localStorage.setItem('userName', 'Super Admin');
-                        // Hapus jejak penyamaran (Opsional, tapi sebaiknya jangan dihapus biar konsisten)
-                        // localStorage.removeItem('adminOrigin'); 
-                        
-                        // Pindah ke Index
-                        window.location.href = 'index.html';
-                    }
-                });
-            }
+        if(badge) {
+            badge.innerText = snapshot.size;
+            badge.style.display = 'block';
         }
+        orderSound.play(); // Bunyi!
 
-        // Fungsi untuk Tombol Floating (Balik ke Dashboard Admin)
-        function backToAdminDashboard() {
-            if(confirm("Kembali ke Control Tower Admin?")) {
-                localStorage.setItem('userRole', 'admin');
-                localStorage.setItem('userName', 'Super Admin');
-                localStorage.setItem('userLink', 'admin-dashboard.html');
-                window.location.href = 'admin-dashboard.html';
-            }
-        }       
+        if(container) {
+            container.innerHTML = '<h3 style="margin-top:0;">Daftar Pesanan Baru</h3>';
+            snapshot.forEach(docSnap => {
+                const order = docSnap.data();
+                const id = docSnap.id;
+                container.innerHTML += `
+                    <div class="order-card-web">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <b>📦 Meja: ${order.tableNum || 'Take Away'}</b>
+                            <small style="color:#aaa;">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
+                        </div>
+                        <div style="margin-bottom:15px; border-top:1px solid #333; padding-top:10px;">
+                            ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="handleOrder('${id}', 'diproses')" style="flex:1; background:#00ff00; color:black; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">TERIMA</button>
+                            <button onclick="handleOrder('${id}', 'ditolak')" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">TOLAK</button>
+                        </div>
+                    </div>`;
+            });
+        }
+    });
+}      
     </script>
     <script type="module" src="mitra-script.js"></script>
 </body>
