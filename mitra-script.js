@@ -230,10 +230,6 @@ function renderBookings(bookings) {
         container.innerHTML += cardHtml;
     });
 }
-// >>> JANGAN HAPUS KODE DI BAWAH INI (Helper, Profile, deleteMenu, dll tetap di bawah baris 246) <<<
-        container.innerHTML += cardHtml;
-    });
-}
 
 // --- HELPER FUNCTIONS ---
 function compressImage(file, maxWidth, callback) {
