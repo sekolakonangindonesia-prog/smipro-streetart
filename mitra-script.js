@@ -19,6 +19,10 @@ let warungTotalCapacity = 15;
 let currentWarungName = ""; 
 let unsubscribeBooking = null; 
 
+// --- TAMBAHAN UNTUK NOTIFIKASI ---
+const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+const LOGO_STREETART = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
+let isInitialLoad = true; // Agar tidak bunyi saat baru pertama kali buka dashboard
 
 // --- 1. LISTENER DATA WARUNG (UTAMA) ---
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
@@ -55,6 +59,16 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         } else {
             btn.classList.remove('open'); btn.classList.add('closed'); txt.innerText = "TUTUP";
         }
+        // --- SINKRONISASI TOMBOL ORDER ONLINE ---
+        const toggle = document.getElementById('toggle-order-web');
+        const desc = document.getElementById('order-status-desc');
+        if(toggle) {
+            toggle.checked = data.enableOrder || false; 
+            if(desc) {
+                desc.innerText = data.enableOrder ? 'Fitur sedang Aktif' : 'Fitur sedang Mati';
+                desc.style.color = data.enableOrder ? '#00ff00' : '#888';
+            }
+        }
 
         if (oldName !== currentWarungName) {
             setupBookingListener(currentWarungName);
@@ -72,67 +86,57 @@ function setupBookingListener(targetName) {
         const bookings = [];
         let countActiveTables = 0; 
         let countBookedTables = 0; 
-        
         const now = new Date();
 
+        // 1. DETEKSI BOOKING BARU (BUNYI & NOTIF HP)
+        snapshot.docChanges().forEach((change) => {
+            // Jika ada data "Baru Masuk" dan bukan loading pertama kali
+            if (change.type === "added" && !isInitialLoad) {
+                const newBooking = change.doc.data();
+                // Bunyikan Suara "Ting!"
+                notifSound.play();
+                // Kirim Notifikasi ke Sistem HP (Beserta Logo)
+                kirimNotifKeHP(`Booking Berhasil! ${newBooking.customerName} memesan ${newBooking.tablesNeeded} meja.`);
+            }
+        });
+        isInitialLoad = false; // Setel ke false setelah loading pertama selesai
+
+        // 2. PROSES DATA TABEL (Kode Asli Anda tetap dipertahankan)
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
-            
-            // CEK EXPIRED (Format Baru: YYYY-MM-DDTHH:MM)
             let isExpired = false;
             if (d.status === 'booked' && d.expiredTime) {
                 const expiredDate = new Date(d.expiredTime);
-                if (now > expiredDate) {
-                    isExpired = true;
-                }
+                if (now > expiredDate) isExpired = true;
             }
-
-            if (isExpired) {
-                deleteDoc(docSnap.ref); 
-                return; 
-            }
+            if (isExpired) { deleteDoc(docSnap.ref); return; }
 
             bookings.push({ id: docSnap.id, ...d });
-            
             const qtyMeja = parseInt(d.tablesNeeded) || 1;
-
-            if(d.status === 'active') {
-                countActiveTables += qtyMeja;
-            } else if (d.status === 'booked') {
-                countBookedTables += qtyMeja;
-            }
+            if(d.status === 'active') countActiveTables += qtyMeja;
+            else if (d.status === 'booked') countBookedTables += qtyMeja;
         });
         
-        // UPDATE UI
+        // 3. UPDATE BADGE LONCENG (Jika Ada Elemennya)
+        const badge = document.getElementById('notif-badge-booking');
+        if(badge) {
+            badge.innerText = snapshot.size;
+            badge.style.display = snapshot.size > 0 ? 'block' : 'none';
+        }
+
+        // UPDATE UI ASLI ANDA
         const totalUsed = countActiveTables + countBookedTables;
         const sisaMeja = warungTotalCapacity - totalUsed;
-        
         const totalEl = document.getElementById('total-table-count');
         if(totalEl) {
             totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
             totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
-            
-            if(totalEl.parentElement) {
-                const smallLabel = totalEl.parentElement.querySelector('small');
-                if(smallLabel) {
-                    smallLabel.innerHTML = `Tersedia <span style="color:#aaa;">(dari Total ${warungTotalCapacity})</span>`;
-                }
-            }
         }
-
         document.getElementById('occupied-count').innerText = countActiveTables;
         document.getElementById('booked-count').innerText = countBookedTables;
-
         renderBookings(bookings);
         updateWarungTableCount(totalUsed);
     });
-}
-
-async function updateWarungTableCount(totalUsed) {
-    try {
-        const warungRef = doc(db, "warungs", WARUNG_ID);
-        await updateDoc(warungRef, { bookedCount: totalUsed });
-    } catch (e) { console.log("Sync error:", e); }
 }
 
 // --- RENDER MENU ---
@@ -428,3 +432,17 @@ window.cancelBooking = async function(docId, tableQty) {
     }
 }
 
+// FUNGSI UNTUK MEMUNCULKAN NOTIF SISTEM HP DENGAN LOGO STREETART
+function kirimNotifKeHP(pesan) {
+    if (!("Notification" in window)) return;
+    
+    if (Notification.permission === "granted") {
+        new Notification("STREETART - Reservasi", {
+            body: pesan,
+            icon: LOGO_STREETART, // Logo StreetArt Muncul di sini
+            vibrate: [200, 100, 200]
+        });
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+}
