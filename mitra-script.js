@@ -1,13 +1,13 @@
 // --- IMPORT FIREBASE ---
 import { db } from './firebase-config.js';
 import { 
-    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, increment 
+    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, increment, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- AMBIL ID DARI LOCALSTORAGE (HASIL LOGIN) ---
+// --- AMBIL ID DARI LOCALSTORAGE (PASTIKAN PENULISAN 'mitraId' BENAR) ---
 let WARUNG_ID = localStorage.getItem('mitraId');
 
-// PENGAMAN: Jika tidak ada ID (Buka langsung tanpa login), tendang ke Login
+// PENGAMAN: Jika tidak ada ID
 if (!WARUNG_ID) {
     alert("Sesi habis atau Anda belum login. Silakan login kembali.");
     window.location.href = 'login.html';
@@ -22,7 +22,7 @@ let unsubscribeBooking = null;
 // --- TAMBAHAN UNTUK NOTIFIKASI ---
 const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 const LOGO_STREETART = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
-let isInitialLoad = true; // Agar tidak bunyi saat baru pertama kali buka dashboard
+let isInitialLoad = true; // Supaya tidak bunyi saat pertama buka halaman
 
 // --- 1. LISTENER DATA WARUNG (UTAMA) ---
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
@@ -33,12 +33,6 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         const oldName = currentWarungName;
         currentWarungName = data.name; 
 
-        // Set Sesi (Hati-hati ini bisa bentrok dengan Admin, tapi biarkan dulu sesuai request)
-        localStorage.setItem('userLoggedIn', 'true');
-        localStorage.setItem('userName', data.name);
-        localStorage.setItem('userRole', 'mitra');
-        localStorage.setItem('userLink', 'mitra-dashboard.html');
-
         document.getElementById('shop-name-display').innerText = data.name;
         
         if(data.img) {
@@ -46,20 +40,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
             document.getElementById('preview-profile-img').src = data.img;
         }
 
-        document.getElementById('edit-name').value = data.name || '';
-        document.getElementById('edit-owner').value = data.owner || '';
-        document.getElementById('edit-phone').value = data.phone || '';
-        document.getElementById('edit-email').value = data.email || '';
-        document.getElementById('edit-pass').value = data.password || '';
-
-        const btn = document.getElementById('store-status-btn');
-        const txt = document.getElementById('store-status-text');
-        if (data.status === 'open') {
-            btn.classList.remove('closed'); btn.classList.add('open'); txt.innerText = "BUKA";
-        } else {
-            btn.classList.remove('open'); btn.classList.add('closed'); txt.innerText = "TUTUP";
-        }
-        // --- SINKRONISASI TOMBOL ORDER ONLINE ---
+        // --- SINKRONISASI TOMBOL TOGGLE ORDER (FIX VISUAL SS2) ---
         const toggle = document.getElementById('toggle-order-web');
         const desc = document.getElementById('order-status-desc');
         if(toggle) {
@@ -70,16 +51,40 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
             }
         }
 
+        // Status Buka/Tutup
+        const btn = document.getElementById('store-status-btn');
+        const txt = document.getElementById('store-status-text');
+        if (data.status === 'open') {
+            btn.className = 'shop-switch open'; txt.innerText = "BUKA";
+        } else {
+            btn.className = 'shop-switch closed'; txt.innerText = "TUTUP";
+        }
+
+        // Jalankan Listener jika nama warung sudah ada
         if (oldName !== currentWarungName) {
-            setupBookingListener(currentWarungName);
+            setupBookingListener();
+            listenToWebOrders(); // Fungsi monitor pesanan makanan
         }
     }
 });
 
-// --- 2. SETUP LISTENER BOOKING (VERSI FIX DATE) ---
-function setupBookingListener(targetName) {
-    if (unsubscribeBooking) { unsubscribeBooking(); }
+// --- 2. FUNGSI UPDATE STATUS ORDER (DITARUH DI DALAM JS MODULE) ---
+window.updateOrderSystemStatus = async function(isActive) {
+    try {
+        await updateDoc(doc(db, "warungs", WARUNG_ID), {
+            enableOrder: isActive
+        });
+        console.log("Status Order Web berhasil diubah.");
+    } catch (e) {
+        alert("Eror update status: " + e.message);
+        // Kembalikan tombol jika gagal
+        document.getElementById('toggle-order-web').checked = !isActive;
+    }
+}
 
+// --- 3. SETUP LISTENER BOOKING (BUNYI & NOTIF HP) ---
+function setupBookingListener() {
+    if (unsubscribeBooking) { unsubscribeBooking(); }
     const qBooking = query(collection(db, "bookings"), where("warungId", "==", WARUNG_ID));
 
     unsubscribeBooking = onSnapshot(qBooking, (snapshot) => {
@@ -88,26 +93,22 @@ function setupBookingListener(targetName) {
         let countBookedTables = 0; 
         const now = new Date();
 
-        // 1. DETEKSI BOOKING BARU (BUNYI & NOTIF HP)
+        // LOGIKA BUNYI SAAT ADA DATA BARU
         snapshot.docChanges().forEach((change) => {
-            // Jika ada data "Baru Masuk" dan bukan loading pertama kali
             if (change.type === "added" && !isInitialLoad) {
-                const newBooking = change.doc.data();
-                // Bunyikan Suara "Ting!"
                 notifSound.play();
-                // Kirim Notifikasi ke Sistem HP (Beserta Logo)
-                kirimNotifKeHP(`Booking Berhasil! ${newBooking.customerName} memesan ${newBooking.tablesNeeded} meja.`);
+                const newB = change.doc.data();
+                kirimNotifKeHP(`Reservasi Meja Baru: ${newB.customerName}`);
             }
         });
-        isInitialLoad = false; // Setel ke false setelah loading pertama selesai
+        isInitialLoad = false;
 
-        // 2. PROSES DATA TABEL (Kode Asli Anda tetap dipertahankan)
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
+            // Cek Expired (tetap ada)
             let isExpired = false;
             if (d.status === 'booked' && d.expiredTime) {
-                const expiredDate = new Date(d.expiredTime);
-                if (now > expiredDate) isExpired = true;
+                if (now > new Date(d.expiredTime)) isExpired = true;
             }
             if (isExpired) { deleteDoc(docSnap.ref); return; }
 
@@ -117,14 +118,14 @@ function setupBookingListener(targetName) {
             else if (d.status === 'booked') countBookedTables += qtyMeja;
         });
         
-        // 3. UPDATE BADGE LONCENG (Jika Ada Elemennya)
-        const badge = document.getElementById('notif-badge-booking');
+        // Update Lonceng Notif (Badge)
+        const badge = document.getElementById('web-notif-count');
         if(badge) {
             badge.innerText = snapshot.size;
             badge.style.display = snapshot.size > 0 ? 'block' : 'none';
         }
 
-        // UPDATE UI ASLI ANDA
+        // Update UI Statistik
         const totalUsed = countActiveTables + countBookedTables;
         const sisaMeja = warungTotalCapacity - totalUsed;
         const totalEl = document.getElementById('total-table-count');
@@ -132,6 +133,7 @@ function setupBookingListener(targetName) {
             totalEl.innerText = sisaMeja < 0 ? 0 : sisaMeja; 
             totalEl.style.color = sisaMeja <= 0 ? '#ff4444' : '#00ff00';
         }
+
         document.getElementById('occupied-count').innerText = countActiveTables;
         document.getElementById('booked-count').innerText = countBookedTables;
         renderBookings(bookings);
@@ -139,26 +141,51 @@ function setupBookingListener(targetName) {
     });
 }
 
-// --- RENDER MENU ---
-const qMenu = query(collection(db, "menus"), where("warungId", "==", WARUNG_ID));
-onSnapshot(qMenu, (snapshot) => {
-    const container = document.getElementById('menu-list-container');
-    container.innerHTML = '';
-    snapshot.forEach((docSnap) => {
-        const m = docSnap.data();
-        container.innerHTML += `
-        <div class="menu-card">
-            <img src="${m.img || 'https://via.placeholder.com/150'}" style="width:100%; height:120px; object-fit:cover;">
-            <div class="menu-details">
-                <b>${m.name}</b><br>
-                <span style="color:gold;">Rp ${parseInt(m.price).toLocaleString()}</span><br>
-                <button class="btn-delete" onclick="deleteMenu('${docSnap.id}')" style="margin-top:5px; width:100%;"><i class="fa-solid fa-trash"></i> Hapus</button>
-            </div>
-        </div>`;
-    });
-});
+// --- 4. LISTENER PESANAN MENU MAKANAN ---
+function listenToWebOrders() {
+    const q = query(collection(db, "warung_orders"), where("warungId", "==", WARUNG_ID), where("status", "==", "pending"));
+    onSnapshot(q, (snapshot) => {
+        const container = document.getElementById('web-orders-container');
+        if(!container) return;
 
-// --- RENDER BOOKING CARDS (VERSI TAMPILAN JELAS) ---
+        if (snapshot.empty) {
+            container.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan aktif saat ini.</p>';
+            return;
+        }
+
+        container.innerHTML = '<h3 style="margin-top:0;">Daftar Pesanan Menu</h3>';
+        snapshot.forEach(docSnap => {
+            const order = docSnap.data();
+            container.innerHTML += `
+                <div style="background:#1a1a1a; border-left:4px solid gold; padding:15px; border-radius:8px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <b>📦 Meja: ${order.tableNum || 'Take Away'}</b>
+                        <small style="color:#aaa;">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
+                    </div>
+                    <div style="margin:10px 0;">
+                        ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
+                    </div>
+                    <button onclick="updateOrderStatus('${docSnap.id}', 'diproses')" style="background:#00ff00; color:black; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">TERIMA & MASAK</button>
+                </div>`;
+        });
+    });
+}
+
+window.updateOrderStatus = async function(id, status) {
+    await updateDoc(doc(db, "warung_orders", id), { status: status });
+}
+
+// --- FUNGSI NOTIF HP DENGAN LOGO ---
+function kirimNotifKeHP(pesan) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+        new Notification("STREETART", { body: pesan, icon: LOGO_STREETART });
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+}
+
+// --- FUNGSI RENDER BOOKING CARDS (Lanjutan Asli Anda) ---
 function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     container.innerHTML = '';
@@ -168,82 +195,42 @@ function renderBookings(bookings) {
         return;
     }
     
-    // Urutkan: Yang Aktif (Makan) di atas, yang Booking di bawah
     bookings.sort((a, b) => (a.status === 'active' ? -1 : 1));
 
     bookings.forEach((b) => {
         let cardHtml = '';
         const qty = b.tablesNeeded || 1;
-        
-        // --- LOGIKA NOMOR MEJA (LEBIH PINTAR) ---
-        let nomorMejaTeks = "Belum Ada";
-        
-        if (b.tableNum) {
-            if (Array.isArray(b.tableNum)) {
-                // Jika banyak meja (Contoh: [1, 2]) -> "MEJA 1, 2"
-                nomorMejaTeks = "MEJA " + b.tableNum.join(", ");
-            } else {
-                // Jika satu meja -> "MEJA 1"
-                nomorMejaTeks = "MEJA " + b.tableNum;
-            }
-        } else {
-            // Fallback jika data lama
-             nomorMejaTeks = `${qty} MEJA (Pending)`;
-        }
-
-        let displayDate = b.bookingDate || "Hari Ini";
-        let displayTime = b.arrivalTime || "-";
-        
-        // Format Tampilan Jam Hangus (Ambil jamnya saja)
-        let jamHangus = "-";
-        if(b.expiredTime && b.expiredTime.includes('T')) {
-            jamHangus = b.expiredTime.split('T')[1];
-        }
+        let nomorMejaTeks = b.tableNum ? (Array.isArray(b.tableNum) ? "MEJA " + b.tableNum.join(", ") : "MEJA " + b.tableNum) : `${qty} MEJA (Pending)`;
 
         if (b.status === 'booked') {
-            // KARTU STATUS: BOOKING (KUNING)
             cardHtml = `
             <div class="card-booking waiting">
-                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:5px 10px; border-radius:5px; margin-bottom:10px;">
-                    <span style="font-weight:bold; color:#FFD700; font-size:1rem;">${nomorMejaTeks}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-weight:bold; color:#FFD700;">${nomorMejaTeks}</span>
                     <span style="background:#555; color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
                 </div>
-                
-                <b style="font-size:1.2rem; display:block; margin-bottom:5px;">${b.customerName}</b>
-                
-                <div style="font-size:0.85rem; color:#ccc; line-height:1.4;">
-                    <i class="fa-solid fa-calendar"></i> Tgl: <b>${displayDate}</b><br>
-                    <i class="fa-solid fa-clock"></i> Rencana: ${displayTime}<br>
-                    <i class="fa-solid fa-hourglass-half"></i> Hangus Pukul: <b style="color:#ff4444;">${jamHangus}</b><br>
-                    Kode: <b style="color:white; letter-spacing:1px; background:#333; padding:2px 5px; border-radius:3px;">${b.bookingCode}</b>
+                <b style="font-size:1.1rem; display:block;">${b.customerName}</b>
+                <div style="font-size:0.8rem; color:#ccc; margin-top:5px;">
+                    Kode: <b>${b.bookingCode}</b> | Tgl: ${b.bookingDate}
                 </div>
-
-                <div class="waiting-text" style="margin-top:10px;">Menunggu Tamu Check-In...</div>
-                
                 <div style="display:flex; gap:5px; margin-top:10px;">
                     <button class="btn-delete" onclick="cancelBooking('${b.id}', ${qty})" style="width:100%;">Batalkan</button>
                 </div>
             </div>`;
-            
-        } else if (b.status === 'active') {
-            // KARTU STATUS: SEDANG MAKAN (MERAH)
+        } else {
             cardHtml = `
             <div class="card-booking active">
-                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:5px 10px; border-radius:5px; margin-bottom:10px;">
-                    <span style="font-weight:bold; color:white; font-size:1rem;">${nomorMejaTeks}</span>
-                    <span style="background:#b71c1c; color:white; padding:2px 6px; border-radius:4px; font-size:0.7rem;">${qty} Meja</span>
-                </div>
-
-                <b style="font-size:1.2rem; display:block; margin-bottom:5px;">${b.customerName}</b>
+                <span style="font-weight:bold; color:white;">${nomorMejaTeks}</span>
+                <b style="font-size:1.1rem; display:block; margin:5px 0;">${b.customerName}</b>
                 <small style="color:#ffaaaa;">Sedang Makan</small>
-
-                <button class="btn-primary" 
-                    style="margin-top:15px; background:white; color:#b71c1c; width:100%; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;" 
-                    onclick="finishBooking('${b.id}', ${qty})">
-                    Selesai / Bayar
-                </button>
+                <button class="btn-primary" style="margin-top:10px; background:white; color:#b71c1c; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;" 
+                    onclick="finishBooking('${b.id}', ${qty})">Selesai / Bayar</button>
             </div>`;
         }
+        container.innerHTML += cardHtml;
+    });
+}
+// >>> JANGAN HAPUS KODE DI BAWAH INI (Helper, Profile, deleteMenu, dll tetap di bawah baris 246) <<<
         container.innerHTML += cardHtml;
     });
 }
