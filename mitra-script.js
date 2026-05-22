@@ -211,7 +211,7 @@ window.switchTab = function(tabId) {
    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-/ 2. Fungsi Kembali ke Home
+// 2. Fungsi Kembali ke Home
 window.goHome = function() {
     window.location.href = 'index.html';
 };
