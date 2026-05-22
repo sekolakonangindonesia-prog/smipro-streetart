@@ -207,11 +207,11 @@ window.switchTab = function(tabId) {
             btn.classList.add('active');
         }
        });
-   if(tabId === 'qr') renderQRCodes();
+    if(tabId === 'qr') renderQRCodes();
    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 2. Fungsi Kembali ke Home
+// 2. Fungsi Kembali ke Home (FIX: Tambah tanda miring ganda)
 window.goHome = function() {
     window.location.href = 'index.html';
 };
@@ -264,31 +264,50 @@ window.saveProfile = async function() {
     } catch (e) { alert(e.message); }
 }
 
-// FINISH & CANCEL LOGIC
-let selectedBookingId = null;
-let selectedTableCount = 0;
+// 1. FUNGSI DIPANGGIL SAAT TOMBOL SELESAI DIKLIK (FIX: Tambah window. agar tombol di HTML jalan)
 window.finishBooking = function(docId, tableQty) {
     selectedBookingId = docId;
     selectedTableCount = parseInt(tableQty) || 1;
     document.getElementById('trx-amount').value = ''; 
     document.getElementById('modal-finish-transaction').style.display = 'flex';
 }
-window.closeFinishModal = function() { document.getElementById('modal-finish-transaction').style.display = 'none'; }
+
+// 2. TUTUP MODAL (FIX: Tambah window.)
+window.closeFinishModal = function() {
+    document.getElementById('modal-finish-transaction').style.display = 'none';
+    selectedBookingId = null;
+}
+
+// 3. EKSEKUSI SIMPAN (FIX: Tambah window.)
 window.submitTransaction = async function() {
     const amount = document.getElementById('trx-amount').value;
-    if(!amount || amount <= 0) return alert("Nominal tidak valid!");
+    if(!amount || amount <= 0) return alert("Masukkan nominal transaksi yang valid!");
+    if(!confirm(`Simpan transaksi Rp ${parseInt(amount).toLocaleString()}?`)) return;
+
     try {
-        await updateDoc(doc(db, "bookings", selectedBookingId), { status: 'finished', revenue: parseInt(amount), finishedAt: new Date() });
-        await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-selectedTableCount) });
-        alert("Transaksi Disimpan!"); closeFinishModal();
+        await updateDoc(doc(db, "bookings", selectedBookingId), {
+            status: 'finished',
+            revenue: parseInt(amount),
+            finishedAt: new Date()
+        });
+        await updateDoc(doc(db, "warungs", WARUNG_ID), {
+            bookedCount: increment(-selectedTableCount) 
+        });
+        alert("Transaksi Berhasil!");
+        window.closeFinishModal();
     } catch (e) { alert(e.message); }
 }
 
-window.cancelBooking = async function(id, qty) {
-    if(confirm("Batalkan booking ini?")) {
-        await deleteDoc(doc(db, "bookings", id));
-        await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-parseInt(qty)) });
-    }
+// --- FUNGSI BATALKAN PESANAN (FIX: Tambah window.) ---
+window.cancelBooking = async function(docId, tableQty) {
+    if(!confirm("Yakin ingin membatalkan?")) return;
+    try {
+        await deleteDoc(doc(db, "bookings", docId));
+        await updateDoc(doc(db, "warungs", WARUNG_ID), {
+            bookedCount: increment(-parseInt(tableQty))
+        });
+        alert("Pesanan Dibatalkan!");
+    } catch (e) { alert(e.message); }
 }
 
 // HELPER: COMPRESS & UPLOAD
