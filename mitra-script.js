@@ -198,23 +198,43 @@ function listenToWebOrders() {
 window.switchTab = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
-    const target = document.getElementById('tab-'+tabId);
-    if(target) target.classList.add('active');
-    if(tabId === 'qr') renderQRCodes();
-    // Highlight tombol tab
+    const targetTab = document.getElementById('tab-' + tabId);
+    if(targetTab) targetTab.classList.add('active');
+   
     const btns = document.querySelectorAll('.tab-btn');
-    btns.forEach(btn => { if(btn.getAttribute('onclick').includes(`'${tabId}'`)) btn.classList.add('active'); });
-}
+    btns.forEach(btn => {
+        if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabId}'`)) {
+            btn.classList.add('active');
+        }
+       });
+   if(tabId === 'qr') renderQRCodes();
+   window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+/ 2. Fungsi Kembali ke Home
+window.goHome = function() {
+    window.location.href = 'index.html';
+};
+
+// 3. Fungsi Logout
+window.prosesLogout = function() {
+    if(confirm("Apakah Anda yakin ingin keluar?")) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+    }
+};
 
 window.updateOrderSystemStatus = async function(isActive) {
     try {
-        await updateDoc(doc(db, "warungs", WARUNG_ID), { enableOrder: isActive });
-        console.log("Status Pesanan Web diperbarui.");
+        await updateDoc(doc(db, "warungs", WARUNG_ID), {
+            enableOrder: isActive
+        });
+        console.log("Fitur Order berubah jadi:", isActive);
     } catch (e) {
         alert("Gagal update status");
         document.getElementById('toggle-order-web').checked = !isActive;
     }
-}
+};
 
 window.handleOrderAction = async function(id, status) {
     await updateDoc(doc(db, "warung_orders", id), { status: status });
