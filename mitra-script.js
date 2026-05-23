@@ -176,19 +176,62 @@ function renderBookings(bookings) {
 
 // --- 6. LOGIKA PESANAN MAKANAN (WEB ORDERS) ---
 function listenToWebOrders() {
-    const q = query(collection(db, "warung_orders"), where("warungId", "==", WARUNG_ID), where("status", "==", "pending"));
+    const warungId = localStorage.getItem('mitraId');
+    // Ambil data pesanan yang statusnya BENAR-BENAR 'pending'
+    const q = query(
+        collection(db, "warung_orders"), 
+        where("warungId", "==", warungId), 
+        where("status", "==", "pending")
+    );
+
     onSnapshot(q, (snapshot) => {
         const container = document.getElementById('web-orders-container');
+        const badge = document.getElementById('web-notif-count');
+        
         if(!container) return;
-        container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan.</p>' : '';
+
+        // --- SINKRONISASI ANGKA LONCENG ---
+        const jumlahPesanan = snapshot.size;
+        if(badge) {
+            badge.innerText = jumlahPesanan;
+            // Hanya tampilkan lingkaran merah jika jumlah > 0
+            badge.style.display = jumlahPesanan > 0 ? 'block' : 'none';
+        }
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:50px 20px; color:#555;">
+                    <i class="fa-solid fa-utensils" style="font-size:3rem; margin-bottom:15px; opacity:0.2;"></i>
+                    <p>Tidak ada pesanan aktif saat ini.</p>
+                </div>`;
+            return;
+        }
+
+        // Tampilkan daftar pesanan jika ada
+        container.innerHTML = '<h3 style="margin-top:0; color:white; padding:0 10px;">Daftar Pesanan Baru</h3>';
         snapshot.forEach(docSnap => {
             const order = docSnap.data();
             container.innerHTML += `
                 <div class="order-card-web" style="background:#1a1a1a; border-left:4px solid gold; padding:15px; border-radius:8px; margin-bottom:10px;">
-                    <b>Meja: ${order.tableNum || 'T.Away'}</b><br>
-                    ${order.items.map(i => i.name).join(', ')}<br>
-                    <button onclick="handleOrderAction('${docSnap.id}', 'diproses')" style="background:#00ff00; border:none; padding:5px 10px; border-radius:3px; font-weight:bold; cursor:pointer; margin-top:10px;">TERIMA</button>
+                    <div style="display:flex; justify-content:space-between;">
+                        <b>Meja: ${order.tableNum || 'T.Away'}</b>
+                        <small style="color:#aaa;">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
+                    </div>
+                    <div style="margin:10px 0; color:#eee;">
+                        ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
+                    </div>
+                    <button onclick="handleOrderAction('${docSnap.id}', 'diproses')" 
+                            style="background:#00ff00; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">
+                        TERIMA & PROSES
+                    </button>
                 </div>`;
+        });
+
+        // Bunyikan suara hanya jika ada TAMBAHAN data baru (added)
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added" && !isInitialLoad) {
+                notifSound.play().catch(e => console.log("Izin suara diperlukan"));
+            }
         });
     });
 }
