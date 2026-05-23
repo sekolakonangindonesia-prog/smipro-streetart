@@ -18,9 +18,9 @@
         .shop-switch.closed { border-color: red; }
         .indicator { width: 10px; height: 10px; border-radius: 50%; background: red; transition: 0.3s; }
         .shop-switch.open .indicator { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
-        .mitra-tabs { display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 20px; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 15px; background: none; border: none; color: #888; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
-        .tab-btn.active { color: white; border-bottom-color: var(--primary); }
+        .mitra-tabs { display: flex; justify-content: space-around; background: #111; border-bottom: 1px solid #333; margin-bottom: 10px; overflow-x: auto; margin-top: 30px; position: relative; z-index: 5; }
+        .tab-btn { flex: 1; padding: 15px; background: none; border: none; color: #ffffff !important; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .tab-btn.active { color: #E50914 !important; border-bottom-color: #E50914; background: rgba(229, 9, 20, 0.05) }
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         
@@ -54,6 +54,15 @@
             object-fit: cover;
         }
         .menu-details { padding: 10px; }
+
+        .warung-info-box { 
+        text-align: center; 
+        margin-top: -60px; 
+        position: relative; 
+        z-index: 10; 
+        padding: 0 20px;
+        margin-bottom: 10px; /* Tambahan jarak bawah */
+        }
         
         /* QR & PROFILE */
         .profile-form label { display: block; color: #aaa; margin-top: 15px; font-size: 0.9rem; }
@@ -136,7 +145,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     </div>
 
     <div class="mitra-tabs">
-        <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> Beranda</button>
+        <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> <span>Beranda</span></button>
          <button class="tab-btn" onclick="switchTab('web-orders')"><i class="fa-solid fa-utensils"></i> Pesanan Web</button>
         <button class="tab-btn" onclick="switchTab('qr')"><i class="fa-solid fa-print"></i> QR Meja</button>
         <button class="tab-btn" onclick="switchTab('menu')"><i class="fa-solid fa-utensils"></i> Menu</button>
