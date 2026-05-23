@@ -56,13 +56,56 @@
         .menu-details { padding: 10px; }
 
         .warung-info-box { 
-        text-align: center; 
-        margin-top: -60px; 
+        display: flex; 
+        align-items: flex-end; /* Nama sejajar dengan bagian bawah foto */
+        gap: 15px; 
+        margin-top: -50px; /* Overlap ke banner */
         position: relative; 
         z-index: 10; 
-        padding: 0 20px;
-        margin-bottom: 10px; /* Tambahan jarak bawah */
+        padding: 0 20px; 
+        text-align: left; /* Teks rata kiri */
         }
+
+        .warung-avatar {
+        width: 90px; 
+        height: 90px; 
+        border-radius: 50%;
+        border: 3px solid #121212; 
+        object-fit: cover; 
+        background: #000;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        flex-shrink: 0; /* Mencegah foto jadi gepeng */
+        }
+
+        .text-info-right {
+        padding-bottom: 5px; /* Jarak agar teks tidak terlalu mepet bawah */
+        }
+
+        .text-info-right h2 { 
+        margin: 0; 
+        font-size: 1.4rem; 
+        font-weight: 800; 
+        color: white;
+        line-height: 1.2;
+        }
+
+        .text-info-right small { 
+        color: #aaa; 
+        display: block; 
+        margin-bottom: 5px; 
+        }
+
+    /* Penyesuaian Status Badge agar ikut ke samping */
+        .status-badge-inline {
+        display: inline-block;
+        background: #222;
+        border: 1px solid #444;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        }
+        
         
         /* QR & PROFILE */
         .profile-form label { display: block; color: #aaa; margin-top: 15px; font-size: 0.9rem; }
@@ -109,9 +152,7 @@ input:checked + .slider:before { transform: translateX(26px); }
          <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
              style="position:absolute; top:15px; left:15px; width:50px; z-index:10;">
         
-        <!-- FOTO HEADER -->
-        <img src="" class="mitra-profile-pic" id="header-profile-img" onclick="triggerUpload()" onerror="this.src='https://via.placeholder.com/150'">
-        
+              
       
 <div style="position:absolute; top:20px; right:20px; display:flex; align-items:center; gap:12px; z-index:999;">
     
@@ -133,11 +174,26 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 </div>
     
-    <div class="mitra-controls">
-        <div>
-            <h2 style="margin:0;" id="shop-name-display">Loading...</h2>
-            <small style="color:#aaa;">Stadion Bayuangga Zone</small>
+  <!-- INFO WARUNG GAYA BARU (DITARUH DI BARIS 179) -->
+<div class="warung-info-box" style="display: flex; align-items: flex-end; gap: 15px; margin-top: -45px; position: relative; z-index: 10; padding: 0 20px;">
+    
+    <!-- Foto Profil (Kiri) -->
+    <img src="" id="header-profile-img" class="warung-avatar" onclick="triggerUpload()" 
+         style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid #121212; object-fit: cover; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-shrink: 0;"
+         onerror="this.src='https://placehold.co/150'">
+    
+    <!-- Teks Info (Kanan) -->
+    <div style="padding-bottom: 5px;">
+        <h2 id="shop-name-display" style="margin: 0; font-size: 1.4rem; font-weight: 800; color: white; line-height: 1.2;">Loading...</h2>
+        <small style="color: #aaa; display: block; margin-bottom: 5px;">Stadion Bayuangga Zone</small>
+        
+        <!-- Tombol BUKA/TUTUP Pindah ke sini -->
+        <div id="store-status-btn" onclick="toggleStoreStatus()" style="display: inline-block; background: #222; border: 1px solid #444; padding: 2px 10px; border-radius: 20px; cursor: pointer;">
+             <span id="store-status-text" style="font-size: 0.7rem; font-weight: bold;">...</span>
         </div>
+    </div>
+
+</div>
         <div class="shop-switch open" id="store-status-btn" onclick="toggleStoreStatus()">
             <div class="indicator"></div>
             <span id="store-status-text" style="font-weight:bold; font-size:0.9rem;">BUKA</span>
