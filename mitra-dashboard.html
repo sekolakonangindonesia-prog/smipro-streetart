@@ -77,9 +77,19 @@
 
 /* Tombol Status di samping Nama */
 .status-badge-inline {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #1a1a1a; border: 1px solid #444; padding: 4px 12px;
-    border-radius: 20px; cursor: pointer; font-size: 0.75rem; color: white;
+    display: inline-flex; 
+    align-items: center; 
+    gap: 8px;
+    background: rgba(0,0,0,0.5); /* Dibuat sedikit transparan agar estetik */
+    border: 1px solid #444; 
+    padding: 6px 15px; /* Padding ditingkatkan agar lebih enak dilihat di HP */
+    border-radius: 20px; 
+    cursor: pointer; 
+    font-size: 0.75rem; 
+    color: white;
+    width: fit-content; /* INI KUNCINYA: Supaya tombol tidak panjang/full */
+    margin-top: 8px; /* Memberi jarak dengan nama warung */
+    transition: 0.3s;
 }
 .status-badge-inline.open { border-color: #00ff00; color: #00ff00; }
 .status-badge-inline.closed { border-color: #ff4444; color: #ff4444; }
