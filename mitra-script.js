@@ -105,6 +105,8 @@ function setupBookingListener() {
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
+
+           if (d.status === 'finished') return;
             // Cek Expired
             let isExpired = false;
             if (d.status === 'booked' && d.expiredTime) {
@@ -118,12 +120,13 @@ function setupBookingListener() {
             else if (d.status === 'booked') countBookedTables += qtyMeja;
         });
         
-        // Update Lonceng Notif (Badge)
-        const badge = document.getElementById('web-notif-count');
-        if(badge) {
-            badge.innerText = snapshot.size;
-            badge.style.display = snapshot.size > 0 ? 'block' : 'none';
-        }
+        // --- UPDATE BAGIAN INI AGAR ANGKA LONCENG COCOK ---
+      const badge = document.getElementById('web-notif-count');
+      if(badge) {
+      const jumlahAktif = bookings.length; // Gunakan panjang array yang sudah difilter
+      badge.innerText = jumlahAktif;
+      badge.style.display = jumlahAktif > 0 ? 'block' : 'none';
+         }
 
         // Update UI Statistik
         const totalUsed = countActiveTables + countBookedTables;
@@ -155,6 +158,8 @@ function renderBookings(bookings) {
     bookings.sort((a, b) => (a.status === 'active' ? -1 : 1));
 
     bookings.forEach((b) => {
+        if (b.status === 'finished') return;
+       
         const qty = b.tablesNeeded || 1;
         let nomorMejaTeks = b.tableNum ? (Array.isArray(b.tableNum) ? "MEJA " + b.tableNum.join(", ") : "MEJA " + b.tableNum) : `${qty} MEJA (Pending)`;
         const statusClass = b.status === 'active' ? 'active' : 'waiting';
