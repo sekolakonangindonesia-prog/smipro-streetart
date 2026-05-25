@@ -1,5 +1,5 @@
 /* =========================================
-   MITRA SCRIPT - SMIPRO (FINAL CLEAN VERSION)
+   MITRA SCRIPT - SMIPRO (FIXED VERSION)
    ========================================= */
 
 // 1. IMPORT FIREBASE
@@ -22,9 +22,6 @@ let warungTotalCapacity = 15;
 let currentWarungName = ""; 
 let unsubscribeBooking = null; 
 let isInitialLoad = true;
-
-window.currentActiveBookings = []; 
-window.currentActiveOrders = []; 
 
 const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 const LOGO_STREETART = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
@@ -96,7 +93,6 @@ function setupBookingListener() {
         let countBookedTables = 0; 
         const now = new Date();
 
-        // LOGIKA BUNYI SAAT ADA DATA BARU
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added" && !isInitialLoad) {
                 notifSound.play();
@@ -108,9 +104,7 @@ function setupBookingListener() {
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
-
-           if (d.status === 'finished') return;
-            // Cek Expired
+            if (d.status === 'finished') return;
             let isExpired = false;
             if (d.status === 'booked' && d.expiredTime) {
                 if (now > new Date(d.expiredTime)) isExpired = true;
@@ -123,34 +117,16 @@ function setupBookingListener() {
             else if (d.status === 'booked') countBookedTables += qtyMeja;
         });
 
-    window.currentActiveBookings = bookings.map(b => ({
-            id: b.id, type: 'booking', judul: 'Reservasi Baru', 
+        // UPDATE RIWAYAT BOOKING (HANYA SATU KALI)
+        window.currentActiveBookings = bookings.map(b => ({
+            id: b.id, 
+            type: 'booking', 
+            judul: 'Reservasi Baru', 
             detail: `Tamu: ${b.customerName} (${b.tablesNeeded || 1} Meja)`,
             time: b.timestamp ? b.timestamp.toMillis() : Date.now(), 
             target: 'home'
         }));
         window.refreshNotifBell();
-       
-         // --- LOGIKA RIWAYAT BOOKING (DI BAWAH BARIS 121) ---
-  window.currentActiveBookings = bookings.map(b => ({
-            id: b.id, 
-            type: 'booking', 
-            judul: 'Reservasi Baru', 
-            // Detail ditambahkan jumlah meja
-            detail: `Tamu: ${b.customerName} (${b.tablesNeeded || 1} Meja)`,
-            time: b.timestamp?.toMillis() || Date.now(), 
-            target: 'home'
-        }));
-        window.refreshNotifBell();
-   // --------------------------------------------------
-       
-        // --- UPDATE BAGIAN INI AGAR ANGKA LONCENG COCOK ---
-      const badge = document.getElementById('web-notif-count');
-      if(badge) {
-      const jumlahAktif = bookings.length; // Gunakan panjang array yang sudah difilter
-      badge.innerText = jumlahAktif;
-      badge.style.display = jumlahAktif > 0 ? 'block' : 'none';
-         }
 
         // Update UI Statistik
         const totalUsed = countActiveTables + countBookedTables;
@@ -183,7 +159,6 @@ function renderBookings(bookings) {
 
     bookings.forEach((b) => {
         if (b.status === 'finished') return;
-       
         const qty = b.tablesNeeded || 1;
         let nomorMejaTeks = b.tableNum ? (Array.isArray(b.tableNum) ? "MEJA " + b.tableNum.join(", ") : "MEJA " + b.tableNum) : `${qty} MEJA (Pending)`;
         const statusClass = b.status === 'active' ? 'active' : 'waiting';
@@ -195,7 +170,7 @@ function renderBookings(bookings) {
                 <small>${b.bookingCode} | ${qty} Meja</small>
                 <div style="display:flex; gap:5px; margin-top:10px;">
                     ${b.status === 'active' ? 
-                        `<button class="btn-primary" style="background:white; color:black; width:100%;" onclick="finishBooking('${b.id}', ${qty})">Selesai / Bayar</button>` : 
+                        `<button class="btn-primary" style="background:white; color:black; width:100%;" onclick="finishBooking('${b.id}', ${qty})">Selesai/Bayar</button>` : 
                         `<button class="btn-delete" style="width:100%;" onclick="cancelBooking('${b.id}', ${qty})">Batalkan</button>`
                     }
                 </div>
@@ -206,83 +181,40 @@ function renderBookings(bookings) {
 // --- 6. LOGIKA PESANAN MAKANAN (WEB ORDERS) ---
 function listenToWebOrders() {
     const warungId = localStorage.getItem('mitraId');
-    // Ambil data pesanan yang statusnya BENAR-BENAR 'pending'
-    const q = query(
-        collection(db, "warung_orders"), 
-        where("warungId", "==", warungId), 
-        where("status", "==", "pending")
-    );
+    const q = query(collection(db, "warung_orders"), where("warungId", "==", warungId), where("status", "==", "pending"));
 
     onSnapshot(q, (snapshot) => {
         const container = document.getElementById('web-orders-container');
-        const badge = document.getElementById('web-notif-count');
-        
         if(!container) return;
 
-       window.currentActiveOrders = snapshot.docs.map(doc => {
-    const o = doc.data(); 
-    return { 
-        id: doc.id, 
-        type: 'order', 
-        judul: 'Pesanan Makanan', 
-        detail: `Meja: ${o.tableNum || 'T.Away'}`,
-        time: o.timestamp ? o.timestamp.toMillis() : Date.now(), 
-        target: 'web-orders' 
-    };
-});
-
-// Panggil Otak Pusat Notifikasi untuk update angka & list
-window.refreshNotifBell(); 
-       
-         // --- TEMPEL KODE INI DI BARIS 217 ---
-      window.currentActiveOrders = snapshot.docs.map(doc => {
-          const o = doc.data(); 
-          return { 
-              id: doc.id, 
-              type: 'order', 
-              judul: 'Pesanan Makanan', 
-              detail: `Meja: ${o.tableNum || 'T.Away'}`,
-              time: o.timestamp ? o.timestamp.toMillis() : Date.now(), 
-              target: 'web-orders' 
-          };
-      });
-      window.refreshNotifBell();
-      // ------------------------------------
+        // UPDATE RIWAYAT MAKANAN (HANYA SATU KALI)
+        window.currentActiveOrders = snapshot.docs.map(doc => {
+            const o = doc.data(); 
+            return { 
+                id: doc.id, 
+                type: 'order', 
+                judul: 'Pesanan Makanan', 
+                detail: `Meja: ${o.tableNum || 'T.Away'}`,
+                time: o.timestamp ? o.timestamp.toMillis() : Date.now(), 
+                target: 'web-orders' 
+            };
+        });
+        window.refreshNotifBell();
        
         if (snapshot.empty) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:50px 20px; color:#555;">
-                    <i class="fa-solid fa-utensils" style="font-size:3rem; margin-bottom:15px; opacity:0.2;"></i>
-                    <p>Tidak ada pesanan aktif saat ini.</p>
-                </div>`;
+            container.innerHTML = `<div style="text-align:center; padding:50px 20px; color:#555;"><i class="fa-solid fa-utensils" style="font-size:3rem; margin-bottom:15px; opacity:0.2;"></i><p>Tidak ada pesanan.</p></div>`;
             return;
         }
 
-        // Tampilkan daftar pesanan jika ada
         container.innerHTML = '<h3 style="margin-top:0; color:white; padding:0 10px;">Daftar Pesanan Baru</h3>';
         snapshot.forEach(docSnap => {
             const order = docSnap.data();
             container.innerHTML += `
                 <div class="order-card-web" style="background:#1a1a1a; border-left:4px solid gold; padding:15px; border-radius:8px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <b>Meja: ${order.tableNum || 'T.Away'}</b>
-                        <small style="color:#aaa;">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
-                    </div>
-                    <div style="margin:10px 0; color:#eee;">
-                        ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
-                    </div>
-                    <button onclick="handleOrderAction('${docSnap.id}', 'diproses')" 
-                            style="background:#00ff00; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">
-                        TERIMA & PROSES
-                    </button>
+                    <b>Meja: ${order.tableNum || 'T.Away'}</b><br>
+                    ${order.items.map(i => `• ${i.name} (x${i.qty})`).join('<br>')}
+                    <button onclick="handleOrderAction('${docSnap.id}', 'diproses')" style="background:#00ff00; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; width:100%; margin-top:10px;">TERIMA</button>
                 </div>`;
-        });
-
-        // Bunyikan suara hanya jika ada TAMBAHAN data baru (added)
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added" && !isInitialLoad) {
-                notifSound.play().catch(e => console.log("Izin suara diperlukan"));
-            }
         });
     });
 }
@@ -291,7 +223,9 @@ window.refreshNotifBell();
    7. FUNGSI-FUNGSI GLOBAL (LOGIKA LONCENG FB)
    ========================================= */
 
-// A. Fungsi Pindah Tab
+window.currentActiveBookings = [];
+window.currentActiveOrders = [];
+
 window.switchTab = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
@@ -308,49 +242,42 @@ window.switchTab = function(tabId) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// B. Fungsi Buka/Tutup Riwayat (FB STYLE)
 window.toggleNotifPanel = function(e) {
     if(e) e.stopPropagation();
     const panel = document.getElementById('notif-panel');
     const badge = document.getElementById('web-notif-count');
     if(!panel) return;
-
     const isVisible = panel.style.display === 'flex';
     panel.style.display = isVisible ? 'none' : 'flex';
-
-    if (!isVisible) { // Jika panel baru saja DIBUKA
+    if (!isVisible) {
         localStorage.setItem('lastReadNotifTime', Date.now()); 
         if(badge) badge.style.display = 'none';
         window.refreshNotifBell();
     }
 };
 
-// C. Klik di luar panel otomatis tutup
 document.onclick = function() {
     const panel = document.getElementById('notif-panel');
     if(panel) panel.style.display = 'none';
 };
 
-// D. Mesin Pengisi Daftar Riwayat di Lonceng
 window.refreshNotifBell = function() {
     const listContainer = document.getElementById('notif-list-history');
     const badge = document.getElementById('web-notif-count');
     if(!listContainer) return;
 
     const lastReadTime = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
-    const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
+    const allNotifs = [...(window.currentActiveBookings || []), ...(window.currentActiveOrders || [])];
     allNotifs.sort((a, b) => b.time - a.time);
 
-    // Hitung berapa yang "Benar-benar Baru" (setelah jam buka lonceng terakhir)
     const unreadCount = allNotifs.filter(n => n.time > lastReadTime).length;
-
     if(badge) {
         badge.innerText = unreadCount;
         badge.style.display = unreadCount > 0 ? 'block' : 'none';
     }
 
     if(allNotifs.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#555; font-size:0.8rem;">Tidak ada pemberitahuan baru.</p>';
+        listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#555; font-size:0.8rem;">Tidak ada pemberitahuan.</p>';
         return;
     }
 
@@ -359,7 +286,6 @@ window.refreshNotifBell = function() {
         const color = n.type === 'booking' ? '#E50914' : '#FFD700';
         const icon = n.type === 'booking' ? 'fa-calendar-check' : 'fa-utensils';
         const isNew = n.time > lastReadTime ? 'border-right: 3px solid #00d2ff;' : '';
-
         listContainer.innerHTML += `
             <div class="notif-item" style="display:flex; gap:12px; padding:12px; border-bottom:1px solid #222; cursor:pointer; ${isNew}" onclick="window.switchTab('${n.target}')">
                 <div style="width:35px; height:35px; border-radius:50%; background:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -373,45 +299,36 @@ window.refreshNotifBell = function() {
     });
 }
 
-// 2. Fungsi Kembali ke Home (FIX: Tambah tanda miring ganda)
+// 2. Fungsi Kembali ke Home (FIXED Karakter)
 window.goHome = function() {
     window.location.href = 'index.html';
 };
 
 // 3. Fungsi Logout
 window.prosesLogout = function() {
-    if(confirm("Apakah Anda yakin ingin keluar?")) {
-        localStorage.clear();
-        window.location.href = 'index.html';
-    }
+    if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; }
 };
 
 window.updateOrderSystemStatus = async function(isActive) {
     try {
-        await updateDoc(doc(db, "warungs", WARUNG_ID), {
-            enableOrder: isActive
-        });
-        console.log("Fitur Order berubah jadi:", isActive);
-    } catch (e) {
-        alert("Gagal update status");
-        document.getElementById('toggle-order-web').checked = !isActive;
-    }
+        await updateDoc(doc(db, "warungs", WARUNG_ID), { enableOrder: isActive });
+    } catch (e) { alert("Gagal update status"); }
 };
 
 window.handleOrderAction = async function(id, status) {
     await updateDoc(doc(db, "warung_orders", id), { status: status });
-}
+};
 
 window.toggleStoreStatus = async function() {
     const btn = document.getElementById('store-status-btn');
-    const newStatus = btn.classList.contains('open') ? 'closed' : 'open';
+    const newStatus = btn && btn.classList.contains('open') ? 'closed' : 'open';
     await updateDoc(doc(db, "warungs", WARUNG_ID), { status: newStatus });
-}
+};
 
 window.editTableCount = async function() {
     let count = prompt("Total Meja Baru:", warungTotalCapacity);
     if(count) await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: parseInt(count) });
-}
+};
 
 window.saveProfile = async function() {
     try {
@@ -424,129 +341,51 @@ window.saveProfile = async function() {
         });
         alert("Profil Tersimpan!");
     } catch (e) { alert(e.message); }
-}
+};
 
-// --- 1. DEFINISI WADAH DATA (Ditempel ke window agar tidak error) ---
+// FINISH BOOKING LOGIC
 window.selectedBookingId = null;
 window.selectedTableCount = 0;
-
-// 2. FUNGSI SAAT TOMBOL SELESAI DIKLIK
 window.finishBooking = function(docId, tableQty) {
     window.selectedBookingId = docId;
     window.selectedTableCount = parseInt(tableQty) || 1;
-    
-    // Reset input nominal di modal
-    const inputNominal = document.getElementById('trx-amount');
-    if(inputNominal) inputNominal.value = ''; 
-    
-    // Munculkan Modal
-    const modal = document.getElementById('modal-finish-transaction');
-    if(modal) modal.style.display = 'flex';
-}
+    document.getElementById('trx-amount').value = ''; 
+    document.getElementById('modal-finish-transaction').style.display = 'flex';
+};
 
-// 3. TUTUP MODAL
-window.closeFinishModal = function() {
-    const modal = document.getElementById('modal-finish-transaction');
-    if(modal) modal.style.display = 'none';
-    window.selectedBookingId = null;
-}
+window.closeFinishModal = function() { 
+    document.getElementById('modal-finish-transaction').style.display = 'none'; 
+};
 
-// 4. EKSEKUSI SIMPAN TRANSAKSI (Selesai/Bayar)
 window.submitTransaction = async function() {
     const amount = document.getElementById('trx-amount').value;
-    if(!amount || amount <= 0) return alert("Masukkan nominal transaksi yang valid!");
-    
-    if(!confirm(`Simpan transaksi Rp ${parseInt(amount).toLocaleString()}?`)) return;
-
+    if(!amount || amount <= 0) return alert("Nominal tidak valid!");
     try {
-        const bookingRef = doc(db, "bookings", window.selectedBookingId);
-        const warungRef = doc(db, "warungs", WARUNG_ID);
+        await updateDoc(doc(db, "bookings", window.selectedBookingId), { status: 'finished', revenue: parseInt(amount), finishedAt: new Date() });
+        await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-window.selectedTableCount) });
+        alert("Berhasil!"); window.closeFinishModal();
+    } catch (e) { alert(e.message); }
+};
 
-        // Update status di Firebase
-        await updateDoc(bookingRef, {
-            status: 'finished',
-            revenue: parseInt(amount),
-            finishedAt: new Date()
-        });
-
-        // Kembalikan stok meja warung
-        await updateDoc(warungRef, {
-            bookedCount: increment(-window.selectedTableCount) 
-        });
-
-        alert("Berhasil! Meja telah kosong kembali.");
-        window.closeFinishModal();
-
-    } catch (e) {
-        alert("Terjadi kesalahan: " + e.message);
-    }
-}
-
-// 5. FUNGSI BATALKAN PESANAN
 window.cancelBooking = async function(id, qty) {
-    if(!confirm("Yakin ingin membatalkan reservasi ini?")) return;
-    try {
+    if(confirm("Batalkan?")) {
         await deleteDoc(doc(db, "bookings", id));
-        await updateDoc(doc(db, "warungs", WARUNG_ID), {
-            bookedCount: increment(-parseInt(qty))
-        });
-        alert("Booking telah dibatalkan.");
-    } catch (e) {
-        alert("Gagal membatalkan: " + e.message);
+        await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-parseInt(qty)) });
     }
-}
+};
 
-// HELPER: COMPRESS & UPLOAD
-function compressImage(file, maxWidth, callback) {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const factor = maxWidth / img.width;
-            canvas.width = maxWidth; canvas.height = img.height * factor;
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            callback(canvas.toDataURL('image/jpeg', 0.7));
-        };
-    };
-}
-
+// IMAGE & QR HELPERS
+window.triggerUpload = () => document.getElementById('file-input').click();
 window.previewImage = (input) => {
     if (input.files && input.files[0]) {
-        compressImage(input.files[0], 300, async (base64) => {
-            await updateDoc(doc(db, "warungs", WARUNG_ID), { img: base64 });
-            alert("Foto Diperbarui!");
-        });
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            await updateDoc(doc(db, "warungs", WARUNG_ID), { img: e.target.result });
+            alert("Foto Update!");
+        };
+        reader.readAsDataURL(input.files[0]);
     }
-}
-
-window.previewMenuImage = (input) => {
-    if (input.files && input.files[0]) {
-        compressImage(input.files[0], 400, (base64) => {
-            currentMenuImageBase64 = base64;
-            document.getElementById('preview-menu-img').src = base64;
-        });
-    }
-}
-
-// MENU MANAGEMENT
-window.addMenu = async function() {
-    const name = document.getElementById('new-menu-name').value;
-    const price = document.getElementById('new-menu-price').value;
-    if(!name || !price) return alert("Isi Nama & Harga!");
-    await addDoc(collection(db, "menus"), { warungId: WARUNG_ID, name, price, img: currentMenuImageBase64 || "" });
-    document.getElementById('modal-menu').style.display = 'none';
-    alert("Menu Ditambah!");
-}
-window.deleteMenu = async function(id) { if(confirm("Hapus menu?")) await deleteDoc(doc(db, "menus", id)); }
-
-// QR & OTHERS
-window.triggerUpload = () => document.getElementById('file-input').click();
-window.triggerMenuUpload = () => document.getElementById('menu-file-input').click();
-window.goHome = () => window.location.href = 'index.html';
-window.prosesLogout = () => { if(confirm("Keluar?")) { localStorage.clear(); window.location.href = 'index.html'; } };
+};
 
 window.renderQRCodes = function() {
     const container = document.getElementById('qr-container');
@@ -555,9 +394,9 @@ window.renderQRCodes = function() {
     for (let i = 1; i <= warungTotalCapacity; i++) {
         const qrData = `${window.location.origin}/checkin.html?w=${WARUNG_ID}&t=${i}`;
         const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
-        container.innerHTML += `<div class="qr-card"><h4>MEJA ${i}</h4><img src="${qrSrc}"><br><button onclick="window.location.href='${qrSrc}'">Unduh</button></div>`;
+        container.innerHTML += `<div class="qr-card" style="background:white; padding:10px; border-radius:10px; text-align:center; color:black;"><h4>M${i}</h4><img src="${qrSrc}" style="width:100px;"></div>`;
     }
-}
+};
 
 function kirimNotifKeHP(pesan) {
     if (Notification.permission === "granted") {
@@ -568,14 +407,3 @@ function kirimNotifKeHP(pesan) {
 async function updateWarungTableCount(totalUsed) {
     try { await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: totalUsed }); } catch (e) {}
 }
-
-const qMenu = query(collection(db, "menus"), where("warungId", "==", WARUNG_ID));
-onSnapshot(qMenu, (snap) => {
-    const container = document.getElementById('menu-list-container');
-    if(!container) return;
-    container.innerHTML = '';
-    snap.forEach(dSnap => {
-        const m = dSnap.data();
-        container.innerHTML += `<div class="menu-card"><img src="${m.img||'https://via.placeholder.com/150'}"><div class="menu-details"><b>${m.name}</b><br><span style="color:gold;">Rp ${parseInt(m.price).toLocaleString()}</span><br><button class="btn-delete" onclick="deleteMenu('${dSnap.id}')">Hapus</button></div></div>`;
-    });
-});
