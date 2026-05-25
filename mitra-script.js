@@ -121,15 +121,16 @@ function setupBookingListener() {
         });
 
          // --- LOGIKA RIWAYAT BOOKING (DI BAWAH BARIS 121) ---
-   window.currentActiveBookings = bookings.map(b => ({
-       id: b.id, 
-       type: 'booking', 
-       judul: 'Reservasi Baru', 
-       detail: `Tamu: ${b.customerName}`,
-       time: b.timestamp?.toMillis() || Date.now(), 
-       target: 'home'
-      }));
-   window.refreshNotifBell();
+  window.currentActiveBookings = bookings.map(b => ({
+            id: b.id, 
+            type: 'booking', 
+            judul: 'Reservasi Baru', 
+            // Detail ditambahkan jumlah meja
+            detail: `Tamu: ${b.customerName} (${b.tablesNeeded || 1} Meja)`,
+            time: b.timestamp?.toMillis() || Date.now(), 
+            target: 'home'
+        }));
+        window.refreshNotifBell();
    // --------------------------------------------------
        
         // --- UPDATE BAGIAN INI AGAR ANGKA LONCENG COCOK ---
@@ -302,10 +303,9 @@ window.toggleNotifPanel = function(e) {
     const isVisible = panel.style.display === 'flex';
     panel.style.display = isVisible ? 'none' : 'flex';
 
-    // --- TAMBAHAN: Jika panel dibuka, sembunyikan angka notifikasi ---
+   // --- TAMBAHAN: Jika panel dibuka, sembunyikan angka notifikasi ---
     if (!isVisible && badge) {
-        badge.style.display = 'none';
-        // Opsional: kita anggap semua sudah "Last Seen"
+        badge.style.display = 'none'; // Langsung hilangkan angka merahnya
     }
 };
 
