@@ -307,50 +307,74 @@ window.saveProfile = async function() {
     } catch (e) { alert(e.message); }
 }
 
-// 1. FUNGSI DIPANGGIL SAAT TOMBOL SELESAI DIKLIK (FIX: Tambah window. agar tombol di HTML jalan)
+// --- 1. DEFINISI WADAH DATA (Ditempel ke window agar tidak error) ---
+window.selectedBookingId = null;
+window.selectedTableCount = 0;
+
+// 2. FUNGSI SAAT TOMBOL SELESAI DIKLIK
 window.finishBooking = function(docId, tableQty) {
-    selectedBookingId = docId;
-    selectedTableCount = parseInt(tableQty) || 1;
-    document.getElementById('trx-amount').value = ''; 
-    document.getElementById('modal-finish-transaction').style.display = 'flex';
+    window.selectedBookingId = docId;
+    window.selectedTableCount = parseInt(tableQty) || 1;
+    
+    // Reset input nominal di modal
+    const inputNominal = document.getElementById('trx-amount');
+    if(inputNominal) inputNominal.value = ''; 
+    
+    // Munculkan Modal
+    const modal = document.getElementById('modal-finish-transaction');
+    if(modal) modal.style.display = 'flex';
 }
 
-// 2. TUTUP MODAL (FIX: Tambah window.)
+// 3. TUTUP MODAL
 window.closeFinishModal = function() {
-    document.getElementById('modal-finish-transaction').style.display = 'none';
-    selectedBookingId = null;
+    const modal = document.getElementById('modal-finish-transaction');
+    if(modal) modal.style.display = 'none';
+    window.selectedBookingId = null;
 }
 
-// 3. EKSEKUSI SIMPAN (FIX: Tambah window.)
+// 4. EKSEKUSI SIMPAN TRANSAKSI (Selesai/Bayar)
 window.submitTransaction = async function() {
     const amount = document.getElementById('trx-amount').value;
     if(!amount || amount <= 0) return alert("Masukkan nominal transaksi yang valid!");
+    
     if(!confirm(`Simpan transaksi Rp ${parseInt(amount).toLocaleString()}?`)) return;
 
     try {
-        await updateDoc(doc(db, "bookings", selectedBookingId), {
+        const bookingRef = doc(db, "bookings", window.selectedBookingId);
+        const warungRef = doc(db, "warungs", WARUNG_ID);
+
+        // Update status di Firebase
+        await updateDoc(bookingRef, {
             status: 'finished',
             revenue: parseInt(amount),
             finishedAt: new Date()
         });
-        await updateDoc(doc(db, "warungs", WARUNG_ID), {
-            bookedCount: increment(-selectedTableCount) 
+
+        // Kembalikan stok meja warung
+        await updateDoc(warungRef, {
+            bookedCount: increment(-window.selectedTableCount) 
         });
-        alert("Transaksi Berhasil!");
+
+        alert("Berhasil! Meja telah kosong kembali.");
         window.closeFinishModal();
-    } catch (e) { alert(e.message); }
+
+    } catch (e) {
+        alert("Terjadi kesalahan: " + e.message);
+    }
 }
 
-// --- FUNGSI BATALKAN PESANAN (FIX: Tambah window.) ---
-window.cancelBooking = async function(docId, tableQty) {
-    if(!confirm("Yakin ingin membatalkan?")) return;
+// 5. FUNGSI BATALKAN PESANAN
+window.cancelBooking = async function(id, qty) {
+    if(!confirm("Yakin ingin membatalkan reservasi ini?")) return;
     try {
-        await deleteDoc(doc(db, "bookings", docId));
+        await deleteDoc(doc(db, "bookings", id));
         await updateDoc(doc(db, "warungs", WARUNG_ID), {
-            bookedCount: increment(-parseInt(tableQty))
+            bookedCount: increment(-parseInt(qty))
         });
-        alert("Pesanan Dibatalkan!");
-    } catch (e) { alert(e.message); }
+        alert("Booking telah dibatalkan.");
+    } catch (e) {
+        alert("Gagal membatalkan: " + e.message);
+    }
 }
 
 // HELPER: COMPRESS & UPLOAD
