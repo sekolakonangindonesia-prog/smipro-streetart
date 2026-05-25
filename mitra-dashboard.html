@@ -302,11 +302,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     <script type="module" src="mitra-script.js"></script>
     
   <!-- === TOMBOL KHUSUS ADMIN (MODAL SUPER USER) === -->
-    <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
-            <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
-        </button>
-    </div>
+    <div id="admin-floating-btn">
+    <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
+    </button>
+</div>
 
      <!-- MODAL SELESAI TRANSAKSI (INPUT OMZET) -->
     <div id="modal-finish-transaction" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:5000; align-items:center; justify-content:center; padding:20px;">
