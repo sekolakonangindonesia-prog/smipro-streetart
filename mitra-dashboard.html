@@ -155,13 +155,25 @@
 .notif-item-body small { font-size: 0.7rem; color: #888; }
 
 /* Posisi Tombol Admin di Kiri Bawah agar tidak tertutup */
+/* --- FIX TOMBOL ADMIN MELAYANG --- */
 #admin-floating-btn {
-    display: none; position: fixed; 
-    left: 20px; bottom: 20px; z-index: 9999;
+    display: none; /* Muncul lewat JS jika admin menyamar */
+    position: fixed;
+    left: 20px; 
+    bottom: 25px; /* Default di laptop */
+    z-index: 999999; /* Pastikan di baris terdepan */
 }
 
+/* Khusus Tampilan HP */
 @media (max-width: 600px) {
-    #admin-floating-btn { bottom: 85px; left: 15px; } 
+    #admin-floating-btn {
+        bottom: 85px; /* Ditinggikan agar di atas tombol merah Booking Meja */
+        left: 15px;
+    }
+    #admin-floating-btn button {
+        padding: 8px 15px !important;
+        font-size: 0.75rem !important;
+    }
 }
 /* Switch Toggle untuk Aktifkan Order Web */
 .order-toggle-box { background: #252525; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
@@ -372,9 +384,9 @@ input:checked + .slider:before { transform: translateX(26px); }
 
     <script type="module" src="mitra-script.js"></script>
     
-  <!-- === TOMBOL KHUSUS ADMIN (MODAL SUPER USER) === -->
-    <div id="admin-floating-btn">
-    <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
+  <!-- TOMBOL KHUSUS ADMIN (MODAL SUPER USER) -->
+<div id="admin-floating-btn">
+    <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,0.8); display:flex; align-items:center; gap:8px;">
         <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
     </button>
 </div>
