@@ -297,15 +297,22 @@ window.currentActiveOrders = [];
 window.toggleNotifPanel = function(e) {
     if(e) e.stopPropagation();
     const panel = document.getElementById('notif-panel');
-    const badge = document.getElementById('web-notif-count'); // Ambil elemen angka merah
+    const badge = document.getElementById('web-notif-count');
     if(!panel) return;
 
     const isVisible = panel.style.display === 'flex';
     panel.style.display = isVisible ? 'none' : 'flex';
 
-   // --- TAMBAHAN: Jika panel dibuka, sembunyikan angka notifikasi ---
-    if (!isVisible && badge) {
-        badge.style.display = 'none'; // Langsung hilangkan angka merahnya
+    // --- REVISI DI SINI ---
+    if (!isVisible) { // Jika panel baru saja DIBUKA
+        // Simpan waktu sekarang ke memori browser sebagai "Waktu Baca Terakhir"
+        localStorage.setItem('lastReadNotifTime', Date.now()); 
+        
+        // Sembunyikan angka merah
+        if(badge) badge.style.display = 'none';
+        
+        // Refresh daftar agar status "unread" hilang (opsional visual)
+        window.refreshNotifBell();
     }
 };
 
@@ -321,16 +328,19 @@ window.refreshNotifBell = function() {
     const badge = document.getElementById('web-notif-count');
     if(!listContainer) return;
 
-    // Gabungkan riwayat Booking dan Pesanan Makanan
+    // Ambil waktu terakhir Anda membuka lonceng dari memori browser
+    const lastReadTime = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
+
     const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
-    
-    // Urutkan: Yang paling baru masuk ada di paling atas
     allNotifs.sort((a, b) => b.time - a.time);
 
-    // Update Angka di Lonceng (Badge Merah)
+    // --- LOGIKA HITUNG BARU: Hanya hitung yang jam-nya lebih baru dari lastReadTime ---
+    const unreadCount = allNotifs.filter(n => n.time > lastReadTime).length;
+
     if(badge) {
-        badge.innerText = allNotifs.length;
-        badge.style.display = allNotifs.length > 0 ? 'block' : 'none';
+        badge.innerText = unreadCount;
+        // Hanya tampilkan badge jika ada pesanan yang BENAR-BENAR belum dilihat
+        badge.style.display = unreadCount > 0 ? 'block' : 'none';
     }
 
     if(allNotifs.length === 0) {
@@ -338,14 +348,16 @@ window.refreshNotifBell = function() {
         return;
     }
 
-    // Gambar ulang isi daftar di dalam lonceng
     listContainer.innerHTML = '';
     allNotifs.forEach(n => {
         const color = n.type === 'booking' ? '#E50914' : '#FFD700';
         const icon = n.type === 'booking' ? 'fa-calendar-check' : 'fa-utensils';
         
+        // Beri tanda khusus jika notif ini "Paling Baru" (opsional visual)
+        const isNew = n.time > lastReadTime ? 'border-right: 3px solid #00d2ff;' : '';
+
         listContainer.innerHTML += `
-            <div class="notif-item" style="display:flex; gap:12px; padding:12px; border-bottom:1px solid #222; cursor:pointer;" onclick="window.switchTab('${n.target}')">
+            <div class="notif-item" style="display:flex; gap:12px; padding:12px; border-bottom:1px solid #222; cursor:pointer; ${isNew}" onclick="window.switchTab('${n.target}')">
                 <div style="width:35px; height:35px; border-radius:50%; background:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid ${icon}" style="color:black; font-size:0.8rem;"></i>
                 </div>
@@ -353,8 +365,7 @@ window.refreshNotifBell = function() {
                     <b style="display:block; font-size:0.85rem; color:white;">${n.judul}</b>
                     <small style="color:#aaa; font-size:0.75rem;">${n.detail}</small>
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 }
 
