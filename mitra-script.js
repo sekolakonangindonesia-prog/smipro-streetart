@@ -94,13 +94,22 @@ function setupBookingListener() {
         const now = new Date();
 
         snapshot.docChanges().forEach((change) => {
+            const d = change.doc.data();
+            
+            // 1. Jika ada Reservasi Baru (Warna Kuning)
             if (change.type === "added" && !isInitialLoad) {
                 notifSound.play();
-                const newB = change.doc.data();
-                kirimNotifKeHP(`Reservasi Baru: ${newB.customerName}`);
+                window.tampilkanPesananBaru('booking', 'Reservasi Meja Baru', `Tamu: ${d.customerName}`, 'home');
+            }
+
+            // 2. Jika Status Berubah (Check-In / Tamu Datang)
+            if (change.type === "modified" && d.status === 'active') {
+                notifSound.play();
+                window.tampilkanPesananBaru('booking', 'Tamu Telah Datang', `Tamu ${d.customerName} berhasil Check-In`, 'home');
             }
         });
         isInitialLoad = false;
+// ---------------------------------
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
