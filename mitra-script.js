@@ -119,7 +119,19 @@ function setupBookingListener() {
             if(d.status === 'active') countActiveTables += qtyMeja;
             else if (d.status === 'booked') countBookedTables += qtyMeja;
         });
-        
+
+         // --- LOGIKA RIWAYAT BOOKING (DI BAWAH BARIS 121) ---
+   window.currentActiveBookings = bookings.map(b => ({
+       id: b.id, 
+       type: 'booking', 
+       judul: 'Reservasi Baru', 
+       detail: `Tamu: ${b.customerName}`,
+       time: b.timestamp?.toMillis() || Date.now(), 
+       target: 'home'
+      }));
+   window.refreshNotifBell();
+   // --------------------------------------------------
+       
         // --- UPDATE BAGIAN INI AGAR ANGKA LONCENG COCOK ---
       const badge = document.getElementById('web-notif-count');
       if(badge) {
@@ -203,6 +215,21 @@ function listenToWebOrders() {
             badge.style.display = jumlahPesanan > 0 ? 'block' : 'none';
         }
 
+         // --- TEMPEL KODE INI DI BARIS 217 ---
+      window.currentActiveOrders = snapshot.docs.map(doc => {
+          const o = doc.data(); 
+          return { 
+              id: doc.id, 
+              type: 'order', 
+              judul: 'Pesanan Makanan', 
+              detail: `Meja: ${o.tableNum || 'T.Away'}`,
+              time: o.timestamp ? o.timestamp.toMillis() : Date.now(), 
+              target: 'web-orders' 
+          };
+      });
+      window.refreshNotifBell();
+      // ------------------------------------
+       
         if (snapshot.empty) {
             container.innerHTML = `
                 <div style="text-align:center; padding:50px 20px; color:#555;">
@@ -258,6 +285,70 @@ window.switchTab = function(tabId) {
     if(tabId === 'qr') renderQRCodes();
    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
+// --- KODE LOGIKA RIWAYAT NOTIFIKASI (TARUH DI BARIS 262) ---
+
+// 1. Wadah Data (Agar data tidak hilang saat pindah tab)
+window.currentActiveBookings = [];
+window.currentActiveOrders = [];
+
+// 2. Fungsi Buka/Tutup Panel (Gaya Facebook)
+window.toggleNotifPanel = function(e) {
+    if(e) e.stopPropagation();
+    const panel = document.getElementById('notif-panel');
+    if(!panel) return;
+    const isVisible = panel.style.display === 'flex';
+    panel.style.display = isVisible ? 'none' : 'flex';
+};
+
+// Klik di mana saja untuk menutup panel
+document.addEventListener('click', () => {
+    const panel = document.getElementById('notif-panel');
+    if(panel) panel.style.display = 'none';
+});
+
+// 3. Mesin Pengisi Daftar Riwayat di Lonceng
+window.refreshNotifBell = function() {
+    const listContainer = document.getElementById('notif-list-history');
+    const badge = document.getElementById('web-notif-count');
+    if(!listContainer) return;
+
+    // Gabungkan riwayat Booking dan Pesanan Makanan
+    const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
+    
+    // Urutkan: Yang paling baru masuk ada di paling atas
+    allNotifs.sort((a, b) => b.time - a.time);
+
+    // Update Angka di Lonceng (Badge Merah)
+    if(badge) {
+        badge.innerText = allNotifs.length;
+        badge.style.display = allNotifs.length > 0 ? 'block' : 'none';
+    }
+
+    if(allNotifs.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#555; font-size:0.8rem;">Tidak ada pemberitahuan baru.</p>';
+        return;
+    }
+
+    // Gambar ulang isi daftar di dalam lonceng
+    listContainer.innerHTML = '';
+    allNotifs.forEach(n => {
+        const color = n.type === 'booking' ? '#E50914' : '#FFD700';
+        const icon = n.type === 'booking' ? 'fa-calendar-check' : 'fa-utensils';
+        
+        listContainer.innerHTML += `
+            <div class="notif-item" style="display:flex; gap:12px; padding:12px; border-bottom:1px solid #222; cursor:pointer;" onclick="window.switchTab('${n.target}')">
+                <div style="width:35px; height:35px; border-radius:50%; background:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i class="fa-solid ${icon}" style="color:black; font-size:0.8rem;"></i>
+                </div>
+                <div style="flex:1; text-align:left;">
+                    <b style="display:block; font-size:0.85rem; color:white;">${n.judul}</b>
+                    <small style="color:#aaa; font-size:0.75rem;">${n.detail}</small>
+                </div>
+            </div>
+        `;
+    });
+}
 
 // 2. Fungsi Kembali ke Home (FIX: Tambah tanda miring ganda)
 window.goHome = function() {
