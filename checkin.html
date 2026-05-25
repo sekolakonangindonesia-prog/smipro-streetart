@@ -248,49 +248,93 @@
             el.innerHTML = html || "<span style='color:red'>Penuh Semua</span>";
         }
 
-       // 5. AKSI: WALK-IN (ORANG DATANG LANGSUNG)
-        window.submitWalkIn = async function() {
-            const name = document.getElementById('walkin-name').value;
-            const pax = document.getElementById('walkin-pax').value;
+       // --- 5. AKSI: WALK-IN (ORANG DATANG LANGSUNG - TERCANGGIH) ---
+window.submitWalkIn = async function() {
+    const name = document.getElementById('walkin-name').value;
+    const pax = document.getElementById('walkin-pax').value;
 
-            if(!name || !pax) return alert("Isi nama dan jumlah orang!");
+    if(!name || !pax || parseInt(pax) < 1) return alert("Isi nama dan jumlah orang!");
 
-            const btn = document.querySelector('#form-free button');
-            btn.innerText = "Memproses..."; btn.disabled = true;
+    const paxInt = parseInt(pax);
+    const btn = document.querySelector('#form-free button');
+    
+    // 1. HITUNG KEBUTUHAN MEJA (Kelipatan 4)
+    // Contoh: 7 orang / 4 = 1.75 -> Dibulatkan ke atas jadi 2 Meja.
+    const qtyNeeded = Math.ceil(paxInt / 4); 
 
-            try {
-                // Simpan Booking Baru
-                await addDoc(collection(db, "bookings"), {
-                    warungId: warungId,          // <--- INI YG KEMARIN HILANG, WAJIB ADA!
-                    warungName: warungData.name,
-                    venueName: warungData.venueName || "", 
-                    customerName: name,
-                    pax: parseInt(pax),
-                    tablesNeeded: 1,
-                    tableNum: [tableNum], 
-                    bookingCode: "WALK-IN",
-                    status: 'active', 
-                    revenue: 0, 
-                    timestamp: new Date(),
-                    checkInTime: new Date()
-                });
+    btn.innerText = "Memproses..."; btn.disabled = true;
 
-                // Update Stok Warung
-                await updateDoc(doc(db, "warungs", warungId), {
-                    bookedCount: increment(1)
-                });
+    try {
+        // --- 2. CARI MEJA KOSONG TAMBAHAN ---
+        // Ambil data meja yang sudah terpakai saat ini di database
+        const qCek = query(collection(db, "bookings"), 
+            where("warungId", "==", warungId),
+            where("status", "in", ["booked", "active"])
+        );
+        const snap = await getDocs(qCek);
+        
+        let usedTables = [];
+        snap.forEach(d => {
+            const data = d.data();
+            if(Array.isArray(data.tableNum)) usedTables.push(...data.tableNum);
+            else if(data.tableNum) usedTables.push(data.tableNum);
+        });
 
-                // Tampilkan Sukses
-                document.getElementById('form-free').style.display = 'none';
-                document.getElementById('state-success').style.display = 'block';
-                document.getElementById('status-badge-area').innerHTML = "";
+        // Masukkan meja yang sedang di-scan sebagai meja utama
+        let assignedTables = [tableNum]; 
 
-            } catch(e) {
-                console.error(e);
-                alert("Gagal Check-In: " + e.message);
-                btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
+        // Jika butuh lebih dari 1 meja, cari meja kosong lainnya
+        if (qtyNeeded > 1) {
+            const limitMeja = warungData.totalTables || 15;
+            for (let i = 1; i <= limitMeja; i++) {
+                // Cari nomor selain yang di-scan dan belum dipakai orang lain
+                if (!usedTables.includes(i) && i !== tableNum) {
+                    assignedTables.push(i);
+                    if (assignedTables.length === qtyNeeded) break; // Berhenti kalau sudah cukup
+                }
             }
         }
+
+        // Cek apakah meja kosong mencukupi?
+        if (assignedTables.length < qtyNeeded) {
+            btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
+            return alert(`Maaf, meja tidak mencukupi untuk ${paxInt} orang. Anda butuh ${qtyNeeded} meja, tapi hanya tersedia ${assignedTables.length}.`);
+        }
+
+        // --- 3. SIMPAN KE FIREBASE ---
+        await addDoc(collection(db, "bookings"), {
+            warungId: warungId,
+            warungName: warungData.name,
+            venueName: warungData.venueName || "", 
+            customerName: name,
+            pax: paxInt,
+            tablesNeeded: qtyNeeded, // Tersimpan otomatis (misal: 2)
+            tableNum: assignedTables, // Array nomor meja (misal: [2, 3])
+            bookingCode: "WALK-IN",
+            status: 'active', 
+            revenue: 0, 
+            timestamp: new Date(),
+            checkInTime: new Date()
+        });
+
+        // Update Stok Terpakai di Data Warung
+        await updateDoc(doc(db, "warungs", warungId), {
+            bookedCount: increment(qtyNeeded)
+        });
+
+        // Tampilkan Sukses
+        document.getElementById('form-free').style.display = 'none';
+        document.getElementById('state-success').style.display = 'block';
+        document.getElementById('status-badge-area').innerHTML = "";
+
+        alert(`Berhasil! Meja dikunci: ${assignedTables.join(", ")}`);
+
+    } catch(e) {
+        console.error(e);
+        alert("Gagal Check-In: " + e.message);
+        btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
+    }
+}
 
         // 6. AKSI: VERIFIKASI TIKET (SMART INPUT)
         window.verifyTicket = async function() {
