@@ -302,21 +302,58 @@
             const p = document.getElementById('book-pax').value;
             document.getElementById('book-qty').value = Math.ceil(p/4) + " Meja";
         }
-        // --- GANTI BARIS 305 - 308 DENGAN KODE INI ---
-window.confirmBooking = async function() {
+        window.confirmBooking = async function() {
     const name = document.getElementById('book-name').value;
     const wa = document.getElementById('book-wa').value;
     const dateVal = document.getElementById('book-date').value; 
     const pax = parseInt(document.getElementById('book-pax').value) || 0;
     
-    // --- LOGIKA KELIPATAN 4 (KUNCI UTAMA) ---
-    // Jika 6 orang, maka 6 / 4 = 1.5, dibulatkan ke atas (Math.ceil) jadi 2 meja.
-    const qty = Math.ceil(pax / 4); 
+    // 1. LOGIKA JUMLAH MEJA (Kelipatan 4)
+    // 7 orang / 4 = 1.75 -> Dibulatkan ke atas jadi 2 Meja.
+    const qtyNeeded = Math.ceil(pax / 4); 
 
     if(!name || pax < 1) return alert("Mohon lengkapi Nama dan Jumlah Orang!");
 
     try {
-        // Simpan data booking ke koleksi "bookings" di Firebase
+        // --- 2. LOGIKA OTOMATIS CARI NOMOR MEJA KOSONG ---
+        
+        // A. Ambil semua booking yang saat ini sedang aktif atau sudah dibooking
+        const qCek = query(collection(db, "bookings"), 
+            where("warungId", "==", warungId),
+            where("status", "in", ["booked", "active"])
+        );
+        const snap = await getDocs(qCek);
+        
+        let mejaTerpakai = [];
+        snap.forEach(d => {
+            const data = d.data();
+            // Masukkan nomor meja yang sudah terpakai ke dalam daftar "absen"
+            if(Array.isArray(data.tableNum)) {
+                mejaTerpakai.push(...data.tableNum);
+            } else if(data.tableNum) {
+                mejaTerpakai.push(data.tableNum);
+            }
+        });
+
+        // B. Cari meja yang tersedia berdasarkan total meja warung
+        let mejaDitemukan = [];
+        const limitMeja = currentWarungData.totalTables || 15;
+
+        for(let i = 1; i <= limitMeja; i++) {
+            if(!mejaTerpakai.includes(i)) {
+                mejaDitemukan.push(i); // Ambil nomor meja ini karena kosong
+                if(mejaDitemukan.length === qtyNeeded) break; // Berhenti jika sudah cukup
+            }
+        }
+
+        // C. Cek apakah meja yang ditemukan cukup untuk pesanan ini?
+        if(mejaDitemukan.length < qtyNeeded) {
+            return alert(`Maaf, meja penuh! Hanya tersisa ${mejaDitemukan.length} meja kosong, sedangkan Anda butuh ${qtyNeeded} meja.`);
+        }
+
+        // --- 3. SIMPAN KE FIREBASE ---
+        const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+        
         await addDoc(collection(db, "bookings"), {
             warungId: warungId,           
             warungName: currentWarungName,
@@ -324,14 +361,20 @@ window.confirmBooking = async function() {
             customerName: name, 
             customerWA: wa,
             pax: pax, 
-            tablesNeeded: qty, // <--- Ini yang dikirim (Jumlah Meja)
+            tablesNeeded: qtyNeeded, 
+            tableNum: mejaDitemukan, // Simpan array nomor meja (Contoh: [1, 2])
             bookingDate: dateVal,
             status: 'booked', 
-            bookingCode: 'TIKET-' + Math.floor(1000 + Math.random() * 9000),
+            bookingCode: kode,
             timestamp: new Date()
         });
 
-        alert(`✅ Booking Berhasil untuk ${pax} Orang (${qty} Meja). Silakan tunggu konfirmasi warung.`);
+        // Update stok booked di data warung
+        await updateDoc(doc(db, "warungs", warungId), {
+            bookedCount: increment(qtyNeeded)
+        });
+
+        alert(`✅ Booking Berhasil!\nUntuk ${pax} Orang, Anda mendapatkan ${qtyNeeded} Meja (Nomor: ${mejaDitemukan.join(", ")}).`);
         closeModal();
 
     } catch (e) {
