@@ -296,9 +296,17 @@ window.currentActiveOrders = [];
 window.toggleNotifPanel = function(e) {
     if(e) e.stopPropagation();
     const panel = document.getElementById('notif-panel');
+    const badge = document.getElementById('web-notif-count'); // Ambil elemen angka merah
     if(!panel) return;
+
     const isVisible = panel.style.display === 'flex';
     panel.style.display = isVisible ? 'none' : 'flex';
+
+    // --- TAMBAHAN: Jika panel dibuka, sembunyikan angka notifikasi ---
+    if (!isVisible && badge) {
+        badge.style.display = 'none';
+        // Opsional: kita anggap semua sudah "Last Seen"
+    }
 };
 
 // Klik di mana saja untuk menutup panel
