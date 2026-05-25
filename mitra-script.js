@@ -120,6 +120,14 @@ function setupBookingListener() {
             else if (d.status === 'booked') countBookedTables += qtyMeja;
         });
 
+    window.currentActiveBookings = bookings.map(b => ({
+            id: b.id, type: 'booking', judul: 'Reservasi Baru', 
+            detail: `Tamu: ${b.customerName} (${b.tablesNeeded || 1} Meja)`,
+            time: b.timestamp ? b.timestamp.toMillis() : Date.now(), 
+            target: 'home'
+        }));
+        window.refreshNotifBell();
+       
          // --- LOGIKA RIWAYAT BOOKING (DI BAWAH BARIS 121) ---
   window.currentActiveBookings = bookings.map(b => ({
             id: b.id, 
@@ -208,14 +216,21 @@ function listenToWebOrders() {
         
         if(!container) return;
 
-        // --- SINKRONISASI ANGKA LONCENG ---
-        const jumlahPesanan = snapshot.size;
-        if(badge) {
-            badge.innerText = jumlahPesanan;
-            // Hanya tampilkan lingkaran merah jika jumlah > 0
-            badge.style.display = jumlahPesanan > 0 ? 'block' : 'none';
-        }
+       window.currentActiveOrders = snapshot.docs.map(doc => {
+    const o = doc.data(); 
+    return { 
+        id: doc.id, 
+        type: 'order', 
+        judul: 'Pesanan Makanan', 
+        detail: `Meja: ${o.tableNum || 'T.Away'}`,
+        time: o.timestamp ? o.timestamp.toMillis() : Date.now(), 
+        target: 'web-orders' 
+    };
+});
 
+// Panggil Otak Pusat Notifikasi untuk update angka & list
+window.refreshNotifBell(); 
+       
          // --- TEMPEL KODE INI DI BARIS 217 ---
       window.currentActiveOrders = snapshot.docs.map(doc => {
           const o = doc.data(); 
@@ -269,8 +284,11 @@ function listenToWebOrders() {
     });
 }
 
-// --- 7. FUNGSI-FUNGSI GLOBAL (WAJIB ADA UNTUK TOMBOL HTML) ---
+/* =========================================
+   7. FUNGSI-FUNGSI GLOBAL (LOGIKA LONCENG FB)
+   ========================================= */
 
+// A. Fungsi Pindah Tab
 window.switchTab = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
@@ -282,18 +300,12 @@ window.switchTab = function(tabId) {
         if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabId}'`)) {
             btn.classList.add('active');
         }
-       });
+    });
     if(tabId === 'qr') renderQRCodes();
-   window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// --- KODE LOGIKA RIWAYAT NOTIFIKASI (TARUH DI BARIS 262) ---
-
-// 1. Wadah Data (Agar data tidak hilang saat pindah tab)
-window.currentActiveBookings = [];
-window.currentActiveOrders = [];
-
-// 2. Fungsi Buka/Tutup Panel (Gaya Facebook)
+// B. Fungsi Buka/Tutup Riwayat (FB STYLE)
 window.toggleNotifPanel = function(e) {
     if(e) e.stopPropagation();
     const panel = document.getElementById('notif-panel');
@@ -303,43 +315,34 @@ window.toggleNotifPanel = function(e) {
     const isVisible = panel.style.display === 'flex';
     panel.style.display = isVisible ? 'none' : 'flex';
 
-    // --- REVISI DI SINI ---
     if (!isVisible) { // Jika panel baru saja DIBUKA
-        // Simpan waktu sekarang ke memori browser sebagai "Waktu Baca Terakhir"
         localStorage.setItem('lastReadNotifTime', Date.now()); 
-        
-        // Sembunyikan angka merah
         if(badge) badge.style.display = 'none';
-        
-        // Refresh daftar agar status "unread" hilang (opsional visual)
         window.refreshNotifBell();
     }
 };
 
-// Klik di mana saja untuk menutup panel
-document.addEventListener('click', () => {
+// C. Klik di luar panel otomatis tutup
+document.onclick = function() {
     const panel = document.getElementById('notif-panel');
     if(panel) panel.style.display = 'none';
-});
+};
 
-// 3. Mesin Pengisi Daftar Riwayat di Lonceng
+// D. Mesin Pengisi Daftar Riwayat di Lonceng
 window.refreshNotifBell = function() {
     const listContainer = document.getElementById('notif-list-history');
     const badge = document.getElementById('web-notif-count');
     if(!listContainer) return;
 
-    // Ambil waktu terakhir Anda membuka lonceng dari memori browser
     const lastReadTime = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
-
     const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
     allNotifs.sort((a, b) => b.time - a.time);
 
-    // --- LOGIKA HITUNG BARU: Hanya hitung yang jam-nya lebih baru dari lastReadTime ---
+    // Hitung berapa yang "Benar-benar Baru" (setelah jam buka lonceng terakhir)
     const unreadCount = allNotifs.filter(n => n.time > lastReadTime).length;
 
     if(badge) {
         badge.innerText = unreadCount;
-        // Hanya tampilkan badge jika ada pesanan yang BENAR-BENAR belum dilihat
         badge.style.display = unreadCount > 0 ? 'block' : 'none';
     }
 
@@ -352,8 +355,6 @@ window.refreshNotifBell = function() {
     allNotifs.forEach(n => {
         const color = n.type === 'booking' ? '#E50914' : '#FFD700';
         const icon = n.type === 'booking' ? 'fa-calendar-check' : 'fa-utensils';
-        
-        // Beri tanda khusus jika notif ini "Paling Baru" (opsional visual)
         const isNew = n.time > lastReadTime ? 'border-right: 3px solid #00d2ff;' : '';
 
         listContainer.innerHTML += `
