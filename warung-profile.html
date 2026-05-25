@@ -302,10 +302,43 @@
             const p = document.getElementById('book-pax').value;
             document.getElementById('book-qty').value = Math.ceil(p/4) + " Meja";
         }
-        window.confirmBooking = async function() {
-            alert("Fitur Booking Terkonfirmasi!"); // Logika booking Anda tetap bekerja di sini
-            closeModal();
-        }
+        // --- GANTI BARIS 305 - 308 DENGAN KODE INI ---
+window.confirmBooking = async function() {
+    const name = document.getElementById('book-name').value;
+    const wa = document.getElementById('book-wa').value;
+    const dateVal = document.getElementById('book-date').value; 
+    const pax = parseInt(document.getElementById('book-pax').value) || 0;
+    
+    // --- LOGIKA KELIPATAN 4 (KUNCI UTAMA) ---
+    // Jika 6 orang, maka 6 / 4 = 1.5, dibulatkan ke atas (Math.ceil) jadi 2 meja.
+    const qty = Math.ceil(pax / 4); 
+
+    if(!name || pax < 1) return alert("Mohon lengkapi Nama dan Jumlah Orang!");
+
+    try {
+        // Simpan data booking ke koleksi "bookings" di Firebase
+        await addDoc(collection(db, "bookings"), {
+            warungId: warungId,           
+            warungName: currentWarungName,
+            venueName: currentWarungData.venueName || "Stadion Bayuangga",   
+            customerName: name, 
+            customerWA: wa,
+            pax: pax, 
+            tablesNeeded: qty, // <--- Ini yang dikirim (Jumlah Meja)
+            bookingDate: dateVal,
+            status: 'booked', 
+            bookingCode: 'TIKET-' + Math.floor(1000 + Math.random() * 9000),
+            timestamp: new Date()
+        });
+
+        alert(`✅ Booking Berhasil untuk ${pax} Orang (${qty} Meja). Silakan tunggu konfirmasi warung.`);
+        closeModal();
+
+    } catch (e) {
+        console.error(e);
+        alert("Gagal Booking: " + e.message);
+    }
+}
     </script>
 </body>
 </html>
