@@ -109,12 +109,20 @@ function setupBookingListener() {
         });
 
         // Simpan untuk Notifikasi Lonceng
-        window.currentActiveBookings = bookingsData.map(b => ({
-            id: b.id, type: 'booking', judul: b.status === 'active' ? 'Tamu Makan' : 'Reservasi Baru',
-            detail: `${b.customerName} (${b.tablesNeeded || 1} Meja)`,
-            time: b.timestamp ? b.timestamp.toMillis() : Date.now(), target: 'home'
-        }));
-        window.refreshNotifBell();
+        // Di dalam setupBookingListener (updateNotifHistory)
+window.currentActiveBookings = bookingsData.map(b => {
+    const isWalkIn = b.bookingCode === 'WALK-IN'; // DETEKSI WALK-IN
+    return {
+        id: b.id,
+        type: 'booking',
+        isWalkIn: isWalkIn, 
+        judul: isWalkIn ? 'Tamu Walk-In' : 'Reservasi Baru',
+        detail: `${b.customerName} (${b.tablesNeeded || 1} Meja)`,
+        time: b.timestamp ? b.timestamp.toMillis() : Date.now(),
+        target: 'home'
+    };
+});
+window.refreshNotifBell();
 
         // Update UI Angka
         document.getElementById('occupied-count').innerText = countActive;
@@ -191,25 +199,58 @@ window.toggleNotifPanel = function(e) {
 };
 
 window.refreshNotifBell = function() {
-    const list = document.getElementById('notif-list-history');
+    const listContainer = document.getElementById('notif-list-history');
     const badge = document.getElementById('web-notif-count');
-    if(!list) return;
+    if(!listContainer) return;
 
-    const lastRead = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
-    const all = [...window.currentActiveBookings, ...window.currentActiveOrders];
-    all.sort((a, b) => b.time - a.time);
+    // Ambil waktu terakhir kali lonceng dibuka
+    const lastReadTime = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
 
-    const unread = all.filter(n => n.time > lastRead).length;
-    if(badge) { badge.innerText = unread; badge.style.display = unread > 0 ? 'block' : 'none'; }
+    const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
+    allNotifs.sort((a, b) => b.time - a.time);
 
-    list.innerHTML = all.length === 0 ? '<p style="text-align:center; padding:20px; color:#555;">Kosong.</p>' : '';
-    all.forEach(n => {
-        const color = n.type === 'booking' ? '#E50914' : '#FFD700';
-        list.innerHTML += `
+    // Hitung yang belum terbaca (untuk angka badge)
+    const unreadCount = allNotifs.filter(n => n.time > lastReadTime).length;
+    if(badge) {
+        badge.innerText = unreadCount;
+        badge.style.display = unreadCount > 0 ? 'block' : 'none';
+    }
+
+    if(allNotifs.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#555;">Tidak ada pemberitahuan.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = '';
+    allNotifs.forEach(n => {
+        // Tentukan Warna & Icon
+        let bgColor = '#FFD700'; // Default Kuning Booking
+        let iconType = 'fa-calendar-day';
+        
+        if(n.isWalkIn) {
+            bgColor = '#E50914'; // Merah Walk-In
+            iconType = 'fa-walking';
+        } else if(n.type === 'order') {
+            bgColor = '#00d2ff'; // Biru/Emas Pesanan Menu
+            iconType = 'fa-utensils';
+        }
+
+        // Cek apakah baru (Belum dibaca)
+        const isUnread = n.time > lastReadTime;
+        const blueDot = isUnread ? '<div class="unread-dot"></div>' : '';
+
+        listContainer.innerHTML += `
             <div class="notif-item" onclick="window.switchTab('${n.target}')">
-                <div style="width:30px; height:30px; border-radius:50%; background:${color}; flex-shrink:0;"></div>
-                <div style="flex:1;"><b>${n.judul}</b><br><small>${n.detail}</small></div>
-            </div>`;
+                <div style="width:40px; height:40px; border-radius:50%; background:${bgColor}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i class="fa-solid ${iconType}" style="color:black; font-size:1rem;"></i>
+                </div>
+                <div style="flex:1; text-align:left;">
+                    <b style="display:block; font-size:0.85rem; color:white;">${n.judul}</b>
+                    <small style="color:#aaa; font-size:0.75rem;">${n.detail}</small>
+                </div>
+                ${blueDot}
+            </div>
+        `;
     });
 };
 
