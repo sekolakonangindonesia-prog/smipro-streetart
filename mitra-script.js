@@ -236,6 +236,7 @@ window.tampilkanPesananBaru = function(tipe, judul, pesan, tab) {
     toast.innerHTML = `<img src="${LOGO_STREETART}" style="width:35px; border-radius:50%;"><div style="flex:1; text-align:left;"><b>${judul}</b><br><small>${pesan}</small></div>`;
     container.appendChild(toast);
     setTimeout(() => { if(toast) toast.remove(); }, 8000);
+    if (Notification.permission === "granted") new Notification("STREETART", { body: pesan, icon: LOGO_STREETART });
 };
 
 /* =========================================
