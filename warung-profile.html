@@ -152,27 +152,50 @@
     </div>
 
     <!-- MODAL BOOKING -->
-    <div id="booking-modal" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px;">
-        <div class="modal-box" style="background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative; color: white;">
-            <i class="fa-solid fa-xmark" style="position: absolute; top: 15px; right: 15px; cursor: pointer;" onclick="closeModal()"></i>
-            <h3 style="text-align: center; margin-bottom: 20px;">Form Booking</h3>
-            <p id="modal-warung-title" style="text-align: center; color: var(--gold); font-weight: bold;"></p>
+    <!-- MODAL BOOKING (STANDARD BARU SS2) -->
+    <div id="booking-modal" class="modal-overlay">
+        <div class="modal-box">
+            <i class="fa-solid fa-xmark close-icon" onclick="closeModal()"></i>
             
-            <label style="font-size: 0.8rem; color: #aaa;">Nama Pemesan</label>
-            <input type="text" id="book-name" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
+             <div style="text-align:center; margin-bottom:10px;">
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
+                     style="width:60px; height:60px; border-radius:50%; border:2px solid #E50914; padding:2px;">
+            </div>
             
-            <label style="font-size: 0.8rem; color: #aaa;">WhatsApp</label>
-            <input type="number" id="book-wa" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
+            <h3 style="margin:0; text-align:center;">Form Booking</h3>
+            <p id="modal-warung-title" style="text-align:center; color:#FFD700; margin-bottom:15px; font-weight:bold;">-</p>
             
-            <label style="font-size: 0.8rem; color: #aaa;">Jumlah Orang</label>
-            <input type="number" id="book-pax" oninput="hitungMeja()" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
+            <label style="color:#aaa; font-size:0.8rem;">Nama Pemesan</label>
+            <input type="text" id="book-name" class="input-request">
             
-            <label style="font-size: 0.8rem; color: #aaa;">Estimasi Kebutuhan Meja</label>
-            <input type="text" id="book-qty" readonly style="width:100%; padding:10px; background:#333; border:1px solid #444; color:var(--primary); font-weight:bold; margin-bottom:20px; border-radius:5px;" value="0 Meja">
+            <label style="color:#aaa; font-size:0.8rem;">WhatsApp</label>
+            <input type="number" id="book-wa" class="input-request" placeholder="08xxxxxxxx">
+            
+            <label style="color:#aaa; font-size:0.8rem;">Tanggal Booking</label>
+            <input type="date" id="book-date" class="input-request" style="color-scheme: dark;"> 
 
-            <button onclick="confirmBooking()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">KONFIRMASI BOOKING</button>
+            <label style="color:#aaa; font-size:0.8rem;">Jumlah Orang</label>
+            <input type="number" id="book-pax" class="input-request" placeholder="Total Orang" oninput="hitungMeja()">
+            
+            <label style="color:#aaa; font-size:0.8rem;">Kebutuhan Meja (1 Meja = 4 Org)</label>
+            <input type="text" id="book-qty" class="input-request" readonly style="color:#E50914; font-weight:bold; background:#333;" value="0 Meja">
+
+            <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
+                <i class="fa-solid fa-clock"></i> <b>ATURAN WAKTU:</b><br>
+                Batas Check-in (Hangus) pukul <b>17:30 WIB</b>.
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModal()">Batal</button>
+                <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="confirmBooking()">Booking</button>
+            </div>
         </div>
     </div>
+
+        <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
+        &copy; 2025 Yayasan Sekolah Konang Indonesia - SMIPRO StreetArt.ID
+    </div>
+
 
     <script type="module">
         import { db } from './firebase-config.js';
