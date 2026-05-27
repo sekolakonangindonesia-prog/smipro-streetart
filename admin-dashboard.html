@@ -1098,9 +1098,9 @@
 
 <script>
     // Logic UI Sederhana (Non-Module)
-    if(localStorage.getItem('userRole') !== 'admin') {
-        alert("Akses Ditolak!"); window.location.href = 'admin-login.html';
-    }
+    if(localStorage.getItem('userRole') !== 'admin' && localStorage.getItem('adminOrigin') !== 'true') {
+    alert("Akses Ditolak!"); window.location.href = 'admin-login.html';
+}
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
     function goToHomeAsAdmin() {
