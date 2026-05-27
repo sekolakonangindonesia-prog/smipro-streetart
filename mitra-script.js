@@ -84,19 +84,36 @@ function setupBookingListener() {
         let countActive = 0, countBooked = 0;
         const now = new Date();
 
-        snapshot.docChanges().forEach((change) => {
-            if (!isInitialLoad) {
-                const d = change.doc.data();
-                if (change.type === "added" && d.status !== 'finished') {
-                    notifSound.play();
-                    window.tampilkanPesananBaru('booking', 'Reservasi Baru', `Tamu: ${d.customerName}`, 'home');
-                }
-                if (change.type === "modified" && d.status === 'active') {
-                    notifSound.play();
-                    window.tampilkanPesananBaru('booking', 'Tamu Datang', `${d.customerName} sudah Check-In`, 'home');
-                }
+        // --- CARI BAGIAN INI DI setupBookingListener DAN GANTI ---
+snapshot.docChanges().forEach((change) => {
+    if (!isInitialLoad) {
+        const d = change.doc.data();
+
+        // 1. Jika ada DATA BARU (Added)
+        if (change.type === "added") {
+            if (d.status === 'booked') {
+                // Booking Baru (Kuning)
+                notifSound.play();
+                window.tampilkanPesananBaru('booking', 'Reservasi Baru', `Tamu: ${d.customerName}`, 'home');
+            } else if (d.status === 'active' && d.bookingCode === 'WALK-IN') {
+                // Walk-In Baru (Merah)
+                notifSound.play();
+                window.tampilkanPesananBaru('walkin', 'Tamu Walk-In', `Tamu: ${d.customerName} langsung di lokasi`, 'home');
             }
-        });
+        }
+
+        // 2. Jika ada PERUBAHAN DATA (Modified) -> Ini untuk Check-In
+        if (change.type === "modified") {
+            // Jika status berubah menjadi 'active' (Tamu datang/Check-In)
+            if (d.status === 'active') {
+                notifSound.play();
+                const nomorMeja = Array.isArray(d.tableNum) ? d.tableNum.join(',') : d.tableNum;
+                window.tampilkanPesananBaru('checkin', 'Tamu Telah Datang', `${d.customerName} sudah duduk di Meja ${nomorMeja}`, 'home');
+            }
+        }
+    }
+});
+// -------------------------------------------------------
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
@@ -122,6 +139,24 @@ window.currentActiveBookings = bookingsData.map(b => {
         target: 'home'
     };
 });
+
+window.tampilkanPesananBaru = function(tipe, judul, pesan, tabTujuan) {
+    const container = document.getElementById('notif-toast-container');
+    if(!container) return;
+
+    // Tentukan Warna: Merah untuk Walk-In & Check-In, Emas untuk Booking
+    let warnaSide = '#FFD700'; // Default Kuning
+    if (tipe === 'walkin' || tipe === 'checkin') {
+        warnaSide = '#E50914'; // Merah
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-notif';
+    toast.style.borderLeft = `5px solid ${warnaSide}`;
+    
+    // ... sisa kode toast tetap sama ...
+}
+        
 window.refreshNotifBell();
 
         // Update UI Angka
