@@ -316,12 +316,15 @@ window.previewCoverImage = function(input) {
                 try {
                     await updateDoc(doc(db, "warungs", WARUNG_ID), { bannerImg: base64Data });
                     alert("✅ Foto Sampul berhasil diperbarui!");
+                    // Update tampilan langsung tanpa refresh
+                    const banner = document.getElementById('banner-bg');
+                    if(banner) banner.style.backgroundImage = `url('${base64Data}')`;
                 } catch (error) {
                     alert("Gagal update foto sampul: " + error.message);
                 }
-            }
-            img.src = e.target.result;
-        }
+            };
+            img.src = e.target.result; // Pindahkan ke sini (di luar img.onload)
+        };
         reader.readAsDataURL(input.files[0]);
     }
 };
