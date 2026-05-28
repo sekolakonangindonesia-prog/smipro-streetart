@@ -26,21 +26,28 @@ const LOGO_STREETART = "https://raw.githubusercontent.com/sekolakonangindonesia-
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
+        
+        // 1. Update Banner
         if (data.bannerImg) {
             const banner = document.getElementById('banner-bg');
             if(banner) banner.style.backgroundImage = `url('${data.bannerImg}')`;
         }
+
+        // 2. Update Informasi Warung
         warungTotalCapacity = data.totalTables || 15; 
         const oldName = currentWarungName;
         currentWarungName = data.name; 
 
-        document.getElementById('shop-name-display').innerText = data.name;
-        if(data.img) {
-            document.getElementById('header-profile-img').src = data.img;
-            document.getElementById('preview-profile-img').src = data.img;
-        }
+        // Update UI Header
+        const nameDisplay = document.getElementById('shop-name-display');
+        if(nameDisplay) nameDisplay.innerText = data.name;
 
-        // Sinkronisasi Toggle Order Web
+        const hImg = document.getElementById('header-profile-img');
+        const pImg = document.getElementById('preview-profile-img');
+        if(hImg && data.img) hImg.src = data.img;
+        if(pImg && data.img) pImg.src = data.img;
+
+        // 3. Sinkronisasi Toggle Order Web
         const toggle = document.getElementById('toggle-order-web');
         const desc = document.getElementById('order-status-desc');
         if(toggle) {
@@ -51,7 +58,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
             }
         }
 
-        // Status Buka/Tutup
+        // 4. Status Buka/Tutup
         const btnStatus = document.getElementById('store-status-btn');
         const txtStatus = document.getElementById('store-status-text');
         if (btnStatus && txtStatus) {
@@ -62,12 +69,12 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
             }
         }
 
-        // Sinkronisasi Form Profil
-        document.getElementById('edit-name').value = data.name || '';
-        document.getElementById('edit-owner').value = data.owner || '';
-        document.getElementById('edit-phone').value = data.phone || '';
-        document.getElementById('edit-email').value = data.email || '';
-        document.getElementById('edit-pass').value = data.password || '';
+        // 5. Sinkronisasi Form Profil (Pengecekan Aman)
+        if(document.getElementById('edit-name')) document.getElementById('edit-name').value = data.name || '';
+        if(document.getElementById('edit-owner')) document.getElementById('edit-owner').value = data.owner || '';
+        if(document.getElementById('edit-phone')) document.getElementById('edit-phone').value = data.phone || '';
+        if(document.getElementById('edit-email')) document.getElementById('edit-email').value = data.email || '';
+        if(document.getElementById('edit-pass')) document.getElementById('edit-pass').value = data.password || '';
 
         if (oldName !== currentWarungName) {
             setupBookingListener();
