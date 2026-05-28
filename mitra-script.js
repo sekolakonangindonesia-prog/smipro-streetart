@@ -85,18 +85,36 @@ function setupBookingListener() {
         const now = new Date();
 
         snapshot.docChanges().forEach((change) => {
-            if (!isInitialLoad) {
-                const d = change.doc.data();
-                if (change.type === "added" && d.status !== 'finished') {
-                    notifSound.play();
-                    window.tampilkanPesananBaru('booking', 'Reservasi Baru', `Tamu: ${d.customerName}`, 'home');
-                }
-                if (change.type === "modified" && d.status === 'active') {
-                    notifSound.play();
-                    window.tampilkanPesananBaru('booking', 'Tamu Datang', `${d.customerName} sudah Check-In`, 'home');
-                }
+    if (!isInitialLoad) {
+        const d = change.doc.data();
+
+        // 1. Jika ada DATA BARU (Added)
+        if (change.type === "added") {
+            if (d.status === 'booked') {
+                
+                // Booking Baru (Kuning)
+                notifSound.play();
+                window.tampilkanPesananBaru('booking', 'Reservasi Baru', `Tamu: ${d.customerName}`, 'home');
+            } else if (d.status === 'active' && d.bookingCode === 'WALK-IN') {
+                
+                // Walk-In Baru (Merah)
+                notifSound.play();
+                window.tampilkanPesananBaru('walkin', 'Tamu Walk-In', `Tamu: ${d.customerName} langsung di lokasi`, 'home');
             }
-        });
+        }
+
+        // 2. Jika ada PERUBAHAN DATA (Modified) -> Ini untuk Check-In
+        if (change.type === "modified") {
+            // Jika status berubah menjadi 'active' (Tamu datang/Check-In)
+            if (d.status === 'active') {
+                notifSound.play();
+                const nomorMeja = Array.isArray(d.tableNum) ? d.tableNum.join(',') : d.tableNum;
+                window.tampilkanPesananBaru('checkin', 'Tamu Telah Datang', `${d.customerName} sudah duduk di Meja ${nomorMeja}`, 'home');
+            }
+        }
+    }
+});
+
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
