@@ -438,7 +438,11 @@ input:checked + .slider:before { transform: translateX(26px); }
         </div>
     </div>
 
-    <script type="module" src="mitra-script.js"></script>
+   <script type="module">
+    import * as script from './mitra-script.js';
+    window.previewImage = script.previewImage; // Jika fungsi ada di module
+    console.log("Script Loaded & Ready");
+</script>
     
   <!-- TOMBOL KHUSUS ADMIN (MODAL SUPER USER) -->
 <div id="admin-floating-btn">
