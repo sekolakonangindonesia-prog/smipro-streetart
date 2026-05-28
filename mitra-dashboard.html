@@ -363,7 +363,15 @@ input:checked + .slider:before { transform: translateX(26px); }
                 <div style="text-align:center; margin-bottom:20px;">
                     <img src="" id="preview-profile-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); margin-bottom:10px;" onerror="this.src='https://via.placeholder.com/150'">
                     <br>
-                    <button class="btn-small" style="background:#333; border:1px solid #555; color:white;" onclick="triggerUpload()"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</button>
+                    <input type="file" id="cover-file-input" style="display:none;" accept="image/*" onchange="previewCoverImage(this)">
+
+                    <button class="btn-small" style="background:#333; border:1px solid #555; color:white;" onclick="triggerUpload()">
+                    <i class="fa-solid fa-camera"></i> Ganti Foto Profil
+                    </button>
+
+                <button class="btn-small" style="background:#333; border:1px solid #555; color:white; margin-top:5px;" onclick="document.getElementById('cover-file-input').click()">
+                <i class="fa-solid fa-image"></i> Ganti Foto Sampul
+                </button>
                 </div>
 
                 <label>Nama Warung</label>
