@@ -26,6 +26,10 @@ const LOGO_STREETART = "https://raw.githubusercontent.com/sekolakonangindonesia-
 onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
     if (docSnap.exists()) {
         const data = docSnap.data();
+        if (data.bannerImg) {
+            const banner = document.getElementById('banner-bg');
+            if(banner) banner.style.backgroundImage = `url('${data.bannerImg}')`;
+        }
         warungTotalCapacity = data.totalTables || 15; 
         const oldName = currentWarungName;
         currentWarungName = data.name; 
@@ -293,7 +297,34 @@ window.toggleStoreStatus = async function() {
     const newStatus = btn.classList.contains('open') ? 'closed' : 'open';
     await updateDoc(doc(db, "warungs", WARUNG_ID), { status: newStatus });
 };
-
+// --- FUNGSI GANTI FOTO SAMPUL (COVER) ---
+window.previewCoverImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 800;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const base64Data = canvas.toDataURL('image/jpeg', 0.7);
+                
+                try {
+                    await updateDoc(doc(db, "warungs", WARUNG_ID), { bannerImg: base64Data });
+                    alert("✅ Foto Sampul berhasil diperbarui!");
+                } catch (error) {
+                    alert("Gagal update foto sampul: " + error.message);
+                }
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+};
 window.updateOrderSystemStatus = async function(isActive) {
     try { await updateDoc(doc(db, "warungs", WARUNG_ID), { enableOrder: isActive }); } catch (e) { alert("Gagal!"); }
 };
