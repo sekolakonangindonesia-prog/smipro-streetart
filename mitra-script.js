@@ -330,6 +330,56 @@ window.previewCoverImage = function(input) {
                     alert("Gagal update foto sampul: " + error.message);
                 }
             };
+
+            // --- FUNGSI ASLI UPLOAD FOTO PROFIL & MENU ---
+
+function compressImage(file, maxWidth, callback) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const factor = maxWidth / img.width;
+            canvas.width = maxWidth; 
+            canvas.height = img.height * factor;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            callback(canvas.toDataURL('image/jpeg', 0.7));
+        };
+    };
+}
+
+window.previewImage = (input) => {
+    if (input.files && input.files[0]) {
+        compressImage(input.files[0], 300, async (base64) => {
+            try {
+                await updateDoc(doc(db, "warungs", WARUNG_ID), { img: base64 });
+                alert("Foto Profil Diperbarui!");
+            } catch (e) {
+                alert("Gagal update foto: " + e.message);
+            }
+        });
+    }
+}
+
+window.previewMenuImage = (input) => {
+    if (input.files && input.files[0]) {
+        compressImage(input.files[0], 400, (base64) => {
+            currentMenuImageBase64 = base64;
+            const preview = document.getElementById('preview-menu-img');
+            if(preview) preview.src = base64;
+        });
+    }
+}
+
+window.triggerUpload = function() {
+    document.getElementById('file-input').click();
+}
+
+window.triggerMenuUpload = function() {
+    document.getElementById('menu-file-input').click();
+}
             img.src = e.target.result; // Pindahkan ke sini (di luar img.onload)
         };
         reader.readAsDataURL(input.files[0]);
