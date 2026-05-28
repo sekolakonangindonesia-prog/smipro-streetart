@@ -359,7 +359,9 @@ window.saveProfile = async function() {
     alert("Profil Tersimpan!");
 };
 
+window.goHome = () => window.location.href = 'index.html';
 window.prosesLogout = () => { if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; } };
+
 
 function listenToWebOrders() {
     const warungId = localStorage.getItem('mitraId');
