@@ -205,33 +205,55 @@ function renderBookings(bookings) {
 window.toggleNotifPanel = function(e) {
     if(e) e.stopPropagation();
     const panel = document.getElementById('notif-panel');
+    const badge = document.getElementById('web-notif-count');
     if(!panel) return;
+
     const isVisible = panel.style.display === 'flex';
-    panel.style.display = isVisible ? 'none' : 'flex';
-    // Angka badge TIDAK KITA HAPUS di sini agar tetap muncul sebelum dibaca per item
-    window.refreshNotifBell(); 
+    
+    if (!isVisible) {
+        // --- PROSES KETIKA LONCENG DIBUKA ---
+        panel.style.display = 'flex';
+        
+        // 1. Langsung simpan waktu buka agar semua notif lama dianggap "Sudah Dibaca"
+        localStorage.setItem('lastReadNotifTime', Date.now().toString()); 
+        
+        // 2. Langsung hapus angka di badge merah
+        if(badge) badge.style.display = 'none';
+        
+        // 3. Langsung gambar ulang list (Agar titik birunya hilang seketika)
+        window.refreshNotifBell();
+    } else {
+        panel.style.display = 'none';
+    }
 };
 
+/* --- REVISI: MESIN PENGISI RIWAYAT LONCENG (INSTANT UPDATE) --- */
 window.refreshNotifBell = function() {
     const listContainer = document.getElementById('notif-list-history');
     const badge = document.getElementById('web-notif-count');
     if(!listContainer) return;
 
+    // Ambil waktu terakhir Anda membuka panel lonceng
+    const lastReadTime = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
+
     const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
     allNotifs.sort((a, b) => b.time - a.time);
 
-    // KUNCI: Hanya hitung yang 'isRead' nya masih false
-    const unreadCount = allNotifs.filter(n => n.isRead === false).length;
-
+    // HITUNG ULANG YANG BELUM DIBACA SECARA REAL-TIME
+    const unreadCount = allNotifs.filter(n => n.time > lastReadTime).length;
     if(badge) {
         badge.innerText = unreadCount;
         badge.style.display = unreadCount > 0 ? 'block' : 'none';
     }
 
-    listContainer.innerHTML = allNotifs.length === 0 ? '<p style="text-align:center; padding:20px; color:#555;">Kosong.</p>' : '';
-    
+    if(allNotifs.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#555; font-size:0.8rem;">Daftar tugas kosong.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = '';
     allNotifs.forEach(n => {
-        // Logika Visual: Warna & Icon
+        // Tentukan Visual: Warna & Icon
         let color = '#FFD700'; // Kuning Booking
         let icon = 'fa-calendar-check';
         
@@ -243,16 +265,18 @@ window.refreshNotifBell = function() {
             icon = 'fa-utensils';
         }
 
-        const blueDot = n.isRead ? '' : '<div class="unread-dot"></div>';
+        // KUNCI PERBAIKAN: Cek status "Baru" tepat saat gambar muncul di layar
+        const isNew = n.time > lastReadTime;
+        const blueDot = isNew ? '<div class="unread-dot"></div>' : '';
 
         listContainer.innerHTML += `
-            <div class="notif-item" onclick="window.bacaNotif('${n.id}', '${n.target}')">
+            <div class="notif-item" onclick="window.switchTab('${n.target}')">
                 <div style="width:35px; height:35px; border-radius:50%; background:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid ${icon}" style="color:black; font-size:0.8rem;"></i>
                 </div>
                 <div style="flex:1; text-align:left;">
                     <b style="display:block; font-size:0.85rem; color:white;">${n.judul}</b>
-                    <small style="color:#aaa; font-size:0.75rem;">${n.detail}</small>
+                    <small style="color:#aaa; font-size:0.7rem;">${n.detail}</small>
                 </div>
                 ${blueDot}
             </div>`;
