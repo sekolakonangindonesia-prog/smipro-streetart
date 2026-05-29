@@ -137,7 +137,7 @@ function setupBookingListener() {
         detail: `${b.customerName} (${b.tablesNeeded || 1} Meja)`,
         time: b.timestamp ? b.timestamp.toMillis() : Date.now(), 
         target: 'home',
-        isRead: localStorage.getItem(`read_notif_${b.id}`) === 'true' // Cek status baca per item
+        isRead: localStorage.getItem(`read_${b.id}`) === 'true' // Cek status baca per item
     };
 });
 window.refreshNotifBell();
@@ -233,54 +233,67 @@ window.refreshNotifBell = function() {
     const badge = document.getElementById('web-notif-count');
     if(!listContainer) return;
 
-    // Ambil waktu terakhir Anda membuka panel lonceng
-    const lastReadTime = parseInt(localStorage.getItem('lastReadNotifTime')) || 0;
-
     const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
     allNotifs.sort((a, b) => b.time - a.time);
 
-    // HITUNG ULANG YANG BELUM DIBACA SECARA REAL-TIME
-    const unreadCount = allNotifs.filter(n => n.time > lastReadTime).length;
+    // 1. HITUNG YANG BELUM DIBACA (Per ID)
+    const unreadCount = allNotifs.filter(n => n.isRead === false).length;
     if(badge) {
         badge.innerText = unreadCount;
         badge.style.display = unreadCount > 0 ? 'block' : 'none';
     }
 
-    if(allNotifs.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#555; font-size:0.8rem;">Daftar tugas kosong.</p>';
-        return;
-    }
-
-    listContainer.innerHTML = '';
+    listContainer.innerHTML = allNotifs.length === 0 ? '<p style="text-align:center; padding:20px; color:#555;">Kosong.</p>' : '';
+    
     allNotifs.forEach(n => {
-        // Tentukan Visual: Warna & Icon
-        let color = '#FFD700'; // Kuning Booking
-        let icon = 'fa-calendar-check';
-        
-        if(n.type === 'walkin') {
-            color = '#E50914'; // Merah Walk-In
-            icon = 'fa-walking';
-        } else if(n.type === 'order') {
-            color = '#00d2ff'; // Biru Pesanan
-            icon = 'fa-utensils';
-        }
+        let color = n.type === 'walkin' ? '#E50914' : (n.type === 'order' ? '#00d2ff' : '#FFD700');
+        let icon = n.type === 'walkin' ? 'fa-walking' : (n.type === 'order' ? 'fa-utensils' : 'fa-calendar-check');
 
-        // KUNCI PERBAIKAN: Cek status "Baru" tepat saat gambar muncul di layar
-        const isNew = n.time > lastReadTime;
-        const blueDot = isNew ? '<div class="unread-dot"></div>' : '';
+        // 2. TAMPILKAN TITIK BIRU JIKA ISREAD MASIH FALSE
+        const blueDot = n.isRead ? '' : '<div class="unread-dot"></div>';
 
         listContainer.innerHTML += `
-            <div class="notif-item" onclick="window.switchTab('${n.target}')">
+            <div class="notif-item" onclick="window.eksekusiBacaPesan('${n.id}', '${n.target}')">
                 <div style="width:35px; height:35px; border-radius:50%; background:${color}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <i class="fa-solid ${icon}" style="color:black; font-size:0.8rem;"></i>
                 </div>
                 <div style="flex:1; text-align:left;">
                     <b style="display:block; font-size:0.85rem; color:white;">${n.judul}</b>
-                    <small style="color:#aaa; font-size:0.7rem;">${n.detail}</small>
+                    <small style="color:#aaa; font-size:0.75rem;">${n.detail}</small>
                 </div>
                 ${blueDot}
             </div>`;
     });
+};
+
+/* --- FUNGSI KLIK: HILANGKAN TITIK & KURANGI ANGKA SECARA INSTAN --- */
+window.eksekusiBacaPesan = function(id, targetTab) {
+    // 1. Simpan status baca di memori permanen
+    localStorage.setItem(`read_${id}`, 'true');
+
+    // 2. Paksa update status di memori sementara (agar UI langsung berubah tanpa refresh)
+    [...window.currentActiveBookings, ...window.currentActiveOrders].forEach(n => {
+        if (n.id === id) n.isRead = true;
+    });
+
+    // 3. Langsung gambar ulang Lonceng (Titik akan hilang & Angka akan kurang 1 saat ini juga)
+    window.refreshNotifBell();
+
+    // 4. Pindah ke Halaman yang dituju
+    window.switchTab(targetTab);
+};
+
+/* --- FUNGSI BUKA LONCENG (HANYA BUKA SAJA) --- */
+window.toggleNotifPanel = function(e) {
+    if(e) e.stopPropagation();
+    const panel = document.getElementById('notif-panel');
+    if(!panel) return;
+    
+    // Hanya buka dan tutup panel, jangan meriset apapun
+    const isVisible = panel.style.display === 'flex';
+    panel.style.display = isVisible ? 'none' : 'flex';
+    
+    window.refreshNotifBell(); 
 };
 
 // Fungsi saat notif diklik (Mark as Read)
@@ -401,7 +414,8 @@ function listenToWebOrders() {
         
         window.currentActiveOrders = snapshot.docs.map(doc => {
             const o = doc.data(); 
-            return { id: doc.id, type: 'order', judul: 'Pesanan Menu', detail: `Meja: ${o.tableNum || 'T.Away'}`, time: o.timestamp ? o.timestamp.toMillis() : Date.now(), target: 'web-orders' };
+            return { id: doc.id, type: 'order', judul: 'Pesanan Menu', detail: `Meja: ${o.tableNum || 'T.Away'}`, time: o.timestamp ? o.timestamp.toMillis() : Date.now(), target: 'web-orders',
+                    isRead: localStorage.getItem(`read_${docSnap.id}`) === 'true'};
         });
         window.refreshNotifBell();
         container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan.</p>' : '';
