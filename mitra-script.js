@@ -83,6 +83,7 @@ function setupBookingListener() {
         const bookingsData = [];
         let countActive = 0, countBooked = 0;
         const now = new Date();
+        const today = new Date().toISOString().split('T')[0];
 
         snapshot.docChanges().forEach((change) => {
     if (!isInitialLoad) {
@@ -121,9 +122,11 @@ function setupBookingListener() {
             if (d.status === 'finished') return;
 
             bookingsData.push({ id: docSnap.id, ...d });
+            if (d.bookingDate === today) {
             const qty = parseInt(d.tablesNeeded) || 1;
             if(d.status === 'active') countActive += qty;
             else if (d.status === 'booked') countBooked += qty;
+            }
         });
 
         // Simpan untuk Notifikasi Lonceng
@@ -161,14 +164,22 @@ function renderBookings(bookings) {
     const container = document.getElementById('booking-container');
     if(!container) return;
     container.innerHTML = bookings.length === 0 ? '<p style="text-align:center; color:#555; grid-column:1/-1;">Belum ada pesanan.</p>' : '';
-    
-    bookings.sort((a, b) => (a.status === 'active' ? -1 : 1));
 
-    bookings.forEach((b) => {
+    const today = new Date().toISOString().split('T')[0];
+    const dataHariIni = bookings.filter(b => b.bookingDate === today);
+
+    if (dataHariIni.length === 0) { // Ganti dari bookings ke dataHariIni
+        container.innerHTML = '<p style="text-align:center; color:#555; grid-column:1/-1;">Tidak ada pesanan untuk hari ini.</p>';
+        return;
+    }
+
+    dataHariIni.sort((a, b) => (a.status === 'active' ? -1 : 1));
+    dataHariIni.forEach((b) => {
         const qty = b.tablesNeeded || 1;
-        const nomorMeja = b.tableNum ? (Array.isArray(b.tableNum) ? b.tableNum.join(", ") : b.tableNum) : "Pending";
+        const nomorMeja = b.tableNum ? (Array.isArray(b.tableNum) ? "MEJA " + b.tableNum.join(", ") : "MEJA " + b.tableNum) : "Pending";
         const jamHangus = b.expiredTime ? b.expiredTime.split('T')[1] : "-";
 
+        
         if (b.status === 'booked') {
             container.innerHTML += `
             <div class="card-booking waiting">
@@ -414,8 +425,13 @@ function listenToWebOrders() {
         
         window.currentActiveOrders = snapshot.docs.map(doc => {
             const o = doc.data(); 
-            return { id: doc.id, type: 'order', judul: 'Pesanan Menu', detail: `Meja: ${o.tableNum || 'T.Away'}`, time: o.timestamp ? o.timestamp.toMillis() : Date.now(), target: 'web-orders',
-                    isRead: localStorage.getItem(`read_{doc.id}`) === 'true'};
+            return { id: doc.id, 
+                    type: 'order', 
+                    judul: 'Pesanan Menu', 
+                    detail: `Meja: ${o.tableNum || 'T.Away'}`, 
+                    time: o.timestamp ? o.timestamp.toMillis() : Date.now(), 
+                    target: 'web-orders',
+                    isRead: localStorage.getItem(`read_${doc.id}`) === 'true'};
         });
         
         window.refreshNotifBell();
@@ -451,4 +467,45 @@ window.deleteMenu = async function(id) { if(confirm("Hapus menu?")) await delete
 document.onclick = function() {
     const panel = document.getElementById('notif-panel');
     if(panel) panel.style.display = 'none';
+};
+
+/* =========================================
+   FITUR TAMBAHAN: FOTO SAMPUL (COVER)
+   ========================================= */
+
+window.previewCoverImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                // Kompresi agar ringan
+                const MAX_WIDTH = 800;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const base64Data = canvas.toDataURL('image/jpeg', 0.7);
+                
+                try {
+                    await updateDoc(doc(db, "warungs", WARUNG_ID), { bannerImg: base64Data });
+                    alert("✅ Foto Sampul berhasil diperbarui!");
+                    // Update tampilan banner secara instan
+                    const banner = document.getElementById('banner-bg');
+                    if(banner) banner.style.backgroundImage = `url('${base64Data}')`;
+                } catch (error) {
+                    alert("Gagal update foto sampul: " + error.message);
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+window.triggerCoverUpload = function() {
+    const input = document.getElementById('cover-file-input');
+    if(input) input.click();
 };
