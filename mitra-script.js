@@ -233,7 +233,7 @@ window.refreshNotifBell = function() {
     const badge = document.getElementById('web-notif-count');
     if(!listContainer) return;
 
-    const allNotifs = [...window.currentActiveBookings, ...window.currentActiveOrders];
+    const allNotifs = [...(window.currentActiveBookings || []), ...(window.currentActiveOrders || [])];
     allNotifs.sort((a, b) => b.time - a.time);
 
     // 1. HITUNG YANG BELUM DIBACA (Per ID)
@@ -415,8 +415,9 @@ function listenToWebOrders() {
         window.currentActiveOrders = snapshot.docs.map(doc => {
             const o = doc.data(); 
             return { id: doc.id, type: 'order', judul: 'Pesanan Menu', detail: `Meja: ${o.tableNum || 'T.Away'}`, time: o.timestamp ? o.timestamp.toMillis() : Date.now(), target: 'web-orders',
-                    isRead: localStorage.getItem(`read_${docSnap.id}`) === 'true'};
+                    isRead: localStorage.getItem(`read_{doc.id}`) === 'true'};
         });
+        
         window.refreshNotifBell();
         container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan.</p>' : '';
         snapshot.forEach(docSnap => {
