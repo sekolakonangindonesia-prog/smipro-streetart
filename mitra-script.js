@@ -471,7 +471,27 @@ function listenToWebOrders() {
         container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan.</p>' : '';
         snapshot.forEach(docSnap => {
             const order = docSnap.data();
-            container.innerHTML += `<div class="order-card-web"><b>Meja: ${order.tableNum}</b><br>${order.items.map(i => i.name).join(', ')}<br><button onclick="window.handleOrderAction('${docSnap.id}', 'diproses')" style="background:#00ff00; border:none; padding:5px; margin-top:10px; cursor:pointer; border-radius:5px;">TERIMA</button></div>`;
+            const orderId = docSnap.id;
+            const totalOrder = order.items.reduce((sum, item) => sum + item.price, 0);
+            
+           container.innerHTML += `
+        <div class="order-card-web">
+            <div style="display:flex; justify-content:space-between;">
+                <b>Meja: ${order.tableNum}</b>
+                <small>${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
+            </div>
+            <div style="margin:10px 0; color:#ccc; font-size:0.85rem;">
+                ${order.items.map(i => `• ${i.name}`).join('<br>')}
+            </div>
+            <hr style="border-color:#333;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <b style="color:gold;">Rp ${totalHarga.toLocaleString()}</b>
+                <button onclick="window.finishWebOrder('${orderId}', ${totalHarga})" 
+                        style="background:#00ff00; color:black; border:none; padding:5px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">
+                    LUNAS
+                </button>
+                </div>
+        </div>`;
         });
     });
 }
@@ -566,3 +586,22 @@ window.addEventListener('load', () => {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
 });
+
+// --- TARUH DI PALING BAWAH mitra-script.js ---
+window.finishWebOrder = async function(orderId, totalUang) {
+    if(!confirm(`Pesanan Meja ini sudah lunas sebesar Rp ${totalUang.toLocaleString()}?`)) return;
+
+    try {
+        // 1. Update status pesanan jadi finished agar hilang dari layar "Pesanan Web"
+        await updateDoc(doc(db, "warung_orders", orderId), { 
+            status: "finished",
+            paidAt: new Date()
+        });
+
+        // 2. Notifikasi sukses
+        alert("Pembayaran Berhasil! Data telah diarsipkan ke laporan.");
+        
+    } catch (e) {
+        alert("Eror saat memproses pembayaran: " + e.message);
+    }
+};
