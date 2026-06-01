@@ -237,7 +237,7 @@
 
         if(warungId) {
             // 1. DATA WARUNG (REALTIME)
-            onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
+            onSnapshot(doc(db, "warungs", warungId), async (docSnap) => {
                 if(docSnap.exists()) {
                     const data = docSnap.data();
                     currentWarungName = data.name;
@@ -262,9 +262,30 @@
                         `;
                     }
                     
-                    // LOGIKA STATUS MEJA
-                    const available = (parseInt(data.totalTables)||0) - (parseInt(data.bookedCount)||0);
-                    const isFull = available <= 0;
+                    // LOGIKA STATUS MEJA                    
+                    const todayStr = new Date().toLocaleDateString('en-CA'); 
+
+                    // 1. Ambil data booking yang AKTIF atau RESERVASI di database
+                    const qKetersediaan = query(collection(db, "bookings"), 
+                        where("warungId", "==", warungId),
+                        where("status", "in", ["booked", "active"])
+                    );
+
+                    const snapKetersediaan = await getDocs(qKetersediaan);
+                    let mejaTerpakaiHariIni = 0;
+
+                    // 2. Filter: Hanya hitung yang tanggalnya HARI INI saja
+                    snapKetersediaan.forEach(bookedDoc => {
+                        const b = bookedDoc.data();
+                        if (b.bookingDate === todayStr || b.status === 'active') {
+                            mejaTerpakaiHariIni += (parseInt(b.tablesNeeded) || 1);
+                        }
+                    });
+
+        // 3. Update sisa meja yang jujur ditampilkan ke pelanggan hari ini
+        const available = (parseInt(data.totalTables) || 15) - mejaTerpakaiHariIni;
+        const isFull = available <= 0;
+        // --------------------------------------------
                     
                     const btnStatus = document.getElementById('table-status-display');
                     const btnBook = document.getElementById('btn-booking-trigger');
@@ -453,8 +474,10 @@
                 // Mengambil data booking terbaru detik ini juga
                 const q = query(collection(db, "bookings"), 
                     where("warungId", "==", warungId), 
-                    where("status", "in", ["active", "booked"])
+                    where("status", "in", ["active", "booked"]),
+                    where("bookingDate", "==", dateVal) // <--- KUNCI: Hanya cek meja terpakai di tanggal ini
                 );
+                
                 const snapshot = await getDocs(q);
 
                 let usedTables = [];
