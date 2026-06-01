@@ -83,7 +83,8 @@ function setupBookingListener() {
         const bookingsData = [];
         let countActive = 0, countBooked = 0;
         const now = new Date();
-        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('filter-date-booking');
+        const today = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
 
         snapshot.docChanges().forEach((change) => {
     if (!isInitialLoad) {
@@ -120,7 +121,15 @@ function setupBookingListener() {
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
             if (d.status === 'finished') return;
-
+            
+            if (d.status === 'booked' && d.expiredTime) {
+            const expiredDate = new Date(d.expiredTime);
+            // Jika waktu sekarang sudah melewati batas hangus (17:30 di tanggal bookingnya)
+            if (now > expiredDate) {
+            deleteDoc(docSnap.ref); // Hapus permanen dari database
+            return; 
+                }
+            }
             bookingsData.push({ id: docSnap.id, ...d });
            if (d.bookingDate === today || d.status === 'active') {
             const qty = parseInt(d.tablesNeeded) || 1;
@@ -165,7 +174,8 @@ function renderBookings(bookings) {
     if(!container) return;
     container.innerHTML = bookings.length === 0 ? '<p style="text-align:center; color:#555; grid-column:1/-1;">Belum ada pesanan.</p>' : '';
 
-    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('filter-date-booking');
+    const today = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
     const dataHariIni = bookings.filter(b => b.bookingDate === today || b.status === 'active');
 
     if (dataHariIni.length === 0) { // Ganti dari bookings ke dataHariIni
@@ -509,3 +519,27 @@ window.triggerCoverUpload = function() {
     const input = document.getElementById('cover-file-input');
     if(input) input.click();
 }; 
+
+/* =========================================
+   BAGIAN EKSEKUSI & FILTER TANGGAL
+   ========================================= */
+
+// Fungsi ini supaya tombol "HARI INI" di HTML bisa diklik
+window.setTodayFilter = function() {
+    const dateInput = document.getElementById('filter-date-booking');
+    if(dateInput) {
+        // Balikkan tanggal ke hari ini
+        dateInput.value = new Date().toISOString().split('T')[0];
+        // Paksa aplikasi untuk hitung ulang meja sesuai tanggal hari ini
+        setupBookingListener(); 
+    }
+}
+
+// Perintah yang dijalankan OTOMATIS saat Dashboard baru dibuka
+window.addEventListener('load', () => {
+    const dateInput = document.getElementById('filter-date-booking');
+    if(dateInput) {
+        // Setel kalender agar otomatis terisi tanggal hari ini saat login
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+});
