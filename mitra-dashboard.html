@@ -212,6 +212,38 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .notif-item:hover { background: #252525; }
+
+        .date-filter-wrapper {
+        background: #1a1a1a;
+        padding: 12px 15px;
+        border-radius: 12px;
+        border: 1px solid #333;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .date-input-custom {
+        background: #252525;
+        border: 1px solid #444;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        outline: none;
+        cursor: pointer;
+        color-scheme: dark;
+    }
+
+    .label-filter {
+        font-size: 0.75rem;
+        color: #888;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
         
     </style>
 </head>
@@ -300,6 +332,17 @@ input:checked + .slider:before { transform: translateX(26px); }
     <div class="container">
         <!-- TAB 1: BERANDA -->
         <div id="tab-home" class="tab-content active">
+            
+            <!-- KODE FILTER TANGGAL (TARUH DI SINI) -->
+<div class="date-filter-wrapper">
+    <div style="flex:1;">
+        <span class="label-filter">Operasional Tanggal:</span><br>
+        <input type="date" id="filter-date-booking" class="date-input-custom" onchange="setupBookingListener()">
+    </div>
+    <div style="text-align: right;">
+        <button onclick="setTodayFilter()" style="background:none; border:1px solid var(--primary); color:white; padding:6px 12px; border-radius:15px; font-size:0.75rem; cursor:pointer; font-weight:bold;">HARI INI</button>
+    </div>
+</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:30px;">
                 <div class="stat-card-mitra">
                     <i class="fa-solid fa-pen edit-icon" onclick="editTableCount()"></i>
@@ -319,6 +362,7 @@ input:checked + .slider:before { transform: translateX(26px); }
             <div id="booking-container" class="booking-cards-grid"></div>
         </div>
 
+        
         <!-- TAB PESANAN WEB -->
 <div id="tab-web-orders" class="tab-content">
     <!-- Kontrol On/Off Order Web -->
