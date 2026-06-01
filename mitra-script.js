@@ -387,8 +387,27 @@ window.toggleStoreStatus = async function() {
     await updateDoc(doc(db, "warungs", WARUNG_ID), { status: newStatus });
 };
 
+// --- GANTI BARIS 390 - 392 DENGAN INI ---
 window.updateOrderSystemStatus = async function(isActive) {
-    try { await updateDoc(doc(db, "warungs", WARUNG_ID), { enableOrder: isActive }); } catch(e){}
+    try {
+        const docRef = doc(db, "warungs", WARUNG_ID);
+        await updateDoc(docRef, {
+            enableOrder: isActive // true atau false
+        });
+        
+        // Perbaikan: Update teks keterangan di bawah saklar (Toggle) secara instan
+        const desc = document.getElementById('order-status-desc');
+        if(desc) {
+            desc.innerText = isActive ? 'Fitur sedang Aktif' : 'Fitur sedang Mati';
+            desc.style.color = isActive ? '#00ff00' : '#888';
+        }
+        console.log("Sistem Order Online:", isActive ? "AKTIF" : "MATI");
+    } catch (e) {
+        alert("Gagal memperbarui fitur order: " + e.message);
+        // Kembalikan posisi tombol jika pengiriman ke Firebase gagal
+        const toggle = document.getElementById('toggle-order-web');
+        if(toggle) toggle.checked = !isActive;
+    }
 };
 
 window.finishBooking = function(id, qty) {
