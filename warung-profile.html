@@ -92,6 +92,33 @@
         .review-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
         .review-stars { color: gold; font-size: 0.8rem; }
 
+        /* --- TAMPILAN TOMBOL TAMBAH DI MENU --- */
+        .btn-order-add {
+            margin-top: 10px;
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-order-add:hover {
+            background: var(--primary); /* Berubah jadi merah saat disentuh */
+            border-color: var(--primary);
+        }
+
+        .btn-order-add i {
+        font-size: 0.7rem;
+        }
         
     </style>
 </head>
@@ -168,6 +195,11 @@
                 <p style="text-align:center; color:#555;">Belum ada ulasan.</p>
             </div>
         </div>
+
+        <div id="cart-float" class="cart-summary" onclick="openOrderModal()" style="cursor:pointer; display:none;">
+    <span><i class="fa-solid fa-cart-shopping"></i> <span id="cart-count">0</span> Item Pesanan</span>
+    <span id="cart-total">Rp 0</span>
+</div>
         
     <div class="bottom-action">
         <div class="btn-status" id="table-status-display">Cek Status...</div>
@@ -214,6 +246,30 @@
         </div>
     </div>
 
+        <!-- MODAL DETAIL PESANAN PELANGGAN (TARUH DI BARIS 243) -->
+<div id="order-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-box" style="background:#1e1e1e; width:100%; max-width:400px; padding:25px; border-radius:15px; border:1px solid #FFD700; color:white; position:relative;">
+        <i class="fa-solid fa-xmark" style="position:absolute; top:15px; right:15px; cursor:pointer; color:#888;" onclick="closeOrderModal()"></i>
+        
+        <h3 style="text-align:center; color:#FFD700; margin-bottom:20px;">Daftar Pesanan Belanja</h3>
+        
+        <div id="order-items-list" style="max-height:300px; overflow-y:auto; margin-bottom:20px;">
+            <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+
+        <div style="border-top:1px dashed #444; padding-top:15px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
+                <span>Total Bayar:</span>
+                <span id="total-modal-price" style="color:#FFD700;">Rp 0</span>
+            </div>
+        </div>
+
+        <button onclick="confirmOrder()" style="width:100%; padding:15px; background:#E50914; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem;">
+             <i class="fa-solid fa-paper-plane"></i> KIRIM PESANAN SEKARANG
+        </button>
+    </div>
+</div>
+
         <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
         &copy; 2025 Yayasan Sekolah Konang Indonesia - SMIPRO StreetArt.ID
     </div>
@@ -234,12 +290,14 @@
         // Variabel untuk menyimpan rating saat ini agar hitungannya akurat
         let currentRatingScore = 0; 
         let currentReviewCount = 0;
+        let currentWarungData = {};
 
         if(warungId) {
             // 1. DATA WARUNG (REALTIME)
             onSnapshot(doc(db, "warungs", warungId), async (docSnap) => {
                 if(docSnap.exists()) {
                     const data = docSnap.data();
+                    currentWarungData = data;
                     currentWarungName = data.name;
                     venueNameGlobal = data.venueName || "Stadion Bayuangga"; 
                     totalTables = data.totalTables;
@@ -326,12 +384,18 @@
                 }
                 snapshot.forEach(docSnap => {
                     const m = docSnap.data();
+
+                    const showOrder = (typeof currentWarungData !== 'undefined' && currentWarungData?.enableOrder) ? 'flex' : 'none'; // BARU
+                    
                     grid.innerHTML += `
                     <div class="menu-card">
                         <img src="${m.img || 'https://via.placeholder.com/150'}" class="menu-img">
                         <div class="menu-info">
                             <span class="menu-title">${m.name}</span>
                             <span class="menu-price">Rp ${parseInt(m.price).toLocaleString()}</span>
+                            <button class="btn-order-add" style="display:${showOrder}" onclick="addToCart('${docSnap.id}', '${m.name}', ${m.price})">
+                            <i class="fa-solid fa-plus"></i> Tambah
+                        </button>
                         </div>
                     </div>`;
                 });
@@ -559,6 +623,142 @@
                 btnConfirm.style.background = "var(--green)";
             }
         }
+
+        /* =========================================
+           LOGIKA KERANJANG BELANJA (ORDER ONLINE)
+           ========================================= */
+
+let myCart = []; // Wadah penampung barang belanjaan
+
+// 1. Fungsi Tambah ke Keranjang
+window.addToCart = function(id, name, price) {
+    const item = { id, name, price };
+    myCart.push(item);
+    
+    // Tampilkan notifikasi kecil (opsional)
+    console.log("Ditambahkan:", name);
+    
+    // Update tampilan Bar Kuning
+    updateCartUI();
+}
+
+// 2. Fungsi Update Tampilan Bar Keranjang Kuning
+function updateCartUI() {
+    const cartFloat = document.getElementById('cart-float');
+    const countEl = document.getElementById('cart-count');
+    const totalEl = document.getElementById('cart-total');
+
+    if(myCart.length > 0) {
+        // Hitung total harga
+        const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
+        
+        // Munculkan Bar Kuning
+        cartFloat.style.display = 'flex';
+        countEl.innerText = myCart.length;
+        totalEl.innerText = 'Rp ' + totalHarga.toLocaleString();
+    } else {
+        // Sembunyikan jika kosong
+        cartFloat.style.display = 'none';
+    }
+}
+
+// 3. Fungsi Melihat Detail & Mengirim Pesanan
+// (Kita bahas ini setelah Anda berhasil memunculkan total harga di bar kuning ya)
+
+        // A. Fungsi Buka Modal Keranjang
+    window.openOrderModal = function() {
+    if(myCart.length === 0) return; // Jangan buka kalau kosong
+    
+    const modal = document.getElementById('order-modal');
+    const list = document.getElementById('order-items-list');
+    const totalEl = document.getElementById('total-modal-price');
+    
+    // Reset isi list
+    list.innerHTML = '';
+    let total = 0;
+
+    // Gambar ulang setiap item yang ada di keranjang
+    myCart.forEach((item, index) => {
+        total += item.price;
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#252525; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #333;">
+                <div>
+                    <b style="display:block; font-size:0.9rem;">${item.name}</b>
+                    <small style="color:var(--gold);">Rp ${item.price.toLocaleString()}</small>
+                </div>
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#E50914; cursor:pointer; font-size:1.1rem;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        `;
+    });
+
+    totalEl.innerText = 'Rp ' + total.toLocaleString();
+    modal.style.display = 'flex';
+}
+
+// B. Fungsi Hapus Item dari Keranjang
+window.removeFromCart = function(index) {
+    myCart.splice(index, 1); // Hapus 1 data
+    updateCartUI(); // Update bar kuning di halaman utama
+    
+    if(myCart.length > 0) {
+        renderOrderItemsInsideModal(); // Gambar ulang isi modal (fungsi bantu)
+    } else {
+        closeOrderModal(); // Tutup kalau sudah habis
+    }
+}
+        window.confirmOrder = async function() {
+    if(myCart.length === 0) return alert("Pilih menu dulu!");
+    
+    // Kita ambil data dari form booking yang sudah ada supaya tidak isi dua kali
+    const namaPemesan = document.getElementById('book-name').value;
+    const nomorMeja = document.getElementById('book-qty').value; // Misal: "2 Meja" atau ambil dari nomor meja check-in
+
+    if(!namaPemesan) return alert("Mohon isi Nama di form booking dulu sebagai identitas.");
+
+    if(confirm("Kirim pesanan ini ke dapur?")) {
+        try {
+            await addDoc(collection(db, "warung_orders"), {
+                warungId: warungId,
+                customerName: namaPemesan,
+                tableNum: nomorMeja,
+                items: myCart,
+                status: "pending",
+                timestamp: new Date()
+            });
+            
+            alert("Pesanan terkirim! Silakan tunggu hidangan Anda.");
+            myCart = []; // Kosongkan keranjang
+            updateCartUI();
+            closeOrderModal();
+        } catch (e) {
+            alert("Gagal kirim pesanan: " + e.message);
+        }
+    }
+}
+
+// Fungsi bantu pelengkap untuk gambar ulang isi modal tanpa menutupnya
+function renderOrderItemsInsideModal() {
+    const list = document.getElementById('order-items-list');
+    const totalEl = document.getElementById('total-modal-price');
+    list.innerHTML = '';
+    let total = 0;
+    myCart.forEach((item, index) => {
+        total += item.price;
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#252525; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #333;">
+                <div><b>${item.name}</b><br><small style="color:var(--gold);">Rp ${item.price.toLocaleString()}</small></div>
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#E50914;"><i class="fa-solid fa-trash-can"></i></button>
+            </div>`;
+    });
+    totalEl.innerText = 'Rp ' + total.toLocaleString();
+}
+
+window.closeOrderModal = function() {
+    document.getElementById('order-modal').style.display = 'none';
+}
+        
     </script>
 </body>
 </html>
