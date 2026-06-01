@@ -75,7 +75,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
 /* =========================================
    2. LISTENER BOOKING (SENSITIF REAL-TIME)
    ========================================= */
-function setupBookingListener() {
+window.setupBookingListener = function() {
     if (unsubscribeBooking) unsubscribeBooking();
     const qBooking = query(collection(db, "bookings"), where("warungId", "==", WARUNG_ID));
 
@@ -84,7 +84,7 @@ function setupBookingListener() {
         let countActive = 0, countBooked = 0;
         const now = new Date();
         const dateInput = document.getElementById('filter-date-booking');
-        const today = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+        const today = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
 
         snapshot.docChanges().forEach((change) => {
     if (!isInitialLoad) {
@@ -131,10 +131,14 @@ function setupBookingListener() {
                 }
             }
             bookingsData.push({ id: docSnap.id, ...d });
-           if (d.bookingDate === today || d.status === 'active') {
-            const qty = parseInt(d.tablesNeeded) || 1;
-            if(d.status === 'active') countActive += qty;
-            else if (d.status === 'booked') countBooked += qty;
+            
+          if (d.bookingDate === today || d.status === 'active') {
+                const qty = parseInt(d.tablesNeeded) || 1;
+                if(d.status === 'active') {
+                    countActive += qty;
+                } else if (d.status === 'booked') {
+                    countBooked += qty;
+                }
             }
         });
 
