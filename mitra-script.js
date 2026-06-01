@@ -122,7 +122,7 @@ function setupBookingListener() {
             if (d.status === 'finished') return;
 
             bookingsData.push({ id: docSnap.id, ...d });
-            if (d.bookingDate === today) {
+           if (d.bookingDate === today || d.status === 'active') {
             const qty = parseInt(d.tablesNeeded) || 1;
             if(d.status === 'active') countActive += qty;
             else if (d.status === 'booked') countBooked += qty;
@@ -166,7 +166,7 @@ function renderBookings(bookings) {
     container.innerHTML = bookings.length === 0 ? '<p style="text-align:center; color:#555; grid-column:1/-1;">Belum ada pesanan.</p>' : '';
 
     const today = new Date().toISOString().split('T')[0];
-    const dataHariIni = bookings.filter(b => b.bookingDate === today);
+    const dataHariIni = bookings.filter(b => b.bookingDate === today || b.status === 'active');
 
     if (dataHariIni.length === 0) { // Ganti dari bookings ke dataHariIni
         container.innerHTML = '<p style="text-align:center; color:#555; grid-column:1/-1;">Tidak ada pesanan untuk hari ini.</p>';
