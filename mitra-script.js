@@ -508,4 +508,4 @@ window.previewCoverImage = function(input) {
 window.triggerCoverUpload = function() {
     const input = document.getElementById('cover-file-input');
     if(input) input.click();
-};
+}; 
