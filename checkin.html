@@ -311,6 +311,7 @@ window.submitWalkIn = async function() {
             tablesNeeded: qtyNeeded, // Tersimpan otomatis (misal: 2)
             tableNum: assignedTables, // Array nomor meja (misal: [2, 3])
             bookingCode: "WALK-IN",
+            bookingDate: new Date().toISOString().split('T')[0], 
             status: 'active', 
             revenue: 0, 
             timestamp: new Date(),
