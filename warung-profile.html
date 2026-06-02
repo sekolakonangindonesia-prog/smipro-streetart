@@ -699,17 +699,22 @@
             }
         }
 
-      /* =========================================
-   LOGIKA KERANJANG BELANJA (DENGAN MEMORI)
+/* =========================================
+   LOGIKA KERANJANG BELANJA (ORDER ONLINE)
    ========================================= */
 
-let myCart = []; // Wadah penampung barang belanjaan
+let myCart = JSON.parse(localStorage.getItem(`cart_${warungId}`)) || [];
 
 // 1. Fungsi Tambah ke Keranjang
 window.addToCart = function(id, name, price) {
     const item = { id, name, price };
     myCart.push(item);
+    simpanKeMemori();
 
+    function simpanKeMemori() {
+    localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
+}
+    
     // Tampilkan notifikasi kecil (opsional)
     console.log("Ditambahkan:", name);
       
@@ -771,6 +776,7 @@ function updateCartUI() {
 // B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
     myCart.splice(index, 1); // Hapus 1 data
+    simpanKeMemori();
     updateCartUI(); // Update bar kuning di halaman utama
 
     if(myCart.length > 0) {
@@ -802,7 +808,8 @@ window.removeFromCart = function(index) {
 
              alert("Pesanan terkirim! Silakan tunggu hidangan Anda.");
                        
-            myCart = [];               
+            myCart = [];      
+            localStorage.removeItem(`cart_${warungId}`);
             updateCartUI();
             closeOrderModal();
         } catch (e) {
@@ -832,6 +839,7 @@ function renderOrderItemsInsideModal() {
 window.closeOrderModal = function() {
     document.getElementById('order-modal').style.display = 'none';
 }
+        updateCartUI();
         
     </script>
 </body>
