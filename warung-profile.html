@@ -712,7 +712,9 @@ window.addToCart = function(id, name, price) {
     simpanKeMemori();
 
     function simpanKeMemori() {
-    localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
+    if (typeof warungId !== 'undefined') {
+        localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
+    }
 }
     
     // Tampilkan notifikasi kecil (opsional)
@@ -780,7 +782,7 @@ window.removeFromCart = function(index) {
     updateCartUI(); // Update bar kuning di halaman utama
 
     if(myCart.length > 0) {
-        renderOrderItemsInsideModal(); // Gambar ulang isi modal (fungsi bantu)
+        renderOrderItems(); // Gambar ulang isi modal (fungsi bantu)
     } else {
         closeOrderModal(); // Tutup kalau sudah habis
     }
@@ -820,17 +822,20 @@ window.removeFromCart = function(index) {
         
                 
 // Fungsi bantu pelengkap untuk gambar ulang isi modal tanpa menutupnya
-function renderOrderItemsInsideModal() {
+function renderOrderItems() {
     const list = document.getElementById('order-items-list');
     const totalEl = document.getElementById('total-modal-price');
+    if(!list || !totalEl) return;
+    
     list.innerHTML = '';
     let total = 0;
+    
     myCart.forEach((item, index) => {
         total += item.price;
         list.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; background:#252525; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #333;">
                 <div><b>${item.name}</b><br><small style="color:var(--gold);">Rp ${item.price.toLocaleString()}</small></div>
-                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#E50914;"><i class="fa-solid fa-trash-can"></i></button>
+                <button onclick="window.removeFromCart(${index})" style="background:none; border:none; color:#E50914;"><i class="fa-solid fa-trash-can"></i></button>
             </div>`;
     });
     totalEl.innerText = 'Rp ' + total.toLocaleString();
