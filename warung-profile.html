@@ -771,11 +771,12 @@ function updateCartUI() {
 
     totalEl.innerText = 'Rp ' + total.toLocaleString();
     modal.style.display = 'flex';
-}; // <--- INI ADALAH PENUTUP DI BARIS 757 (HANYA SATU SAJA)
+}
         
 // B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
     myCart.splice(index, 1); // Hapus 1 data   
+    simpanKeMemori(); 
     updateCartUI(); // Update bar kuning di halaman utama
 
     if(myCart.length > 0) {
