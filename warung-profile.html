@@ -705,49 +705,72 @@
 
 let myCart = []; // Wadah penampung barang belanjaan
 
-// B. Fungsi Tambah ke Keranjang
+// 1. Fungsi Tambah ke Keranjang
 window.addToCart = function(id, name, price) {
     const item = { id, name, price };
     myCart.push(item);
-    
-    // Simpan ke memori browser
-    simpanKeMemori();
-    
+
+    // Tampilkan notifikasi kecil (opsional)
+    console.log("Ditambahkan:", name);
+      
     // Update tampilan Bar Kuning
     updateCartUI();
-};
-
-// C. Fungsi Simpan ke LocalStorage
-function simpanKeMemori() {
-    localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
 }
 
-// D. Fungsi Update Tampilan Bar Keranjang (Pojok Kanan Atas)
+// 2. Fungsi Update Tampilan Bar Keranjang Kuning
 function updateCartUI() {
     const cartFloat = document.getElementById('cart-float');
     const badgeEl = document.getElementById('cart-badge');
         
     if (myCart.length > 0) {
         cartFloat.style.display = 'flex';
-        badgeEl.innerText = myCart.length; // Hanya update angka 1, 2, 3..
-        const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
-        
-        if (cartFloat) cartFloat.style.display = 'flex';
-        
-        // Update angka item & total harga di bar kuning
-        const countDisplay = document.getElementById('cart-count');
-        const priceDisplay = document.getElementById('cart-total');
-        if (countDisplay) countDisplay.innerText = myCart.length;
-        if (priceDisplay) priceDisplay.innerText = 'Rp ' + totalHarga.toLocaleString();
+        badgeEl.innerText = myCart.length; // Hanya update angka 1, 2, 3..        
     } else {
         cartFloat.style.display = 'none';
     }
 }
+        
+// 3. Fungsi Melihat Detail & Mengirim Pesanan
+        
+// A. Fungsi Buka Modal Keranjang
+   window.openOrderModal = function() {
+    // A. Ambil identitas warung untuk dipasang di modal
+    const profilWarung = document.getElementById('w-img').src;
+    document.getElementById('modal-warung-img').src = profilWarung;
 
+    // B. Ambil elemen modal
+    const modal = document.getElementById('order-modal');
+    const list = document.getElementById('order-items-list');
+    const totalEl = document.getElementById('total-modal-price');
+
+    if(myCart.length === 0) return alert("Keranjang Kosong!");
+
+    // C. Reset isi list sebelum digambar ulang
+    list.innerHTML = '';
+    let total = 0;
+
+    // D. Gambar daftar belanjaan
+    myCart.forEach((item, index) => {
+        total += item.price;
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#252525; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #333;">
+                <div>
+                    <b style="display:block; font-size:0.9rem;">${item.name}</b>
+                    <small style="color:var(--gold);">Rp ${item.price.toLocaleString()}</small>
+                </div>
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#E50914; cursor:pointer; font-size:1.1rem;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>`;
+    });
+
+    totalEl.innerText = 'Rp ' + total.toLocaleString();
+    modal.style.display = 'flex';
+}; // <--- INI ADALAH PENUTUP DI BARIS 757 (HANYA SATU SAJA)
+        
 // B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
     myCart.splice(index, 1); // Hapus 1 data
-    simpanKeMemori();
     updateCartUI(); // Update bar kuning di halaman utama
 
     if(myCart.length > 0) {
@@ -779,8 +802,7 @@ window.removeFromCart = function(index) {
 
              alert("Pesanan terkirim! Silakan tunggu hidangan Anda.");
                        
-            myCart = [];
-            localStorage.removeItem(`cart_${warungId}`);            
+            myCart = [];               
             updateCartUI();
             closeOrderModal();
         } catch (e) {
@@ -789,9 +811,7 @@ window.removeFromCart = function(index) {
     }
 }
         
-        // G. JALANKAN OTOMATIS SAAT WEB DIBUKA (Agar keranjang lama muncul lagi)
-        updateCartUI();
-
+                
 // Fungsi bantu pelengkap untuk gambar ulang isi modal tanpa menutupnya
 function renderOrderItemsInsideModal() {
     const list = document.getElementById('order-items-list');
