@@ -121,28 +121,28 @@
         }
 
         /* --- GAYA BARU KERANJANG DI POJOK KANAN ATAS --- */
-    .cart-summary {
+   .cart-summary {
     position: fixed;
-    top: 20px; /* Melayang di atas kanan */
-    right: 20px;
-    background: var(--gold);
-    color: black;
-    padding: 8px 18px;
+    top: 25px; /* Jarak dari atas */
+    right: 20px; /* Jarak dari kanan */
+    background: #FFD700 !important; /* Warna Kuning Emas Solid */
+    color: #000000 !important; /* Tulisan Hitam Pekat agar kontras */
+    padding: 10px 20px;
     border-radius: 30px;
-    display: none; /* Muncul otomatis jika ada pesanan */
+    display: none; /* Akan diubah jadi 'flex' oleh JS saat ada isi */
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.6);
-    z-index: 3000; /* Paling depan */
+    gap: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.8); /* Bayangan lebih tebal agar timbul */
+    z-index: 99999; /* Angka paling tinggi agar tidak tertutup gambar apapun */
     font-weight: 800;
     cursor: pointer;
-    border: 2px solid #000;
-    font-size: 0.85rem;
-    animation: slideInRight 0.3s ease;
+    border: 2px solid #ffffff; /* Garis tepi putih agar makin jelas */
+    animation: slideInRight 0.5s ease-out;
 }
 
+/* Animasi supaya saat muncul dia meluncur dari kanan */
 @keyframes slideInRight {
-    from { transform: translateX(50px); opacity: 0; }
+    from { transform: translateX(100px); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
 
@@ -247,10 +247,11 @@
             </div>
         </div>
 
-        <div id="cart-float" class="cart-summary" onclick="openOrderModal()" style="cursor:pointer; display:none;">
-    <span><i class="fa-solid fa-cart-shopping"></i> <span id="cart-count">0</span> Item Pesanan</span>
-    <span id="cart-total">Rp 0</span>
-</div>
+        <div id="cart-float" class="cart-summary" onclick="openOrderModal()">
+            <i class="fa-solid fa-cart-shopping"></i> 
+            <span><span id="cart-count">0</span> Item</span> 
+            <span id="cart-total">Rp 0</span>
+        </div>
         
     <div class="bottom-action">
         <div class="btn-status" id="table-status-display">Cek Status...</div>
