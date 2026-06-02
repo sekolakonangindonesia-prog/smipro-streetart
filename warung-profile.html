@@ -58,7 +58,7 @@
         .btn-book-action { flex: 2; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-book-action:disabled { background: #555; cursor: not-allowed; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px; }
-        .modal-box { background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-box { background: #1e1e1e; width: 100%; max-width: 350px; padding: 25px; border-radius: 10px; border: 2px solid var(--gold);  box-shadow: 0 0 30px rgba(255, 215, 0, 0.2); position: relative; max-height: 90vh; overflow-y: auto; }
         .input-request { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
         .btn-small { border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
         .close-icon { position: absolute; top: 15px; right: 15px; color: #888; cursor: pointer; font-size: 1.2rem; }
@@ -703,12 +703,14 @@
            LOGIKA KERANJANG BELANJA (ORDER ONLINE)
            ========================================= */
 
-let myCart = []; // Wadah penampung barang belanjaan
-
+let myCart = JSON.parse(localStorage.getItem(`cart_${warungId}`)) || [];
+        
 // 1. Fungsi Tambah ke Keranjang
 window.addToCart = function(id, name, price) {
     const item = { id, name, price };
     myCart.push(item);
+
+    simpanKeMemori();
     
     // Tampilkan notifikasi kecil (opsional)
     console.log("Ditambahkan:", name);
@@ -717,16 +719,26 @@ window.addToCart = function(id, name, price) {
     updateCartUI();
 }
 
+function simpanKeMemori() {
+    localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
+}
+
 // 2. Fungsi Update Tampilan Bar Keranjang Kuning
 function updateCartUI() {
     const cartFloat = document.getElementById('cart-float');
     const badgeEl = document.getElementById('cart-badge');
 
     if(myCart.length > 0) {
-        cartFloat.style.display = 'flex';
-        badgeEl.innerText = myCart.length; // Hanya update angka 1, 2, 3..
+        const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
+        if (cartFloat) cartFloat.style.display = 'flex';
+        
+        // Update angka item & total harga di bar kuning
+        const countDisplay = document.getElementById('cart-count');
+        const priceDisplay = document.getElementById('cart-total');
+        if (countDisplay) countDisplay.innerText = myCart.length;
+        if (priceDisplay) priceDisplay.innerText = 'Rp ' + totalHarga.toLocaleString();
     } else {
-        cartFloat.style.display = 'none';
+        if (cartFloat) cartFloat.style.display = 'none';
     }
 }
         
@@ -771,6 +783,7 @@ function updateCartUI() {
 // B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
     myCart.splice(index, 1); // Hapus 1 data
+    simpanKeMemori();
     updateCartUI(); // Update bar kuning di halaman utama
     
     if(myCart.length > 0) {
@@ -799,7 +812,7 @@ window.removeFromCart = function(index) {
                 timestamp: new Date()
             });
             
-            alert("Pesanan terkirim! Silakan tunggu hidangan Anda.");
+            alert("✅ Pesanan terkirim!");
             myCart = []; // Kosongkan keranjang
             updateCartUI();
             closeOrderModal();
