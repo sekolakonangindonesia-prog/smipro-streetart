@@ -719,25 +719,25 @@ function updateCartUI() {
 }
 
 // 3. Fungsi Melihat Detail & Mengirim Pesanan
-// (Kita bahas ini setelah Anda berhasil memunculkan total harga di bar kuning ya)
 
         // A. Fungsi Buka Modal Keranjang
-    window.openOrderModal = function() {
-    if(myCart.length === 0) return; // Jangan buka kalau kosong
+   window.openOrderModal = function() {
+    // A. Ambil identitas warung untuk dipasang di modal
     const profilWarung = document.getElementById('w-img').src;
-        document.getElementById('modal-warung-img').src = profilWarung;
-        renderOrderItems(); 
-        document.getElementById('order-modal').style.display = 'flex';
-        }
+    document.getElementById('modal-warung-img').src = profilWarung;
+
+    // B. Ambil elemen modal
     const modal = document.getElementById('order-modal');
     const list = document.getElementById('order-items-list');
     const totalEl = document.getElementById('total-modal-price');
-    
-    // Reset isi list
+
+    if(myCart.length === 0) return alert("Keranjang Kosong!");
+
+    // C. Reset isi list sebelum digambar ulang
     list.innerHTML = '';
     let total = 0;
 
-    // Gambar ulang setiap item yang ada di keranjang
+    // D. Gambar daftar belanjaan
     myCart.forEach((item, index) => {
         total += item.price;
         list.innerHTML += `
@@ -749,13 +749,12 @@ function updateCartUI() {
                 <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#E50914; cursor:pointer; font-size:1.1rem;">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
-            </div>
-        `;
+            </div>`;
     });
 
     totalEl.innerText = 'Rp ' + total.toLocaleString();
     modal.style.display = 'flex';
-}
+}; // <--- INI ADALAH PENUTUP DI BARIS 757 (HANYA SATU SAJA)
 
 // B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
