@@ -703,8 +703,7 @@
    LOGIKA KERANJANG BELANJA (DENGAN MEMORI)
    ========================================= */
 
-// A. Logika Ambil Data dari Memori Browser saat pertama kali buka web
-let myCart = JSON.parse(localStorage.getItem(`cart_${warungId}`)) || [];
+let myCart = []; // Wadah penampung barang belanjaan
 
 // B. Fungsi Tambah ke Keranjang
 window.addToCart = function(id, name, price) {
@@ -726,10 +725,11 @@ function simpanKeMemori() {
 // D. Fungsi Update Tampilan Bar Keranjang (Pojok Kanan Atas)
 function updateCartUI() {
     const cartFloat = document.getElementById('cart-float');
-    const badgeEl = document.getElementById('cart-count'); // Jika anda pake ID cart-count
-    // Jika anda pakai struktur lama yang muncul teks "X Item Rp ...", sesuaikan element-nya
-    
+    const badgeEl = document.getElementById('cart-badge');
+        
     if (myCart.length > 0) {
+        cartFloat.style.display = 'flex';
+        badgeEl.innerText = myCart.length; // Hanya update angka 1, 2, 3..
         const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
         
         if (cartFloat) cartFloat.style.display = 'flex';
@@ -740,28 +740,33 @@ function updateCartUI() {
         if (countDisplay) countDisplay.innerText = myCart.length;
         if (priceDisplay) priceDisplay.innerText = 'Rp ' + totalHarga.toLocaleString();
     } else {
-        if (cartFloat) cartFloat.style.display = 'none';
+        cartFloat.style.display = 'none';
     }
 }
 
-// E. Fungsi Hapus Item Satu Per Satu
+// B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
-    myCart.splice(index, 1);
-    simpanKeMemori(); // Update memori browser
-    updateCartUI();   // Update tampilan web
-    
-    if (myCart.length > 0) {
-        renderOrderItems(); // Gambar ulang list di modal
-    } else {
-        closeOrderModal();  // Tutup modal kalau kosong
-    }
-};
+    myCart.splice(index, 1); // Hapus 1 data
+    simpanKeMemori();
+    updateCartUI(); // Update bar kuning di halaman utama
 
-// F. Fungsi Kirim Pesanan (Wajib hapus memori jika sukses terkirim)
-window.confirmOrder = async function() {
-    // ... (Logika ambil nama & meja anda sudah benar) ...
-    
-    if (confirm("Kirim pesanan ini ke dapur?")) {
+    if(myCart.length > 0) {
+        renderOrderItemsInsideModal(); // Gambar ulang isi modal (fungsi bantu)
+    } else {
+        closeOrderModal(); // Tutup kalau sudah habis
+    }
+}
+
+        window.confirmOrder = async function() {
+    if(myCart.length === 0) return alert("Pilih menu dulu!");
+
+    // Kita ambil data dari form booking yang sudah ada supaya tidak isi dua kali
+    const namaPemesan = document.getElementById('book-name').value;
+    const nomorMeja = document.getElementById('book-qty').value; // Misal: "2 Meja" atau ambil dari nomor meja check-in
+
+    if(!namaPemesan) return alert("Mohon isi Nama di form booking dulu sebagai identitas.");
+
+    if(confirm("Kirim pesanan ini ke dapur?")) {
         try {
             await addDoc(collection(db, "warung_orders"), {
                 warungId: warungId,
@@ -772,12 +777,10 @@ window.confirmOrder = async function() {
                 timestamp: new Date()
             });
 
-            alert("✅ Pesanan terkirim!");
-            
-            // KUNCI: Hapus keranjang di memori karena pesanan sudah sukses terkirim
+             alert("Pesanan terkirim! Silakan tunggu hidangan Anda.");
+                       
             myCart = [];
-            localStorage.removeItem(`cart_${warungId}`);
-            
+            localStorage.removeItem(`cart_${warungId}`);            
             updateCartUI();
             closeOrderModal();
         } catch (e) {
@@ -785,6 +788,7 @@ window.confirmOrder = async function() {
         }
     }
 }
+        
         // G. JALANKAN OTOMATIS SAAT WEB DIBUKA (Agar keranjang lama muncul lagi)
         updateCartUI();
 
