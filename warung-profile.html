@@ -121,54 +121,88 @@
         }
 
         /* --- GAYA BARU KERANJANG DI POJOK KANAN ATAS --- */
-   .cart-summary {
+  .cart-summary {
     position: fixed;
-    top: 25px; /* Jarak dari atas */
-    right: 20px; /* Jarak dari kanan */
-    background: #FFD700 !important; /* Warna Kuning Emas Solid */
-    color: #000000 !important; /* Tulisan Hitam Pekat agar kontras */
-    padding: 10px 20px;
-    border-radius: 30px;
-    display: none; /* Akan diubah jadi 'flex' oleh JS saat ada isi */
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--gold);
+    color: black;
+    border-radius: 50%; /* Bulat */
+    display: none; 
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.8); /* Bayangan lebih tebal agar timbul */
-    z-index: 99999; /* Angka paling tinggi agar tidak tertutup gambar apapun */
-    font-weight: 800;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+    z-index: 3000;
     cursor: pointer;
-    border: 2px solid #ffffff; /* Garis tepi putih agar makin jelas */
-    animation: slideInRight 0.5s ease-out;
+    border: 2px solid #000;
+    transition: 0.3s;
 }
 
-/* Animasi supaya saat muncul dia meluncur dari kanan */
-@keyframes slideInRight {
-    from { transform: translateX(100px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+/* Lingkaran Angka Merah (Badge) */
+/* --- GAYA ICON KERANJANG POJOK KANAN ATAS --- */
+.cart-summary {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--gold);
+    color: black;
+    border-radius: 50%; /* Bulat */
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+    z-index: 3000;
+    cursor: pointer;
+    border: 2px solid #000;
+    transition: 0.3s;
 }
 
-/* Logo di dalam Modal Keranjang (Gaya Facebook/Profesional) */
+/* Lingkaran Angka Merah (Badge) */
+.cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--primary); /* Merah */
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #000;
+    padding: 2px;
+}
+
+/* --- HEADER LOGO DI DALAM MODAL (DITUKAR) --- */
 .modal-header-logos {
     display: flex;
     align-items: center;
-    justify-content: center; /* Logo StreetArt di tengah */
+    justify-content: center; /* Warung Profil di tengah */
     position: relative;
     margin-bottom: 25px;
-    height: 60px;
+    height: 50px;
+}
+
+.modal-platform-logo {
+    position: absolute;
+    left: 0; /* Logo StreetArt di pojok kiri modal */
+    width: 40px; /* Ukuran diperkecil */
 }
 
 .modal-warung-mini {
-    position: absolute;
-    left: 0; /* Foto warung di pojok kiri modal */
-    width: 50px;
+    width: 50px; /* Ukuran diperkecil sedikit */
     height: 50px;
     border-radius: 50%;
     border: 2px solid var(--gold);
     object-fit: cover;
     background: #000;
-}
-
-.modal-platform-logo {
-    width: 60px; /* Logo StreetArt di tengah modal */
 }
         
     </style>
@@ -247,11 +281,11 @@
             </div>
         </div>
 
-        <div id="cart-float" class="cart-summary" onclick="openOrderModal()">
-            <i class="fa-solid fa-cart-shopping"></i> 
-            <span><span id="cart-count">0</span> Item</span> 
-            <span id="cart-total">Rp 0</span>
-        </div>
+       <div id="cart-float" class="cart-summary" onclick="openOrderModal()">
+    <i class="fa-solid fa-cart-shopping" style="font-size: 1.3rem;"></i>
+    <!-- Angka Badge -->
+    <div id="cart-badge" class="cart-badge">0</div>
+    </div>
         
     <div class="bottom-action">
         <div class="btn-status" id="table-status-display">Cek Status...</div>
@@ -306,10 +340,10 @@
         <!-- HEADER DUA LOGO -->
         <div class="modal-header-logos">
             <!-- Foto Warung Bulat di Kiri -->
-            <img src="" id="modal-warung-img" class="modal-warung-mini" onerror="this.src='https://placehold.co/100'">
+             <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-platform-logo">
             
             <!-- Logo StreetArt di Tengah -->
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-platform-logo">
+             <img src="" id="modal-warung-img" class="modal-warung-mini" onerror="this.src='https://placehold.co/100'">
         </div>
 
         <h3 style="text-align:center; color:white; margin-bottom:20px; font-size:1.1rem;">Daftar Pesanan Belanja</h3>
@@ -702,23 +736,16 @@ window.addToCart = function(id, name, price) {
 // 2. Fungsi Update Tampilan Bar Keranjang Kuning
 function updateCartUI() {
     const cartFloat = document.getElementById('cart-float');
-    const countEl = document.getElementById('cart-count');
-    const totalEl = document.getElementById('cart-total');
+    const badgeEl = document.getElementById('cart-badge');
 
     if(myCart.length > 0) {
-        // Hitung total harga
-        const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
-        
-        // Munculkan Bar Kuning
         cartFloat.style.display = 'flex';
-        countEl.innerText = myCart.length;
-        totalEl.innerText = 'Rp ' + totalHarga.toLocaleString();
+        badgeEl.innerText = myCart.length; // Hanya update angka 1, 2, 3..
     } else {
-        // Sembunyikan jika kosong
         cartFloat.style.display = 'none';
     }
 }
-
+        
 // 3. Fungsi Melihat Detail & Mengirim Pesanan
 
         // A. Fungsi Buka Modal Keranjang
