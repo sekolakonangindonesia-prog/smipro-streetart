@@ -775,8 +775,7 @@ function updateCartUI() {
         
 // B. Fungsi Hapus Item dari Keranjang
 window.removeFromCart = function(index) {
-    myCart.splice(index, 1); // Hapus 1 data
-    simpanKeMemori();
+    myCart.splice(index, 1); // Hapus 1 data   
     updateCartUI(); // Update bar kuning di halaman utama
 
     if(myCart.length > 0) {
