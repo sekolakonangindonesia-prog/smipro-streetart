@@ -699,37 +699,39 @@
             }
         }
 
-        /* =========================================
-           LOGIKA KERANJANG BELANJA (ORDER ONLINE)
-           ========================================= */
+      /* =========================================
+   LOGIKA KERANJANG BELANJA (DENGAN MEMORI)
+   ========================================= */
 
+// A. Logika Ambil Data dari Memori Browser saat pertama kali buka web
 let myCart = JSON.parse(localStorage.getItem(`cart_${warungId}`)) || [];
-        
-// 1. Fungsi Tambah ke Keranjang
+
+// B. Fungsi Tambah ke Keranjang
 window.addToCart = function(id, name, price) {
     const item = { id, name, price };
     myCart.push(item);
-
-    simpanKeMemori();
     
-    // Tampilkan notifikasi kecil (opsional)
-    console.log("Ditambahkan:", name);
+    // Simpan ke memori browser
+    simpanKeMemori();
     
     // Update tampilan Bar Kuning
     updateCartUI();
-}
+};
 
+// C. Fungsi Simpan ke LocalStorage
 function simpanKeMemori() {
     localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
 }
 
-// 2. Fungsi Update Tampilan Bar Keranjang Kuning
+// D. Fungsi Update Tampilan Bar Keranjang (Pojok Kanan Atas)
 function updateCartUI() {
     const cartFloat = document.getElementById('cart-float');
-    const badgeEl = document.getElementById('cart-badge');
-
-    if(myCart.length > 0) {
+    const badgeEl = document.getElementById('cart-count'); // Jika anda pake ID cart-count
+    // Jika anda pakai struktur lama yang muncul teks "X Item Rp ...", sesuaikan element-nya
+    
+    if (myCart.length > 0) {
         const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
+        
         if (cartFloat) cartFloat.style.display = 'flex';
         
         // Update angka item & total harga di bar kuning
@@ -741,67 +743,25 @@ function updateCartUI() {
         if (cartFloat) cartFloat.style.display = 'none';
     }
 }
-        
-// 3. Fungsi Melihat Detail & Mengirim Pesanan
 
-        // A. Fungsi Buka Modal Keranjang
-   window.openOrderModal = function() {
-    // A. Ambil identitas warung untuk dipasang di modal
-    const profilWarung = document.getElementById('w-img').src;
-    document.getElementById('modal-warung-img').src = profilWarung;
-
-    // B. Ambil elemen modal
-    const modal = document.getElementById('order-modal');
-    const list = document.getElementById('order-items-list');
-    const totalEl = document.getElementById('total-modal-price');
-
-    if(myCart.length === 0) return alert("Keranjang Kosong!");
-
-    // C. Reset isi list sebelum digambar ulang
-    list.innerHTML = '';
-    let total = 0;
-
-    // D. Gambar daftar belanjaan
-    myCart.forEach((item, index) => {
-        total += item.price;
-        list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#252525; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #333;">
-                <div>
-                    <b style="display:block; font-size:0.9rem;">${item.name}</b>
-                    <small style="color:var(--gold);">Rp ${item.price.toLocaleString()}</small>
-                </div>
-                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#E50914; cursor:pointer; font-size:1.1rem;">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>`;
-    });
-
-    totalEl.innerText = 'Rp ' + total.toLocaleString();
-    modal.style.display = 'flex';
-}; // <--- INI ADALAH PENUTUP DI BARIS 757 (HANYA SATU SAJA)
-
-// B. Fungsi Hapus Item dari Keranjang
+// E. Fungsi Hapus Item Satu Per Satu
 window.removeFromCart = function(index) {
-    myCart.splice(index, 1); // Hapus 1 data
-    simpanKeMemori();
-    updateCartUI(); // Update bar kuning di halaman utama
+    myCart.splice(index, 1);
+    simpanKeMemori(); // Update memori browser
+    updateCartUI();   // Update tampilan web
     
-    if(myCart.length > 0) {
-        renderOrderItemsInsideModal(); // Gambar ulang isi modal (fungsi bantu)
+    if (myCart.length > 0) {
+        renderOrderItems(); // Gambar ulang list di modal
     } else {
-        closeOrderModal(); // Tutup kalau sudah habis
+        closeOrderModal();  // Tutup modal kalau kosong
     }
-}
-        window.confirmOrder = async function() {
-    if(myCart.length === 0) return alert("Pilih menu dulu!");
+};
+
+// F. Fungsi Kirim Pesanan (Wajib hapus memori jika sukses terkirim)
+window.confirmOrder = async function() {
+    // ... (Logika ambil nama & meja anda sudah benar) ...
     
-    // Kita ambil data dari form booking yang sudah ada supaya tidak isi dua kali
-    const namaPemesan = document.getElementById('book-name').value;
-    const nomorMeja = document.getElementById('book-qty').value; // Misal: "2 Meja" atau ambil dari nomor meja check-in
-
-    if(!namaPemesan) return alert("Mohon isi Nama di form booking dulu sebagai identitas.");
-
-    if(confirm("Kirim pesanan ini ke dapur?")) {
+    if (confirm("Kirim pesanan ini ke dapur?")) {
         try {
             await addDoc(collection(db, "warung_orders"), {
                 warungId: warungId,
@@ -811,9 +771,13 @@ window.removeFromCart = function(index) {
                 status: "pending",
                 timestamp: new Date()
             });
-            
+
             alert("✅ Pesanan terkirim!");
-            myCart = []; // Kosongkan keranjang
+            
+            // KUNCI: Hapus keranjang di memori karena pesanan sudah sukses terkirim
+            myCart = [];
+            localStorage.removeItem(`cart_${warungId}`);
+            
             updateCartUI();
             closeOrderModal();
         } catch (e) {
@@ -821,6 +785,8 @@ window.removeFromCart = function(index) {
         }
     }
 }
+        // G. JALANKAN OTOMATIS SAAT WEB DIBUKA (Agar keranjang lama muncul lagi)
+        updateCartUI();
 
 // Fungsi bantu pelengkap untuk gambar ulang isi modal tanpa menutupnya
 function renderOrderItemsInsideModal() {
