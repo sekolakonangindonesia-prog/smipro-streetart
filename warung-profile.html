@@ -712,9 +712,9 @@ window.addToCart = function(id, name, price) {
     simpanKeMemori();
 
     function simpanKeMemori() {
-    if (typeof warungId !== 'undefined') {
-        localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
-    }
+    // Menyimpan isi variabel 'myCart' ke browser storage
+    localStorage.setItem('myCartData', JSON.stringify(myCart));
+    console.log("Data berhasil disimpan ke memori");
 }
     
     // Tampilkan notifikasi kecil (opsional)
