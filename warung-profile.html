@@ -707,33 +707,26 @@ let myCart = JSON.parse(localStorage.getItem(`cart_${warungId}`)) || [];
 
 // 1. Fungsi Tambah ke Keranjang
 window.addToCart = function(id, name, price) {
-    const item = { id, name, price };
-    myCart.push(item);
-    simpanKeMemori();
-
-    function simpanKeMemori() {
-    // Menyimpan isi variabel 'myCart' ke browser storage
-    localStorage.setItem('myCartData', JSON.stringify(myCart));
-    console.log("Data berhasil disimpan ke memori");
-}
-    
-    // Tampilkan notifikasi kecil (opsional)
-    console.log("Ditambahkan:", name);
-      
-    // Update tampilan Bar Kuning
+    myCart.push({ id, name, price });
+    eksekusiSimpanMemori(); 
     updateCartUI();
-}
-
+};
+    
 // 2. Fungsi Update Tampilan Bar Keranjang Kuning
 function updateCartUI() {
     const cartFloat = document.getElementById('cart-float');
-    const badgeEl = document.getElementById('cart-badge');
+    const badgeEl = document.getElementById('cart-count');
+    const totalEl = document.getElementById('cart-total');
         
     if (myCart.length > 0) {
-        cartFloat.style.display = 'flex';
-        badgeEl.innerText = myCart.length; // Hanya update angka 1, 2, 3..        
+        const totalHarga = myCart.reduce((sum, item) => sum + item.price, 0);
+        
+        if(cartFloat) cartFloat.style.display = 'flex';
+        if(badgeEl) badgeEl.innerText = myCart.length; // Angka 1, 2, 3..
+        if(totalEl) totalEl.innerText = 'Rp ' + totalHarga.toLocaleString();
     } else {
-        cartFloat.style.display = 'none';
+        if(cartFloat) cartFloat.style.display = 'none';
+        localStorage.removeItem(`cart_${warungId}`); // Bersihkan memori jika kosong
     }
 }
         
