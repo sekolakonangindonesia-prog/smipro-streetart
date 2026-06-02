@@ -119,6 +119,57 @@
         .btn-order-add i {
         font-size: 0.7rem;
         }
+
+        /* --- GAYA BARU KERANJANG DI POJOK KANAN ATAS --- */
+    .cart-summary {
+    position: fixed;
+    top: 20px; /* Melayang di atas kanan */
+    right: 20px;
+    background: var(--gold);
+    color: black;
+    padding: 8px 18px;
+    border-radius: 30px;
+    display: none; /* Muncul otomatis jika ada pesanan */
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.6);
+    z-index: 3000; /* Paling depan */
+    font-weight: 800;
+    cursor: pointer;
+    border: 2px solid #000;
+    font-size: 0.85rem;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Logo di dalam Modal Keranjang (Gaya Facebook/Profesional) */
+.modal-header-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Logo StreetArt di tengah */
+    position: relative;
+    margin-bottom: 25px;
+    height: 60px;
+}
+
+.modal-warung-mini {
+    position: absolute;
+    left: 0; /* Foto warung di pojok kiri modal */
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    object-fit: cover;
+    background: #000;
+}
+
+.modal-platform-logo {
+    width: 60px; /* Logo StreetArt di tengah modal */
+}
         
     </style>
 </head>
@@ -247,25 +298,30 @@
     </div>
 
         <!-- MODAL DETAIL PESANAN PELANGGAN (TARUH DI BARIS 243) -->
-<div id="order-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; padding:20px;">
-    <div class="modal-box" style="background:#1e1e1e; width:100%; max-width:400px; padding:25px; border-radius:15px; border:1px solid #FFD700; color:white; position:relative;">
-        <i class="fa-solid fa-xmark" style="position:absolute; top:15px; right:15px; cursor:pointer; color:#888;" onclick="closeOrderModal()"></i>
+   <div id="order-modal" class="modal-overlay">
+    <div class="modal-box" style="border:1px solid var(--gold); padding: 25px;">
+        <i class="fa-solid fa-xmark close-icon" onclick="closeOrderModal()"></i>
         
-        <h3 style="text-align:center; color:#FFD700; margin-bottom:20px;">Daftar Pesanan Belanja</h3>
-        
-        <div id="order-items-list" style="max-height:300px; overflow-y:auto; margin-bottom:20px;">
-            <!-- Diisi otomatis oleh JavaScript -->
+        <!-- HEADER DUA LOGO -->
+        <div class="modal-header-logos">
+            <!-- Foto Warung Bulat di Kiri -->
+            <img src="" id="modal-warung-img" class="modal-warung-mini" onerror="this.src='https://placehold.co/100'">
+            
+            <!-- Logo StreetArt di Tengah -->
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="modal-platform-logo">
         </div>
 
-        <div style="border-top:1px dashed #444; padding-top:15px; margin-bottom:20px;">
-            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
-                <span>Total Bayar:</span>
-                <span id="total-modal-price" style="color:#FFD700;">Rp 0</span>
-            </div>
+        <h3 style="text-align:center; color:white; margin-bottom:20px; font-size:1.1rem;">Daftar Pesanan Belanja</h3>
+        
+        <div id="order-items-list"></div>
+
+        <div style="border-top:1px dashed #444; padding-top:15px; margin-top:15px; display:flex; justify-content:space-between; font-weight:bold;">
+            <span>Total Bayar:</span>
+            <span id="total-modal-price" style="color:var(--gold);">Rp 0</span>
         </div>
 
-        <button onclick="confirmOrder()" style="width:100%; padding:15px; background:#E50914; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1rem;">
-             <i class="fa-solid fa-paper-plane"></i> KIRIM PESANAN SEKARANG
+        <button onclick="confirmOrder()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; margin-top:20px;">
+             <i class="fa-solid fa-paper-plane"></i> KIRIM PESAN SEKARANG
         </button>
     </div>
 </div>
@@ -668,7 +724,11 @@ function updateCartUI() {
         // A. Fungsi Buka Modal Keranjang
     window.openOrderModal = function() {
     if(myCart.length === 0) return; // Jangan buka kalau kosong
-    
+    const profilWarung = document.getElementById('w-img').src;
+        document.getElementById('modal-warung-img').src = profilWarung;
+        renderOrderItems(); 
+        document.getElementById('order-modal').style.display = 'flex';
+        }
     const modal = document.getElementById('order-modal');
     const list = document.getElementById('order-items-list');
     const totalEl = document.getElementById('total-modal-price');
