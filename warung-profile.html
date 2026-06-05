@@ -376,6 +376,9 @@
                     const data = docSnap.data();
                     currentWarungData = data;
                     currentWarungName = data.name;
+                    document.querySelectorAll('.btn-order-add').forEach(btn => {
+                    btn.style.display = data.enableOrder ? 'flex' : 'none';
+                    });
                     venueNameGlobal = data.venueName || "Stadion Bayuangga"; 
                     totalTables = data.totalTables;
                     
