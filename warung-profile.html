@@ -416,7 +416,7 @@
                     // 2. Filter: Hanya hitung yang tanggalnya HARI INI saja
                     snapKetersediaan.forEach(bookedDoc => {
                         const b = bookedDoc.data();
-                        if (b.bookingDate === todayStr {
+                        if (b.bookingDate === todayStr) {
                             mejaTerpakaiHariIni += (parseInt(b.tablesNeeded) || 1);
                         }
                     });
