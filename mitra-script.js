@@ -133,7 +133,7 @@ window.setupBookingListener = function() {
             }
             bookingsData.push({ id: docSnap.id, ...d });
             
-          if (d.bookingDate === today || d.status === 'active') {
+          if (d.bookingDate === today {
                 const qty = parseInt(d.tablesNeeded) || 1;
                 if(d.status === 'active') {
                     countActive += qty;
