@@ -363,11 +363,12 @@
         
         let currentWarungName = "";
         let venueNameGlobal = ""; 
-        let totalTables = 0;
-        // Variabel untuk menyimpan rating saat ini agar hitungannya akurat
+        let totalTables = 0;        
         let currentRatingScore = 0; 
         let currentReviewCount = 0;
         let currentWarungData = {};
+        const urlMeja = params.get('meja');
+        const urlNama = params.get('nama');
 
         if(warungId) {
             // 1. DATA WARUNG (REALTIME)
@@ -795,8 +796,8 @@ window.removeFromCart = function(index) {
 // 8. Fungsi Kirim Pesanan ke Admin Warung
 window.confirmOrder = async function() {
     if(myCart.length === 0) return alert("Keranjang kosong!");
-    const namaPemesan = document.getElementById('book-name').value;
-    const nomorMeja = document.getElementById('book-qty').value;
+    const namaPemesan = urlNama || document.getElementById('book-name').value;
+    const nomorMeja = urlMeja || document.getElementById('book-qty').value;
 
     if(!namaPemesan) return alert("Mohon isi Nama Pemesan di Form Booking dulu.");
 
