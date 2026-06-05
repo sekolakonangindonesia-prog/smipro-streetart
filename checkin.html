@@ -154,11 +154,12 @@
                 if(warungData.img) document.getElementById('warung-img').src = warungData.img;
 
                 // B. CEK STATUS MEJA DI DATABASE
-                // Cari booking yang statusnya 'booked' atau 'active' DAN punya nomor meja ini
+                const todayStr = new Date().toISOString().split('T')[0];
                 const q = query(collection(db, "bookings"), 
                     where("warungName", "==", warungData.name),
                     where("status", "in", ["booked", "active"]),
-                    where("tableNum", "array-contains", tableNum) // Cek apakah meja ini ada di dalam array
+                    where("tableNum", "array-contains", tableNum),
+                    where("bookingDate", "==", todayStr)
                 );
 
                 const bSnap = await getDocs(q);
@@ -224,9 +225,12 @@
             el.innerHTML = "Mencari meja kosong...";
 
             // Ambil semua booking aktif
+            const todayStr = new Date().toISOString().split('T')[0];
             const q = query(collection(db, "bookings"), 
                 where("warungName", "==", warungData.name),
-                where("status", "in", ["booked", "active"])
+                where("status", "in", ["booked", "active"]),
+                where("tableNum", "array-contains", tableNum),
+                where("bookingDate", "==", todayStr)
             );
             const snap = await getDocs(q);
             
