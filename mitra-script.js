@@ -77,6 +77,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
    ========================================= */
 window.setupBookingListener = function() {
     if (unsubscribeBooking) unsubscribeBooking();
+    isInitialLoad = true; // Tambahan ini saja
     const qBooking = query(collection(db, "bookings"), where("warungId", "==", WARUNG_ID));
 
     unsubscribeBooking = onSnapshot(qBooking, (snapshot) => {
