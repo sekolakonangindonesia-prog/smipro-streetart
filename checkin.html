@@ -109,11 +109,14 @@
 
             <!-- 4. SUKSES CHECK-IN -->
             <div id="state-success" style="display:none;">
-                <i class="fa-solid fa-circle-check" style="color:#00ff00; font-size:4rem; margin-bottom:15px;"></i>
-                <h2 style="color:white; margin:0;">SELAMAT DATANG!</h2>
-                <p style="color:#ccc;">Pesanan Anda sudah dikonfirmasi.<br>Selamat menikmati.</p>
-                <button class="btn-checkin" onclick="location.href='index.html'" style="background:#333; margin-top:20px;">Kembali ke Menu Utama</button>
-            </div>
+    <i class="fa-solid fa-circle-check" style="color:#00ff00; font-size:4rem; margin-bottom:15px;"></i>
+    <h2 style="color:white; margin:0;">SELAMAT DATANG!</h2>
+    <p style="color:#ccc;">Pesanan Anda sudah dikonfirmasi.<br>Selamat menikmati.</p>
+    <button class="btn-checkin" id="btn-pesan-menu" style="background:#FFD700; color:black; margin-top:10px; font-size:1rem;">
+        <i class="fa-solid fa-bowl-food"></i> PESAN MENU SEKARANG
+    </button>
+    <button class="btn-checkin" onclick="location.href='index.html'" style="background:#333; margin-top:10px;">Kembali ke Menu Utama</button>
+</div>
 
         </div>
     </div>
@@ -334,6 +337,12 @@ window.submitWalkIn = async function() {
 
         alert(`Berhasil! Meja dikunci: ${assignedTables.join(", ")}`);
 
+        // Isi tombol Pesan Menu dengan link lengkap
+document.getElementById('btn-pesan-menu').onclick = function() {
+    const mejaStr = assignedTables.join(',');
+    window.location.href = `warung-profile.html?id=${warungId}&meja=${mejaStr}&nama=${encodeURIComponent(name)}`;
+};
+
     } catch(e) {
         console.error(e);
         alert("Gagal Check-In: " + e.message);
@@ -372,6 +381,12 @@ window.submitWalkIn = async function() {
                     document.getElementById('form-booked').style.display = 'none';
                     document.getElementById('state-success').style.display = 'block';
                     document.getElementById('status-badge-area').innerHTML = "";
+
+                    // Isi tombol Pesan Menu dengan link lengkap
+const mejaStr = Array.isArray(existingBooking.tableNum) ? existingBooking.tableNum.join(',') : existingBooking.tableNum;
+document.getElementById('btn-pesan-menu').onclick = function() {
+    window.location.href = `warung-profile.html?id=${warungId}&meja=${mejaStr}&nama=${encodeURIComponent(existingBooking.customerName)}`;
+};
 
                 } catch(e) {
                     console.error(e);
