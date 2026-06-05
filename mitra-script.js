@@ -154,6 +154,7 @@ window.setupBookingListener = function() {
         detail: `${b.customerName} (${b.tablesNeeded || 1} Meja)`,
         time: b.timestamp ? b.timestamp.toMillis() : Date.now(), 
         target: 'home',
+        bookingDate: b.bookingDate, 
         isRead: localStorage.getItem(`read_${b.id}`) === 'true' // Cek status baca per item
     };
 });
@@ -305,7 +306,17 @@ window.eksekusiBacaPesan = function(id, targetTab) {
     // 3. Langsung gambar ulang Lonceng (Titik akan hilang & Angka akan kurang 1 saat ini juga)
     window.refreshNotifBell();
 
-    // 4. Pindah ke Halaman yang dituju
+    // 4. Jika ada tanggal booking, arahkan filter ke tanggal tersebut
+    const notif = window.currentActiveBookings.find(n => n.id === id);
+    if (notif && notif.bookingDate) {
+        const dateInput = document.getElementById('filter-date-booking');
+        if (dateInput) {
+            dateInput.value = notif.bookingDate;
+            setupBookingListener();
+        }
+    }
+
+   // 5. Pindah ke tab yang dituju
     window.switchTab(targetTab);
 };
 
