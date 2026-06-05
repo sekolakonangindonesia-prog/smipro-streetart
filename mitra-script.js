@@ -582,8 +582,8 @@ window.setTodayFilter = function() {
 window.addEventListener('load', () => {
     const dateInput = document.getElementById('filter-date-booking');
     if(dateInput) {
-        // Setel kalender agar otomatis terisi tanggal hari ini saat login
         dateInput.value = new Date().toISOString().split('T')[0];
+        setupBookingListener(); // Tambahan ini saja
     }
 });
 
