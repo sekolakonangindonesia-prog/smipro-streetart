@@ -618,3 +618,10 @@ window.finishWebOrder = async function(orderId, totalUang) {
         alert("Eror saat memproses pembayaran: " + e.message);
     }
 };
+
+setInterval(() => {
+    const d = new Date().toISOString().split('T')[0];
+    if(d !== document.getElementById('filter-date-booking').value) {
+        location.reload(); // Refresh dashboard saat tanggal berganti
+    }
+}, 60000); // Cek tiap 1 menit
