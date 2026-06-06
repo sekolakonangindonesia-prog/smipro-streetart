@@ -72,6 +72,7 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         setupBookingListener();
         listenToWebOrders();
     }
+        }
 });
 
 /* =========================================
