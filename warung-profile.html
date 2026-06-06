@@ -419,21 +419,19 @@
                     const todayStr = new Date().toLocaleDateString('en-CA'); 
 
                     // 1. Ambil data booking yang AKTIF atau RESERVASI di database
-                    const qKetersediaan = query(collection(db, "bookings"), 
-                        where("warungId", "==", warungId),
-                        where("status", "in", ["booked", "active"])
-                    );
+                   const qKetersediaan = query(collection(db, "bookings"), 
+    where("warungId", "==", warungId),
+    where("bookingDate", "==", todayStr),
+    where("status", "in", ["booked", "active"])
+);
 
-                    const snapKetersediaan = await getDocs(qKetersediaan);
-                    let mejaTerpakaiHariIni = 0;
+const snapKetersediaan = await getDocs(qKetersediaan);
+let mejaTerpakaiHariIni = 0;
 
-                    // 2. Filter: Hanya hitung yang tanggalnya HARI INI saja
-                    snapKetersediaan.forEach(bookedDoc => {
-                        const b = bookedDoc.data();
-                        if (b.bookingDate === todayStr) {
-                            mejaTerpakaiHariIni += (parseInt(b.tablesNeeded) || 1);
-                        }
-                    });
+snapKetersediaan.forEach(bookedDoc => {
+    const b = bookedDoc.data();
+    mejaTerpakaiHariIni += (parseInt(b.tablesNeeded) || 1);
+});
 
         // 3. Update sisa meja yang jujur ditampilkan ke pelanggan hari ini
         const available = (parseInt(data.totalTables) || 15) - mejaTerpakaiHariIni;
