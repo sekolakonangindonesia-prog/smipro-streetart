@@ -308,7 +308,7 @@
 
             <div style="background:#332b00; padding:10px; border-radius:5px; margin-bottom:15px; font-size:0.8rem; color:#ffeb3b; border:1px dashed #ffeb3b;">
                 <i class="fa-solid fa-clock"></i> <b>ATURAN WAKTU:</b><br>
-                Batas Check-in (Hangus) pukul <b>17:30 WIB</b>.
+                Batas Check-in pukul <b>19:30 WIB</b> (atau 45 menit setelah booking jika memesan lewat jam 19:30).
             </div>
 
             <div style="display:flex; gap:10px;">
@@ -665,6 +665,19 @@
                 const now = new Date();
                 const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
                 const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
+                // Hitung expired: jika booking sebelum 19:30 → expired 19:30, jika sesudah → +45 menit
+const batasJam = 19, batasMenit = 30;
+let expiredJam, expiredISO;
+if (now.getHours() < batasJam || (now.getHours() === batasJam && now.getMinutes() < batasMenit)) {
+    // Sebelum 19:30 → expired tetap 19:30
+    expiredJam = "19:30";
+    expiredISO = `${dateVal}T19:30`;
+} else {
+    // Setelah 19:30 → expired +45 menit
+    const expiredTime = new Date(now.getTime() + 45 * 60 * 1000);
+    expiredJam = String(expiredTime.getHours()).padStart(2, '0') + ":" + String(expiredTime.getMinutes()).padStart(2, '0');
+    expiredISO = `${dateVal}T${expiredJam}`;
+}
 
                 await addDoc(collection(db, "bookings"), {
                     warungId: warungId,           
@@ -677,7 +690,7 @@
                     tableNum: assignedTables, // Array nomor meja (PENTING UNTUK DASHBOARD)
                     bookingDate: dateVal,
                     arrivalTime: jamBooking, 
-                    expiredTime: `${dateVal}T17:30`,
+                    expiredTime: expiredISO,
                     bookingCode: kode, 
                     status: 'booked', 
                     revenue: 0,
@@ -701,7 +714,7 @@
                               `Kode Tiket: *${kode}*\n` +
                               `MEJA RESERVASI: No. ${mejaString}\n` +
                               `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
-                              `PENTING: Harap Check-In sebelum Pukul *17:30 WIB*.\n` +
+                              `PENTING: Harap Check-In sebelum pukul *${expiredJam} WIB*.\n`
                               `Lewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
 
                 if(confirm(`Booking Berhasil! Meja No: ${mejaString}\n\nKirim tiket ke WA?`)) {
