@@ -595,8 +595,10 @@ window.addEventListener('load', () => {
     const dateInput = document.getElementById('filter-date-booking');
     if(dateInput) {
         dateInput.value = new Date().toISOString().split('T')[0];
-        setupBookingListener(); // Tambahan ini saja
     }
+    setTimeout(() => {
+        setupBookingListener();
+    }, 2000); // Tunggu 2 detik biar Firebase siap dulu
 });
 
 // --- TARUH DI PALING BAWAH mitra-script.js ---
