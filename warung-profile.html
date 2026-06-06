@@ -416,8 +416,9 @@
                     }
                     
                     // LOGIKA STATUS MEJA                    
-                    const todayStr = new Date().toLocaleDateString('en-CA'); 
-
+                    const now = new Date();
+                    const todayStr = now.toISOString().split('T')[0];
+                    
                     // 1. Ambil data booking yang AKTIF atau RESERVASI di database
                    const qKetersediaan = query(collection(db, "bookings"), 
     where("warungId", "==", warungId),
@@ -426,7 +427,8 @@
 );
 
 const snapKetersediaan = await getDocs(qKetersediaan);
-let mejaTerpakaiHariIni = 0;
+console.log("Tanggal Hari Ini:", todayStr);
+console.log("Jumlah Booking ditemukan:", snapKetersediaan.size);
 
 snapKetersediaan.forEach(bookedDoc => {
     const b = bookedDoc.data();
