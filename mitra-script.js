@@ -65,7 +65,8 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         document.getElementById('edit-email').value = data.email || '';
         document.getElementById('edit-pass').value = data.password || '';
 
-        if (oldName !== currentWarungName || !unsubscribeBooking) {
+       if (oldName !== currentWarungName || isFirstLoad) {
+    isFirstLoad = false;
     setupBookingListener();
     listenToWebOrders();
 }
@@ -596,9 +597,6 @@ window.addEventListener('load', () => {
     if(dateInput) {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
-    setTimeout(() => {
-        setupBookingListener();
-    }, 2000); // Tunggu 2 detik biar Firebase siap dulu
 });
 
 // --- TARUH DI PALING BAWAH mitra-script.js ---
