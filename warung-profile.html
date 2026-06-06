@@ -622,6 +622,12 @@
             if(!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi data!");
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
+            const nowCek = new Date();
+const isHariIni = dateVal === nowCek.toISOString().split('T')[0];
+if(isHariIni && (nowCek.getHours() > 19 || (nowCek.getHours() === 19 && nowCek.getMinutes() >= 30))) {
+    return alert("Maaf, booking untuk hari ini sudah ditutup (lewat jam 19:30). Silakan booking untuk hari berikutnya.");
+}
+
             // UI Loading (Biar user gak klik 2 kali)
             const btnConfirm = document.querySelector('#booking-modal button[onclick="confirmBooking()"]');
             btnConfirm.innerText = "Memproses...";
@@ -667,16 +673,14 @@
                 const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
                 // Hitung expired: jika booking sebelum 19:30 → expired 19:30, jika sesudah → +45 menit
 const batasJam = 19, batasMenit = 30;
-let expiredJam, expiredISO;
+let jamExpired, isoExpired;
 if (now.getHours() < batasJam || (now.getHours() === batasJam && now.getMinutes() < batasMenit)) {
-    // Sebelum 19:30 → expired tetap 19:30
-    expiredJam = "19:30";
-    expiredISO = `${dateVal}T19:30`;
+    jamExpired = "19:30";
+    isoExpired = `${dateVal}T19:30`;
 } else {
-    // Setelah 19:30 → expired +45 menit
     const expiredTime = new Date(now.getTime() + 45 * 60 * 1000);
-    expiredJam = String(expiredTime.getHours()).padStart(2, '0') + ":" + String(expiredTime.getMinutes()).padStart(2, '0');
-    expiredISO = `${dateVal}T${expiredJam}`;
+    jamExpired = String(expiredTime.getHours()).padStart(2, '0') + ":" + String(expiredTime.getMinutes()).padStart(2, '0');
+    isoExpired = `${dateVal}T${jamExpired}`;
 }
 
                 await addDoc(collection(db, "bookings"), {
@@ -690,7 +694,7 @@ if (now.getHours() < batasJam || (now.getHours() === batasJam && now.getMinutes(
                     tableNum: assignedTables, // Array nomor meja (PENTING UNTUK DASHBOARD)
                     bookingDate: dateVal,
                     arrivalTime: jamBooking, 
-                    expiredTime: expiredISO,
+                    expiredTime: isoExpired,
                     bookingCode: kode, 
                     status: 'booked', 
                     revenue: 0,
