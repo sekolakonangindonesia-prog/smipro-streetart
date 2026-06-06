@@ -416,24 +416,30 @@
                     }
                     
                     // LOGIKA STATUS MEJA                    
-                   const nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
-                   const todayStr = nowWIB.toISOString().split('T')[0];
+                   const _nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+                   const todayStr = _nowWIB.toISOString().split('T')[0];
                    let mejaTerpakaiHariIni = 0;
                   
 const qKetersediaan = query(collection(db, "bookings"), 
-    where("warungId", "==", warungId),
-    where("bookingDate", "==", todayStr),
-    where("status", "in", ["booked", "active"])
-);
-
-const snapKetersediaan = await getDocs(qKetersediaan);
-console.log("Tanggal Hari Ini:", todayStr);
-console.log("Jumlah Booking ditemukan:", snapKetersediaan.size);
-
-snapKetersediaan.forEach(bookedDoc => {
-    const b = bookedDoc.data();
-    mejaTerpakaiHariIni += (parseInt(b.tablesNeeded) || 1);
-});
+        where("warungId", "==", warungId),
+        where("bookingDate", "==", todayStr),
+        where("status", "in", ["booked", "active"])
+    );
+ 
+    const snapKetersediaan = await getDocs(qKetersediaan);
+    console.log("Tanggal Hari Ini (WIB):", todayStr);
+    console.log("Jumlah Booking ditemukan:", snapKetersediaan.size);
+ 
+    const nowMs = Date.now();
+    snapKetersediaan.forEach(bookedDoc => {
+        const b = bookedDoc.data();
+        // FIX: Jika status 'booked' tapi sudah expired, skip (jangan hitung)
+        if (b.status === 'booked' && b.expiredTime) {
+            const expMs = new Date(b.expiredTime).getTime();
+            if (nowMs > expMs) return; // sudah hangus, tidak hitung
+        }
+        mejaTerpakaiHariIni += (parseInt(b.tablesNeeded) || 1);
+    });
 
         // 3. Update sisa meja yang jujur ditampilkan ke pelanggan hari ini
         const available = (parseInt(data.totalTables) || 15) - mejaTerpakaiHariIni;
@@ -623,8 +629,8 @@ snapKetersediaan.forEach(bookedDoc => {
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
             const nowCek = new Date();
-    const nowWIBCek = new Date(nowCek.getTime() + (7 * 60 * 60 * 1000));
-    const isHariIni = dateVal === nowWIBCek.toISOString().split('T')[0];
+    const _nowWIBCek = new Date(nowCek.getTime() + (7 * 60 * 60 * 1000));
+    const isHariIni = dateVal === _nowWIBCek.toISOString().split('T')[0];
 if(isHariIni && (nowCek.getHours() > 19 || (nowCek.getHours() === 19 && nowCek.getMinutes() >= 30))) {
     return alert("Maaf, booking untuk hari ini sudah ditutup (lewat jam 19:30). Silakan booking untuk hari berikutnya.");
 }
