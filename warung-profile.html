@@ -718,7 +718,7 @@ if (now.getHours() < batasJam || (now.getHours() === batasJam && now.getMinutes(
                               `Kode Tiket: *${kode}*\n` +
                               `MEJA RESERVASI: No. ${mejaString}\n` +
                               `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
-                              `PENTING: Harap Check-In sebelum pukul *${expiredJam} WIB*.\n`
+                              `PENTING: Harap Check-In sebelum pukul *${jamExpired} WIB*.\n`
                               `Lewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
 
                 if(confirm(`Booking Berhasil! Meja No: ${mejaString}\n\nKirim tiket ke WA?`)) {
