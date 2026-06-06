@@ -416,8 +416,8 @@
                     }
                     
                     // LOGIKA STATUS MEJA                    
-                   const now = new Date();
-                   const todayStr = new Date().toLocaleDateString('en-CA');
+                   const nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+                   const todayStr = nowWIB.toISOString().split('T')[0];
                    let mejaTerpakaiHariIni = 0;
                   
 const qKetersediaan = query(collection(db, "bookings"), 
@@ -623,7 +623,8 @@ snapKetersediaan.forEach(bookedDoc => {
             if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
             const nowCek = new Date();
-const isHariIni = dateVal === nowCek.toISOString().split('T')[0];
+    const nowWIBCek = new Date(nowCek.getTime() + (7 * 60 * 60 * 1000));
+    const isHariIni = dateVal === nowWIBCek.toISOString().split('T')[0];
 if(isHariIni && (nowCek.getHours() > 19 || (nowCek.getHours() === 19 && nowCek.getMinutes() >= 30))) {
     return alert("Maaf, booking untuk hari ini sudah ditutup (lewat jam 19:30). Silakan booking untuk hari berikutnya.");
 }
