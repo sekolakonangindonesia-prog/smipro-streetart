@@ -309,14 +309,14 @@ window.eksekusiBacaPesan = function(id, targetTab) {
     window.refreshNotifBell();
 
     // 4. Jika ada tanggal booking, arahkan filter ke tanggal tersebut
-    const notif = window.currentActiveBookings.find(n => n.id === id);
-    if (notif && notif.bookingDate) {
-        const dateInput = document.getElementById('filter-date-booking');
-        if (dateInput) {
-            dateInput.value = notif.bookingDate;
-            setupBookingListener();
-        }
+   const notif = window.currentActiveBookings.find(n => n.id === id);
+if (notif && notif.bookingDate) {
+    const dateInput = document.getElementById('filter-date-booking');
+    if (dateInput && dateInput.value !== notif.bookingDate) {
+        dateInput.value = notif.bookingDate;
+        setupBookingListener();
     }
+}
 
    // 5. Pindah ke tab yang dituju
     window.switchTab(targetTab);
