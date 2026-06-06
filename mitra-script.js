@@ -183,7 +183,8 @@ function renderBookings(bookings) {
     container.innerHTML = bookings.length === 0 ? '<p style="text-align:center; color:#555; grid-column:1/-1;">Belum ada pesanan.</p>' : '';
 
     const dateInput = document.getElementById('filter-date-booking');
-    const today = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+    const wib = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+    const today = dateInput && dateInput.value ? dateInput.value : wib.toISOString().split('T')[0];
     const dataHariIni = bookings.filter(b => b.bookingDate === today || b.status === 'active');
 
     if (dataHariIni.length === 0) { // Ganti dari bookings ke dataHariIni
@@ -592,13 +593,6 @@ window.setTodayFilter = function() {
     }
 }
 
-// Perintah yang dijalankan OTOMATIS saat Dashboard baru dibuka
-window.addEventListener('load', () => {
-    const dateInput = document.getElementById('filter-date-booking');
-    if(dateInput) {
-        dateInput.value = new Date().toISOString().split('T')[0];
-    }
-});
 
 // --- TARUH DI PALING BAWAH mitra-script.js ---
 window.finishWebOrder = async function(orderId, totalUang) {
