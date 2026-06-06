@@ -66,11 +66,11 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         document.getElementById('edit-email').value = data.email || '';
         document.getElementById('edit-pass').value = data.password || '';
 
-       if (oldName !== currentWarungName || isFirstLoad) {
-    isFirstLoad = false;
-    setupBookingListener();
-    listenToWebOrders();
-}
+        const wasFirstLoad = isFirstLoad;
+        isFirstLoad = false;
+        if (oldName !== currentWarungName || wasFirstLoad) {
+        setupBookingListener();
+        listenToWebOrders();
     }
 });
 
