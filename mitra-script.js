@@ -195,7 +195,11 @@ function renderBookings(bookings) {
     const dateInput = document.getElementById('filter-date-booking');
     // FIX: Gunakan helper WIB agar konsisten
     const today = (dateInput && dateInput.value) ? dateInput.value : getTodayWIB();
-    const dataHariIni = bookings.filter(b => b.bookingDate === today || b.status === 'active');
+    // FIX BUG: Sebelumnya `|| b.status === 'active'` tanpa cek tanggal,
+    // akibatnya booking active dari hari LAIN (misal kemarin belum di-finish)
+    // ikut ditampilkan dan ikut dikurangi dari total meja hari ini.
+    // Sekarang: hanya tampilkan booking di tanggal yang dipilih filter.
+    const dataHariIni = bookings.filter(b => b.bookingDate === today);
 
     if (dataHariIni.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#555; grid-column:1/-1;">Tidak ada pesanan untuk hari ini.</p>';
