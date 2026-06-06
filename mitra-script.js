@@ -87,8 +87,8 @@ window.setupBookingListener = function() {
         let countActive = 0, countBooked = 0;
         const now = new Date();
         const dateInput = document.getElementById('filter-date-booking');
-        const today = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
-
+        const today = document.getElementById('filter-date-booking').value || new Date().toISOString().split('T')[0];
+        
         snapshot.docChanges().forEach((change) => {
     if (!isInitialLoad) {
         const d = change.doc.data();
@@ -311,7 +311,7 @@ window.eksekusiBacaPesan = function(id, targetTab) {
     // 4. Jika ada tanggal booking, arahkan filter ke tanggal tersebut
    const notif = window.currentActiveBookings.find(n => n.id === id);
 if (notif && notif.bookingDate) {
-    const dateInput = document.getElementById('filter-date-booking');
+    const tanggalHariIni = new Date().toISOString().split('T')[0];
     if (dateInput && dateInput.value !== notif.bookingDate) {
         dateInput.value = notif.bookingDate;
         setupBookingListener();
