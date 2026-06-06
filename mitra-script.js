@@ -16,6 +16,7 @@ let warungTotalCapacity = 15;
 let currentWarungName = ""; 
 let unsubscribeBooking = null; 
 let isInitialLoad = true;
+let isFirstLoad = true;
 
 const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 const LOGO_STREETART = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png";
