@@ -336,16 +336,30 @@
         
         <div id="order-items-list"></div>
 
-        <div style="border-top:1px dashed #444; padding-top:15px; margin-top:15px; display:flex; justify-content:space-between; font-weight:bold;">
-            <span>Total Bayar:</span>
-            <span id="total-modal-price" style="color:var(--gold);">Rp 0</span>
-        </div>
+<div style="border-top:1px dashed #444; padding-top:15px; margin-top:15px; display:flex; justify-content:space-between; font-weight:bold;">
+    <span>Total Bayar:</span>
+    <span id="total-modal-price" style="color:var(--gold);">Rp 0</span>
+</div>
 
-        <button onclick="confirmOrder()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; margin-top:20px;">
-             <i class="fa-solid fa-paper-plane"></i> KIRIM PESAN SEKARANG
+<!-- INPUT NOMOR WA -->
+<input type="number" id="order-wa" class="input-request" placeholder="Nomor WhatsApp Anda" style="margin-top:15px;">
+
+<!-- PILIHAN METODE BAYAR -->
+<div style="margin-bottom:15px;">
+    <p style="color:#aaa; font-size:0.8rem; margin-bottom:8px;">Metode Pembayaran:</p>
+    <div style="display:flex; gap:10px;">
+        <button id="btn-cod" onclick="pilihMetode('cod')" style="flex:1; padding:10px; border-radius:8px; border:2px solid #555; background:#333; color:white; cursor:pointer; font-weight:bold;">
+            💵 COD
+        </button>
+        <button id="btn-qris" onclick="pilihMetode('qris')" style="flex:1; padding:10px; border-radius:8px; border:2px solid #555; background:#333; color:white; cursor:pointer; font-weight:bold;">
+            📱 QRIS
         </button>
     </div>
 </div>
+
+<button onclick="confirmOrder()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; margin-top:5px;">
+     <i class="fa-solid fa-paper-plane"></i> KIRIM PESAN SEKARANG
+</button>
 
         <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
         &copy; 2025 Yayasan Sekolah Konang Indonesia - SMIPRO StreetArt.ID
@@ -798,20 +812,36 @@ window.confirmOrder = async function() {
     if(myCart.length === 0) return alert("Keranjang kosong!");
     const namaPemesan = urlNama || document.getElementById('book-name').value;
     const nomorMeja = urlMeja || document.getElementById('book-qty').value;
+     let noWA = document.getElementById('order-wa').value;
 
     if(!namaPemesan) return alert("Mohon isi Nama Pemesan di Form Booking dulu.");
-
+     if(!noWA) return alert("Mohon isi Nomor WhatsApp!");
+    if(!metodeBayar) return alert("Pilih metode pembayaran dulu!");
+    if(noWA.startsWith('0')) noWA = '62' + noWA.slice(1);
     if(confirm("Kirim pesanan ini ke dapur?")) {
         try {
             await addDoc(collection(db, "warung_orders"), {
                 warungId: warungId,
                 customerName: namaPemesan,
+                customerWA: noWA,
                 tableNum: nomorMeja,
                 items: myCart,
+                metodeBayar: metodeBayar,
                 status: "pending",
                 timestamp: new Date()
             });
-            alert("✅ Pesanan terkirim!");
+            // Buat nota WA
+const daftarMenu = myCart.map(i => `• ${i.name} - Rp ${i.price.toLocaleString()}`).join('\n');
+const totalHarga = myCart.reduce((sum, i) => sum + i.price, 0);
+const pesanWA = `Halo ${namaPemesan},\n\n` +
+    `✅ Pesanan Anda di *${currentWarungName}* telah diterima!\n\n` +
+    `📋 *Detail Pesanan:*\n${daftarMenu}\n\n` +
+    `🪑 Meja: *${nomorMeja}*\n` +
+    `💰 Total: *Rp ${totalHarga.toLocaleString()}*\n` +
+    `💳 Metode: *${metodeBayar.toUpperCase()}*\n\n` +
+    `Terima kasih sudah memesan! 🙏`;
+
+window.open(`https://wa.me/${noWA}?text=${encodeURIComponent(pesanWA)}`, '_blank');
             myCart = [];
             localStorage.removeItem(`cart_${warungId}`);
             window.updateCartUI();
@@ -822,7 +852,14 @@ window.confirmOrder = async function() {
 
 // --- EKSEKUSI AWAL (PENTING AGAR TIDAK NOL SAAT REFRESH) ---
 window.updateCartUI();      
-                        
+           let metodeBayar = '';
+window.pilihMetode = function(metode) {
+    metodeBayar = metode;
+    document.getElementById('btn-cod').style.borderColor = metode === 'cod' ? '#00ff00' : '#555';
+    document.getElementById('btn-qris').style.borderColor = metode === 'qris' ? '#FFD700' : '#555';
+    document.getElementById('btn-cod').style.background = metode === 'cod' ? '#1a3320' : '#333';
+    document.getElementById('btn-qris').style.background = metode === 'qris' ? '#332b00' : '#333';
+};             
     </script>
 </body>
 </html>
