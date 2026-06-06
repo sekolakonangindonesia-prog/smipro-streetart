@@ -522,19 +522,23 @@ input:checked + .slider:before { transform: translateX(26px); }
 </script>
     <script type="module" src="mitra-script.js"></script>
     
-    <script>
+   <script>
     window.addEventListener('DOMContentLoaded', () => {
-        const d = new Date().toISOString().split('T')[0];
+        // Mengambil waktu lokal Indonesia
+        const now = new Date();
+        // Menggeser waktu agar sesuai WIB (UTC+7)
+        const wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+        const d = wib.toISOString().split('T')[0]; 
+        
         const dateInput = document.getElementById('filter-date-booking');
         if(dateInput) {
             dateInput.value = d;
-            console.log("Tanggal dipaksa oleh HTML menjadi: " + d);
+            console.log("Tanggal dipaksa menjadi (WIB): " + d);
             
-            // Kita tunggu 1 detik agar file mitra-script.js selesai dimuat
             setTimeout(() => {
                 if(typeof window.setupBookingListener === 'function') {
                     window.setupBookingListener();
-                    console.log("Fungsi setupBookingListener dipanggil paksa!");
+                    console.log("Fungsi setupBookingListener dipanggil!");
                 }
             }, 1000);
         }
