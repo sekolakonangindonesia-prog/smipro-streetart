@@ -420,7 +420,8 @@
                     const todayStr = now.toISOString().split('T')[0];
                     
                     // 1. Ambil data booking yang AKTIF atau RESERVASI di database
-                   const qKetersediaan = query(collection(db, "bookings"), 
+                  const todayStr = new Date().toLocaleDateString('en-CA');
+const qKetersediaan = query(collection(db, "bookings"), 
     where("warungId", "==", warungId),
     where("bookingDate", "==", todayStr),
     where("status", "in", ["booked", "active"])
