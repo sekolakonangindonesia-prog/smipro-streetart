@@ -497,8 +497,8 @@ function listenToWebOrders() {
             </div>
             <hr style="border-color:#333;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b style="color:gold;">Rp ${totalHarga.toLocaleString()}</b>
-                <button onclick="window.finishWebOrder('${orderId}', ${totalHarga})" 
+                <b style="color:gold;">Rp ${totalOrder.toLocaleString()}</b>
+                <button onclick="window.finishWebOrder('${orderId}', ${totalOrder})" 
                         style="background:#00ff00; color:black; border:none; padding:5px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">
                     LUNAS
                 </button>
