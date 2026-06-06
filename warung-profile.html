@@ -416,11 +416,10 @@
                     }
                     
                     // LOGIKA STATUS MEJA                    
-                    const now = new Date();
-                    const todayStr = now.toISOString().split('T')[0];
-                    
-                    // 1. Ambil data booking yang AKTIF atau RESERVASI di database
-                  const todayStr = new Date().toLocaleDateString('en-CA');
+                   const now = new Date();
+                   const todayStr = new Date().toLocaleDateString('en-CA');
+                   let mejaTerpakaiHariIni = 0;
+                  
 const qKetersediaan = query(collection(db, "bookings"), 
     where("warungId", "==", warungId),
     where("bookingDate", "==", todayStr),
