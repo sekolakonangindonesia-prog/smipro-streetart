@@ -65,10 +65,10 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
         document.getElementById('edit-email').value = data.email || '';
         document.getElementById('edit-pass').value = data.password || '';
 
-        if (oldName !== currentWarungName) {
-            setupBookingListener();
-            listenToWebOrders();
-        }
+        if (oldName !== currentWarungName || !unsubscribeBooking) {
+    setupBookingListener();
+    listenToWebOrders();
+}
     }
 });
 
