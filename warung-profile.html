@@ -427,9 +427,13 @@ onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
     // Field ini ditulis oleh mitra-script.js setiap kali dashboard
     // menghitung ulang sisa meja → selalu sinkron, tidak perlu query sendiri
     // ============================================================
-    const available = typeof data.availableTables === 'number' 
+    const nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+    const todayStr = nowWIB.toISOString().split('T')[0];
+    const isDataValid = (data.lastAvailableDate === todayStr);
+    
+    const available = (typeof data.availableTables === 'number' && isDataValid)
         ? data.availableTables 
-        : (parseInt(data.totalTables) || 15); // fallback jika field belum ada
+        : (parseInt(data.totalTables) || 15); // fallback: hari baru = semua meja kosong
 
     const btnStatus = document.getElementById('table-status-display');
     const btnBook = document.getElementById('btn-booking-trigger');
