@@ -186,8 +186,9 @@ window.setupBookingListener = function() {
         // SINKRONISASI: Simpan sisaMeja ke Firestore agar warung-profile
         // baca langsung dari sini → selalu sinkron dengan dashboard
         updateDoc(doc(db, "warungs", WARUNG_ID), {
-            availableTables: sisa < 0 ? 0 : sisa
-        }).catch(() => {}); // silent fail
+            availableTables: sisa < 0 ? 0 : sisa,
+            lastAvailableDate: today
+        }).catch(() => {});
         renderBookings(bookingsData);
         isInitialLoad = false;
     });
