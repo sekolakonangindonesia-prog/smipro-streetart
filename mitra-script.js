@@ -182,6 +182,12 @@ window.setupBookingListener = function() {
             totalEl.style.color = sisa <= 0 ? 'red' : '#00ff00';
         }
 
+
+        // SINKRONISASI: Simpan sisaMeja ke Firestore agar warung-profile
+        // baca langsung dari sini → selalu sinkron dengan dashboard
+        updateDoc(doc(db, "warungs", WARUNG_ID), {
+            availableTables: sisa < 0 ? 0 : sisa
+        }).catch(() => {}); // silent fail
         renderBookings(bookingsData);
         isInitialLoad = false;
     });
