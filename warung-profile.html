@@ -369,7 +369,7 @@
     <script type="module">       
 import { db } from './firebase-config.js';
 import { 
-    doc, getDoc, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, increment
+    doc, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const params = new URLSearchParams(window.location.search);
@@ -384,16 +384,6 @@ let currentWarungData = {};
 const urlMeja = params.get('meja');
 const urlNama = params.get('nama');
 
-// FIX RACE CONDITION: Flag agar query ketersediaan tidak dijalankan bersamaan
-let isCheckingAvailability = false;
-
-// Helper tanggal WIB yang konsisten
-function getTodayWIB() {
-    const now = new Date();
-    const wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-    return wib.toISOString().split('T')[0];
-}
-
 if (!warungId) {
     alert("Warung tidak ditemukan!");
     window.location.href = 'index.html';
@@ -401,8 +391,11 @@ if (!warungId) {
 
 // ============================================================
 // 1. DATA WARUNG (REALTIME)
+// Solusi sinkronisasi: baca field 'availableTables' yang sudah
+// dihitung dan disimpan oleh dashboard mitra secara real-time.
+// Tidak perlu query booking sendiri → dijamin selalu sama dengan dashboard.
 // ============================================================
-onSnapshot(doc(db, "warungs", warungId), async (docSnap) => {
+onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
     if (!docSnap.exists()) return;
 
     const data = docSnap.data();
@@ -429,25 +422,18 @@ onSnapshot(doc(db, "warungs", warungId), async (docSnap) => {
             <span style="font-size:0.8rem;">(${currentReviewCount} Ulasan)</span>`;
     }
 
-    // FIX RACE CONDITION: Jika sedang query, skip — biarkan yang sedang berjalan selesai dulu
-    if (isCheckingAvailability) return;
-    isCheckingAvailability = true;
+    // ============================================================
+    // KUNCI SINKRONISASI: Baca availableTables dari Firestore
+    // Field ini ditulis oleh mitra-script.js setiap kali dashboard
+    // menghitung ulang sisa meja → selalu sinkron, tidak perlu query sendiri
+    // ============================================================
+    const available = typeof data.availableTables === 'number' 
+        ? data.availableTables 
+        : (parseInt(data.totalTables) || 15); // fallback jika field belum ada
 
-    try {
-        await cekDanTampilkanStatus(data);
-    } finally {
-        isCheckingAvailability = false;
-    }
-});
-
-// ============================================================
-// FUNGSI CEK STATUS MEJA (DIPISAH AGAR BERSIH)
-// ============================================================
-async function cekDanTampilkanStatus(data) {
     const btnStatus = document.getElementById('table-status-display');
     const btnBook = document.getElementById('btn-booking-trigger');
 
-    // Kalau warung tutup, langsung tampilkan dan tidak perlu query meja
     if (data.status === 'closed') {
         document.getElementById('w-status').innerText = "SEDANG TUTUP";
         document.getElementById('w-status').style.color = "red";
@@ -455,59 +441,7 @@ async function cekDanTampilkanStatus(data) {
         btnBook.innerText = "TIDAK MENERIMA PESANAN";
         btnBook.disabled = true;
         btnBook.style.background = "#555";
-        return;
-    }
-
-    // Hitung ketersediaan meja
-    const todayStr = getTodayWIB();
-    const nowMs = Date.now();
-    let mejaTerpakai = 0;
-
-    try {
-        const qKetersediaan = query(
-            collection(db, "bookings"), 
-            where("warungId", "==", warungId),
-            where("bookingDate", "==", todayStr),
-            where("status", "in", ["booked", "active"])
-        );
-        
-        const snapKetersediaan = await getDocs(qKetersediaan);
-        
-        // === DEBUG LOG (bisa dihapus setelah masalah selesai) ===
-        console.log("=== CEK MEJA ===");
-        console.log("Tanggal WIB:", todayStr);
-        console.log("totalTables:", data.totalTables);
-        console.log("Booking ditemukan:", snapKetersediaan.size);
-        // =========================================================
-
-        snapKetersediaan.forEach(bookedDoc => {
-            const b = bookedDoc.data();
-            // Skip booking expired
-            if (b.status === 'booked' && b.expiredTime) {
-                const expMs = new Date(b.expiredTime).getTime();
-                if (nowMs > expMs) {
-                    console.log(`  SKIP expired: ${b.customerName}`);
-                    return;
-                }
-            }
-            const jmlMeja = parseInt(b.tablesNeeded) || 1;
-            console.log(`  HITUNG: ${b.customerName} [${b.status}] = ${jmlMeja} meja`);
-            mejaTerpakai += jmlMeja;
-        });
-
-        console.log("Total terpakai:", mejaTerpakai, "| Kapasitas:", data.totalTables, "| Sisa:", data.totalTables - mejaTerpakai);
-
-    } catch (err) {
-        console.error("Gagal query ketersediaan:", err);
-        // Kalau query gagal, tampilkan "buka" daripada salah tampilkan "full"
-        mejaTerpakai = 0;
-    }
-
-    const kapasitas = parseInt(data.totalTables) || 15;
-    const available = kapasitas - mejaTerpakai;
-    const isFull = available <= 0;
-
-    if (isFull) {
+    } else if (available <= 0) {
         document.getElementById('w-status').innerText = "BUKA - PENUH";
         document.getElementById('w-status').style.color = "orange";
         btnStatus.innerText = "0 Meja";
@@ -522,7 +456,7 @@ async function cekDanTampilkanStatus(data) {
         btnBook.disabled = false;
         btnBook.style.background = "#E50914";
     }
-}
+});
 
 // ============================================================
 // 2. DATA MENU (REALTIME)
@@ -644,11 +578,10 @@ window.confirmBooking = async function() {
     if (!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi data!");
     if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-    // Cek jam booking hari ini (pakai WIB)
+    // Cek jam booking (pakai WIB)
     const nowCek = new Date();
     const nowWIBCek = new Date(nowCek.getTime() + (7 * 60 * 60 * 1000));
     const isHariIni = dateVal === nowWIBCek.toISOString().split('T')[0];
-    // Jam di WIB
     const jamWIB = nowWIBCek.getUTCHours();
     const menitWIB = nowWIBCek.getUTCMinutes();
     if (isHariIni && (jamWIB > 19 || (jamWIB === 19 && menitWIB >= 30))) {
@@ -687,17 +620,18 @@ window.confirmBooking = async function() {
         }
 
         const now = new Date();
-        const jamBooking = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+        const nowWIB = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+        const jamBooking = String(nowWIB.getUTCHours()).padStart(2, '0') + ":" + String(nowWIB.getUTCMinutes()).padStart(2, '0');
         const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
         
-        const batasJam = 19, batasMenit = 30;
         let jamExpired, isoExpired;
-        if (jamWIB < batasJam || (jamWIB === batasJam && menitWIB < batasMenit)) {
+        if (jamWIB < 19 || (jamWIB === 19 && menitWIB < 30)) {
             jamExpired = "19:30";
             isoExpired = `${dateVal}T19:30`;
         } else {
             const expiredTime = new Date(now.getTime() + 45 * 60 * 1000);
-            jamExpired = String(expiredTime.getHours()).padStart(2, '0') + ":" + String(expiredTime.getMinutes()).padStart(2, '0');
+            const expWIB = new Date(expiredTime.getTime() + (7 * 60 * 60 * 1000));
+            jamExpired = String(expWIB.getUTCHours()).padStart(2, '0') + ":" + String(expWIB.getUTCMinutes()).padStart(2, '0');
             isoExpired = `${dateVal}T${jamExpired}`;
         }
 
@@ -843,7 +777,7 @@ window.confirmOrder = async function() {
     }
 };
 
-window.updateCartUI();            
+window.updateCartUI();          
     </script>
 </body>
 </html>
