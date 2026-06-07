@@ -377,7 +377,7 @@ const warungId = params.get('id');
 
 let currentWarungName = "";
 let venueNameGlobal = ""; 
-let totalTables = 0;        
+let totalTables = 15;        
 let currentRatingScore = 0; 
 let currentReviewCount = 0;
 let currentWarungData = {};
@@ -389,54 +389,22 @@ if (!warungId) {
     window.location.href = 'index.html';
 }
 
+// Helper tanggal WIB
+function getTodayWIB() {
+    return new Date(new Date().getTime() + 7 * 3600000).toISOString().split('T')[0];
+}
+
 // ============================================================
-// 1. DATA WARUNG (REALTIME)
-// Solusi sinkronisasi: baca field 'availableTables' yang sudah
-// dihitung dan disimpan oleh dashboard mitra secara real-time.
-// Tidak perlu query booking sendiri → dijamin selalu sama dengan dashboard.
+// TAMPILKAN STATUS MEJA (dipanggil saat data warung atau
+// data booking berubah)
 // ============================================================
-onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
-    if (!docSnap.exists()) return;
+let cachedWarungData = null;
+let cachedAvailable = null;
 
-    const data = docSnap.data();
-    currentWarungData = data;
-    currentWarungName = data.name;
-    venueNameGlobal = data.venueName || "Stadion Bayuangga"; 
-    totalTables = parseInt(data.totalTables) || 15;
-    currentRatingScore = data.rating || 0;
-    currentReviewCount = data.reviewCount || 0;
-
-    document.getElementById('w-name').innerText = data.name;
-    if (data.img) document.getElementById('w-img').src = data.img;
-
-    document.querySelectorAll('.btn-order-add').forEach(btn => {
-        btn.style.display = data.enableOrder ? 'flex' : 'none';
-    });
-
-    // Rating display
-    const ratingBox = document.querySelector('.warung-rating');
-    if (ratingBox) {
-        ratingBox.innerHTML = `
-            <i class="fa-solid fa-star"></i> 
-            <span style="font-size:1.2rem; font-weight:bold; color:white;">${currentRatingScore.toFixed(1)}</span> 
-            <span style="font-size:0.8rem;">(${currentReviewCount} Ulasan)</span>`;
-    }
-
-    // ============================================================
-    // KUNCI SINKRONISASI: Baca availableTables dari Firestore
-    // Field ini ditulis oleh mitra-script.js setiap kali dashboard
-    // menghitung ulang sisa meja → selalu sinkron, tidak perlu query sendiri
-    // ============================================================
-    const nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
-    const todayStr = nowWIB.toISOString().split('T')[0];
-    const isDataValid = (data.lastAvailableDate === todayStr);
-    
-    const available = (typeof data.availableTables === 'number' && isDataValid)
-        ? data.availableTables 
-        : (parseInt(data.totalTables) || 15); // fallback: hari baru = semua meja kosong
-
+function tampilkanStatus(data, available) {
     const btnStatus = document.getElementById('table-status-display');
     const btnBook = document.getElementById('btn-booking-trigger');
+    if (!btnStatus || !btnBook) return;
 
     if (data.status === 'closed') {
         document.getElementById('w-status').innerText = "SEDANG TUTUP";
@@ -460,14 +428,112 @@ onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
         btnBook.disabled = false;
         btnBook.style.background = "#E50914";
     }
+}
+
+// ============================================================
+// 1. LISTENER DATA WARUNG (info nama, foto, rating, status)
+// ============================================================
+onSnapshot(doc(db, "warungs", warungId), (docSnap) => {
+    if (!docSnap.exists()) return;
+    const data = docSnap.data();
+    cachedWarungData = data;
+    currentWarungData = data;
+    currentWarungName = data.name;
+    venueNameGlobal = data.venueName || "Stadion Bayuangga"; 
+    totalTables = parseInt(data.totalTables) || 15;
+    currentRatingScore = data.rating || 0;
+    currentReviewCount = data.reviewCount || 0;
+
+    document.getElementById('w-name').innerText = data.name;
+    if (data.img) document.getElementById('w-img').src = data.img;
+
+    document.querySelectorAll('.btn-order-add').forEach(btn => {
+        btn.style.display = data.enableOrder ? 'flex' : 'none';
+    });
+
+    const ratingBox = document.querySelector('.warung-rating');
+    if (ratingBox) {
+        ratingBox.innerHTML = `
+            <i class="fa-solid fa-star"></i> 
+            <span style="font-size:1.2rem; font-weight:bold; color:white;">${currentRatingScore.toFixed(1)}</span> 
+            <span style="font-size:0.8rem;">(${currentReviewCount} Ulasan)</span>`;
+    }
+
+    // Tampilkan status dengan available terakhir yang diketahui
+    if (cachedAvailable !== null) {
+        tampilkanStatus(data, cachedAvailable);
+    }
 });
 
 // ============================================================
-// 2. DATA MENU (REALTIME)
+// 2. LISTENER BOOKING REAL-TIME
+// Hitung langsung dari koleksi bookings — update otomatis
+// setiap ada booking baru, check-in, atau selesai
+// ============================================================
+const todayWIB = getTodayWIB();
+const nowMs = Date.now();
+
+// Query booking hari ini untuk warung ini
+const qBooking = query(
+    collection(db, "bookings"),
+    where("warungId", "==", warungId),
+    where("bookingDate", "==", todayWIB),
+    where("status", "in", ["booked", "active"])
+);
+
+onSnapshot(qBooking, (snapshot) => {
+    let terpakai = 0;
+    snapshot.forEach(d => {
+        const b = d.data();
+        // Skip booking yang sudah expired
+        if (b.status === 'booked' && b.expiredTime) {
+            if (nowMs > new Date(b.expiredTime).getTime()) return;
+        }
+        terpakai += parseInt(b.tablesNeeded) || 1;
+    });
+
+    const kapasitas = totalTables || 15;
+    cachedAvailable = Math.max(0, kapasitas - terpakai);
+
+    // Update tampilan jika data warung sudah ada
+    if (cachedWarungData) {
+        tampilkanStatus(cachedWarungData, cachedAvailable);
+    }
+});
+
+// ============================================================
+// 3. LISTENER BOOKING ACTIVE DARI HARI LAIN (walk-in kemarin
+// yang belum di-finish tetap harus dihitung)
+// ============================================================
+const qActiveOther = query(
+    collection(db, "bookings"),
+    where("warungId", "==", warungId),
+    where("status", "==", "active")
+);
+
+onSnapshot(qActiveOther, (snapshot) => {
+    let terpakaiLain = 0;
+    snapshot.forEach(d => {
+        const b = d.data();
+        // Hanya hitung yang bukan hari ini (hari ini sudah dihitung di query atas)
+        if (b.bookingDate !== todayWIB) {
+            terpakaiLain += parseInt(b.tablesNeeded) || 1;
+        }
+    });
+
+    // Gabungkan dengan hitungan hari ini
+    // Ambil ulang dari snapshot pertama tidak bisa langsung,
+    // jadi kita simpan terpakaiLain dan hitung ulang
+    window._terpakaiLain = terpakaiLain;
+});
+
+// ============================================================
+// 4. DATA MENU (REALTIME)
 // ============================================================
 const qMenu = query(collection(db, "menus"), where("warungId", "==", warungId));
 onSnapshot(qMenu, (snapshot) => {
     const grid = document.getElementById('menu-grid');
+    if (!grid) return;
     grid.innerHTML = '';
     if (snapshot.empty) {
         grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Belum ada menu.</p>';
@@ -491,11 +557,12 @@ onSnapshot(qMenu, (snapshot) => {
 });
 
 // ============================================================
-// 3. LOAD REVIEW LIST
+// 5. LOAD REVIEW LIST
 // ============================================================
 const qReview = query(collection(db, "warung_reviews"), where("warungId", "==", warungId));
 onSnapshot(qReview, (snapshot) => {
     const list = document.getElementById('warung-reviews-list');
+    if (!list) return;
     list.innerHTML = '';
     if (snapshot.empty) {
         list.innerHTML = '<p style="text-align:center; color:#555;">Belum ada ulasan. Jadilah yang pertama!</p>';
@@ -513,15 +580,11 @@ onSnapshot(qReview, (snapshot) => {
             <p style="margin:0; color:#ccc; font-size:0.9rem;">"${r.comment}"</p>
         </div>`;
     });
-}, (error) => {
-    console.error("Error ambil ulasan:", error);
-});
+}, (error) => { console.error("Error ambil ulasan:", error); });
 
 // ============================================================
 // FUNGSI GLOBAL
 // ============================================================
-
-// Rating bintang
 let selectedRating = 0;
 window.rateWarung = function(n) {
     selectedRating = n;
@@ -531,7 +594,6 @@ window.rateWarung = function(n) {
     });
 };
 
-// Kirim review
 window.submitWarungReview = async function() {
     const name = document.getElementById('review-name').value;
     const comment = document.getElementById('review-comment').value;
@@ -548,12 +610,9 @@ window.submitWarungReview = async function() {
         document.getElementById('review-name').value = '';
         document.getElementById('review-comment').value = '';
         window.rateWarung(0);
-    } catch (e) {
-        alert("Gagal kirim ulasan: " + e.message);
-    }
+    } catch (e) { alert("Gagal kirim ulasan: " + e.message); }
 };
 
-// Booking modal
 window.openBookingModal = function() {
     document.getElementById('modal-warung-title').innerText = currentWarungName;
     document.getElementById('book-name').value = '';
@@ -566,8 +625,7 @@ window.openBookingModal = function() {
 
 window.hitungMeja = function() {
     let orang = parseInt(document.getElementById('book-pax').value) || 0;
-    let qty = orang < 1 ? 0 : Math.ceil(orang / 4);
-    document.getElementById('book-qty').value = qty + " Meja";
+    document.getElementById('book-qty').value = (orang < 1 ? 0 : Math.ceil(orang / 4)) + " Meja";
 };
 
 window.closeModal = function() { document.getElementById('booking-modal').style.display = 'none'; };
@@ -582,9 +640,8 @@ window.confirmBooking = async function() {
     if (!name || !wa || !dateVal || pax < 1) return alert("Mohon lengkapi data!");
     if (wa.startsWith('0')) wa = '62' + wa.slice(1);
 
-    // Cek jam booking (pakai WIB)
     const nowCek = new Date();
-    const nowWIBCek = new Date(nowCek.getTime() + (7 * 60 * 60 * 1000));
+    const nowWIBCek = new Date(nowCek.getTime() + 7 * 3600000);
     const isHariIni = dateVal === nowWIBCek.toISOString().split('T')[0];
     const jamWIB = nowWIBCek.getUTCHours();
     const menitWIB = nowWIBCek.getUTCMinutes();
@@ -624,18 +681,16 @@ window.confirmBooking = async function() {
         }
 
         const now = new Date();
-        const nowWIB = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-        const jamBooking = String(nowWIB.getUTCHours()).padStart(2, '0') + ":" + String(nowWIB.getUTCMinutes()).padStart(2, '0');
+        const nowWIB = new Date(now.getTime() + 7 * 3600000);
+        const jamBooking = String(nowWIB.getUTCHours()).padStart(2,'0') + ":" + String(nowWIB.getUTCMinutes()).padStart(2,'0');
         const kode = 'TIKET-' + Math.floor(1000 + Math.random() * 9000);
         
         let jamExpired, isoExpired;
         if (jamWIB < 19 || (jamWIB === 19 && menitWIB < 30)) {
-            jamExpired = "19:30";
-            isoExpired = `${dateVal}T19:30`;
+            jamExpired = "19:30"; isoExpired = `${dateVal}T19:30`;
         } else {
-            const expiredTime = new Date(now.getTime() + 45 * 60 * 1000);
-            const expWIB = new Date(expiredTime.getTime() + (7 * 60 * 60 * 1000));
-            jamExpired = String(expWIB.getUTCHours()).padStart(2, '0') + ":" + String(expWIB.getUTCMinutes()).padStart(2, '0');
+            const expWIB = new Date(now.getTime() + 7 * 3600000 + 45 * 60000);
+            jamExpired = String(expWIB.getUTCHours()).padStart(2,'0') + ":" + String(expWIB.getUTCMinutes()).padStart(2,'0');
             isoExpired = `${dateVal}T${jamExpired}`;
         }
 
@@ -653,16 +708,7 @@ window.confirmBooking = async function() {
         window.closeModal();
 
         const mejaString = assignedTables.join(", ");
-        const pesan = `Halo ${name},\n\n` +
-            `Terima kasih sudah memesan tempat di *${currentWarungName}* pada jam ${jamBooking}\n` +
-            `Berikut detail pesanan Anda:\n` +
-            `Tanggal: ${dateVal}\n` +
-            `Jumlah: ${pax} Orang\n` +
-            `Kode Tiket: *${kode}*\n` +
-            `MEJA RESERVASI: No. ${mejaString}\n` +
-            `Scan QR yang ada di meja no tersebut untuk check-in\n\n` +
-            `PENTING: Harap Check-In sebelum pukul *${jamExpired} WIB*.\n` +
-            `Lewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
+        const pesan = `Halo ${name},\n\nTerima kasih sudah memesan tempat di *${currentWarungName}* pada jam ${jamBooking}\nBerikut detail pesanan Anda:\nTanggal: ${dateVal}\nJumlah: ${pax} Orang\nKode Tiket: *${kode}*\nMEJA RESERVASI: No. ${mejaString}\nScan QR yang ada di meja no tersebut untuk check-in\n\nPENTING: Harap Check-In sebelum pukul *${jamExpired} WIB*.\nLewat dari jam tersebut, harap hubungi *${currentWarungName}*`;
 
         if (confirm(`Booking Berhasil! Meja No: ${mejaString}\n\nKirim tiket ke WA?`)) {
             window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
@@ -677,15 +723,11 @@ window.confirmBooking = async function() {
     }
 };
 
-// ============================================================
-// KERANJANG BELANJA
-// ============================================================
+// Keranjang
 let myCart = JSON.parse(localStorage.getItem(`cart_${warungId}`)) || [];
 let metodeBayar = '';
 
-window.eksekusiSimpanMemori = function() {
-    localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
-};
+window.eksekusiSimpanMemori = () => localStorage.setItem(`cart_${warungId}`, JSON.stringify(myCart));
 
 window.updateCartUI = function() {
     const cartFloat = document.getElementById('cart-float');
@@ -733,9 +775,7 @@ window.openOrderModal = function() {
     document.getElementById('order-modal').style.display = 'flex';
 };
 
-window.closeOrderModal = function() {
-    document.getElementById('order-modal').style.display = 'none';
-};
+window.closeOrderModal = () => document.getElementById('order-modal').style.display = 'none';
 
 window.removeFromCart = function(index) {
     myCart.splice(index, 1);
@@ -781,7 +821,7 @@ window.confirmOrder = async function() {
     }
 };
 
-window.updateCartUI();          
+window.updateCartUI();         
     </script>
 </body>
 </html>
