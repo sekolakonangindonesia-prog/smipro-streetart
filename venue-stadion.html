@@ -340,7 +340,12 @@
             snapshot.forEach(docSnap => {
                 const w = docSnap.data();
                 // Hitung sisa meja (Total - Terpakai)
-                const available = (parseInt(w.totalTables)||0) - (parseInt(w.bookedCount)||0); 
+                const nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
+    const todayStr = nowWIB.toISOString().split('T')[0];
+    const isDataValid = (w.lastAvailableDate === todayStr);
+    const available = (typeof w.availableTables === 'number' && isDataValid)
+        ? w.availableTables
+        : (parseInt(w.totalTables) || 15); 
                 const isFull = available <= 0;
                 const isClosed = w.status === 'closed';
 
