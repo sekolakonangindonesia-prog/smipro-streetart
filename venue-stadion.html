@@ -325,59 +325,91 @@
         } catch (e) { console.error("Gagal load venue:", e); }
     }
 
-    // --- 3. LOAD WARUNG (FILTER SESUAI LOKASI) ---
+   // --- 3. LOAD WARUNG (FILTER SESUAI LOKASI) ---
     function loadWarungs(vName) {
         const container = document.getElementById('warung-grid-ss3');
         const q = query(collection(db, "warungs"), where("venueName", "==", vName));
+        
+        const warungMap = {};
+        const availableMap = {};
+        const unsubBookingMap = {};
 
-        onSnapshot(q, (snapshot) => {
+        function renderGrid() {
             container.innerHTML = '';
-            if (snapshot.empty) {
+            const ids = Object.keys(warungMap);
+            if (ids.length === 0) {
                 container.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada warung buka di ${vName}.</p>`;
                 return;
             }
-
-            snapshot.forEach(docSnap => {
-                const w = docSnap.data();
-                // Hitung sisa meja (Total - Terpakai)
-                const nowWIB = new Date(new Date().getTime() + (7 * 60 * 60 * 1000));
-    const todayStr = nowWIB.toISOString().split('T')[0];
-    const isDataValid = (w.lastAvailableDate === todayStr);
-    const available = (typeof w.availableTables === 'number' && isDataValid)
-        ? w.availableTables
-        : (parseInt(w.totalTables) || 15); 
+            ids.forEach(id => {
+                const w = warungMap[id];
+                const available = availableMap[id] ?? (parseInt(w.totalTables) || 15);
                 const isFull = available <= 0;
                 const isClosed = w.status === 'closed';
 
                 let btnHtml = '';
-                
-                 if (isClosed) {
-                     
-                      btnHtml = `<button class="btn-full-ss3" style="background:#222; color:#ff4444; border:1px solid #555;">TUTUP</button>`;
-                } 
-                else if (isFull) {
-                    // KONDISI 2: Jika Buka tapi PENUH
+                if (isClosed) {
+                    btnHtml = `<button class="btn-full-ss3" style="background:#222; color:#ff4444; border:1px solid #555;">TUTUP</button>`;
+                } else if (isFull) {
                     btnHtml = `<button class="btn-full-ss3">Penuh</button>`;
-                } 
-                else {
-                    // KONDISI 3: Jika Buka & Ada Meja -> Muncul Tombol Booking
-                    btnHtml = `<button class="btn-book-ss3" onclick="window.openBooking('${w.name}', '${docSnap.id}')">Booking</button>`;
+                } else {
+                    btnHtml = `<button class="btn-book-ss3" onclick="window.openBooking('${w.name}', '${id}')">Booking</button>`;
                 }
-                
-                const imgUrl = w.img || "https://via.placeholder.com/200?text=Warung";
 
+                const imgUrl = w.img || "https://via.placeholder.com/200?text=Warung";
                 container.innerHTML += `
                 <div class="warung-card">
-                    <img src="${imgUrl}" class="warung-img" onclick="window.location.href='warung-profile.html?id=${docSnap.id}'">
+                    <img src="${imgUrl}" class="warung-img" onclick="window.location.href='warung-profile.html?id=${id}'">
                     <div class="warung-body">
-                        <span class="warung-name" onclick="window.location.href='warung-profile.html?id=${docSnap.id}'">${w.name}</span>
+                        <span class="warung-name" onclick="window.location.href='warung-profile.html?id=${id}'">${w.name}</span>
                         <span class="warung-stats" style="color:${isFull || isClosed ? 'red' : '#00ff00'}">
-                            ${isFull ? 'Full' : available + ' Meja Kosong'}
+                            ${isClosed ? 'Tutup' : isFull ? 'Full' : available + ' Meja Kosong'}
                         </span>
                         ${btnHtml}
                     </div>
                 </div>`;
             });
+        }
+
+        function setupBookingListener(warungId, totalTables) {
+            if (unsubBookingMap[warungId]) unsubBookingMap[warungId]();
+
+            const todayWIB = new Date(new Date().getTime() + 7 * 3600000).toISOString().split('T')[0];
+            const nowMs = Date.now();
+
+            const qB = query(
+                collection(db, "bookings"),
+                where("warungId", "==", warungId),
+                where("bookingDate", "==", todayWIB),
+                where("status", "in", ["booked", "active"])
+            );
+
+            unsubBookingMap[warungId] = onSnapshot(qB, (snap) => {
+                let terpakai = 0;
+                snap.forEach(d => {
+                    const b = d.data();
+                    if (b.status === 'booked' && b.expiredTime) {
+                        if (nowMs > new Date(b.expiredTime).getTime()) return;
+                    }
+                    terpakai += parseInt(b.tablesNeeded) || 1;
+                });
+                availableMap[warungId] = Math.max(0, (parseInt(totalTables) || 15) - terpakai);
+                renderGrid();
+            });
+        }
+
+        onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                container.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#555;">Belum ada warung buka di ${vName}.</p>`;
+                return;
+            }
+            snapshot.forEach(docSnap => {
+                const id = docSnap.id;
+                const w = docSnap.data();
+                warungMap[id] = w;
+                setupBookingListener(id, w.totalTables);
+            });
+            renderGrid();
         });
     }
 
