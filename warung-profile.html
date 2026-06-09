@@ -771,7 +771,22 @@ window.renderOrderItems = function() {
 window.openOrderModal = function() {
     if (myCart.length === 0) return alert("Pilih menu dulu!");
     document.getElementById('modal-warung-img').src = document.getElementById('w-img').src;
-    window.renderOrderItems(); 
+    window.renderOrderItems();
+
+    // FITUR 4: Auto-isi nomor meja dari URL checkin
+    const inputMeja = document.getElementById('order-meja');
+    if (inputMeja) {
+        if (urlMeja) {
+            inputMeja.value = urlMeja;
+            inputMeja.readOnly = true;
+            inputMeja.style.color = '#FFD700';
+            inputMeja.style.background = '#1a1a1a';
+        } else {
+            inputMeja.value = '';
+            inputMeja.readOnly = false;
+        }
+    }
+
     document.getElementById('order-modal').style.display = 'flex';
 };
 
@@ -796,22 +811,32 @@ window.pilihMetode = function(metode) {
 window.confirmOrder = async function() {
     if (myCart.length === 0) return alert("Keranjang kosong!");
     const namaPemesan = urlNama || document.getElementById('book-name').value;
-    const nomorMeja = urlMeja || document.getElementById('book-qty').value;
+    // FITUR 4: Baca nomor meja dari input baru (order-meja)
+    const inputMeja = document.getElementById('order-meja');
+    const nomorMeja = (inputMeja && inputMeja.value) ? inputMeja.value : (urlMeja || '-');
     let noWA = document.getElementById('order-wa').value;
     if (!namaPemesan) return alert("Mohon isi Nama Pemesan di Form Booking dulu.");
+    if (!nomorMeja || nomorMeja === '-') return alert("Mohon isi Nomor Meja!");
     if (!noWA) return alert("Mohon isi Nomor WhatsApp!");
     if (!metodeBayar) return alert("Pilih metode pembayaran dulu!");
     if (noWA.startsWith('0')) noWA = '62' + noWA.slice(1);
     if (confirm("Kirim pesanan ini ke dapur?")) {
         try {
+            // FITUR 5: Ambil tanggal dan jam WIB saat ini
+            const nowWIB = new Date(new Date().getTime() + 7 * 3600000);
+            const tanggalPesan = nowWIB.toISOString().split('T')[0];
+            const jamPesan = String(nowWIB.getUTCHours()).padStart(2,'0') + ':' + String(nowWIB.getUTCMinutes()).padStart(2,'0');
+
             await addDoc(collection(db, "warung_orders"), {
                 warungId, customerName: namaPemesan, customerWA: noWA,
                 tableNum: nomorMeja, items: myCart, metodeBayar,
+                orderDate: tanggalPesan, orderTime: jamPesan,
                 status: "pending", timestamp: new Date()
             });
             const daftarMenu = myCart.map(i => `• ${i.name} - Rp ${i.price.toLocaleString()}`).join('\n');
             const totalHarga = myCart.reduce((sum, i) => sum + i.price, 0);
-            const pesanWA = `Halo ${namaPemesan},\n\n✅ Pesanan Anda di *${currentWarungName}* telah diterima!\n\n📋 *Detail Pesanan:*\n${daftarMenu}\n\n🪑 Meja: *${nomorMeja}*\n💰 Total: *Rp ${totalHarga.toLocaleString()}*\n💳 Metode: *${metodeBayar.toUpperCase()}*\n\nTerima kasih sudah memesan! 🙏`;
+            // FITUR 5: Tambah tanggal & jam di nota WA
+            const pesanWA = `Halo ${namaPemesan},\n\n✅ Pesanan Anda di *${currentWarungName}* telah diterima!\n\n📋 *Detail Pesanan:*\n${daftarMenu}\n\n🪑 Meja: *${nomorMeja}*\n💰 Total: *Rp ${totalHarga.toLocaleString()}*\n💳 Metode: *${metodeBayar.toUpperCase()}*\n📅 Tanggal: *${tanggalPesan}*\n🕐 Jam Pesan: *${jamPesan} WIB*\n\nTerima kasih sudah memesan! 🙏`;
             window.open(`https://wa.me/${noWA}?text=${encodeURIComponent(pesanWA)}`, '_blank');
             myCart = [];
             localStorage.removeItem(`cart_${warungId}`);
@@ -821,7 +846,7 @@ window.confirmOrder = async function() {
     }
 };
 
-window.updateCartUI();         
+window.updateCartUI();      
     </script>
 </body>
 </html>
