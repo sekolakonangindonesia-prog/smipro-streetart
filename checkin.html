@@ -6,73 +6,60 @@
     <title>Check-In Meja - SMIPRO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* CSS GAYA HITAM MERAH (SAMA SEPERTI ASLINYA) */
-        body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
-        
-        .checkin-card {
-            background: #111; border: 1px solid #333; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px;
-            text-align: center; box-shadow: 0 0 30px rgba(229, 9, 20, 0.2); position: relative;
-            <!-- LOGO KECIL POJOK KIRI -->
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="corner-logo">
-            }
-        
+        body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .checkin-card { background: #111; border: 1px solid #333; padding: 30px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(229, 9, 20, 0.2); position: relative; }
         .warung-logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #E50914; margin-bottom: 15px; }
-        .table-number { font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        
+        .table-number { font-size: 2.5rem; font-weight: 800; color: white; margin: 10px 0; }
         .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 20px; }
         .status-free { background: #1a3320; color: #4ade80; border: 1px solid #4ade80; }
         .status-booked { background: #332b00; color: #ffeb3b; border: 1px solid #ffeb3b; }
         .status-active { background: #330000; color: #ff4444; border: 1px solid #ff4444; }
-
-        .input-checkin { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; margin-bottom: 10px; text-align: center; font-size: 1rem; box-sizing:border-box; }
-        
+        .input-checkin { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; margin-bottom: 10px; text-align: center; font-size: 1rem; box-sizing: border-box; }
         .btn-checkin { width: 100%; padding: 12px; background: #E50914; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.3s; margin-top: 10px; }
-        .btn-checkin:hover { background: #b71c1c; }
-
+        .btn-checkin:hover { opacity: 0.85; }
         .suggestion-box { background: #222; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px dashed #555; text-align: left; }
-        .free-table-badge { display: inline-block; background: #004d00; color: #00ff00; padding: 3px 8px; border-radius: 5px; margin: 3px; font-weight: bold; font-size: 0.8rem; border: 1px solid #00ff00; }
 
-        /* LOGO POJOK KIRI ATAS */
-        .corner-logo {
-        position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; 
-        border-radius: 50%; border: 2px solid #E50914; object-fit: cover;
+        /* FIX: Badge meja kosong jadi tombol yang bisa diklik */
+        .free-table-badge {
+            display: inline-block;
+            background: #004d00; color: #00ff00;
+            padding: 6px 12px; border-radius: 5px;
+            margin: 4px; font-weight: bold; font-size: 0.85rem;
+            border: 1px solid #00ff00;
+            cursor: pointer;        /* Bisa diklik */
+            text-decoration: none;  /* Tidak ada garis bawah */
+            transition: 0.2s;
         }
+        .free-table-badge:hover { background: #00ff00; color: black; }
+
+        .corner-logo { position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #E50914; object-fit: cover; }
     </style>
 </head>
 <body>
-
     <div class="checkin-card">
-        
-        <!-- LOADING -->
         <div id="loading-state">
             <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="color:#E50914;"></i>
             <p style="color:#888; margin-top:15px;">Mendeteksi Status Meja...</p>
         </div>
 
-        <!-- CONTENT UTAMA -->
         <div id="content-area" style="display:none;">
-            <!-- LOGO KECIL -->
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
-             style="position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #E50914;">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="corner-logo">
             <img src="https://via.placeholder.com/100" class="warung-logo" id="warung-img">
             <h3 style="margin:0; color:#ddd;" id="warung-name">Nama Warung</h3>
-            
             <div class="table-number" id="table-display">MEJA -</div>
             <div id="status-badge-area"></div>
 
-            <!-- 1. FORM MEJA KOSONG (WALK-IN) -->
+            <!-- 1. FORM WALK-IN (MEJA KOSONG) -->
             <div id="form-free" style="display:none;">
                 <p style="color:#aaa; font-size:0.9rem;">Meja Kosong. Silakan Check-In.</p>
-                
                 <input type="text" id="walkin-name" class="input-checkin" placeholder="Nama Anda">
                 <input type="number" id="walkin-pax" class="input-checkin" placeholder="Jumlah Orang">
-                
                 <button class="btn-checkin" onclick="window.submitWalkIn()" style="background:#00ff00; color:black;">
                     CHECK-IN SEKARANG
                 </button>
             </div>
 
-            <!-- 2. FORM MEJA SUDAH DIBOOKING (PERINGATAN) -->
+            <!-- 2. FORM MEJA SUDAH DI-BOOKING -->
             <div id="form-booked" style="display:none;">
                 <div style="background:#332b00; padding:15px; border-radius:10px; border:1px solid #ffeb3b; margin-bottom:15px;">
                     <i class="fa-solid fa-triangle-exclamation" style="color:#ffeb3b; font-size:2rem; margin-bottom:10px;"></i>
@@ -81,21 +68,19 @@
                         <b style="font-size:1.2rem; color:white;" id="booker-name">...</b>
                     </p>
                 </div>
-
                 <p style="color:#aaa; font-size:0.8rem; text-align:left;">Apakah ini pesanan Anda?</p>
                 <input type="text" id="ticket-code" class="input-checkin" placeholder="MASUKKAN KODE TIKET" style="text-transform:uppercase; letter-spacing:1px; border-color:#E50914;">
                 <button class="btn-checkin" onclick="window.verifyTicket()">YA, SAYA PEMESANNYA</button>
 
-                <!-- SARAN MEJA KOSONG -->
                 <div class="suggestion-box">
                     <p style="color:#ccc; font-size:0.8rem; margin-top:0;">
                         <i class="fa-solid fa-arrow-right"></i> Bukan Anda? Silakan pindah ke:
                     </p>
-                    <div id="suggestion-list">Loading...</div>
+                    <div id="suggestion-list">Mencari meja kosong...</div>
                 </div>
             </div>
 
-            <!-- 3. FORM MEJA SEDANG DIPAKAI (ACTIVE) -->
+            <!-- 3. MEJA SEDANG DIPAKAI -->
             <div id="state-occupied" style="display:none;">
                 <div style="padding:20px; border:1px solid #ff4444; border-radius:10px; background:#2a0000;">
                     <h3 style="color:#ff4444; margin:0;">MEJA SEDANG DIGUNAKAN</h3>
@@ -103,299 +88,284 @@
                 </div>
                 <div class="suggestion-box">
                     <p style="color:#ccc; font-size:0.8rem; margin-top:0;">Meja yang tersedia:</p>
-                    <div id="occupied-suggestion-list"></div>
+                    <div id="occupied-suggestion-list">Mencari meja kosong...</div>
                 </div>
             </div>
 
             <!-- 4. SUKSES CHECK-IN -->
             <div id="state-success" style="display:none;">
-    <i class="fa-solid fa-circle-check" style="color:#00ff00; font-size:4rem; margin-bottom:15px;"></i>
-    <h2 style="color:white; margin:0;">SELAMAT DATANG!</h2>
-    <p style="color:#ccc;">Pesanan Anda sudah dikonfirmasi.<br>Selamat menikmati.</p>
-    <button class="btn-checkin" id="btn-pesan-menu" style="background:#FFD700; color:black; margin-top:10px; font-size:1rem;">
-        <i class="fa-solid fa-bowl-food"></i> PESAN MENU SEKARANG
-    </button>
-    <button class="btn-checkin" onclick="location.href='index.html'" style="background:#333; margin-top:10px;">Kembali ke Menu Utama</button>
-</div>
-
+                <i class="fa-solid fa-circle-check" style="color:#00ff00; font-size:4rem; margin-bottom:15px;"></i>
+                <h2 style="color:white; margin:0;">SELAMAT DATANG!</h2>
+                <p style="color:#ccc;">Pesanan Anda sudah dikonfirmasi.<br>Selamat menikmati.</p>
+                <button class="btn-checkin" id="btn-pesan-menu" style="background:#FFD700; color:black; margin-top:10px; font-size:1rem;">
+                    <i class="fa-solid fa-bowl-food"></i> PESAN MENU SEKARANG
+                </button>
+                <button class="btn-checkin" onclick="location.href='index.html'" style="background:#333; margin-top:10px;">Kembali ke Menu Utama</button>
+            </div>
         </div>
     </div>
 
-    <!-- SCRIPT CERDAS (MODULAR) -->
     <script type="module">
         import { db } from './firebase-config.js';
         import { 
             doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, increment 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 1. AMBIL PARAMETER (checkin.html?w=ID_WARUNG&t=NOMOR_MEJA)
         const params = new URLSearchParams(window.location.search);
         const warungId = params.get('w');
         const tableNum = parseInt(params.get('t'));
 
-        // Variabel Global
         let warungData = null;
-        let existingBooking = null; // Data booking orang yang menguasai meja ini
+        let existingBooking = null;
 
-        // 2. INIT SISTEM
+        // FIX: Helper tanggal WIB yang konsisten
+        function getTodayWIB() {
+            return new Date(new Date().getTime() + 7 * 3600000).toISOString().split('T')[0];
+        }
+
         async function initCheckIn() {
-            if(!warungId || !tableNum) {
+            if (!warungId || !tableNum) {
                 document.getElementById('loading-state').innerHTML = "<h3 style='color:red'>QR Code Error / Tidak Lengkap</h3>";
                 return;
             }
-
             try {
-                // A. Ambil Data Warung
                 const wSnap = await getDoc(doc(db, "warungs", warungId));
                 if (!wSnap.exists()) { alert("Warung tidak ditemukan!"); return; }
                 
                 warungData = wSnap.data();
-                
-                // Update UI Header
                 document.getElementById('warung-name').innerText = warungData.name;
                 document.getElementById('table-display').innerText = "MEJA " + tableNum;
-                if(warungData.img) document.getElementById('warung-img').src = warungData.img;
+                if (warungData.img) document.getElementById('warung-img').src = warungData.img;
 
-                // B. CEK STATUS MEJA DI DATABASE
-                const todayStr = new Date().toISOString().split('T')[0];
+                // FIX: Gunakan tanggal WIB
+                const todayStr = getTodayWIB();
+
+                // Cek apakah meja ini sedang dipakai hari ini
                 const q = query(collection(db, "bookings"), 
-                    where("warungName", "==", warungData.name),
+                    where("warungId", "==", warungId),
                     where("status", "in", ["booked", "active"]),
                     where("tableNum", "array-contains", tableNum),
                     where("bookingDate", "==", todayStr)
                 );
-
                 const bSnap = await getDocs(q);
 
                 if (!bSnap.empty) {
-                    // KASUS 1: MEJA SUDAH ADA YANG PUNYA
-                    existingBooking = bSnap.docs[0].data();
-                    existingBooking.id = bSnap.docs[0].id; // Simpan ID Dokumen
-                    
-                    if (existingBooking.status === 'active') {
-                        // Sedang Makan (Merah)
-                        renderView('occupied');
-                    } else {
-                        // Sudah Booking tapi Belum Checkin (Kuning)
-                        renderView('booked');
-                    }
+                    existingBooking = { id: bSnap.docs[0].id, ...bSnap.docs[0].data() };
+                    renderView(existingBooking.status === 'active' ? 'occupied' : 'booked');
                 } else {
-                    // KASUS 2: MEJA KOSONG (Hijau)
                     renderView('free');
                 }
 
-                // Matikan Loading
                 document.getElementById('loading-state').style.display = 'none';
                 document.getElementById('content-area').style.display = 'block';
 
             } catch (e) {
                 console.error(e);
-                alert("Error Memuat Data: " + e.message);
+                alert("Error: " + e.message);
             }
         }
 
-        // 3. FUNGSI GANTI TAMPILAN
         async function renderView(state) {
-            // Sembunyikan semua
             ['form-free', 'form-booked', 'state-occupied', 'state-success'].forEach(id => 
                 document.getElementById(id).style.display = 'none'
             );
-
             const badgeArea = document.getElementById('status-badge-area');
 
             if (state === 'free') {
                 badgeArea.innerHTML = `<span class="status-badge status-free">TERSEDIA (KOSONG)</span>`;
                 document.getElementById('form-free').style.display = 'block';
-            } 
-            else if (state === 'booked') {
+            } else if (state === 'booked') {
                 badgeArea.innerHTML = `<span class="status-badge status-booked">SUDAH DI-BOOKING</span>`;
                 document.getElementById('booker-name').innerText = existingBooking.customerName;
                 document.getElementById('form-booked').style.display = 'block';
-                
-                // Cari meja kosong untuk rekomendasi
                 findEmptyTables('suggestion-list');
-            }
-            else if (state === 'occupied') {
+            } else if (state === 'occupied') {
                 badgeArea.innerHTML = `<span class="status-badge status-active">SEDANG DIGUNAKAN</span>`;
                 document.getElementById('state-occupied').style.display = 'block';
                 findEmptyTables('occupied-suggestion-list');
             }
         }
 
-        // 4. LOGIKA CARI MEJA KOSONG (UNTUK SARAN)
+        // FIX: Query semua booking hari ini, TANPA filter tableNum
+        // sehingga semua meja yang terpakai benar-benar terdeteksi
         async function findEmptyTables(targetElementId) {
             const el = document.getElementById(targetElementId);
+            if (!el) return;
             el.innerHTML = "Mencari meja kosong...";
 
-            // Ambil semua booking aktif
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getTodayWIB();
+
+            // FIX: Ambil SEMUA booking hari ini untuk warung ini (tidak filter per meja)
             const q = query(collection(db, "bookings"), 
-                where("warungName", "==", warungData.name),
+                where("warungId", "==", warungId),
                 where("status", "in", ["booked", "active"]),
-                where("tableNum", "array-contains", tableNum),
                 where("bookingDate", "==", todayStr)
             );
             const snap = await getDocs(q);
             
-            let usedTables = [];
+            let usedTables = new Set();
             snap.forEach(d => {
                 const nums = d.data().tableNum;
-                if(Array.isArray(nums)) usedTables.push(...nums); 
-                else usedTables.push(nums);
+                if (Array.isArray(nums)) nums.forEach(n => usedTables.add(n));
+                else if (nums) usedTables.add(nums);
             });
 
-            // Cari yg tidak dipakai (Max 15)
+            // Juga tambahkan booking active dari hari lain yang belum selesai
+            const qActive = query(collection(db, "bookings"),
+                where("warungId", "==", warungId),
+                where("status", "==", "active")
+            );
+            const snapActive = await getDocs(qActive);
+            snapActive.forEach(d => {
+                const nums = d.data().tableNum;
+                if (Array.isArray(nums)) nums.forEach(n => usedTables.add(n));
+                else if (nums) usedTables.add(nums);
+            });
+
+            const totalMeja = warungData.totalTables || 15;
             let html = "";
-            for(let i=1; i<=15; i++) {
-                if(!usedTables.includes(i)) {
-                    html += `<span class="free-table-badge">Meja ${i}</span>`;
+            for (let i = 1; i <= totalMeja; i++) {
+                if (!usedTables.has(i)) {
+                    // FIX FITUR: Badge jadi link yang bisa diklik langsung
+                    // Klik → langsung buka checkin.html untuk meja tersebut
+                    const url = `checkin.html?w=${warungId}&t=${i}`;
+                    html += `<a href="${url}" class="free-table-badge">Meja ${i}</a>`;
                 }
             }
             
-            el.innerHTML = html || "<span style='color:red'>Penuh Semua</span>";
+            el.innerHTML = html || "<span style='color:red'>Semua meja penuh</span>";
         }
 
-       // --- 5. AKSI: WALK-IN (ORANG DATANG LANGSUNG - TERCANGGIH) ---
-window.submitWalkIn = async function() {
-    const name = document.getElementById('walkin-name').value;
-    const pax = document.getElementById('walkin-pax').value;
+        // WALK-IN — FIX: Tambah filter tanggal WIB
+        window.submitWalkIn = async function() {
+            const name = document.getElementById('walkin-name').value.trim();
+            const pax = parseInt(document.getElementById('walkin-pax').value) || 0;
 
-    if(!name || !pax || parseInt(pax) < 1) return alert("Isi nama dan jumlah orang!");
+            if (!name || pax < 1) return alert("Isi nama dan jumlah orang!");
 
-    const paxInt = parseInt(pax);
-    const btn = document.querySelector('#form-free button');
-    
-    // 1. HITUNG KEBUTUHAN MEJA (Kelipatan 4)
-    // Contoh: 7 orang / 4 = 1.75 -> Dibulatkan ke atas jadi 2 Meja.
-    const qtyNeeded = Math.ceil(paxInt / 4); 
+            const qtyNeeded = Math.ceil(pax / 4);
+            const btn = document.querySelector('#form-free button');
+            btn.innerText = "Memproses..."; btn.disabled = true;
 
-    btn.innerText = "Memproses..."; btn.disabled = true;
+            try {
+                const todayStr = getTodayWIB();
 
-    try {
-        // --- 2. CARI MEJA KOSONG TAMBAHAN ---
-        // Ambil data meja yang sudah terpakai saat ini di database
-        const qCek = query(collection(db, "bookings"), 
-            where("warungId", "==", warungId),
-            where("status", "in", ["booked", "active"])
-        );
-        const snap = await getDocs(qCek);
-        
-        let usedTables = [];
-        snap.forEach(d => {
-            const data = d.data();
-            if(Array.isArray(data.tableNum)) usedTables.push(...data.tableNum);
-            else if(data.tableNum) usedTables.push(data.tableNum);
-        });
+                // FIX: Query pakai tanggal WIB hari ini
+                const qCek = query(collection(db, "bookings"), 
+                    where("warungId", "==", warungId),
+                    where("status", "in", ["booked", "active"]),
+                    where("bookingDate", "==", todayStr)
+                );
+                const snap = await getDocs(qCek);
+                
+                let usedTables = new Set();
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (Array.isArray(data.tableNum)) data.tableNum.forEach(n => usedTables.add(n));
+                    else if (data.tableNum) usedTables.add(data.tableNum);
+                });
 
-        // Masukkan meja yang sedang di-scan sebagai meja utama
-        let assignedTables = [tableNum]; 
+                // Juga cek booking active dari hari lain
+                const qActive = query(collection(db, "bookings"),
+                    where("warungId", "==", warungId),
+                    where("status", "==", "active")
+                );
+                const snapActive = await getDocs(qActive);
+                snapActive.forEach(d => {
+                    const data = d.data();
+                    if (Array.isArray(data.tableNum)) data.tableNum.forEach(n => usedTables.add(n));
+                    else if (data.tableNum) usedTables.add(data.tableNum);
+                });
 
-        // Jika butuh lebih dari 1 meja, cari meja kosong lainnya
-        if (qtyNeeded > 1) {
-            const limitMeja = warungData.totalTables || 15;
-            for (let i = 1; i <= limitMeja; i++) {
-                // Cari nomor selain yang di-scan dan belum dipakai orang lain
-                if (!usedTables.includes(i) && i !== tableNum) {
-                    assignedTables.push(i);
-                    if (assignedTables.length === qtyNeeded) break; // Berhenti kalau sudah cukup
+                // Mulai dari meja yang di-scan, tambah meja lain jika perlu
+                let assignedTables = [tableNum];
+                if (qtyNeeded > 1) {
+                    const limitMeja = warungData.totalTables || 15;
+                    for (let i = 1; i <= limitMeja; i++) {
+                        if (!usedTables.has(i) && i !== tableNum) {
+                            assignedTables.push(i);
+                            if (assignedTables.length === qtyNeeded) break;
+                        }
+                    }
                 }
+
+                if (assignedTables.length < qtyNeeded) {
+                    btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
+                    return alert(`Meja tidak cukup untuk ${pax} orang. Butuh ${qtyNeeded} meja, tersedia ${assignedTables.length}.`);
+                }
+
+                await addDoc(collection(db, "bookings"), {
+                    warungId: warungId,
+                    warungName: warungData.name,
+                    venueName: warungData.venueName || "",
+                    customerName: name,
+                    pax: pax,
+                    tablesNeeded: qtyNeeded,
+                    tableNum: assignedTables,
+                    bookingCode: "WALK-IN",
+                    bookingDate: todayStr,
+                    status: 'active',
+                    revenue: 0,
+                    timestamp: new Date(),
+                    checkInTime: new Date()
+                });
+
+                await updateDoc(doc(db, "warungs", warungId), {
+                    bookedCount: increment(qtyNeeded)
+                });
+
+                document.getElementById('form-free').style.display = 'none';
+                document.getElementById('state-success').style.display = 'block';
+                document.getElementById('status-badge-area').innerHTML = "";
+
+                document.getElementById('btn-pesan-menu').onclick = function() {
+                    window.location.href = `warung-profile.html?id=${warungId}&meja=${assignedTables.join(',')}&nama=${encodeURIComponent(name)}`;
+                };
+
+            } catch (e) {
+                console.error(e);
+                alert("Gagal Check-In: " + e.message);
+                btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
             }
         }
 
-        // Cek apakah meja kosong mencukupi?
-        if (assignedTables.length < qtyNeeded) {
-            btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
-            return alert(`Maaf, meja tidak mencukupi untuk ${paxInt} orang. Anda butuh ${qtyNeeded} meja, tapi hanya tersedia ${assignedTables.length}.`);
-        }
-
-        // --- 3. SIMPAN KE FIREBASE ---
-        await addDoc(collection(db, "bookings"), {
-            warungId: warungId,
-            warungName: warungData.name,
-            venueName: warungData.venueName || "", 
-            customerName: name,
-            pax: paxInt,
-            tablesNeeded: qtyNeeded, // Tersimpan otomatis (misal: 2)
-            tableNum: assignedTables, // Array nomor meja (misal: [2, 3])
-            bookingCode: "WALK-IN",
-            bookingDate: new Date().toISOString().split('T')[0], 
-            status: 'active', 
-            revenue: 0, 
-            timestamp: new Date(),
-            checkInTime: new Date()
-        });
-
-        // Update Stok Terpakai di Data Warung
-        await updateDoc(doc(db, "warungs", warungId), {
-            bookedCount: increment(qtyNeeded)
-        });
-
-        // Tampilkan Sukses
-        document.getElementById('form-free').style.display = 'none';
-        document.getElementById('state-success').style.display = 'block';
-        document.getElementById('status-badge-area').innerHTML = "";
-
-        alert(`Berhasil! Meja dikunci: ${assignedTables.join(", ")}`);
-
-        // Isi tombol Pesan Menu dengan link lengkap
-document.getElementById('btn-pesan-menu').onclick = function() {
-    const mejaStr = assignedTables.join(',');
-    window.location.href = `warung-profile.html?id=${warungId}&meja=${mejaStr}&nama=${encodeURIComponent(name)}`;
-};
-
-    } catch(e) {
-        console.error(e);
-        alert("Gagal Check-In: " + e.message);
-        btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
-    }
-}
-
-        // 6. AKSI: VERIFIKASI TIKET (SMART INPUT)
+        // VERIFIKASI TIKET
         window.verifyTicket = async function() {
             let inputCode = document.getElementById('ticket-code').value.trim().toUpperCase();
-            
-            if(!inputCode) return alert("Masukkan Kode Tiket!");
+            if (!inputCode) return alert("Masukkan Kode Tiket!");
+            if (!inputCode.startsWith("TIKET-")) inputCode = "TIKET-" + inputCode;
 
-            // --- LOGIKA SMART INPUT ---
-            // Jika user tidak mengetik "TIKET-", sistem menambahkannya otomatis
-            if (!inputCode.startsWith("TIKET-")) {
-                inputCode = "TIKET-" + inputCode;
-            }
-
-            // Cek Kesesuaian Kode
             if (inputCode !== existingBooking.bookingCode) {
                 alert("KODE SALAH!\nSistem membaca: " + inputCode + "\nCek kembali WhatsApp Anda.");
                 return;
             }
 
-            if(confirm("Kode Benar! Check-In sekarang?")) {
+            if (confirm("Kode Benar! Check-In sekarang?")) {
                 try {
-                    // Update Status jadi 'active'
                     await updateDoc(doc(db, "bookings", existingBooking.id), {
                         status: 'active',
                         checkInTime: new Date()
                     });
 
-                    
-                    // Tampilkan Sukses
                     document.getElementById('form-booked').style.display = 'none';
                     document.getElementById('state-success').style.display = 'block';
                     document.getElementById('status-badge-area').innerHTML = "";
 
-                    // Isi tombol Pesan Menu dengan link lengkap
-const mejaStr = Array.isArray(existingBooking.tableNum) ? existingBooking.tableNum.join(',') : existingBooking.tableNum;
-document.getElementById('btn-pesan-menu').onclick = function() {
-    window.location.href = `warung-profile.html?id=${warungId}&meja=${mejaStr}&nama=${encodeURIComponent(existingBooking.customerName)}`;
-};
+                    const mejaStr = Array.isArray(existingBooking.tableNum) 
+                        ? existingBooking.tableNum.join(',') 
+                        : existingBooking.tableNum;
+                    
+                    document.getElementById('btn-pesan-menu').onclick = function() {
+                        window.location.href = `warung-profile.html?id=${warungId}&meja=${mejaStr}&nama=${encodeURIComponent(existingBooking.customerName)}`;
+                    };
 
-                } catch(e) {
+                } catch (e) {
                     console.error(e);
                     alert("Gagal Validasi: " + e.message);
                 }
             }
         }
 
-        // Jalankan
         initCheckIn();
     </script>
 </body>
