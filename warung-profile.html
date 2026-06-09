@@ -781,18 +781,34 @@ window.openOrderModal = function() {
     document.getElementById('modal-warung-img').src = document.getElementById('w-img').src;
     window.renderOrderItems();
 
-    // FITUR 4: Auto-isi nomor meja dari URL checkin
+    // FITUR 4: Auto-isi nama & nomor meja dari URL checkin (scan QR)
     const inputMeja = document.getElementById('order-meja');
-    if (inputMeja) {
-        if (urlMeja) {
-            inputMeja.value = urlMeja;
-            inputMeja.readOnly = true;
-            inputMeja.style.color = '#FFD700';
-            inputMeja.style.background = '#1a1a1a';
-        } else {
-            inputMeja.value = '';
-            inputMeja.readOnly = false;
-        }
+    const inputNama = document.getElementById('order-nama');
+
+    if (urlMeja && inputMeja) {
+        // Datang dari scan QR - meja terkunci
+        inputMeja.value = urlMeja;
+        inputMeja.readOnly = true;
+        inputMeja.style.color = '#FFD700';
+        inputMeja.style.background = '#1a1a1a';
+    } else if (inputMeja) {
+        inputMeja.value = '';
+        inputMeja.readOnly = false;
+        inputMeja.style.color = 'white';
+        inputMeja.style.background = '#222';
+    }
+
+    if (urlNama && inputNama) {
+        // Nama dari URL (check-in QR) - terkunci
+        inputNama.value = urlNama;
+        inputNama.readOnly = true;
+        inputNama.style.color = '#FFD700';
+        inputNama.style.background = '#1a1a1a';
+    } else if (inputNama) {
+        inputNama.value = '';
+        inputNama.readOnly = false;
+        inputNama.style.color = 'white';
+        inputNama.style.background = '#222';
     }
 
     document.getElementById('order-modal').style.display = 'flex';
@@ -818,13 +834,18 @@ window.pilihMetode = function(metode) {
 
 window.confirmOrder = async function() {
     if (myCart.length === 0) return alert("Keranjang kosong!");
-    const namaPemesan = urlNama || document.getElementById('book-name').value;
-    // FITUR 4: Baca nomor meja dari input baru (order-meja)
+    // Baca nama dari input order-nama, atau fallback ke urlNama / book-name
+    const inputNamaPesan = document.getElementById('order-nama');
+    const namaPemesan = (inputNamaPesan && inputNamaPesan.value.trim())
+        ? inputNamaPesan.value.trim()
+        : (urlNama || document.getElementById('book-name')?.value || '');
+
+    // FITUR 4: Baca nomor meja dari input order-meja
     const inputMeja = document.getElementById('order-meja');
-    const nomorMeja = (inputMeja && inputMeja.value) ? inputMeja.value : (urlMeja || '-');
+    const nomorMeja = (inputMeja && inputMeja.value.trim()) ? inputMeja.value.trim() : (urlMeja || '');
     let noWA = document.getElementById('order-wa').value;
-    if (!namaPemesan) return alert("Mohon isi Nama Pemesan di Form Booking dulu.");
-    if (!nomorMeja || nomorMeja === '-') return alert("Mohon isi Nomor Meja!");
+    if (!namaPemesan) return alert("Mohon isi Nama Pemesan!");
+    if (!nomorMeja) return alert("Mohon isi Nomor Meja!");
     if (!noWA) return alert("Mohon isi Nomor WhatsApp!");
     if (!metodeBayar) return alert("Pilih metode pembayaran dulu!");
     if (noWA.startsWith('0')) noWA = '62' + noWA.slice(1);
@@ -854,7 +875,7 @@ window.confirmOrder = async function() {
     }
 };
 
-window.updateCartUI();      
+window.updateCartUI();    
     </script>
 </body>
 </html>
