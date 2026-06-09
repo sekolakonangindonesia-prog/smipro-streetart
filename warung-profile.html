@@ -332,22 +332,25 @@
              <img src="" id="modal-warung-img" class="modal-warung-mini" onerror="this.src='https://placehold.co/100'">
         </div>
 
-        <h3 style="text-align:center; color:white; margin-bottom:20px; font-size:1.1rem;">Daftar Pesanan Belanja</h3>
-        
-        <div id="order-items-list"></div>
-
-<div style="border-top:1px dashed #444; padding-top:15px; margin-top:15px; display:flex; justify-content:space-between; font-weight:bold;">
-    <span>Total Bayar:</span>
-    <span id="total-modal-price" style="color:var(--gold);">Rp 0</span>
-</div>
-
-<!-- INPUT NOMOR MEJA (BARU) -->
+       <h3 style="text-align:center; color:white; margin-bottom:20px; font-size:1.1rem;">Daftar Pesanan Belanja</h3>
+    
+    <div id="order-items-list"></div>
+ 
+    <div style="border-top:1px dashed #444; padding-top:15px; margin-top:15px; display:flex; justify-content:space-between; font-weight:bold;">
+        <span>Total Bayar:</span>
+        <span id="total-modal-price" style="color:var(--gold);">Rp 0</span>
+    </div>
+ 
+    <!-- INPUT NAMA PEMESAN (BARU) -->
+    <input type="text" id="order-nama" class="input-request" 
+           placeholder="Nama Pemesan" style="margin-top:15px;">
+ 
+    <!-- INPUT NOMOR MEJA (BARU) -->
     <input type="text" id="order-meja" class="input-request" 
-           placeholder="Nomor Meja Anda (cth: 3 atau 1,2)" 
-           style="margin-top:15px;">
-        
-<!-- INPUT NOMOR WA -->
-<input type="number" id="order-wa" class="input-request" placeholder="Nomor WhatsApp Anda" style="margin-top:15px;">
+           placeholder="Nomor Meja (cth: 2 atau 1,2)">
+ 
+    <!-- INPUT NOMOR WA -->
+    <input type="number" id="order-wa" class="input-request" placeholder="Nomor WhatsApp Anda">
 
 <!-- PILIHAN METODE BAYAR -->
 <div style="margin-bottom:15px;">
