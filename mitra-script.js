@@ -442,6 +442,18 @@ function listenToWebOrders() {
     const warungId = localStorage.getItem('mitraId');
     const q = query(collection(db, "warung_orders"), where("warungId", "==", warungId), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
+        // FIX BEL: Bunyikan notif saat ada pesanan menu BARU
+        if (typeof isFirstOrderLoad === "undefined") window.isFirstOrderLoad = true;
+        if (!window.isFirstOrderLoad) {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === "added") {
+                    const o = change.doc.data();
+                    notifSound.play().catch(() => {});
+                    window.tampilkanPesananBaru("order", "Pesanan Menu Baru", `Meja: ${o.tableNum || "-"}`, "web-orders");
+                }
+            });
+        }
+        window.isFirstOrderLoad = false;
         const container = document.getElementById('web-orders-container');
         if(!container) return;
         
