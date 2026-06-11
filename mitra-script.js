@@ -54,6 +54,12 @@ onSnapshot(doc(db, "warungs", WARUNG_ID), (docSnap) => {
             document.getElementById('preview-profile-img').src = data.img;
         }
 
+        // Load foto QRIS jika sudah ada
+        if (data.qrisImg) {
+            const previewQris = document.getElementById('preview-qris-img');
+            if (previewQris) previewQris.src = data.qrisImg;
+        }
+
         // Sinkronisasi Toggle Order Web
         const toggle = document.getElementById('toggle-order-web');
         const desc = document.getElementById('order-status-desc');
@@ -604,6 +610,40 @@ window.previewCoverImage = function(input) {
                     if(banner) banner.style.backgroundImage = `url('${base64Data}')`;
                 } catch (error) {
                     alert("Gagal update foto sampul: " + error.message);
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+
+window.previewQrisImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_SIZE = 400;
+                const scale = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+                
+                const previewEl = document.getElementById('preview-qris-img');
+                if (previewEl) previewEl.src = base64Data;
+                
+                try {
+                    await updateDoc(doc(db, "warungs", WARUNG_ID), { 
+                        qrisImg: base64Data 
+                    });
+                    alert("Foto QRIS berhasil disimpan!");
+                } catch (error) {
+                    alert("Gagal simpan QRIS: " + error.message);
                 }
             };
             img.src = e.target.result;
