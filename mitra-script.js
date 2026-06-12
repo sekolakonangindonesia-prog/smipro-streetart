@@ -411,7 +411,21 @@ window.finishBooking = function(id, qty) {
 window.submitTransaction = async function() {
     const amt = document.getElementById('trx-amount').value;
     if(!amt || amt <= 0) return alert("Masukkan Nominal!");
-    await updateDoc(doc(db, "bookings", window.selectedBookingId), { status: 'finished', revenue: parseInt(amt), finishedAt: new Date() });
+    
+    // FIX: Pastikan semua field yang dibutuhkan rekap admin tersimpan
+    // Admin membaca: warungName, venueName, pax, revenue, finishedAt dari koleksi bookings
+    const bookingSnap = await getDoc(doc(db, "bookings", window.selectedBookingId));
+    const bookingData = bookingSnap.exists() ? bookingSnap.data() : {};
+    
+    await updateDoc(doc(db, "bookings", window.selectedBookingId), { 
+        status: 'finished', 
+        revenue: parseInt(amt), 
+        finishedAt: new Date(),
+        // Pastikan field rekap ada (fallback ke data warung jika kosong di booking)
+        warungName: bookingData.warungName || currentWarungName,
+        venueName: bookingData.venueName || "",
+        pax: bookingData.pax || 0
+    });
     await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-window.selectedTableCount) });
     document.getElementById('modal-finish-transaction').style.display = 'none';
 };
@@ -674,13 +688,49 @@ window.setTodayFilter = function() {
     }
 }
 
+window.cancelWebOrder = async function(orderId) {
+    if(!confirm("Hapus pesanan ini?")) return;
+    try {
+        await deleteDoc(doc(db, "warung_orders", orderId));
+    } catch (e) {
+        alert("Gagal hapus: " + e.message);
+    }
+};
+
 window.finishWebOrder = async function(orderId, totalUang) {
     if(!confirm(`Pesanan Meja ini sudah lunas sebesar Rp ${totalUang.toLocaleString()}?`)) return;
     try {
+        // 1. Update status pesanan web jadi finished
+        const orderSnap = await getDoc(doc(db, "warung_orders", orderId));
+        const orderData = orderSnap.exists() ? orderSnap.data() : {};
+        
         await updateDoc(doc(db, "warung_orders", orderId), { 
             status: "finished",
             paidAt: new Date()
         });
+
+        // 2. FIX: Catat ke koleksi bookings agar masuk rekap admin
+        // Format sama persis dengan submitTransaction agar terbaca di laporan PDF
+        const todayStr = getTodayWIB();
+        await addDoc(collection(db, "bookings"), {
+            warungId: WARUNG_ID,
+            warungName: currentWarungName,
+            venueName: orderData.venueName || "",
+            customerName: orderData.customerName || "Pelanggan Web",
+            tableNum: orderData.tableNum ? [orderData.tableNum] : [],
+            tablesNeeded: 0,
+            pax: orderData.items ? orderData.items.length : 0,
+            bookingCode: "WEB-ORDER",
+            bookingDate: todayStr,
+            status: "finished",
+            revenue: parseInt(totalUang),
+            finishedAt: new Date(),
+            timestamp: new Date(),
+            // Referensi ke pesanan asli
+            sourceOrderId: orderId,
+            metodeBayar: orderData.metodeBayar || "cod"
+        });
+
         alert("Pembayaran Berhasil! Data telah diarsipkan ke laporan.");
     } catch (e) {
         alert("Eror saat memproses pembayaran: " + e.message);
