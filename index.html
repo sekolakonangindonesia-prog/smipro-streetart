@@ -3,31 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
     <title>STREETART.ID - Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* ============ STYLE KHUSUS HALAMAN HOME ============ */
+
+        /* HERO BANNER AREA (poster / live) */
+        #hero-banner-area {
+            margin: 0;
+            position: relative;
+        }
+        .banner-poster {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 380px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a0a0a 0%, #0a0a0a 100%);
+        }
+        .banner-poster img {
+            width: 100%; height: 100%; object-fit: cover;
+            display: block;
+        }
+        .banner-poster::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(10,10,10,0.95) 100%);
+        }
+        .banner-brand {
+            position: absolute; bottom: 16px; left: 18px; right: 18px; z-index: 2;
+        }
+        .banner-brand .brand-badge { margin-bottom: 8px; }
+        .banner-brand h1 {
+            font-size: clamp(1.4rem, 5vw, 2.2rem);
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 4px 14px rgba(0,0,0,0.6);
+        }
+        .banner-brand p {
+            font-size: 0.78rem; color: #ccc; margin: 4px 0 0;
+            max-width: 480px;
+        }
+
+        /* LIVE MODE */
+        .banner-live {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 380px;
+            background: #000;
+            overflow: hidden;
+        }
+        .banner-live img.live-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+        .banner-live::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.92) 100%);
+        }
+        .live-badge-top {
+            position: absolute; top: 14px; left: 14px; z-index: 3;
+            display: flex; align-items: center; gap: 6px;
+            background: var(--primary); color: #fff;
+            border-radius: var(--radius-sm); padding: 5px 12px;
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em;
+            box-shadow: var(--shadow-glow-primary);
+        }
+        .live-badge-top .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.2s infinite; }
+        .banner-live-playbtn {
+            position: absolute; inset: 0; z-index: 2;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+        .banner-live-playbtn i {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: rgba(229,9,20,0.92);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.7rem; color: #fff;
+            box-shadow: 0 0 34px rgba(229,9,20,0.55);
+            transition: transform 0.2s var(--ease);
+        }
+        .banner-live-playbtn:hover i { transform: scale(1.08); }
+        .banner-live-meta {
+            position: absolute; bottom: 64px; left: 16px; right: 16px; z-index: 3;
+        }
+        .banner-live-meta h2 { margin: 0; color: #fff; font-size: 1.3rem; }
+        .banner-live-meta p { margin: 3px 0 0; color: #ccc; font-size: 0.8rem; }
+        .banner-live-meta .perf-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .banner-live-meta .chip {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius-pill); padding: 3px 10px; font-size: 0.68rem; color: #eee;
+        }
+        .banner-live-actions {
+            position: absolute; bottom: 14px; left: 14px; right: 14px; z-index: 3;
+            display: flex; gap: 10px;
+        }
+        .banner-live-actions a {
+            flex: 1; text-align: center; text-decoration: none;
+            padding: 11px; border-radius: var(--radius-sm);
+            font-weight: 700; font-size: 0.85rem;
+            transition: 0.2s var(--ease);
+        }
+        .banner-live-actions .btn-req { background: var(--primary); color: #fff; box-shadow: var(--shadow-glow-primary); }
+        .banner-live-actions .btn-req:hover { background: #ff1620; }
+        .banner-live-actions .btn-watch { background: rgba(255,255,255,0.08); border: 1px solid var(--border-strong); color: #eee; }
+        .banner-live-actions .btn-watch:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* SEARCH BAR */
+        .search-bar-home {
+            margin: -22px 20px 0;
+            position: relative;
+            z-index: 5;
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .search-bar-home a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-pill);
+            padding: 14px 20px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow-md);
+            transition: 0.2s var(--ease);
+        }
+        .search-bar-home a:hover { border-color: var(--accent); color: var(--text-muted); }
+        .search-bar-home i { color: var(--text-dim); }
+
+        /* QUICK ACTIONS */
+        .quick-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .quick-item {
+            background: var(--bg-card-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px 6px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-white);
+            transition: 0.2s var(--ease);
+        }
+        .quick-item:hover { transform: translateY(-3px); border-color: var(--border-strong); background: var(--bg-card-hover); }
+        .quick-icon {
+            width: 40px; height: 40px;
+            border-radius: var(--radius-sm);
+            margin: 0 auto 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .quick-label { font-size: 0.7rem; color: var(--text-muted); line-height: 1.3; font-weight: 600; }
+
+        /* VENUE STATUS STRIP */
+        #venue-status-strip {
+            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; margin-top: 14px;
+        }
+        .vstrip-card {
+            min-width: 130px; flex-shrink: 0;
+            background: var(--bg-card-soft); border: 1px solid var(--border);
+            border-radius: var(--radius-md); overflow: hidden; text-decoration: none; color: #fff;
+            transition: 0.2s var(--ease);
+        }
+        .vstrip-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+        .vstrip-top {
+            height: 58px; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.02); position: relative;
+        }
+        .vstrip-top img { width: 100%; height: 100%; object-fit: cover; }
+        .vstrip-top i { font-size: 1.4rem; color: var(--text-dim); }
+        .vstrip-dot {
+            position: absolute; top: 6px; right: 6px;
+            width: 8px; height: 8px; border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.4);
+        }
+        .vstrip-body { padding: 8px 10px; }
+        .vstrip-name { font-size: 0.72rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .vstrip-status { font-size: 0.65rem; margin-top: 2px; font-weight: 600; }
+
+        /* FOOTER */
+        .home-footer {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            padding: 26px 10px;
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+        }
+
+        /* small top welcome strip under banner */
+        .welcome-strip {
+            max-width: 800px; margin: 18px auto 0; padding: 0 20px;
+        }
+        .welcome-strip .prolog-box { margin-top: 0; }
+    </style>
 </head>
 <body>
+    <!-- WELCOME OVERLAY -->
     <div id="welcome-overlay" style="display:none; position:fixed; inset:0; background:#000; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-    <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:100px; margin-bottom:20px;">
-    <h2 style="color:white; letter-spacing:4px; font-size:1.2rem;">STREET ART</h2>
-    <p style="color:#555; font-size:0.8rem; margin-bottom:30px;">Digitalizing Street Performance</p>
-    <button id="btn-enter" style="background:#E50914; color:white; border:none; padding:15px 50px; border-radius:40px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow: 0 0 20px rgba(229,9,20,0.4);">
-        MASUK & PLAY
-    </button>
-    <audio id="bgm-player" loop></audio>
-</div>
+        <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:100px; margin-bottom:20px;">
+        <h2 style="color:white; letter-spacing:4px; font-size:1.2rem; font-family:var(--font-display);">STREET ART</h2>
+        <p style="color:#555; font-size:0.8rem; margin-bottom:30px;">Digitalizing Street Performance</p>
+        <button id="btn-enter" class="btn-primary" style="width:auto; padding:15px 50px; border-radius:40px;">
+            MASUK & PLAY
+        </button>
+        <audio id="bgm-player" loop></audio>
+    </div>
+
     <!-- NAVBAR -->
     <nav class="top-nav">
         <a href="index.html" class="logo-container">
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo" class="logo-img" style="height: 50px;">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo" class="logo-img">
             <span class="logo-text">STREETART.ID</span>
         </a>
         <div class="menu" style="display:flex; align-items:center;">
-             <a href="about.html" style="color:#E50914; text-decoration:none; margin-right:15px; font-size:1.2rem;" title="Tentang SMIPRO">
+            <a href="about.html" style="color:var(--primary); text-decoration:none; margin-right:15px; font-size:1.2rem;" title="Tentang SMIPRO">
                 <i class="fa-solid fa-circle-info"></i>
             </a>
-            <!-- WADAH TOMBOL LOGIN/USER (ID PENTING) -->
             <div id="nav-btn-area">
                 <a href="login.html" class="btn-mitra">
                     <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
@@ -36,99 +237,114 @@
         </div>
     </nav>
 
-    <!-- HEADER + NARASI -->
-    <header class="hero">
-        <div class="hero-content">
-            <span class="brand-badge">LIVE 2025</span>
-            <h1 style="margin:10px 0;">STREETART.ID</h1>
-            <div class="prolog-box">
-                "Memodernisasi sektor seni pertunjukan "jalanan" adalah upaya perbaikan tatakelola zona legal ekonomi kreatif untuk sebuah misi pertumbuhan ekonomi inklusif dan berkelanjutan"
-            </div>
+    <!-- ============ HERO BANNER AREA (POSTER atau LIVE) ============ -->
+    <div id="hero-banner-area">
+        <!-- diisi otomatis oleh JS: banner-poster (default) atau banner-live (saat ada venue live) -->
+        <div class="banner-poster">
+            <div class="skeleton" style="position:absolute; inset:0;"></div>
         </div>
-    </header>
+    </div>
+
+    <!-- WELCOME STRIP (badge + prolog singkat) -->
+    <div class="welcome-strip">
+        <span class="brand-badge"><i class="fa-solid fa-bolt"></i> LIVE 2025</span>
+        <div class="prolog-box">
+            "Memodernisasi sektor seni pertunjukan "jalanan" adalah upaya perbaikan tatakelola zona legal ekonomi kreatif untuk sebuah misi pertumbuhan ekonomi inklusif dan berkelanjutan"
+        </div>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="search-bar-home">
+        <a href="schedule.html">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Cari venue, artis, atau jadwal...</span>
+        </a>
+    </div>
 
     <div class="container">
 
         <!-- === JADWAL UTAMA === -->
-       <div id="home-schedule-container" style="display:none;"></div>
+        <div id="home-schedule-container" style="display:none;"></div>
 
-       <!-- === JADWAL TOUR / CAFE (Awalnya Kosong) === -->
+        <!-- === JADWAL TOUR / CAFE === -->
         <div id="home-tour-container" style="display:none;"></div>
 
-        <!-- === RADIO CARD (Awalnya Kosong) === -->
+        <!-- === RADIO CARD === -->
         <div id="home-radio-container" style="display:none;"></div>
-        
-        <!-- 1. LIST ANGKRINGAN -->
-        <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> 5 Angkringan Live</div>
-        <div id="venue-list-container">
+
+        <!-- QUICK ACTIONS -->
+        <div class="quick-grid">
+            <a href="schedule.html" class="quick-item">
+                <div class="quick-icon" style="background:var(--accent-dim); color:var(--accent);"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="quick-label">Jadwal<br>Event</div>
+            </a>
+            <a href="radio.html" class="quick-item">
+                <div class="quick-icon" style="background:var(--cyan-dim); color:var(--cyan);"><i class="fa-solid fa-tower-broadcast"></i></div>
+                <div class="quick-label">Radio<br>Live</div>
+            </a>
+            <a href="podcast.html" class="quick-item">
+                <div class="quick-icon" style="background:var(--primary-dim); color:var(--primary);"><i class="fa-solid fa-photo-film"></i></div>
+                <div class="quick-label">Galeri<br>&amp; Musik</div>
+            </a>
+            <a href="training.html" class="quick-item">
+                <div class="quick-icon" style="background:var(--green-dim); color:var(--green);"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="quick-label">Bengkel<br>Perform</div>
+            </a>
+        </div>
+
+        <!-- 1. LIST ANGKRINGAN (HANYA YANG DIAKTIFKAN ADMIN) -->
+        <div class="section-title"><i class="fa-solid fa-map-location-dot"></i> Venue Aktif</div>
+        <div id="venue-status-strip"></div>
+        <div id="venue-list-container" style="margin-top:14px;">
             <p style="text-align:center; color:#888; padding:20px;">
                 <i class="fa-solid fa-spinner fa-spin"></i> Memuat Lokasi...
             </p>
         </div>
 
-       <!-- 2. TOP 5 PERFORMER -->
+        <!-- 2. TOP 5 PERFORMER -->
         <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Profil)</div>
         <div class="performer-wrap" id="top-performer-container">
             <p style="text-align:center; width:100%; color:#888;">Memuat Artis...</p>
         </div>
 
         <!-- 3. BENGKEL PERFORM -->
-        <div class="training-banner" onclick="location.href='training.html'" 
-     style="background: linear-gradient(135deg, #b40000, #ffde10); border: 1px solid #ffde10;">
-    
-    <div>
-        <!-- Tulisan Judul jadi Hitam -->
-        <h3 style="margin:0; color: black; text-shadow: none;">Bengkel Perform STREETART</h3>
-        
-        <!-- Tulisan Kecil jadi Hitam -->
-        <small style="color: black; font-weight: 600;">Klik untuk melihat Tim Pelatih</small>
-    </div>
-    
-    <!-- Ikon Toga jadi Hitam -->
-    <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color: black;"></i>
+        <div class="training-banner" onclick="location.href='training.html'"
+             style="background: linear-gradient(135deg, #b40000, #ffde10); border: 1px solid #ffde10;">
+            <div>
+                <h3 style="margin:0; color: black; text-shadow: none; font-family:var(--font-display);">Bengkel Perform STREETART</h3>
+                <small style="color: black; font-weight: 600;">Klik untuk melihat Tim Pelatih</small>
+            </div>
+            <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color: black;"></i>
+        </div>
 
-</div>
-                
-       <!-- 4. PODCAST HIGHLIGHT (SUDAH DINAMIS) -->
+        <!-- 4. PODCAST HIGHLIGHT -->
         <div class="section-title" style="margin-top: 50px;">
             <i class="fa-solid fa-photo-film"></i> Galeri & Podcast Terbaru
         </div>
-
-        <!-- WADAH INI NANTI DIISI OTOMATIS OLEH JAVASCRIPT -->
         <div id="home-podcast-container" style="margin-bottom: 20px;">
             <p style="text-align:center; color:#888;">
                 <i class="fa-solid fa-circle-notch fa-spin"></i> Memuat konten...
             </p>
         </div>
 
-        <!-- 5. DUKUNG KAMI (REVISI) -->
+        <!-- 5. DUKUNG KAMI -->
         <div class="support-section">
             <h3 style="margin:0; color:white;">Dukung Street.Art</h3>
             <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
-            
             <div class="social-icons">
-                <!-- 1. YOUTUBE (Link Aktif) -->
                 <a href="https://www.youtube.com/@SmiproStreetart" target="_blank" style="color:red;" title="YouTube SMIPRO">
                     <i class="fa-brands fa-youtube"></i>
                 </a>
-
-                <!-- 2. TIKTOK (Ganti tanda # dengan link nanti) -->
                 <a href="https://www.tiktok.com/@smipro_streetart" target="_blank" style="color:#00f2ea;" title="TikTok">
                     <i class="fa-brands fa-tiktok"></i>
                 </a>
-
-                <!-- 3. INSTAGRAM (Ganti tanda # dengan link nanti) -->
                 <a href="https://www.instagram.com/smipro.streetart/" target="_blank" style="color:#C13584;" title="Instagram">
                     <i class="fa-brands fa-instagram"></i>
                 </a>
-
-                <!-- 4. FACEBOOK (Ganti tanda # dengan link nanti) -->
                 <a href="https://www.facebook.com/profile.php?id=61586115930975&locale=id_ID" target="_blank" style="color:#1877F2;" title="Facebook">
                     <i class="fa-brands fa-facebook-f"></i>
                 </a>
             </div>
-            
-            <!-- Tombol Donasi sudah dihapus -->
         </div>
 
         <!-- 6. BERITA -->
@@ -137,16 +353,27 @@
             <div class="news-card"><div>Memuat Berita...</div></div>
         </div>
 
-        <br><br>
-        <center><small style="color:#444;">&copy; 2025 Yayasan Sekolah Konang Indonesia -  StreetArt.ID</small></center>
+        <div class="home-footer">
+            &copy; 2025 Yayasan Sekolah Konang Indonesia &mdash; StreetArt.ID
+        </div>
     </div>
+
+    <!-- BOTTOM TAB BAR -->
+    <div class="tabbar-spacer"></div>
+    <nav class="bottom-tabbar">
+        <a href="index.html" class="active"><i class="fa-solid fa-house"></i><span>Home</span></a>
+        <a href="schedule.html"><i class="fa-solid fa-calendar-days"></i><span>Jadwal</span></a>
+        <a href="podcast.html"><i class="fa-solid fa-music"></i><span>Galeri</span></a>
+        <a href="radio.html"><i class="fa-solid fa-tower-broadcast"></i><span>Radio</span></a>
+        <a href="login.html" id="tab-akun"><i class="fa-solid fa-user"></i><span>Akun</span></a>
+    </nav>
 
     <!-- SCRIPT TUNGGAL (GABUNGAN LOGIC & DATA) -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { 
-    collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, getDoc, onSnapshot, where 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import {
+            collection, getDocs, query, orderBy, limit, addDoc, updateDoc, doc, getDoc, onSnapshot, where
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ==========================================
         // 1. CEK STATUS LOGIN (INIT PERTAMA KALI)
@@ -154,9 +381,8 @@
         function checkAuthStatus() {
             const isLoggedIn = localStorage.getItem('userLoggedIn');
             const userName = localStorage.getItem('userName');
-            const userRole = localStorage.getItem('userRole'); 
-            
-            // Logika Fallback Link Dashboard
+            const userRole = localStorage.getItem('userRole');
+
             let userLink = localStorage.getItem('userLink');
             if (!userLink || userLink === 'null') {
                 if (userRole === 'mitra') userLink = 'mitra-dashboard.html';
@@ -167,29 +393,35 @@
             }
 
             const navArea = document.getElementById('nav-btn-area');
-            if (navArea) {
-                if (isLoggedIn === 'true') {
-                    // TENTUKAN IKON & WARNA
-                    let icon = 'fa-user'; 
-                    let color = '#E50914'; 
-                    
-                    if (userRole === 'mitra') icon = 'fa-store';
-                    if (userRole === 'performer') icon = 'fa-guitar';
-                    if (userRole === 'mentor') icon = 'fa-graduation-cap';
-                    
-                    if (userRole === 'admin') {
-                        icon = 'fa-user-shield';
-                        color = '#ff0000'; 
-                    }
+            const tabAkun = document.getElementById('tab-akun');
 
-                    // TAMPILKAN NAMA USER (KLIK MASUK DASHBOARD)
+            if (isLoggedIn === 'true') {
+                let icon = 'fa-user';
+                let color = 'var(--primary)';
+
+                if (userRole === 'mitra') icon = 'fa-store';
+                if (userRole === 'performer') icon = 'fa-guitar';
+                if (userRole === 'mentor') icon = 'fa-graduation-cap';
+
+                if (userRole === 'admin') {
+                    icon = 'fa-user-shield';
+                    color = '#ff0000';
+                }
+
+                if (navArea) {
                     navArea.innerHTML = `
                         <a href="${userLink}" style="text-decoration:none; display:flex; align-items:center; gap:8px; color:${color}; font-weight:800; font-size:1rem;">
                             <i class="fa-solid ${icon}"></i> ${userName}
                         </a>
                     `;
-                } else {
-                    // BELUM LOGIN
+                }
+
+                if (tabAkun) {
+                    tabAkun.href = userLink;
+                    tabAkun.innerHTML = `<i class="fa-solid ${icon}"></i><span>${userRole === 'admin' ? 'Admin' : 'Akun'}</span>`;
+                }
+            } else {
+                if (navArea) {
                     navArea.innerHTML = `
                         <a href="login.html" class="btn-mitra">
                             <i class="fa-solid fa-user-gear"></i> Mitra (Login/Daftar)
@@ -200,30 +432,104 @@
         }
 
         // ==========================================
-        // 2. FUNGSI LOAD DATA
+        // 2. HERO BANNER AREA (POSTER <-> LIVE)
         // ==========================================
-        
+        // Default poster jika admin belum mengisi settings.bannerUrl
+        const DEFAULT_BANNER = "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/StreetArd_bener.jpg";
+
+        async function loadHeroBanner() {
+            const area = document.getElementById('hero-banner-area');
+
+            try {
+                // 1. Cek apakah ada venue yang sedang LIVE
+                const qLive = query(collection(db, "venues"), where("isLiveNow", "==", true), limit(1));
+                const liveSnap = await getDocs(qLive);
+
+                if (!liveSnap.empty && liveSnap.docs[0].data().youtubeId) {
+                    const docSnap = liveSnap.docs[0];
+                    const data = docSnap.data();
+                    const thumb = `https://img.youtube.com/vi/${data.youtubeId}/hqdefault.jpg`;
+
+                    // Ambil nama performer yang tampil (dari events type=main, lokasi cocok)
+                    let perfChips = '';
+                    try {
+                        const qEv = query(collection(db, "events"), orderBy("date", "asc"));
+                        const evSnap = await getDocs(qEv);
+                        evSnap.forEach(ev => {
+                            const e = ev.data();
+                            if (e.type === 'main' && e.location === data.name && e.performers) {
+                                e.performers.slice(0, 3).forEach(p => {
+                                    perfChips += `<span class="chip">${p.name}</span>`;
+                                });
+                            }
+                        });
+                    } catch(e) {}
+
+                    area.innerHTML = `
+                    <div class="banner-live">
+                        <img class="live-thumb" src="${thumb}" alt="Live ${data.name}">
+                        <div class="live-badge-top"><span class="dot"></span> LIVE SEKARANG</div>
+                        <div class="banner-live-playbtn" onclick="location.href='venue-stadion.html?id=${docSnap.id}'">
+                            <i class="fa-solid fa-play"></i>
+                        </div>
+                        <div class="banner-live-meta">
+                            <h2>${data.name}</h2>
+                            <p>Siaran langsung sedang berlangsung</p>
+                            ${perfChips ? `<div class="perf-chips">${perfChips}</div>` : ''}
+                        </div>
+                        <div class="banner-live-actions">
+                            <a class="btn-req" href="venue-stadion.html?id=${docSnap.id}">
+                                <i class="fa-solid fa-music"></i> Request &amp; Sawer
+                            </a>
+                            <a class="btn-watch" href="venue-stadion.html?id=${docSnap.id}">
+                                <i class="fa-solid fa-tv"></i> Tonton Live
+                            </a>
+                        </div>
+                    </div>`;
+                    return;
+                }
+
+                // 2. Tidak ada live -> tampilkan poster promosi (settings.bannerUrl)
+                let bannerUrl = DEFAULT_BANNER;
+                try {
+                    const settingsSnap = await getDoc(doc(db, "settings", "general"));
+                    if (settingsSnap.exists() && settingsSnap.data().bannerUrl) {
+                        bannerUrl = settingsSnap.data().bannerUrl;
+                    }
+                } catch(e) {}
+
+                area.innerHTML = `
+                <div class="banner-poster">
+                    <img src="${bannerUrl}" alt="Poster STREETART.ID" onerror="this.src='${DEFAULT_BANNER}'">
+                </div>`;
+
+            } catch (e) {
+                console.error("Gagal load hero banner:", e);
+                area.innerHTML = `<div class="banner-poster"><img src="${DEFAULT_BANNER}" alt="Poster STREETART.ID"></div>`;
+            }
+        }
+
+        // ==========================================
+        // 3. FUNGSI LOAD DATA LAIN
+        // ==========================================
+
         // JADWAL
         async function loadMainSchedule() {
             const container = document.getElementById('home-schedule-container');
-            const q = query(collection(db, "events"), orderBy("date", "asc")); 
+            const q = query(collection(db, "events"), orderBy("date", "asc"));
             const querySnapshot = await getDocs(q);
 
             let foundMain = false;
-
-            // Bersihkan dulu
             container.innerHTML = '';
-            
+
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.type === 'main' && !foundMain) { 
+                if (data.type === 'main' && !foundMain) {
                     foundMain = true;
-
-                    // MUNCULKAN KOTAKNYA
                     container.style.display = 'block';
-                    
+
                     let artistNames = data.performers ? data.performers.map(p => p.name).join(", ") : "Artis Pilihan";
-                    const dateParts = data.displayDate.split(' '); 
+                    const dateParts = data.displayDate.split(' ');
                     const hari = dateParts[0].replace(',','').toUpperCase();
                     const tgl = dateParts[1];
                     const blnThn = dateParts[2].substr(0,3).toUpperCase() + " " + dateParts[3];
@@ -252,11 +558,10 @@
             if(!foundMain) container.innerHTML = `<div class="main-schedule-card"><div class="msc-info">Belum ada jadwal minggu ini.</div></div>`;
         }
 
-       // 4. LOAD RADIO (TAMPILKAN WALAU OFFLINE)
+        // LOAD RADIO
         async function loadMainRadio() {
             const container = document.getElementById('home-radio-container');
-            // Urutkan dari Pagi (1) ke Malam (3)
-            const q = query(collection(db, "broadcasts"), orderBy("order", "asc")); 
+            const q = query(collection(db, "broadcasts"), orderBy("order", "asc"));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
@@ -265,27 +570,18 @@
             }
 
             let dataToShow = null;
-
-            // 1. Cek apakah ada yang LIVE?
             querySnapshot.forEach(doc => {
                 if (doc.data().isLive) dataToShow = doc.data();
             });
-
-            // 2. Jika TIDAK ada yang Live, ambil jadwal pertama (Pagi) sebagai info
-            if (!dataToShow) {
-                dataToShow = querySnapshot.docs[0].data();
-            }
+            if (!dataToShow) dataToShow = querySnapshot.docs[0].data();
 
             container.style.display = 'block';
             container.innerHTML = '';
-           
-            // Logika Tampilan (Biru jika Live, Abu jika Offline)
+
             const isLive = dataToShow.isLive;
             const badgeStyle = isLive ? 'background:#ff0000; color:white; border:none; animation: pulse 1s infinite;' : 'background:#00d2ff; color:black; border:none;';
             const badgeText = isLive ? 'LIVE SEKARANG' : 'SEGERA TAYANG';
-            const titleColor = isLive ? 'white' : '#888';
-            const iconColor = isLive ? 'cyan-text' : 'style="color:#555"';
-            
+
             container.innerHTML = `
             <div class="main-schedule-card" onclick="location.href='radio.html'" style="cursor:pointer; border-left: 5px solid #00d2ff; background: linear-gradient(135deg, #001a22 0%, #000 100%);">
                 <div class="msc-date" style="background:#00d2ff; color:black;">
@@ -306,47 +602,33 @@
             </div>`;
         }
 
-       // JADWAL TOUR (CAFE)
-        // 3. LOAD JADWAL TOUR (CAFE) - VERSI ANTI ERROR
+        // JADWAL TOUR (CAFE)
         async function loadTourSchedule() {
             const container = document.getElementById('home-tour-container');
-            
-            // PERBAIKAN: Hapus 'orderBy' sementara agar tidak kena error Index Firebase
-            // Kita ambil data tour apa saja yang ada
             const q = query(collection(db, "events"), where("type", "==", "tour"), limit(1));
-            
+
             try {
                 const querySnapshot = await getDocs(q);
 
-                // JIKA KOSONG DI DATABASE: Tampilkan Dummy Biar Kelihatan Dulu
                 if (querySnapshot.empty) {
-                    console.log("Data Tour Kosong. Memeriksa...");
-                    // Opsional: uncomment baris bawah ini jika ingin paksa muncul dummy
-                    // await seedTourData(); return loadTourSchedule(); 
                     container.style.display = 'none';
                     return;
                 }
 
-                // JIKA ADA DATA
                 container.style.display = 'block';
                 container.innerHTML = '';
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    
-                    // Format Tanggal (Fallback jika kosong)
                     const displayDate = data.displayDate || "COMING SOON";
-                    const dateParts = displayDate.split(' '); 
-                    // Ambil angka tanggal (misal bagian kedua: "03" dari "SABTU 03 JAN")
+                    const dateParts = displayDate.split(' ');
                     const tgl = dateParts.length > 1 ? dateParts[1] : 'New';
 
-                    // Ambil Nama Artis
                     let artistName = "Guest Star";
                     if(data.performers && data.performers.length > 0) {
                         artistName = data.performers[0].name;
                     }
 
-                    // TAMPILKAN KARTU
                     container.innerHTML = `
                     <div class="main-schedule-card" onclick="location.href='cafe-live.html?loc=${encodeURIComponent(data.location)}'" style="cursor:pointer; border-left: 5px solid #ff9800; margin-bottom: 20px;">
                         <div class="msc-date" style="background:#ff9800; color:black;">
@@ -370,58 +652,83 @@
             }
         }
 
-        // VENUES (DENGAN PERBAIKAN ADMIN AKSES)
-       async function loadVenues() {
+        // VENUES — hanya tampilkan yang diaktifkan admin (isActive !== false)
+        async function loadVenues() {
             const container = document.getElementById('venue-list-container');
+            const strip = document.getElementById('venue-status-strip');
             const userRole = localStorage.getItem('userRole');
             const isAdmin = userRole === 'admin';
 
             const q = query(collection(db, "venues"), orderBy("order", "asc"));
-            
+
             onSnapshot(q, (snapshot) => {
                 if(snapshot.empty) {
                     container.innerHTML = `<p style="text-align:center;color:#666;">Lokasi belum tersedia.</p>`;
+                    if (strip) strip.innerHTML = '';
                     return;
                 }
 
                 container.innerHTML = '';
-                
+                let stripHtml = '';
+                let totalActive = 0;
+
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
+
+                    // FILTER: venue yang sengaja dinonaktifkan admin (isActive === false) tidak ditampilkan
+                    if (data.isActive === false && !isAdmin) return;
+
+                    totalActive++;
                     const isOpen = data.status === 'open';
                     const badgeClass = isOpen ? 'active' : 'soon';
                     const badgeText = isOpen ? 'BUKA' : 'TUTUP';
-                    
-                    // Tombol Saklar Admin
+                    const inactiveTag = (data.isActive === false) ? `<span class="badge" style="background:#333;color:#999;">NONAKTIF</span>` : '';
+
                     let adminSwitchHTML = "";
                     if (isAdmin) {
                         const toggleColor = isOpen ? '#00ff00' : '#333';
                         const toggleIcon = isOpen ? 'fa-toggle-on' : 'fa-toggle-off';
-                        
+
                         adminSwitchHTML = `
-                        <div style="margin-left:10px; text-align:center; z-index:100; cursor:pointer;" 
+                        <div style="margin-left:10px; text-align:center; z-index:100; cursor:pointer;"
                              onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
                             <i class="fa-solid ${toggleIcon}" style="color:${toggleColor}; font-size:2rem; transition:0.3s;"></i>
                             <div style="font-size:0.6rem; color:#888;">ADMIN</div>
                         </div>`;
                     }
 
-                    // RENDER HTML (Perhatikan onlclick memanggil fungsi yang ada di screenshot Anda)
                     container.innerHTML += `
-                    <div class="venue-card ${isOpen ? '' : 'disabled'}" 
-                         onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')" 
+                    <div class="venue-card ${isOpen ? '' : 'disabled'}"
+                         onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')"
                          style="display:flex; align-items:center; cursor:pointer;">
-                        
                         <div class="icon-box"><i class="fa-solid ${data.icon}"></i></div>
-                        
                         <div style="flex:1;">
-                            <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span></h3>
+                            <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span> ${inactiveTag}</h3>
                             <small style="color:#888;">${data.desc}</small>
                         </div>
-                        
                         ${adminSwitchHTML}
                     </div>`;
+
+                    const dotColor = isOpen ? 'var(--green)' : '#555';
+                    const thumbHtml = data.img ? `<img src="${data.img}" alt="${data.name}">` : `<i class="fa-solid ${data.icon}"></i>`;
+                    stripHtml += `
+                    <a href="javascript:void(0)" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')" class="vstrip-card">
+                        <div class="vstrip-top">
+                            ${thumbHtml}
+                            <span class="vstrip-dot" style="background:${dotColor};"></span>
+                        </div>
+                        <div class="vstrip-body">
+                            <div class="vstrip-name">${data.name}</div>
+                            <div class="vstrip-status" style="color:${isOpen ? 'var(--green)' : 'var(--text-dim)'}">${badgeText}</div>
+                        </div>
+                    </a>`;
                 });
+
+                if (totalActive === 0) {
+                    container.innerHTML = `<p style="text-align:center;color:#666; padding:20px;">Belum ada venue yang diaktifkan.</p>`;
+                }
+
+                if (strip) strip.innerHTML = stripHtml;
             });
         }
 
@@ -475,75 +782,58 @@
         }
 
         // ==========================================
-        // 3. FUNGSI GLOBAL (ADMIN ONLY)
+        // 4. FUNGSI GLOBAL (ADMIN ONLY)
         // ==========================================
         window.toggleVenueStatus = async function(id, currentStatus) {
-            event.stopPropagation(); 
+            event.stopPropagation();
             const newStatus = currentStatus === 'open' ? 'closed' : 'open';
             if(confirm(`Ubah status menjadi ${newStatus.toUpperCase()}?`)) {
                 await updateDoc(doc(db, "venues", id), { status: newStatus });
             }
         }
 
-        // --- FUNGSI BARU: KLIK VENUE (AMAN DARI ERROR) ---
-window.handleVenueClick = function(id, status) {
-    const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole === 'admin';
-    const isOpen = status === 'open';
+        window.handleVenueClick = function(id, status) {
+            const userRole = localStorage.getItem('userRole');
+            const isAdmin = userRole === 'admin';
+            const isOpen = status === 'open';
 
-    // Logika: Admin bebas masuk, User biasa harus cek status buka
-    if (isAdmin || isOpen) {
-        window.location.href = `venue-stadion.html?id=${id}`;
-    } else {
-        alert('Maaf, lokasi ini sedang tutup/belum beroperasi.');
-    }
-}
+            if (isAdmin || isOpen) {
+                window.location.href = `venue-stadion.html?id=${id}`;
+            } else {
+                alert('Maaf, lokasi ini sedang tutup/belum beroperasi.');
+            }
+        }
 
-        // --- FUNGSI BARU: LOAD PODCAST HIGHLIGHT ---
+        // LOAD PODCAST HIGHLIGHT
         async function loadPodcastHighlight() {
             const container = document.getElementById('home-podcast-container');
-            
-            // Ambil 1 data terbaru berdasarkan timestamp
             const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"), limit(1));
             const snapshot = await getDocs(q);
-        
+
             if (snapshot.empty) {
                 container.innerHTML = `<div class="podcast-card"><div style="padding:20px; text-align:center;">Belum ada konten galeri.</div></div>`;
                 return;
             }
-        
+
             snapshot.forEach(doc => {
                 const d = doc.data();
-                
-                // Cek Tipe: Video atau Audio?
                 const isVideo = d.mediaType === 'video';
-                
-                // Atur Tampilan
                 const typeIcon = isVideo ? 'fa-brands fa-youtube' : 'fa-brands fa-spotify';
-                const typeColor = isVideo ? '#ff0000' : '#1DB954'; 
+                const typeColor = isVideo ? '#ff0000' : '#1DB954';
                 const typeLabel = isVideo ? 'VIDEO TERBARU' : 'AUDIO TERBARU';
                 const thumbImg = d.thumb || "https://via.placeholder.com/400x200?text=No+Cover";
-        
-                // Render Kartu Keren
+
                 container.innerHTML = `
-                <div class="podcast-card" onclick="location.href='podcast.html'" style="cursor:pointer; border:1px solid #333; overflow:hidden; position:relative;">
-                    
-                    <!-- GAMBAR COVER -->
+                <div class="podcast-card" onclick="location.href='podcast.html'" style="cursor:pointer; position:relative;">
                     <div style="position:relative; height:200px; overflow:hidden;">
                         <img src="${thumbImg}" style="width:100%; height:100%; object-fit:cover; filter: brightness(0.7);">
-                        
-                        <!-- Label Pojok -->
                         <div style="position:absolute; top:10px; left:10px; background:${typeColor}; color:white; padding:3px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">
                             <i class="${typeIcon}"></i> ${typeLabel}
                         </div>
-        
-                        <!-- Tombol Play -->
-                        <i class="fa-solid fa-circle-play play-btn-center" style="font-size:3.5rem; color:white; opacity:0.9; text-shadow: 0 0 10px rgba(0,0,0,0.5);"></i>
+                        <i class="fa-solid fa-circle-play play-btn-center"></i>
                     </div>
-        
-                    <!-- INFO BAWAH -->
-                    <div class="podcast-info" style="padding:15px; background: linear-gradient(to right, #111, #000);">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size:1.1rem; line-height:1.4;">${d.title}</h4>
+                    <div class="podcast-info" style="background: linear-gradient(to right, #111, #000);">
+                        <h4 style="margin:0 0 5px 0;">${d.title}</h4>
                         <div style="color:#888; font-size:0.85rem;">
                             <i class="fa-solid fa-user-pen"></i> ${d.host || 'Admin'}
                         </div>
@@ -552,76 +842,71 @@ window.handleVenueClick = function(id, status) {
             });
         }
 
-       // --- LOGIKA WELCOME SCREEN & BGM (VERSI FINAL ANTI-ERROR) ---
-async function initWelcomeScreen() {
-    const overlay = document.getElementById('welcome-overlay');
-    const player = document.getElementById('bgm-player');
-    const btn = document.getElementById('btn-enter');
-    
-    if (!overlay || !player || !btn) return;
+        // LOGIKA WELCOME SCREEN & BGM
+        async function initWelcomeScreen() {
+            const overlay = document.getElementById('welcome-overlay');
+            const player = document.getElementById('bgm-player');
+            const btn = document.getElementById('btn-enter');
 
-    try {
-        const docSnap = await getDoc(doc(db, "settings", "general"));
-        
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            
-            if (data.bgmEnabled && data.bgmUrl) {
-                overlay.style.display = 'flex';
-                
-                // --- PROSES LINK (DROPBOX / DRIVE) ---
-                let finalUrl = data.bgmUrl;
+            if (!overlay || !player || !btn) return;
 
-                if (finalUrl.includes('dropbox.com')) {
-                    finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
-                } else if (finalUrl.includes('drive.google.com')) {
-                    const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
-                    finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                }
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "general"));
 
-                player.src = finalUrl;
-                player.load();
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
 
-                btn.onclick = () => {
-                    // Paksa browser mengenali interaksi user
-                    player.muted = false; 
-                    player.volume = 1.0;  
+                    if (data.bgmEnabled && data.bgmUrl) {
+                        overlay.style.display = 'flex';
 
-                    // Gunakan janji (Promise) untuk memastikan musik berputar
-                    const playPromise = player.play();
+                        let finalUrl = data.bgmUrl;
 
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log("🎶 MUSIK SMIPRO BERHASIL DIPUTAR!");
-                        }).catch(error => {
-                            console.error("❌ Browser memblokir suara: ", error);
-                            // Solusi darurat: Jika gagal, coba play lagi setelah overlay hilang
-                        });
-                    }
+                        if (finalUrl.includes('dropbox.com')) {
+                            finalUrl = finalUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('dl=0', 'raw=1');
+                        } else if (finalUrl.includes('drive.google.com')) {
+                            const fileId = finalUrl.includes('/file/d/') ? finalUrl.split('/file/d/')[1].split('/')[0] : finalUrl.split('id=')[1]?.split('&')[0];
+                            finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                        }
 
-                    // Hilangkan overlay
-                    overlay.style.transition = 'opacity 0.5s ease';
-                    overlay.style.opacity = '0';
-                    setTimeout(() => {
+                        player.src = finalUrl;
+                        player.load();
+
+                        btn.onclick = () => {
+                            player.muted = false;
+                            player.volume = 1.0;
+
+                            const playPromise = player.play();
+                            if (playPromise !== undefined) {
+                                playPromise.then(() => {
+                                    console.log("🎶 MUSIK SMIPRO BERHASIL DIPUTAR!");
+                                }).catch(error => {
+                                    console.error("❌ Browser memblokir suara: ", error);
+                                });
+                            }
+
+                            overlay.style.transition = 'opacity 0.5s ease';
+                            overlay.style.opacity = '0';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 500);
+                        };
+                    } else {
                         overlay.style.display = 'none';
-                    }, 500);
-                };
-            } else {
+                    }
+                } else {
+                    overlay.style.display = 'none';
+                }
+            } catch (e) {
+                console.error("Error BGM:", e);
                 overlay.style.display = 'none';
             }
-        } else {
-            overlay.style.display = 'none';
         }
-    } catch (e) {
-        console.error("Error BGM:", e);
-        overlay.style.display = 'none';
-    }
-}
-        
+
         // ==========================================
-        // 4. EKSEKUSI
+        // 5. EKSEKUSI
         // ==========================================
-        checkAuthStatus(); // Cek Login Dulu
+        checkAuthStatus();
+        loadHeroBanner();
         loadMainSchedule();
         loadTourSchedule();
         loadMainRadio();
@@ -629,9 +914,8 @@ async function initWelcomeScreen() {
         loadTopPerformers();
         loadNews();
         loadPodcastHighlight();
-        initWelcomeScreen(); 
+        initWelcomeScreen();
 
     </script>
 </body>
 </html>
-
