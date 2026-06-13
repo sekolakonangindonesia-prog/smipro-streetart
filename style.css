@@ -772,3 +772,40 @@ select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
   .hero { padding: 44px 16px 36px; }
   .section-title { font-size: 0.9rem; }
 }
+
+/* Card Venue Style Baru */
+.venue-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.venue-card-new {
+    background: #111111;
+    border: 1px solid #222222;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* Garis merah atas */
+.venue-card-new.open::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, #E50914, transparent);
+}
+
+.venue-icon { font-size: 2rem; margin-bottom: 10px; }
+.venue-name { font-weight: 800; color: #fff; margin-bottom: 4px; font-size: 0.9rem; }
+.venue-desc { font-size: 0.7rem; color: #666; margin-bottom: 12px; }
+
+.badge-status {
+    background: #333; color: #fff; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.65rem; font-weight: 800; display: inline-block;
+}
+.badge-status.open { background: #00ff00; color: #000; }
