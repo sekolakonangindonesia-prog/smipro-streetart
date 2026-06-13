@@ -3199,6 +3199,7 @@ async function loadBgmSettings() {
             const data = docSnap.data();
             document.getElementById('bgm-url-input').value = data.bgmUrl || "";
             toggle.checked = data.bgmEnabled || false;
+            document.getElementById('banner-url-input').value = data.bannerUrl || "";
             updateBgmUI(data.bgmEnabled);
         } else {
             updateBgmUI(false); // Default jika data belum ada di DB
@@ -3236,11 +3237,13 @@ function updateBgmUI(isEnabled) {
 window.saveBgmSettings = async function() {
     const url = document.getElementById('bgm-url-input').value;
     const isEnabled = document.getElementById('bgm-active-toggle').checked;
+    const bannerUrl = document.getElementById('banner-url-input').value;
 
     try {
         await setDoc(doc(db, "settings", "general"), {
             bgmUrl: url,
             bgmEnabled: isEnabled,
+            bannerUrl: bannerUrl,
             updatedAt: new Date()
         }, { merge: true });
         
