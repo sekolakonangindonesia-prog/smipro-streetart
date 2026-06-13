@@ -276,14 +276,7 @@
         </div>
     </div>
 
-    <!-- SEARCH BAR -->
-    <div class="search-bar-home">
-        <a href="schedule.html">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Cari venue, artis, atau jadwal...</span>
-        </a>
-    </div>
-
+   
     <div class="container">
 
         <!-- === JADWAL UTAMA === -->
@@ -677,65 +670,57 @@
 
       // VENUES — Tampilan Grid Kotak (Menghapus List Baris Lama)
         async function loadVenues() {
-            const container = document.getElementById('venue-list-container');
-            const strip = document.getElementById('venue-status-strip'); // Ini tetap ada di HTML tapi akan kita kosongkan
-            const userRole = localStorage.getItem('userRole');
-            const isAdmin = userRole === 'admin';
+    const container = document.getElementById('venue-list-container');
+    const strip = document.getElementById('venue-status-strip');
+    const userRole = localStorage.getItem('userRole');
+    const isAdmin = userRole === 'admin';
 
-            // Mengatur container agar menjadi Grid
-            container.style.display = 'grid';
-            container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
-            container.style.gap = '15px';
+    container.className = 'venue-grid-container';
 
-            const q = query(collection(db, "venues"), orderBy("order", "asc"));
+    const q = query(collection(db, "venues"), orderBy("order", "asc"));
 
-            onSnapshot(q, (snapshot) => {
-                if(snapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Lokasi belum tersedia.</p>`;
-                    if (strip) strip.innerHTML = '';
-                    return;
-                }
-
-                container.innerHTML = '';
-                let totalActive = 0;
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-
-                    // FILTER: venue yang sengaja dinonaktifkan admin
-                    if (data.isActive === false && !isAdmin) return;
-
-                    totalActive++;
-                    const isOpen = data.status === 'open';
-                    const badgeClass = isOpen ? 'active' : 'soon';
-                    const badgeText = isOpen ? 'BUKA' : 'TUTUP';
-
-                    // Tampilan KOTAK (Mengganti model list lama)
-                    container.innerHTML += `
-                    <div class="venue-card-box" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')"
-                         style="background:var(--bg-card-soft); border:1px solid var(--border); border-radius:var(--radius-md); padding:15px; text-align:center; cursor:pointer; transition:0.2s;">
-                        <div style="font-size:1.8rem; margin-bottom:10px; color:${isOpen ? 'var(--primary)' : '#555'};">
-                            <i class="fa-solid ${data.icon}"></i>
-                        </div>
-                        <h3 style="margin:0; font-size:0.9rem; color:#fff; font-family:var(--font-display);">${data.name}</h3>
-                        <span class="badge ${badgeClass}" style="display:inline-block; margin:8px 0;">${badgeText}</span>
-                        ${isAdmin ? `
-                            <div style="margin-top:10px; border-top:1px solid #333; padding-top:10px;" 
-                                 onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
-                                <i class="fa-solid ${isOpen ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color:${isOpen ? '#00ff00' : '#333'}; font-size:1.8rem;"></i>
-                                <div style="font-size:0.6rem; color:#888;">ADMIN</div>
-                            </div>` : ''}
-                    </div>`;
-                });
-
-                if (totalActive === 0) {
-                    container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Belum ada venue yang diaktifkan.</p>`;
-                }
-
-                // Kita kosongkan strip agar tidak muncul baris list di atas
-                if (strip) strip.innerHTML = '';
-            });
+    onSnapshot(q, (snapshot) => {
+        if(snapshot.empty) {
+            container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Lokasi belum tersedia.</p>`;
+            if (strip) strip.innerHTML = '';
+            return;
         }
+
+        container.innerHTML = '';
+        let totalActive = 0;
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.isActive === false && !isAdmin) return;
+            totalActive++;
+
+            const isOpen = data.status === 'open';
+            const badgeClass = isOpen ? 'open' : '';
+            const badgeText = isOpen ? 'BUKA' : 'TUTUP';
+
+            container.innerHTML += `
+            <div class="venue-card-box ${isOpen ? 'open' : ''}" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')">
+                <div class="venue-icon-box" style="color:${isOpen ? 'var(--primary)' : '#555'};">
+                    <i class="fa-solid ${data.icon}"></i>
+                </div>
+                <h3 class="venue-name">${data.name}</h3>
+                <span class="badge-status ${badgeClass}">${badgeText}</span>
+                ${isAdmin ? `
+                    <div style="margin-top:12px; border-top:1px solid #333; padding-top:10px;" 
+                         onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
+                        <i class="fa-solid ${isOpen ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color:${isOpen ? '#00ff00' : '#333'}; font-size:1.8rem;"></i>
+                        <div style="font-size:0.6rem; color:#888;">ADMIN</div>
+                    </div>` : ''}
+            </div>`;
+        });
+
+        if (totalActive === 0) {
+            container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Belum ada venue yang diaktifkan.</p>`;
+        }
+
+        if (strip) strip.innerHTML = '';
+    });
+}
         
         // TOP PERFORMERS
         async function loadTopPerformers() {
