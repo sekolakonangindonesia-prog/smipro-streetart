@@ -669,53 +669,37 @@
         }
 
       // VENUES — Tampilan Grid Kotak (Menghapus List Baris Lama)
-        async function loadVenues() {
+       async function loadVenues() {
     const container = document.getElementById('venue-list-container');
     const strip = document.getElementById('venue-status-strip');
-    const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole === 'admin';
-
     container.className = 'venue-grid-container';
 
     const q = query(collection(db, "venues"), orderBy("order", "asc"));
 
     onSnapshot(q, (snapshot) => {
-        if(snapshot.empty) {
-            container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Lokasi belum tersedia.</p>`;
-            if (strip) strip.innerHTML = '';
-            return;
-        }
-
         container.innerHTML = '';
-        let totalActive = 0;
+        let totalOpen = 0;
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            if (data.isActive === false && !isAdmin) return;
-            totalActive++;
 
-            const isOpen = data.status === 'open';
-            const badgeClass = isOpen ? 'open' : '';
-            const badgeText = isOpen ? 'BUKA' : 'TUTUP';
+            // FILTER: hanya tampilkan yang BUKA
+            if (data.status !== 'open') return;
+
+            totalOpen++;
 
             container.innerHTML += `
-            <div class="venue-card-box ${isOpen ? 'open' : ''}" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')">
-                <div class="venue-icon-box" style="color:${isOpen ? 'var(--primary)' : '#555'};">
+            <div class="venue-card-box open" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')">
+                <div class="venue-icon-box">
                     <i class="fa-solid ${data.icon}"></i>
                 </div>
                 <h3 class="venue-name">${data.name}</h3>
-                <span class="badge-status ${badgeClass}">${badgeText}</span>
-                ${isAdmin ? `
-                    <div style="margin-top:12px; border-top:1px solid #333; padding-top:10px;" 
-                         onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
-                        <i class="fa-solid ${isOpen ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color:${isOpen ? '#00ff00' : '#333'}; font-size:1.8rem;"></i>
-                        <div style="font-size:0.6rem; color:#888;">ADMIN</div>
-                    </div>` : ''}
+                <span class="badge-status open">BUKA</span>
             </div>`;
         });
 
-        if (totalActive === 0) {
-            container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Belum ada venue yang diaktifkan.</p>`;
+        if (totalOpen === 0) {
+            container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Belum ada venue yang sedang buka.</p>`;
         }
 
         if (strip) strip.innerHTML = '';
