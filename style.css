@@ -776,36 +776,35 @@ select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
 /* Card Venue Style Baru */
 .venue-grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 15px;
     padding: 10px 0;
 }
-
-.venue-card-new {
+.venue-card-box {
     background: #111111;
     border: 1px solid #222222;
     border-radius: 14px;
-    padding: 16px;
+    padding: 20px;
     text-align: center;
     position: relative;
     overflow: hidden;
     cursor: pointer;
     transition: 0.3s;
 }
-
-/* Garis merah atas */
-.venue-card-new.open::before {
+.venue-card-box:hover {
+    border-color: #444;
+    transform: translateY(-3px);
+}
+/* Garis merah atas - hanya saat BUKA */
+.venue-card-box.open::before {
     content: '';
     position: absolute; top: 0; left: 0; right: 0; height: 3px;
     background: linear-gradient(90deg, transparent, #E50914, transparent);
 }
-
-.venue-icon { font-size: 2rem; margin-bottom: 10px; }
-.venue-name { font-weight: 800; color: #fff; margin-bottom: 4px; font-size: 0.9rem; }
-.venue-desc { font-size: 0.7rem; color: #666; margin-bottom: 12px; }
-
+.venue-icon-box { font-size: 2.2rem; margin-bottom: 12px; }
+.venue-name { font-weight: 800; color: #fff; margin-bottom: 8px; font-size: 1rem; font-family: var(--font-display, inherit); }
 .badge-status {
-    background: #333; color: #fff; padding: 3px 10px; border-radius: 20px;
-    font-size: 0.65rem; font-weight: 800; display: inline-block;
+    background: #333; color: #fff; padding: 4px 14px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 800; display: inline-block;
 }
 .badge-status.open { background: #00ff00; color: #000; }
