@@ -1,439 +1,774 @@
-/* GLOBAL STYLE */
+/* ==========================================================================
+   STREETART.ID — GLOBAL DESIGN SYSTEM
+   ----------------------------------------------------------------
+   Catatan penting:
+   - Semua nama class & ID lama DIPERTAHANKAN agar JavaScript yang
+     sudah ada (script.js, admin-script.js, mitra-script.js, dst)
+     tetap berjalan tanpa perubahan apapun.
+   - File ini hanya meningkatkan kualitas visual: warna, tipografi,
+     spacing, shadow, animasi, dan konsistensi komponen.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-    --primary: #E50914; 
-    --accent: #FFD700; 
-    --bg-dark: #121212;
-    --bg-card: #1E1E1E;
-    --text-white: #ffffff;
-    --text-muted: #b3b3b3;
-    --green: #2ecc71;
+  /* --- Brand Colors (nama variabel lama dipertahankan) --- */
+  --primary: #E50914;        /* Merah SMIPRO */
+  --primary-dim: rgba(229, 9, 20, 0.14);
+  --accent: #FFD700;         /* Emas */
+  --accent-dim: rgba(255, 215, 0, 0.12);
+  --cyan: #00d2ff;           /* Radio / Live */
+  --cyan-dim: rgba(0, 210, 255, 0.12);
+  --green: #2ecc71;
+  --green-dim: rgba(46, 204, 113, 0.12);
+  --gold: #FFD700;           /* alias dipakai beberapa file */
+
+  /* --- Surface & Background --- */
+  --bg-dark: #0a0a0a;
+  --bg-card: #161616;
+  --bg-card-soft: #141414;
+  --bg-card-hover: #1e1e1e;
+  --bg-elevated: #1c1c1c;
+
+  /* --- Text --- */
+  --text-white: #ffffff;
+  --text-muted: #a8a8a8;
+  --text-dim: #6e6e6e;
+
+  /* --- Borders & Radius --- */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* --- Shadow --- */
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow-primary: 0 8px 24px rgba(229, 9, 20, 0.25);
+  --shadow-glow-accent: 0 8px 24px rgba(255, 215, 0, 0.18);
+
+  /* --- Type --- */
+  --font-display: 'Poppins', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-* { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: var(--text-white); padding-bottom: 60px; }
+/* ==========================================================================
+   RESET & BASE
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
-/* NAV */
-.top-nav { display: flex; justify-content: space-between; align-items: center; padding: 13px 18px; background: #000; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 999; }
-.logo { font-weight: 800; color: var(--primary); font-size: 1.2rem; text-decoration: none; }
-.menu a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.9rem; }
+html { scroll-behavior: smooth; }
 
-/* HERO & NARASI */
-.hero { padding: 40px 20px; background: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/StreetArd_bener.jpg') center/cover; position: relative; }
-.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(18,18,18,0.5), var(--bg-dark)); }
-.hero-content { position: relative; z-index: 2; max-width: 800px; margin: 0 auto; }
-.brand-badge { background: var(--primary); padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; font-weight: bold; display: inline-block; }
-.prolog-box { border-left: 3px solid var(--accent); padding-left: 15px; margin-top: 15px; font-style: italic; color: #ddd; line-height: 1.5; font-size: 0.95rem; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg-dark);
+  color: var(--text-white);
+  padding-bottom: 60px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
 
-/* LAYOUT */
-.container { max-width: 800px; margin: 0 auto; padding: 20px; }
-.section-title { color: var(--accent); margin: 30px 0 15px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 5px; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
 
-/* VENUE CARDS */
-.venue-card { background: var(--bg-card); padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; text-decoration: none; color: white; transition: all 0.3s ease; }
-.venue-card:hover { border-color: var(--primary); transform: translateY(-3px); background: #252525; }
-.venue-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
-.venue-card.disabled:hover { transform: none; border-color: #333; }
-.icon-box { font-size: 1.5rem; color: #555; width: 40px; text-align: center; }
-.venue-card:not(.disabled) .icon-box { color: var(--primary); }
+a { color: inherit; }
 
-/* PERFORMER GRID SYSTEM (FIXED) */
+/* Scrollbar halus untuk strip horizontal */
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Fokus keyboard tetap terlihat (aksesibilitas) */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(8, 8, 8, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 1.2rem;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.menu a {
+  color: var(--text-white);
+  text-decoration: none;
+  margin-left: 15px;
+  font-size: 0.9rem;
+  transition: color 0.2s var(--ease);
+}
+.menu a:hover { color: var(--primary); }
+
+/* Tombol Mitra (Login/Daftar) */
+.btn-mitra {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: #fff !important;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-glow-primary);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s;
+}
+.btn-mitra:hover {
+  transform: translateY(-2px);
+  background: #ff1620;
+  box-shadow: 0 10px 28px rgba(229, 9, 20, 0.35);
+}
+
+/* Logo container (index navbar) */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.logo-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+  transition: transform 0.3s var(--ease);
+}
+.logo-container:hover .logo-img { transform: rotate(-8deg) scale(1.05); }
+.logo-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+/* Back button */
+.btn-back {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text-white);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  transition: 0.2s var(--ease);
+  font-family: var(--font-body);
+}
+.btn-back:hover { background: rgba(255,255,255,0.1); border-color: var(--border-strong); }
+
+/* ==========================================================================
+   HERO & NARASI (index.html)
+   ========================================================================== */
+.hero {
+  padding: 56px 20px 44px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(229,9,20,0.18), transparent 60%),
+    url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/StreetArd_bener.jpg') center/cover;
+  position: relative;
+  isolation: isolate;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(10,10,10,0.45) 0%, var(--bg-dark) 100%);
+  z-index: -1;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+  animation: heroFadeUp 0.7s var(--ease) both;
+}
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.brand-badge {
+  background: var(--primary);
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-glow-primary);
+}
+.brand-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse 1.4s infinite;
+}
+
+.hero-content h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 6vw, 3rem);
+  letter-spacing: 0.06em;
+  margin: 14px 0 0;
+  background: linear-gradient(135deg, #ffffff 0%, #d8d8d8 60%, var(--accent) 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.prolog-box {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin-top: 16px;
+  font-style: italic;
+  color: #d6d6d6;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+}
+
+/* ==========================================================================
+   LAYOUT GENERAL
+   ========================================================================== */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.section-title {
+  color: var(--accent);
+  margin: 34px 0 16px;
+  font-size: 1rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   VENUE CARDS
+   ========================================================================== */
+.venue-card {
+  background: var(--bg-card);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  text-decoration: none;
+  color: var(--text-white);
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.venue-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-md);
+}
+.venue-card.disabled { opacity: 0.45; filter: grayscale(0.6); cursor: not-allowed; }
+.venue-card.disabled:hover { transform: none; border-color: var(--border); box-shadow: none; }
+
+.icon-box {
+  font-size: 1.5rem;
+  color: var(--text-dim);
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.03);
+  flex-shrink: 0;
+  transition: color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.venue-card:not(.disabled) .icon-box { color: var(--primary); background: var(--primary-dim); }
+
+/* ==========================================================================
+   PERFORMER GRID
+   ========================================================================== */
 .performer-wrap {
-    display: grid;
-    /* GANTI auto-fit JADI auto-fill agar kartu tidak melar selebar layar */
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-    gap: 15px;
-    margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
 }
 
-/* Kartu Artis */
-.artist-card { 
-    background: #222; 
-    padding: 15px 10px; 
-    border-radius: 12px; 
-    text-align: center; 
-    cursor: pointer; 
-    border: 1px solid #333; 
-    transition: all 0.3s ease;
-    
-    /* Pastikan isinya rapi vertikal */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%; /* Agar tinggi seragam */
+.artist-card {
+  background: var(--bg-card-soft);
+  padding: 18px 10px;
+  border-radius: var(--radius-md);
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.artist-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-glow-accent);
 }
 
-/* Efek Hover */
-.artist-card:hover { 
-    transform: translateY(-5px); 
-    border-color: var(--accent); 
-    background: #2a2a2a; 
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+.artist-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+  margin-bottom: 10px;
+  transition: 0.3s var(--ease);
 }
+.artist-card:hover .artist-img { border-color: var(--accent); transform: scale(1.06); }
 
-/* Foto Bulat */
-.artist-img { 
-    width: 70px; 
-    height: 70px; 
-    border-radius: 50%; /* Tetap Bulat */
-    object-fit: cover; 
-    border: 2px solid var(--primary); 
-    margin-bottom: 8px; 
-    transition: 0.3s;
-}
-
-.artist-card:hover .artist-img { 
-    border-color: white; 
-}
-
-/* Teks Nama Artis */
 .artist-card div {
-    font-size: 0.85rem;
-    font-weight: 500;
-    line-height: 1.2;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  font-family: var(--font-body);
 }
 
-/* TRAINING BANNER (HOVER ADDED) */
-.training-banner { margin-top: 30px; background: linear-gradient(to right, #2c3e50, #000000); padding: 20px; border-radius: 15px; border: 1px solid #444; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.3s ease; }
-.training-banner:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+/* ==========================================================================
+   TRAINING BANNER
+   ========================================================================== */
+.training-banner {
+  margin-top: 32px;
+  background: linear-gradient(120deg, #2c3e50 0%, #0c0c0c 100%);
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.training-banner:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow-accent);
+}
 
-/* SUPPORT SECTION */
-.support-section { background: #151515; border-radius: 15px; padding: 30px; text-align: center; margin-top: 40px; border: 1px dashed #333; }
-.btn-dukung { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 10px 25px; border-radius: 25px; margin-top: 20px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-.btn-dukung:hover { background: var(--primary); color: white; }
+/* ==========================================================================
+   SUPPORT / SOCIAL SECTION
+   ========================================================================== */
+.support-section {
+  background: var(--bg-card-soft);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  margin-top: 44px;
+  border: 1px dashed var(--border-strong);
+}
 
-.social-icons { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
-.social-icons a { width: 45px; height: 45px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; transition: 0.3s; text-decoration: none; }
-.social-icons a:hover { transform: scale(1.1); background: white; }
+.btn-dukung {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 10px 25px;
+  border-radius: var(--radius-pill);
+  margin-top: 20px;
+  cursor: pointer;
+  transition: 0.25s var(--ease);
+  font-weight: 700;
+}
+.btn-dukung:hover { background: var(--primary); color: #fff; }
 
-/* NEWS */
-.news-card { display: flex; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 15px; align-items: center; border: 1px solid #333; transition: 0.3s; }
-.news-card:hover { border-color: #555; background: #222; }
-.news-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; }
+.social-icons {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+.social-icons a {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.3rem;
+  transition: transform 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  text-decoration: none;
+}
+.social-icons a:hover {
+  transform: translateY(-4px) scale(1.06);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+}
 
-/* UTILS */
-.badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-left: 5px; }
-.badge.active { background: #00ff00; color: black; font-weight: bold; }
-.badge.soon { background: #444; color: #aaa; }
-.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
-.btn-back { background: none; border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+/* ==========================================================================
+   NEWS CARDS
+   ========================================================================== */
+.news-card {
+  display: flex;
+  gap: 15px;
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  align-items: center;
+  border: 1px solid var(--border);
+  transition: 0.25s var(--ease);
+}
+.news-card:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+.news-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+}
 
-/* === MAIN SCHEDULE CARD (BANNER ATAS) === */
+/* ==========================================================================
+   BADGES & UTILITY BUTTONS
+   ========================================================================== */
+.badge {
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  margin-left: 6px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: inline-block;
+}
+.badge.active { background: var(--green-dim); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+.badge.soon   { background: rgba(255,255,255,0.06); color: var(--text-dim); border: 1px solid var(--border); }
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 13px 20px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  width: 100%;
+  font-family: var(--font-body);
+  transition: 0.2s var(--ease);
+  box-shadow: var(--shadow-glow-primary);
+}
+.btn-primary:hover { background: #ff1620; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* ==========================================================================
+   MAIN SCHEDULE CARD (Banner Jadwal)
+   ========================================================================== */
 .main-schedule-card {
-    background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
-    border-radius: 12px;
-    border: 1px solid #333;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    margin-bottom: 30px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, #1c1c1c 0%, #050505 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  margin-bottom: 28px;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  box-shadow: var(--shadow-sm);
 }
-
 .main-schedule-card:hover {
-    border-color: var(--primary);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(229, 9, 20, 0.2);
+  border-color: var(--primary);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-glow-primary);
 }
 
-/* Bagian Kiri (Tanggal Merah) */
 .msc-date {
-    background: var(--primary);
-    color: white;
-    padding: 15px 20px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-width: 90px;
+  background: var(--primary);
+  color: #fff;
+  padding: 16px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 92px;
+  font-family: var(--font-display);
 }
 
-/* Bagian Kanan (Info) */
-.msc-info {
-    padding: 15px 20px;
-    flex: 1;
-}
+.msc-info { padding: 16px 20px; flex: 1; }
 
 .msc-badge {
-    background: #333;
-    color: #fff;
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    display: inline-block;
-    border: 1px solid #555;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  border: 1px solid var(--border-strong);
 }
 
-/* RESPONSIVE HP (Supaya tanggal disamping, teks disebelahnya, rapi) */
 @media (max-width: 480px) {
-    .main-schedule-card {
-        flex-direction: row; /* Tetap menyamping biar hemat tempat vertikal */
-    }
-    .msc-date {
-        padding: 10px 15px;
-        min-width: 80px;
-    }
-    .msc-info {
-        padding: 10px 15px;
-    }
-    .msc-info h3 {
-        font-size: 1rem;
-    }
-}
-/* --- PERBAIKAN UKURAN LOGO --- */
-.logo-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
+  .main-schedule-card { flex-direction: row; }
+  .msc-date { padding: 12px 14px; min-width: 78px; }
+  .msc-info { padding: 12px 14px; }
+  .msc-info h3 { font-size: 1rem; }
 }
 
-.logo-img {
-    width: 50px;       /* Kunci: Memaksa lebar jadi 50 pixel */
-    height: 50px;      /* Kunci: Memaksa tinggi jadi 50 pixel */
-    border-radius: 50%; /* Membuat lingkaran (hapus baris ini jika logo ingin kotak) */
-    object-fit: cover;
-    border: 2px solid var(--primary);
-}
+/* ==========================================================================
+   RADIO / PODCAST / CYAN THEME
+   ========================================================================== */
+.cyan-theme { border-color: var(--cyan) !important; }
+.cyan-bg    { background: var(--cyan) !important; color: #000 !important; }
+.cyan-text  { color: var(--cyan) !important; }
 
-.logo-text {
-    font-weight: 800;
-    color: var(--primary);
-    font-size: 1.2rem;
-}
-
-/* === TAMBAHAN STYLE BARU === */
-
-/* 1. Warna Khusus Radio (Cyan) */
-.cyan-theme { border-color: #00d2ff !important; }
-.cyan-bg { background: #00d2ff !important; color: #000 !important; }
-.cyan-text { color: #00d2ff !important; }
-
-/* 2. Style Podcast (YouTube Card) */
 .podcast-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Lebar agak besar */
-    gap: 15px;
-    margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 .podcast-card {
-    background: #1a1a1a;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #333;
-    transition: 0.3s;
-    cursor: pointer;
+  background: var(--bg-card-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: 0.25s var(--ease);
+  cursor: pointer;
 }
-.podcast-card:hover { transform: translateY(-5px); border-color: red; }
-.podcast-thumb {
-    width: 100%;
-    aspect-ratio: 16/9; /* Rasio Video YouTube */
-    object-fit: cover;
-    position: relative;
-}
+.podcast-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: var(--shadow-md); }
+.podcast-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; position: relative; }
 .play-btn-center {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 3rem; color: rgba(255,255,255,0.8);
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 3rem; color: rgba(255,255,255,0.85);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  transition: transform 0.25s var(--ease);
 }
-.podcast-info { padding: 15px; }
-.podcast-info h4 { margin: 0; font-size: 0.95rem; line-height: 1.4; color: white; }
-.podcast-info span { font-size: 0.75rem; color: #888; margin-top: 5px; display: block; }
+.podcast-card:hover .play-btn-center { transform: translate(-50%, -50%) scale(1.1); }
+.podcast-info { padding: 16px; }
+.podcast-info h4 { margin: 0; font-size: 0.95rem; line-height: 1.4; color: #fff; }
+.podcast-info span { font-size: 0.75rem; color: var(--text-dim); margin-top: 6px; display: block; }
 
-/* 3. Style Halaman Radio (Chat/Request) */
-.radio-box {
-    background: #111;
-    border: 1px solid #333;
-    border-radius: 10px;
-    padding: 20px;
-    height: 100%;
-}
+.radio-box { background: #0e0e0e; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; height: 100%; }
 .request-form input, .request-form textarea {
-    width: 100%; padding: 10px; margin-bottom: 10px;
-    background: #222; border: 1px solid #444; color: white; border-radius: 5px;
+  width: 100%; padding: 11px; margin-bottom: 10px;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong);
+  color: #fff; border-radius: var(--radius-sm); font-family: var(--font-body);
+  transition: border-color 0.2s var(--ease);
 }
-.chat-list {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 20px;
-    padding-right: 5px;
-}
-.chat-item {
-    background: #1e1e1e;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border-left: 3px solid #00d2ff;
-    font-size: 0.85rem;
-}
-.chat-item b { color: #00d2ff; }
+.request-form input:focus, .request-form textarea:focus { border-color: var(--cyan); }
+.chat-list { max-height: 300px; overflow-y: auto; margin-top: 20px; padding-right: 5px; }
+.chat-item { background: var(--bg-card); padding: 11px; border-radius: var(--radius-sm); margin-bottom: 10px; border-left: 3px solid var(--cyan); font-size: 0.85rem; }
+.chat-item b { color: var(--cyan); }
 
-/* =========================================
-   STYLE KHUSUS PROFIL PUBLIK (PROFILE.HTML)
-   ========================================= */
-
-/* 1. Header & Banner */
+/* ==========================================================================
+   PROFILE PAGES (performer / mentor)
+   ========================================================================== */
 .profile-banner {
-    height: 250px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.3), #121212), url('https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=1000');
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    margin-bottom: 70px; /* Memberi ruang untuk foto profil yang turun */
+  height: 250px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), var(--bg-dark)), url('https://images.unsplash.com/photo-1501612780327-450456b106f8?q=80&w=1000');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  margin-bottom: 70px;
+  transition: background 1s ease;
 }
-
-/* Logo Kecil di Pojok Kiri Atas */
 .profile-logo-corner {
-    position: absolute;
-    top: 20px; 
-    left: 20px;
-    width: 60px !important;
-    height: 60px !important;
-    object-fit: contain;
-    z-index: 20;
-    filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
+  position: absolute; top: 20px; left: 20px;
+  width: 60px !important; height: 60px !important;
+  object-fit: contain; z-index: 20;
+  filter: drop-shadow(0 0 6px rgba(0,0,0,0.8));
 }
-
-/* Wadah Foto Profil (Tengah & Melayang) */
 .profile-avatar-container {
-    position: absolute;
-    bottom: -60px; /* Turun setengah keluar banner */
-    left: 50%;     /* Geser ke tengah */
-    transform: translateX(-50%); /* Koreksi posisi agar pas tengah */
-    width: 130px; 
-    height: 130px;
-    z-index: 20;
-    border-radius: 50%;
-    background: #121212;
-    padding: 5px;
+  position: absolute; bottom: -60px; left: 50%;
+  transform: translateX(-50%);
+  width: 130px; height: 130px; z-index: 20;
+  border-radius: 50%; background: var(--bg-dark); padding: 5px;
 }
-
-/* Foto Profilnya */
 .profile-avatar {
-    width: 100%; 
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--accent); /* Lingkaran Emas */
-    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  width: 100%; height: 100%;
+  border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 24px rgba(0,0,0,0.8);
 }
 
-/* 2. Identitas & Rating */
 .profile-identity { text-align: center; margin-bottom: 20px; }
-.profile-identity h1 { margin: 0; font-size: 1.8rem; color: white; }
-.profile-identity p { color: var(--accent); margin: 5px 0; font-weight: bold; }
-.rating-stars { color: gold; font-size: 1.2rem; margin: 5px 0; }
-.badge-lulus { 
-    background: #1a3320; color: #4ade80; 
-    padding: 5px 15px; border-radius: 20px; 
-    font-size: 0.8rem; display: inline-flex; 
-    align-items: center; gap: 5px; 
-    border: 1px solid #4ade80; 
-    margin-top: 5px;
+.profile-identity h1 { margin: 0; font-size: 1.8rem; color: #fff; }
+.profile-identity p { color: var(--accent); margin: 6px 0; font-weight: 700; }
+.rating-stars { color: var(--gold); font-size: 1.2rem; margin: 6px 0; }
+
+.badge-lulus {
+  background: rgba(46,204,113,0.12); color: #4ade80;
+  padding: 6px 16px; border-radius: var(--radius-pill);
+  font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid rgba(74,222,128,0.35); margin-top: 6px; font-weight: 600;
 }
 
-/* 3. Jadwal Cards (3 Warna) */
 .schedule-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
 .sched-card {
-    background: #222;
-    padding: 15px;
-    border-radius: 10px;
-    display: flex; align-items: center; gap: 15px;
-    border-left: 5px solid #555; 
+  background: var(--bg-card-soft);
+  padding: 15px; border-radius: var(--radius-md);
+  display: flex; align-items: center; gap: 15px;
+  border-left: 4px solid var(--text-dim);
+  transition: transform 0.2s var(--ease);
 }
+.sched-card:hover { transform: translateX(3px); }
 .sched-icon { font-size: 1.5rem; width: 40px; text-align: center; }
-
-.sched-card.official { border-left-color: var(--primary); } 
+.sched-card.official { border-left-color: var(--primary); }
 .sched-card.official .sched-icon { color: var(--primary); }
-
-.sched-card.radio { border-left-color: #00d2ff; } 
-.sched-card.radio .sched-icon { color: #00d2ff; }
-
-.sched-card.cafe { border-left-color: #ff9800; } 
+.sched-card.radio { border-left-color: var(--cyan); }
+.sched-card.radio .sched-icon { color: var(--cyan); }
+.sched-card.cafe { border-left-color: #ff9800; }
 .sched-card.cafe .sched-icon { color: #ff9800; }
 
-/* 4. Bio Box */
 .bio-box {
-    background: #1e1e1e;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #333;
-    text-align: center;
-    margin-bottom: 30px;
+  background: var(--bg-card-soft);
+  padding: 22px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border); text-align: center; margin-bottom: 30px;
 }
-.bio-socials { display: flex; justify-content: center; gap: 20px; margin-top: 15px; border-top: 1px dashed #444; padding-top: 15px; }
-.bio-socials i { font-size: 1.5rem; transition: 0.3s; cursor: pointer; color: white; }
-.bio-socials i:hover { transform: scale(1.2); color: var(--primary); }
+.bio-socials { display: flex; justify-content: center; gap: 20px; margin-top: 16px; border-top: 1px dashed var(--border-strong); padding-top: 16px; }
+.bio-socials i, .bio-socials a i { font-size: 1.6rem; transition: 0.25s var(--ease); cursor: pointer; color: #fff; }
+.bio-socials a { text-decoration: none; transition: transform 0.25s var(--ease); display: inline-block; }
+.bio-socials a:hover, .bio-socials i:hover { transform: scale(1.18); color: var(--primary); }
 
-/* 5. Floating WA */
-.floating-wa {
-    position: fixed; bottom: 25px; right: 25px;
-    background: #25D366; color: white;
-    width: 60px; height: 60px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    z-index: 100; text-decoration: none;
-    animation: bounce 2s infinite;
-}
-@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-/* =========================================
-   PERBAIKAN BANNER DASHBOARD MITRA
-   ========================================= */
-
-.mitra-header-bg {
-    width: 100%;
-    /* Tinggi di Laptop diperbesar biar gambar jelas */
-    height: 250px; 
-    
-    /* GANTI LINK DI BAWAH INI DENGAN LINK GAMBAR ANDA SENDIRI */
-    background-image: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/StreetArd_bener.jpg');
-    
-    /* PENTING: Agar gambar full memenuhi kotak tanpa gepeng */
-    background-size: cover; 
-    
-    /* PENTING: Agar fokus gambar di tengah-tengah */
-    background-position: center center; 
-    
-    background-repeat: no-repeat;
-    position: relative;
-}
-
-/* Penyesuaian Khusus HP (Agar tidak terlalu tinggi di layar kecil) */
-@media (max-width: 600px) {
-    .mitra-header-bg {
-        height: 180px; /* Tinggi di HP sedikit dikurangi */
-        background-position: center center;
-    }
-}
-
-/* === TAMBAHAN STYLE UNTUK SOSIAL MEDIA DI PROFIL === */
-
-.bio-socials {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 15px;
-    border-top: 1px dashed #444;
-    padding-top: 15px;
-}
-
-.bio-socials a {
-    text-decoration: none;
-    transition: transform 0.3s;
-    display: inline-block;
-}
-
-.bio-socials a:hover {
-    transform: scale(1.2);
-}
-
-.bio-socials i {
-    font-size: 2rem; /* Ukuran ikon diperbesar */
-}
-
-/* Warna Brand Sosmed */
+/* Brand colors sosmed */
 .fa-instagram { color: #C13584; }
 .fa-tiktok { color: #00f2ea; }
 .fa-youtube { color: #ff0000; }
+
+/* ==========================================================================
+   FLOATING WHATSAPP
+   ========================================================================== */
+.floating-wa {
+  position: fixed; bottom: 25px; right: 25px;
+  background: #25D366; color: #fff;
+  width: 58px; height: 58px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.9rem; box-shadow: 0 8px 22px rgba(0,0,0,0.5);
+  z-index: 100; text-decoration: none;
+  animation: bounce 2.4s infinite;
+}
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity: 0.35; } }
+
+/* ==========================================================================
+   MITRA HEADER BG
+   ========================================================================== */
+.mitra-header-bg {
+  width: 100%;
+  height: 250px;
+  background-image: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/StreetArd_bener.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+@media (max-width: 600px) {
+  .mitra-header-bg { height: 180px; background-position: center center; }
+}
+
+/* ==========================================================================
+   BOTTOM TAB BAR (komponen baru — opsional dipakai halaman publik)
+   ========================================================================== */
+.bottom-tabbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding: 8px 4px calc(6px + env(safe-area-inset-bottom));
+  z-index: 950;
+}
+.bottom-tabbar a {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  text-decoration: none;
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 4px 0;
+  transition: color 0.2s var(--ease);
+}
+.bottom-tabbar a i { font-size: 1.15rem; }
+.bottom-tabbar a.active { color: var(--primary); }
+
+/* Spacer agar konten tidak tertutup tabbar */
+.tabbar-spacer { height: 70px; }
+
+/* ==========================================================================
+   SKELETON LOADING (komponen baru)
+   ========================================================================== */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShine 1.4s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes skeletonShine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ==========================================================================
+   RESPONSIVE TWEAKS GLOBAL
+   ========================================================================== */
+@media (max-width: 600px) {
+  .container { padding: 16px; }
+  .hero { padding: 44px 16px 36px; }
+  .section-title { font-size: 0.9rem; }
+}
