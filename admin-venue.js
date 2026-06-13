@@ -1,5 +1,6 @@
 /* =========================================
    MODUL KHUSUS: MANAJEMEN VENUE LOKASI
+   (VERSI BARU: + toggle "Aktif di Beranda")
    ========================================= */
 import { db } from './firebase-config.js';
 import { 
@@ -36,10 +37,7 @@ window.saveVenue = async function() {
         desc: desc 
     };
 
-    // Jika ada gambar baru, masukkan ke payload. Jika tidak, pakai yg lama.
-    if(img) dataPayload.icon = "fa-map-marker-alt"; // Default icon kalau pakai gambar
-    // (Catatan: Kita simpan gambar base64 di field 'img', atau tetap pakai 'icon' fontawesome jika mau simpel)
-    // Di sini saya asumsikan bapak mau pakai FOTO ASLI:
+    if(img) dataPayload.icon = "fa-map-marker-alt";
     if(img) dataPayload.img = img; 
 
     if(id) {
@@ -53,7 +51,8 @@ window.saveVenue = async function() {
         // --- MODE BARU ---
         if(confirm("Tambah Venue Baru?")) {
             dataPayload.status = "closed"; // Default tutup
-            if(!img) dataPayload.icon = "fa-store"; // Default icon
+            dataPayload.isActive = true;   // Default aktif tampil di beranda
+            if(!img) dataPayload.icon = "fa-store";
 
             await addDoc(collection(db, "venues"), dataPayload);
             alert("Venue Baru Ditambahkan!");
@@ -72,7 +71,7 @@ window.loadVenueManagement = function() {
     onSnapshot(q, (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="5" align="center">Belum ada venue.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" align="center">Belum ada venue.</td></tr>';
             return;
         }
 
@@ -81,6 +80,14 @@ window.loadVenueManagement = function() {
             const isOpen = d.status === 'open';
             const statusBadge = isOpen ? '<span style="color:#00ff00;">BUKA</span>' : '<span style="color:#666;">TUTUP</span>';
             const btnColor = isOpen ? '#2ecc71' : '#444';
+
+            // --- BARU: status Aktif di Beranda (default true jika field belum ada) ---
+            const isActive = d.isActive !== false;
+            const activeBadge = isActive
+                ? '<span style="color:#00d2ff;"><i class="fa-solid fa-eye"></i> Tampil</span>'
+                : '<span style="color:#888;"><i class="fa-solid fa-eye-slash"></i> Sembunyi</span>';
+            const activeBtnColor = isActive ? '#00d2ff' : '#444';
+            const activeBtnText = isActive ? 'AKTIF' : 'OFF';
             
             // Gambar atau Icon
             let imgDisplay = `<i class="fa-solid ${d.icon||'fa-store'}" style="font-size:1.5rem; color:#aaa;"></i>`;
@@ -102,6 +109,12 @@ window.loadVenueManagement = function() {
                     </button>
                 </td>
                 <td>
+                    <button onclick="toggleActiveVenue('${docSnap.id}', ${isActive})" style="background:${activeBtnColor}; border:none; color:black; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.7rem;">
+                        ${activeBtnText}
+                    </button>
+                    <div style="font-size:0.7rem; margin-top:3px;">${activeBadge}</div>
+                </td>
+                <td>
                     <button class="btn-action btn-edit" onclick="editVenue('${docSnap.id}', '${d.name}', '${d.order}', '${d.desc}', '${d.img||''}')">
                         <i class="fa-solid fa-pen"></i>
                     </button>
@@ -120,6 +133,15 @@ window.toggleStatusVenue = async function(id, current) {
     await updateDoc(doc(db, "venues", id), { status: newStat });
 }
 
+// --- BARU: Toggle tampil/sembunyi di beranda ---
+window.toggleActiveVenue = async function(id, currentActive) {
+    const newVal = !currentActive;
+    const label = newVal ? "MENAMPILKAN" : "MENYEMBUNYIKAN";
+    if(confirm(`${label} venue ini di beranda publik?`)) {
+        await updateDoc(doc(db, "venues", id), { isActive: newVal });
+    }
+}
+
 window.deleteVenue = async function(id) {
     if(confirm("Hapus Venue ini Permanen? Warung di dalamnya mungkin akan error.")) {
         await deleteDoc(doc(db, "venues", id));
@@ -136,7 +158,7 @@ window.editVenue = function(id, name, order, desc, img) {
     if(img && img.length > 100) document.getElementById('venue-preview').src = img;
     else document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
     
-    currentVenueBase64 = null; // Reset buffer
+    currentVenueBase64 = null;
     
     document.getElementById('btn-save-venue').innerText = "Simpan Perubahan";
     document.getElementById('btn-save-venue').style.background = "#FFD700";
