@@ -205,6 +205,29 @@
             max-width: 800px; margin: 18px auto 0; padding: 0 20px;
         }
         .welcome-strip .prolog-box { margin-top: 0; }
+
+        /* Styling Baru untuk Grid Venue */
+        .venue-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .venue-card-box {
+            background: var(--bg-card-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+        .venue-card-box:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .venue-card-box .icon { font-size: 1.5rem; margin-bottom: 10px; color: var(--text-dim); }
+        .venue-card-box h3 { font-size: 0.85rem; margin: 0; color: #fff; }
+        .venue-card-box .badge { font-size: 0.6rem; padding: 2px 5px; display: block; margin-top: 5px; }
+        
     </style>
 </head>
 <body>
@@ -652,18 +675,23 @@
             }
         }
 
-        // VENUES — hanya tampilkan yang diaktifkan admin (isActive !== false)
+       // VENUES — Tampilan Grid Kotak & Status Strip
         async function loadVenues() {
             const container = document.getElementById('venue-list-container');
             const strip = document.getElementById('venue-status-strip');
             const userRole = localStorage.getItem('userRole');
             const isAdmin = userRole === 'admin';
 
+            // Tambahkan CSS Grid jika belum ada di style agar kotak rapi
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(140px, 1fr))';
+            container.style.gap = '15px';
+
             const q = query(collection(db, "venues"), orderBy("order", "asc"));
 
             onSnapshot(q, (snapshot) => {
                 if(snapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center;color:#666;">Lokasi belum tersedia.</p>`;
+                    container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Lokasi belum tersedia.</p>`;
                     if (strip) strip.innerHTML = '';
                     return;
                 }
@@ -675,48 +703,35 @@
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
 
-                    // FILTER: venue yang sengaja dinonaktifkan admin (isActive === false) tidak ditampilkan
                     if (data.isActive === false && !isAdmin) return;
 
                     totalActive++;
                     const isOpen = data.status === 'open';
                     const badgeClass = isOpen ? 'active' : 'soon';
                     const badgeText = isOpen ? 'BUKA' : 'TUTUP';
-                    const inactiveTag = (data.isActive === false) ? `<span class="badge" style="background:#333;color:#999;">NONAKTIF</span>` : '';
 
-                    let adminSwitchHTML = "";
-                    if (isAdmin) {
-                        const toggleColor = isOpen ? '#00ff00' : '#333';
-                        const toggleIcon = isOpen ? 'fa-toggle-on' : 'fa-toggle-off';
-
-                        adminSwitchHTML = `
-                        <div style="margin-left:10px; text-align:center; z-index:100; cursor:pointer;"
-                             onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
-                            <i class="fa-solid ${toggleIcon}" style="color:${toggleColor}; font-size:2rem; transition:0.3s;"></i>
-                            <div style="font-size:0.6rem; color:#888;">ADMIN</div>
-                        </div>`;
-                    }
-
+                    // Tampilan KOTAK untuk container utama
                     container.innerHTML += `
-                    <div class="venue-card ${isOpen ? '' : 'disabled'}"
-                         onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')"
-                         style="display:flex; align-items:center; cursor:pointer;">
-                        <div class="icon-box"><i class="fa-solid ${data.icon}"></i></div>
-                        <div style="flex:1;">
-                            <h3 style="margin:0;">${data.name} <span class="badge ${badgeClass}">${badgeText}</span> ${inactiveTag}</h3>
-                            <small style="color:#888;">${data.desc}</small>
+                    <div class="venue-card-box" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')"
+                         style="background:var(--bg-card-soft); border:1px solid var(--border); border-radius:var(--radius-md); padding:15px; text-align:center; cursor:pointer; transition:0.2s;">
+                        <div style="font-size:1.5rem; margin-bottom:10px; color:${isOpen ? 'var(--primary)' : '#555'};">
+                            <i class="fa-solid ${data.icon}"></i>
                         </div>
-                        ${adminSwitchHTML}
+                        <h3 style="margin:0; font-size:0.85rem; color:#fff;">${data.name}</h3>
+                        <span class="badge ${badgeClass}" style="display:inline-block; margin-top:5px;">${badgeText}</span>
+                        ${isAdmin ? `
+                            <div style="margin-top:10px;" onclick="event.stopPropagation(); window.toggleVenueStatus('${docSnap.id}', '${data.status}')">
+                                <i class="fa-solid ${isOpen ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color:${isOpen ? '#00ff00' : '#333'}; font-size:1.5rem;"></i>
+                                <div style="font-size:0.6rem; color:#888;">ADMIN</div>
+                            </div>` : ''}
                     </div>`;
 
+                    // Tampilan STRIP (tetap dipertahankan)
                     const dotColor = isOpen ? 'var(--green)' : '#555';
                     const thumbHtml = data.img ? `<img src="${data.img}" alt="${data.name}">` : `<i class="fa-solid ${data.icon}"></i>`;
                     stripHtml += `
                     <a href="javascript:void(0)" onclick="window.handleVenueClick('${docSnap.id}', '${data.status}')" class="vstrip-card">
-                        <div class="vstrip-top">
-                            ${thumbHtml}
-                            <span class="vstrip-dot" style="background:${dotColor};"></span>
-                        </div>
+                        <div class="vstrip-top">${thumbHtml}<span class="vstrip-dot" style="background:${dotColor};"></span></div>
                         <div class="vstrip-body">
                             <div class="vstrip-name">${data.name}</div>
                             <div class="vstrip-status" style="color:${isOpen ? 'var(--green)' : 'var(--text-dim)'}">${badgeText}</div>
@@ -725,7 +740,7 @@
                 });
 
                 if (totalActive === 0) {
-                    container.innerHTML = `<p style="text-align:center;color:#666; padding:20px;">Belum ada venue yang diaktifkan.</p>`;
+                    container.innerHTML = `<p style="text-align:center;color:#666; grid-column:1/-1;">Belum ada venue yang diaktifkan.</p>`;
                 }
 
                 if (strip) strip.innerHTML = stripHtml;
