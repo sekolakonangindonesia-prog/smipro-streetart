@@ -330,17 +330,7 @@
         <div class="performer-wrap" id="top-performer-container">
             <p style="text-align:center; width:100%; color:#888;">Memuat Artis...</p>
         </div>
-
-        <!-- 3. BENGKEL PERFORM -->
-        <div class="training-banner" onclick="location.href='training.html'"
-             style="background: linear-gradient(135deg, #b40000, #ffde10); border: 1px solid #ffde10;">
-            <div>
-                <h3 style="margin:0; color: black; text-shadow: none; font-family:var(--font-display);">Bengkel Perform STREETART</h3>
-                <small style="color: black; font-weight: 600;">Klik untuk melihat Tim Pelatih</small>
-            </div>
-            <i class="fa-solid fa-graduation-cap" style="font-size:2rem; color: black;"></i>
-        </div>
-
+       
         <!-- 4. PODCAST HIGHLIGHT -->
         <div class="section-title" style="margin-top: 50px;">
             <i class="fa-solid fa-photo-film"></i> Galeri & Podcast Terbaru
@@ -792,41 +782,76 @@ area.innerHTML = `
 
         // LOAD PODCAST HIGHLIGHT
         async function loadPodcastHighlight() {
-            const container = document.getElementById('home-podcast-container');
-            const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"), limit(1));
-            const snapshot = await getDocs(q);
-
-            if (snapshot.empty) {
-                container.innerHTML = `<div class="podcast-card"><div style="padding:20px; text-align:center;">Belum ada konten galeri.</div></div>`;
-                return;
-            }
-
-            snapshot.forEach(doc => {
-                const d = doc.data();
-                const isVideo = d.mediaType === 'video';
-                const typeIcon = isVideo ? 'fa-brands fa-youtube' : 'fa-brands fa-spotify';
-                const typeColor = isVideo ? '#ff0000' : '#1DB954';
-                const typeLabel = isVideo ? 'VIDEO TERBARU' : 'AUDIO TERBARU';
-                const thumbImg = d.thumb || "https://via.placeholder.com/400x200?text=No+Cover";
-
-                container.innerHTML = `
-                <div class="podcast-card" onclick="location.href='podcast.html'" style="cursor:pointer; position:relative;">
-                    <div style="position:relative; height:200px; overflow:hidden;">
-                        <img src="${thumbImg}" style="width:100%; height:100%; object-fit:cover; filter: brightness(0.7);">
-                        <div style="position:absolute; top:10px; left:10px; background:${typeColor}; color:white; padding:3px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">
-                            <i class="${typeIcon}"></i> ${typeLabel}
-                        </div>
-                        <i class="fa-solid fa-circle-play play-btn-center"></i>
-                    </div>
-                    <div class="podcast-info" style="background: linear-gradient(to right, #111, #000);">
-                        <h4 style="margin:0 0 5px 0;">${d.title}</h4>
-                        <div style="color:#888; font-size:0.85rem;">
-                            <i class="fa-solid fa-user-pen"></i> ${d.host || 'Admin'}
-                        </div>
-                    </div>
-                </div>`;
-            });
-        }
+    const container = document.getElementById('home-podcast-container');
+    const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"), limit(2));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        container.innerHTML = `<p style="text-align:center; color:#888;">Belum ada konten galeri.</p>`;
+        return;
+    }
+    let videoItem = null;
+    let audioItem = null;
+    snapshot.forEach(doc => {
+        const d = doc.data();
+        if (!videoItem && d.mediaType === 'video') videoItem = { id: doc.id, ...d };
+        if (!audioItem && d.mediaType === 'audio') audioItem = { id: doc.id, ...d };
+    });
+    // Jika tidak ada keduanya, ambil apapun yang ada
+    if (!videoItem && !audioItem) {
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            if (!videoItem) videoItem = { id: doc.id, ...d };
+        });
+    }
+    const renderCard = (item, type) => {
+        if (!item) return `
+        <div style="background:#111; border:1px solid #222; border-radius:12px; 
+             display:flex; align-items:center; justify-content:center; 
+             min-height:160px; color:#444; font-size:0.85rem;">
+            Belum ada ${type === 'video' ? 'video' : 'audio'}
+        </div>`;
+        const isVideo = type === 'video';
+        const thumbImg = item.thumb || "https://via.placeholder.com/400x200?text=No+Cover";
+        const badgeColor = isVideo ? '#E50914' : '#1DB954';
+        const badgeBg = isVideo ? 'rgba(229,9,20,0.15)' : 'rgba(30,215,96,0.15)';
+        const badgeBorder = isVideo ? 'rgba(229,9,20,0.3)' : 'rgba(30,215,96,0.3)';
+        const badgeLabel = isVideo ? 'VIDEO' : 'AUDIO';
+        const playColor = isVideo ? 'rgba(229,9,20,0.85)' : 'rgba(30,215,96,0.85)';
+        return `
+        <div onclick="location.href='podcast.html'" style="background:#111; border:1px solid #222; 
+             border-radius:12px; overflow:hidden; cursor:pointer; position:relative;
+             transition:0.25s;" 
+             onmouseover="this.style.borderColor='#444'; this.style.transform='translateY(-3px)'"
+             onmouseout="this.style.borderColor='#222'; this.style.transform='translateY(0)'">
+            <div style="position:absolute; top:0; left:0; right:0; height:3px; 
+                 background:linear-gradient(90deg, transparent, #E50914, transparent); z-index:2;"></div>
+            <div style="position:relative; height:110px; overflow:hidden;">
+                <img src="${thumbImg}" style="width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                <span style="position:absolute; top:8px; left:8px; font-size:0.6rem; font-weight:800;
+                      padding:2px 8px; border-radius:999px; background:${badgeBg}; 
+                      color:${badgeColor}; border:1px solid ${badgeBorder}; z-index:3;">
+                    ${badgeLabel}
+                </span>
+                <div style="position:absolute; bottom:8px; right:8px; width:28px; height:28px; 
+                     border-radius:50%; background:${playColor};
+                     display:flex; align-items:center; justify-content:center; 
+                     font-size:0.7rem; color:white; z-index:3;">▶</div>
+            </div>
+            <div style="padding:12px;">
+                <h4 style="margin:0 0 4px; color:#fff; font-size:0.82rem; font-weight:700;
+                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    ${item.title}
+                </h4>
+                <small style="color:#666; font-size:0.7rem;">${item.host || 'Admin'}</small>
+            </div>
+        </div>`;
+    };
+    container.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        ${renderCard(videoItem, 'video')}
+        ${renderCard(audioItem, 'audio')}
+    </div>`;
+}
 
         // LOGIKA WELCOME SCREEN & BGM
         async function initWelcomeScreen() {
