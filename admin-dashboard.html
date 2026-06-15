@@ -946,8 +946,24 @@
             </h4>
 
             <label class="cms-label" style="font-size: 0.75rem;">Link Poster Banner (Beranda):</label>
-            <input type="text" id="banner-url-input" class="cms-input" placeholder="https://raw.githubusercontent.com/.../poster.jpg" style="margin-bottom: 15px; font-size: 0.85rem;">
-            <small style="color:#666; display:block; margin-top:-10px; margin-bottom:15px;">*Banner ini otomatis berganti jadi tampilan LIVE saat ada venue yang sedang siaran.</small>
+<input type="text" id="banner-url-input" class="cms-input" placeholder="https://raw.githubusercontent.com/.../poster.jpg" style="margin-bottom: 10px; font-size: 0.85rem;">
+
+<div style="background:#1a1a1a; padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border: 1px solid #222;">
+    <div>
+        <b style="color:white; display:block; font-size:0.85rem;">Aktifkan Poster Banner</b>
+        <small id="banner-status-text" style="color:#666; font-size: 0.7rem;">Status: Memuat...</small>
+    </div>
+    <label style="position:relative; display:inline-block; width:44px; height:22px; cursor:pointer;">
+        <input type="checkbox" id="banner-active-toggle" style="position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; z-index:2;">
+        <span style="position:absolute; inset:0; background:#333; border-radius:22px; transition:0.4s; pointer-events:none;" id="banner-toggle-slider"></span>
+        <span style="position:absolute; left:4px; bottom:4px; background:white; width:14px; height:14px; border-radius:50%; transition:0.4s;" id="banner-toggle-circle"></span>
+    </label>
+</div>
+<style>
+    #banner-active-toggle:checked ~ #banner-toggle-circle { transform: translateX(22px); }
+</style>
+<small style="color:#666; display:block; margin-bottom:15px;">*Saat MATI → banner default. Saat ada venue LIVE → otomatis override ke tampilan live.</small>
+<hr style="border-color:#333; margin-bottom:15px;">
 
             <hr style="border-color:#333; margin-bottom:15px;">
             
