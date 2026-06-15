@@ -967,8 +967,17 @@
 
             <hr style="border-color:#333; margin-bottom:15px;">
             
-            <label class="cms-label" style="font-size: 0.75rem;">Link File MP3 (Direct URL):</label>
-            <input type="text" id="bgm-url-input" class="cms-input" placeholder="https://..." style="margin-bottom: 15px; font-size: 0.85rem;">
+            <label class="cms-label" style="font-size: 0.75rem;">Upload Poster Banner (Beranda):</label>
+<div style="display:flex; align-items:center; gap:15px; margin-bottom:10px;">
+    <div style="cursor:pointer;" onclick="document.getElementById('banner-file-input').click()">
+        <img id="banner-preview" src="https://placehold.co/160x90?text=Poster" 
+             style="width:160px; height:90px; object-fit:cover; border-radius:6px; border:2px dashed #555;">
+        <div style="font-size:0.7rem; color:#888; margin-top:5px; text-align:center;">Klik untuk Upload</div>
+    </div>
+    <input type="file" id="banner-file-input" style="display:none;" accept="image/*" onchange="previewBannerImg(this)">
+    <input type="hidden" id="banner-url-input">
+    <small style="color:#666; flex:1;">Upload gambar poster event langsung dari perangkat.<br>Otomatis override ke LIVE saat ada siaran.</small>
+</div>
             
             <div style="background:#1a1a1a; padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border: 1px solid #222;">
                 <div>
