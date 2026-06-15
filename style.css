@@ -353,6 +353,8 @@ select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
   border-radius: var(--radius-md);
   text-align: center;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
   border: 1px solid var(--border);
   transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
   display: flex;
@@ -360,6 +362,11 @@ select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+.artist-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, #E50914, transparent);
 }
 .artist-card:hover {
   transform: translateY(-5px);
