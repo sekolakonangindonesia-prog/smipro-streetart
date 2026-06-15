@@ -513,19 +513,23 @@
                     return;
                 }
 
-                // 2. Tidak ada live -> tampilkan poster promosi (settings.bannerUrl)
-                let bannerUrl = DEFAULT_BANNER;
-                try {
-                    const settingsSnap = await getDoc(doc(db, "settings", "general"));
-                    if (settingsSnap.exists() && settingsSnap.data().bannerUrl) {
-                        bannerUrl = settingsSnap.data().bannerUrl;
-                    }
-                } catch(e) {}
-
-                area.innerHTML = `
-                <div class="banner-poster">
-                    <img src="${bannerUrl}" alt="Poster STREETART.ID" onerror="this.src='${DEFAULT_BANNER}'">
-                </div>`;
+                // 2. Tidak ada live -> cek banner admin
+let bannerUrl = DEFAULT_BANNER;
+let bannerEnabled = false;
+try {
+    const settingsSnap = await getDoc(doc(db, "settings", "general"));
+    if (settingsSnap.exists()) {
+        const sData = settingsSnap.data();
+        bannerEnabled = sData.bannerEnabled || false;
+        if (bannerEnabled && sData.bannerUrl) {
+            bannerUrl = sData.bannerUrl;
+        }
+    }
+} catch(e) {}
+area.innerHTML = `
+<div class="banner-poster">
+    <img src="${bannerUrl}" alt="Poster STREETART.ID" onerror="this.src='${DEFAULT_BANNER}'">
+</div>`;
 
             } catch (e) {
                 console.error("Gagal load hero banner:", e);
