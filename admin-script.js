@@ -3202,6 +3202,7 @@ async function loadBgmSettings() {
             toggle.checked = data.bgmEnabled || false;
             bannerToggle.checked = data.bannerEnabled || false; // BARU
             document.getElementById('banner-url-input').value = data.bannerUrl || "";
+            if (data.bannerUrl) document.getElementById('banner-preview').src = data.bannerUrl;
             updateBgmUI(data.bgmEnabled);
             updateBannerUI(data.bannerEnabled); // BARU
         } else {
@@ -3281,6 +3282,30 @@ window.clearBgmSettings = async function() {
         document.getElementById('bgm-url-input').value = "";
         document.getElementById('bgm-active-toggle').checked = false;
         await saveBgmSettings();
+    }
+}
+
+window.previewBannerImg = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                // Kompres gambar biar tidak terlalu besar
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1280;
+                const scale = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                // Simpan ke hidden input & preview
+                document.getElementById('banner-url-input').value = base64;
+                document.getElementById('banner-preview').src = base64;
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
