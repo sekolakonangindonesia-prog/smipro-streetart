@@ -524,6 +524,8 @@ select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
   background: linear-gradient(135deg, #1c1c1c 0%, #050505 100%);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -531,6 +533,11 @@ select:focus-visible, textarea:focus-visible, [onclick]:focus-visible {
   cursor: pointer;
   transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
   box-shadow: var(--shadow-sm);
+}
+.main-schedule-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, #E50914, transparent);
 }
 .main-schedule-card:hover {
   border-color: var(--primary);
