@@ -3194,20 +3194,25 @@ async function loadBgmSettings() {
         
         // Ambil elemen toggle
         const toggle = document.getElementById('bgm-active-toggle');
+        const bannerToggle = document.getElementById('banner-active-toggle'); // BARU
 
         if (docSnap.exists()) {
             const data = docSnap.data();
             document.getElementById('bgm-url-input').value = data.bgmUrl || "";
             toggle.checked = data.bgmEnabled || false;
+            bannerToggle.checked = data.bannerEnabled || false; // BARU
             document.getElementById('banner-url-input').value = data.bannerUrl || "";
             updateBgmUI(data.bgmEnabled);
+            updateBannerUI(data.bannerEnabled); // BARU
         } else {
             updateBgmUI(false); // Default jika data belum ada di DB
+            updateBannerUI(false); // BARU
         }
 
         // --- TAMBAHAN PENTING: Agar tombol bisa diklik & respon instan ---
         toggle.onchange = function() {
             updateBgmUI(this.checked);
+            bannerToggle.onchange = function() { updateBannerUI(this.checked); }; // BARU
         };
 
     } catch (e) { 
@@ -3233,22 +3238,40 @@ function updateBgmUI(isEnabled) {
     }
 }
 
+function updateBannerUI(isEnabled) {
+    const text = document.getElementById('banner-status-text');
+    const slider = document.getElementById('banner-toggle-slider');
+    if(!text || !slider) return;
+    if (isEnabled) {
+        text.innerText = "Status: AKTIF (Poster event ditampilkan)";
+        text.style.color = "#00ff00";
+        slider.style.background = "#00ff00";
+    } else {
+        text.innerText = "Status: MATI (Banner default dipakai)";
+        text.style.color = "#888";
+        slider.style.background = "#444";
+    }
+}
+
 // Tombol Simpan
 window.saveBgmSettings = async function() {
     const url = document.getElementById('bgm-url-input').value;
     const isEnabled = document.getElementById('bgm-active-toggle').checked;
     const bannerUrl = document.getElementById('banner-url-input').value;
+    const bannerEnabled = document.getElementById('banner-active-toggle').checked; // BARU
 
     try {
         await setDoc(doc(db, "settings", "general"), {
             bgmUrl: url,
             bgmEnabled: isEnabled,
             bannerUrl: bannerUrl,
+            bannerEnabled: bannerEnabled, // BARU
             updatedAt: new Date()
         }, { merge: true });
         
         alert("✅ Pengaturan Berhasil Disimpan!");
         updateBgmUI(isEnabled);
+        updateBannerUI(bannerEnabled); // BARU
     } catch (e) { alert("Gagal: " + e.message); }
 }
 
