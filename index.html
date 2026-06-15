@@ -145,7 +145,7 @@
             margin-top: 18px;
         }
         .quick-item {
-           background: var(--bg-card-soft); linear-gradient(90deg, transparent, #E50914, transparent);
+            background: var(--bg-card-soft); 
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
             padding: 16px 6px;
@@ -153,6 +153,11 @@
             text-decoration: none;
             color: var(--text-white);
             transition: 0.2s var(--ease);
+        }
+        .quick-item.open::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, #E50914, transparent);
         }
         .quick-item:hover { transform: translateY(-3px); border-color: var(--border-strong); background: var(--bg-card-hover); }
         .quick-icon {
