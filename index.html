@@ -782,77 +782,120 @@ area.innerHTML = `
 
         // LOAD PODCAST HIGHLIGHT
         async function loadPodcastHighlight() {
-    const container = document.getElementById('home-podcast-container');
-    const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"), limit(10));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-        container.innerHTML = `<p style="text-align:center; color:#888;">Belum ada konten galeri.</p>`;
-        return;
-    }
-    let videoItem = null;
-    let audioItem = null;
-    snapshot.forEach(doc => {
-        const d = doc.data();
-        const type = d.mediaType || (d.link && d.link.includes('youtube') ? 'video' : 'audio');
-        if (!videoItem && d.mediaType === 'video') videoItem = { id: doc.id, ...d };
-        if (!audioItem && d.mediaType === 'audio') audioItem = { id: doc.id, ...d };
-    });
-    // Jika tidak ada keduanya, ambil apapun yang ada
-    if (!videoItem && !audioItem) {
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            if (!videoItem) videoItem = { id: doc.id, ...d };
-        });
-    }
-    const renderCard = (item, type) => {
-        if (!item) return `
-        <div style="background:#111; border:1px solid #222; border-radius:12px; 
-             display:flex; align-items:center; justify-content:center; 
-             min-height:160px; color:#444; font-size:0.85rem;">
-            Belum ada ${type === 'video' ? 'video' : 'audio'}
-        </div>`;
-        const isVideo = type === 'video';
-        const thumbImg = item.thumb || "https://via.placeholder.com/400x200?text=No+Cover";
-        const badgeColor = isVideo ? '#E50914' : '#1DB954';
-        const badgeBg = isVideo ? 'rgba(229,9,20,0.15)' : 'rgba(30,215,96,0.15)';
-        const badgeBorder = isVideo ? 'rgba(229,9,20,0.3)' : 'rgba(30,215,96,0.3)';
-        const badgeLabel = isVideo ? 'VIDEO' : 'AUDIO';
-        const playColor = isVideo ? 'rgba(229,9,20,0.85)' : 'rgba(30,215,96,0.85)';
-        return `
-        <div onclick="location.href='podcast.html'" style="background:#111; border:1px solid #222; 
-             border-radius:12px; overflow:hidden; cursor:pointer; position:relative;
-             transition:0.25s;" 
-             onmouseover="this.style.borderColor='#444'; this.style.transform='translateY(-3px)'"
-             onmouseout="this.style.borderColor='#222'; this.style.transform='translateY(0)'">
-            <div style="position:absolute; top:0; left:0; right:0; height:3px; 
-                 background:linear-gradient(90deg, transparent, #E50914, transparent); z-index:2;"></div>
-            <div style="position:relative; height:110px; overflow:hidden;">
-                <img src="${thumbImg}" style="width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-                <span style="position:absolute; top:8px; left:8px; font-size:0.6rem; font-weight:800;
-                      padding:2px 8px; border-radius:999px; background:${badgeBg}; 
-                      color:${badgeColor}; border:1px solid ${badgeBorder}; z-index:3;">
-                    ${badgeLabel}
-                </span>
-                <div style="position:absolute; bottom:8px; right:8px; width:28px; height:28px; 
-                     border-radius:50%; background:${playColor};
-                     display:flex; align-items:center; justify-content:center; 
-                     font-size:0.7rem; color:white; z-index:3;">▶</div>
-            </div>
-            <div style="padding:12px;">
-                <h4 style="margin:0 0 4px; color:#fff; font-size:0.82rem; font-weight:700;
-                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    ${item.title}
-                </h4>
-                <small style="color:#666; font-size:0.7rem;">${item.host || 'Admin'}</small>
-            </div>
-        </div>`;
-    };
-    container.innerHTML = `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-        ${renderCard(videoItem, 'video')}
-        ${renderCard(audioItem, 'audio')}
-    </div>`;
-}
+            const container = document.getElementById('home-podcast-container');
+            const q = query(collection(db, "podcasts"), orderBy("timestamp", "desc"), limit(10));
+            const snapshot = await getDocs(q);
+ 
+            if (snapshot.empty) {
+                container.innerHTML = `<p style="text-align:center; color:#888;">Belum ada konten galeri.</p>`;
+                return;
+            }
+ 
+            let videoItem = null;
+            let audioItem = null;
+ 
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                if (!videoItem && d.mediaType === 'video') videoItem = { id: doc.id, ...d };
+                if (!audioItem && d.mediaType === 'audio') audioItem = { id: doc.id, ...d };
+            });
+ 
+            // Jika tidak ada keduanya, ambil apapun
+            if (!videoItem && !audioItem) {
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    if (!videoItem) videoItem = { id: doc.id, ...d };
+                });
+            }
+ 
+            // Helper: ekstrak YT ID dari URL atau ID langsung
+            function getYtId(raw) {
+                if (!raw) return '';
+                raw = raw.trim();
+                if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+                const m = raw.match(/(?:youtube\.com\/(?:watch\?(?:[^&]*&)*v=|embed\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                return m ? m[1] : '';
+            }
+ 
+            const renderCard = (item, type) => {
+                // Tujuan link: video → podcast.html, audio → musik.html
+                const targetPage = type === 'video' ? 'podcast.html' : 'musik.html';
+                const label      = type === 'video' ? 'VIDEO'  : 'AUDIO';
+                const accent     = type === 'video' ? '#E50914' : '#1DB954';
+                const accentBg   = type === 'video' ? 'rgba(229,9,20,0.12)'  : 'rgba(30,215,96,0.12)';
+                const accentBdr  = type === 'video' ? 'rgba(229,9,20,0.25)'  : 'rgba(30,215,96,0.25)';
+ 
+                if (!item) return `
+                <div style="background:#111; border:1px solid #1e1e1e; border-radius:12px;
+                     display:flex; align-items:center; justify-content:center;
+                     min-height:160px; color:#333; font-size:0.82rem; flex-direction:column; gap:8px;">
+                    <i class="fa-solid ${type === 'video' ? 'fa-clapperboard' : 'fa-headphones'}" style="font-size:1.5rem;"></i>
+                    Belum ada ${type === 'video' ? 'video' : 'audio'}
+                </div>`;
+ 
+                // Thumb: untuk video coba ambil dari YouTube jika ada link
+                let thumbImg = item.thumb || '';
+                if (type === 'video' && !thumbImg) {
+                    const ytId = getYtId(item.youtubeId || item.youtube_id || item.videoId || item.link || item.url || '');
+                    if (ytId) thumbImg = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                }
+                if (!thumbImg) thumbImg = 'https://via.placeholder.com/400x200/111/444?text=' + label;
+ 
+                return `
+                <div onclick="location.href='${targetPage}'"
+                     style="background:#111; border:1px solid #1e1e1e; border-radius:12px;
+                            overflow:hidden; cursor:pointer; position:relative;
+                            transition:0.22s;"
+                     onmouseover="this.style.borderColor='#333'; this.style.transform='translateY(-3px)'"
+                     onmouseout="this.style.borderColor='#1e1e1e'; this.style.transform='translateY(0)'">
+ 
+                    <!-- Garis atas -->
+                    <div style="position:absolute; top:0; left:0; right:0; height:3px;
+                         background:linear-gradient(90deg, transparent, ${accent}, transparent); z-index:2;"></div>
+ 
+                    <!-- Thumbnail -->
+                    <div style="position:relative; height:108px; overflow:hidden;">
+                        <img src="${thumbImg}"
+                             style="width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                             onerror="this.src='https://via.placeholder.com/400x200/111/444?text=${label}'">
+ 
+                        <!-- Badge tipe -->
+                        <span style="position:absolute; top:8px; left:8px; z-index:3;
+                              font-size:0.58rem; font-weight:800; letter-spacing:1px;
+                              padding:2px 8px; border-radius:99px;
+                              background:${accentBg}; color:${accent}; border:1px solid ${accentBdr};">
+                            ${label}
+                        </span>
+ 
+                        <!-- Tombol play -->
+                        <div style="position:absolute; bottom:8px; right:8px; z-index:3;
+                             width:30px; height:30px; border-radius:50%;
+                             background:rgba(0,0,0,0.6); border:2px solid ${accent};
+                             display:flex; align-items:center; justify-content:center;">
+                            <i class="fa-solid fa-play" style="color:${accent}; font-size:0.65rem; margin-left:2px;"></i>
+                        </div>
+                    </div>
+ 
+                    <!-- Info -->
+                    <div style="padding:10px 12px 12px;">
+                        <h4 style="margin:0 0 3px; color:#fff; font-size:0.8rem; font-weight:700;
+                             white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${item.title || 'Untitled'}
+                        </h4>
+                        <small style="color:#555; font-size:0.68rem;">
+                            ${item.host || 'Admin'} &nbsp;·&nbsp;
+                            <span style="color:${accent};">Buka ${type === 'video' ? 'Street Stage' : 'SMIPRO Tunes'} →</span>
+                        </small>
+                    </div>
+                </div>`;
+            };
+ 
+            container.innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                ${renderCard(videoItem, 'video')}
+                ${renderCard(audioItem, 'audio')}
+            </div>`;
+        }
 
         // LOGIKA WELCOME SCREEN & BGM
         async function initWelcomeScreen() {
