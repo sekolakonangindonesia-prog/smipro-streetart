@@ -29,12 +29,6 @@
         .nb-badge{font-size:0.58rem;font-weight:800;letter-spacing:1px;background:rgba(229,9,20,0.12);color:#E50914;border:1px solid rgba(229,9,20,0.25);padding:2px 8px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;gap:4px}
         .nb-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:#E50914;animation:blink 1s infinite}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-        .musik-banner{margin:14px 14px 0;display:flex;align-items:center;gap:12px;background:#0d0d0d;border:1px solid #1e1e1e;border-left:3px solid #1DB954;border-radius:10px;padding:11px 14px;text-decoration:none;transition:0.2s}
-        .musik-banner:hover{transform:translateX(2px);border-left-color:#1ed760}
-        .mb-icon{font-size:1.3rem;color:#1DB954;flex-shrink:0}
-        .mb-label{font-size:0.62rem;color:#1DB954;font-weight:800;letter-spacing:1px}
-        .mb-desc{font-size:0.78rem;font-weight:700;color:#fff;margin-top:2px}
-        .mb-arrow{margin-left:auto;color:#333;font-size:0.85rem}
         .filter-bar{position:sticky;top:53px;z-index:200;display:flex;gap:8px;padding:9px 14px;background:rgba(8,8,8,0.96);backdrop-filter:blur(8px);border-bottom:1px solid #1a1a1a;overflow-x:auto}
         .filter-bar::-webkit-scrollbar{display:none}
         .f-chip{flex-shrink:0;padding:6px 16px;border-radius:20px;background:#181818;border:1px solid #282828;color:#777;font-size:0.76rem;font-weight:700;cursor:pointer;transition:0.18s;white-space:nowrap}
@@ -110,11 +104,6 @@
     </div>
 </div>
 
-<a href="musik.html" class="musik-banner">
-    <div class="mb-icon"><i class="fa-solid fa-headphones"></i></div>
-    <div><div class="mb-label">SMIPRO TUNES</div><div class="mb-desc">Koleksi Musik & Audio Player</div></div>
-    <div class="mb-arrow"><i class="fa-solid fa-chevron-right"></i></div>
-</a>
 
 <div class="filter-bar">
     <button class="f-chip active" onclick="setFilter('all',this)">Semua Video</button>
