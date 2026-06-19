@@ -446,26 +446,46 @@
     }
 
     // SHARE LAGU
-    window.shareTrack = function(e, id, title, artist, link) {
+    window.shareTrack = function(e, idx) {
         e.stopPropagation();
-        const shareUrl = window.location.origin + window.location.pathname + '?play=' + encodeURIComponent(id);
-        const shareText = '🎵 ' + title + ' — ' + artist + '\nDengarkan di SMIPRO Tunes:';
-        
+        const d = filteredTracks[idx];
+        if (!d) return;
+
+        const title  = d.title  || 'Untitled';
+        const artist = d.host   || 'Admin';
+        // Link share: URL halaman ini + query param id lagu
+        const shareUrl  = window.location.href.split('?')[0] + '?play=' + encodeURIComponent(d.id);
+        const shareText = '🎵 ' + title + '\nOleh: ' + artist + '\nDengarkan di SMIPRO Tunes STREETART.ID';
+
         if (navigator.share) {
+            // Native share sheet (HP Android/iOS)
             navigator.share({
-                title: title + ' – SMIPRO Tunes',
-                text: shareText,
-                url: shareUrl
+                title : title + ' – SMIPRO Tunes',
+                text  : shareText,
+                url   : shareUrl
             }).catch(() => {});
         } else {
-            // Fallback: copy to clipboard
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                showToast('Link lagu disalin! 📋');
-            }).catch(() => {
-                showToast('Salin link: ' + shareUrl);
-            });
+            // Fallback desktop: copy ke clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showToast('✅ Link disalin ke clipboard!');
+                }).catch(() => fallbackCopy(shareUrl));
+            } else {
+                fallbackCopy(shareUrl);
+            }
         }
     };
+
+    function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showToast('✅ Link disalin!'); }
+        catch(e) { showToast('Salin manual: ' + text); }
+        document.body.removeChild(ta);
+    }
 
     function showToast(msg) {
         let t = document.getElementById('toast-msg');
@@ -532,7 +552,7 @@
                     <div class="tr-title">${d.title || 'Untitled'}</div>
                     <div class="tr-host">${d.host || 'Admin'}</div>
                 </div>
-                <button class="tr-share" onclick="shareTrack(event, d.id, d.title||'Untitled', d.host||'Admin', d.link||d.url||'')"><i class="fa-solid fa-share-nodes"></i></button>
+                <button class="tr-share" onclick="shareTrack(event,${i})" title="Bagikan lagu ini"><i class="fa-solid fa-share-nodes"></i></button>
             </div>`;
         }).join('');
     }
