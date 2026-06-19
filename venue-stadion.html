@@ -362,6 +362,7 @@ function loadWarungs(vId, vName) {
     const availableMap = {};
     const unsubMap     = {};
 
+
     // ── RENDER GRID ──
     function renderGrid() {
         container.innerHTML = '';
@@ -411,16 +412,13 @@ function loadWarungs(vId, vName) {
     // ── LISTENER BOOKING (hitung meja terpakai hari ini) ──
     function listenBookings(warungId, totalTables) {
         if (unsubMap[warungId]) unsubMap[warungId]();
-
         const todayWIB = new Date(Date.now() + 7*3600000).toISOString().split('T')[0];
-
         const qB = query(
             collection(db, "bookings"),
             where("warungId", "==", warungId),
             where("bookingDate", "==", todayWIB),
             where("status", "in", ["booked","active"])
         );
-
         unsubMap[warungId] = onSnapshot(qB, snap => {
             let used = 0;
             snap.forEach(d => { used += parseInt(d.data().tablesNeeded) || 1; });
@@ -431,65 +429,35 @@ function loadWarungs(vId, vName) {
 
     // ══ QUERY UTAMA: pakai venueId ══
     // Pertama coba query dengan field venueId
-    const qById = query(collection(db, "warungs"), where("venueId", "==", vId));
+    const processWarungs = (snap) => {
+        snap.forEach(d => {
+            const w = d.data();
+            const wVenueId   = (w.venueId || "").trim();
+            const wVenueName = (w.venueName || "").trim().toLowerCase();
+            const targetName = vName.trim().toLowerCase();
 
-    getDocs(qById).then(snapById => {
-        if (!snapById.empty) {
-            // ✅ Ketemu pakai venueId
-            console.log(`✅ Warung ditemukan via venueId (${snapById.size} warung)`);
-            snapById.forEach(d => {
-                warungMap[d.id] = d.data();
-                listenBookings(d.id, d.data().totalTables);
-            });
-            renderGrid();
+            // Cocok jika: venueId sama ATAU nama venue mengandung/sama
+            const matchById   = wVenueId === vId;
+            const matchByName = wVenueName === targetName ||
+                                wVenueName.includes(targetName) ||
+                                targetName.includes(wVenueName);
 
-            // Realtime update
-            onSnapshot(qById, snap => {
-                snap.forEach(d => { warungMap[d.id] = d.data(); });
-                renderGrid();
-            });
-
-        } else {
-            // ⚠️ Tidak ketemu pakai venueId → fallback: query semua & cocokkan venueName
-            console.warn("⚠️ Tidak ada warung dengan venueId =", vId, "→ fallback ke venueName");
-
-            const qAll = query(collection(db, "warungs"));
-            onSnapshot(qAll, snap => {
-                let found = 0;
-                snap.forEach(d => {
-                    const w      = d.data();
-                    const wVName = (w.venueName || "").toLowerCase().trim();
-                    const target = vName.toLowerCase().trim();
-
-                    // Cocok jika salah satu mengandung yang lain
-                    if (wVName.includes(target) || target.includes(wVName) || wVName === target) {
-                        warungMap[d.id] = w;
-                        listenBookings(d.id, w.totalTables);
-                        found++;
-                    }
-                });
-                console.log(`Fallback venueName: ditemukan ${found} warung`);
-                renderGrid();
-            });
-        }
-    }).catch(e => {
-        console.error("Query venueId error:", e);
-        // Kalau query gagal (misal field tidak ada), langsung fallback
-        const qAll = query(collection(db, "warungs"));
-        onSnapshot(qAll, snap => {
-            snap.forEach(d => {
-                const w      = d.data();
-                const wVName = (w.venueName || "").toLowerCase().trim();
-                const target = vName.toLowerCase().trim();
-                if (wVName.includes(target) || target.includes(wVName)) {
+            if (matchById || matchByName) {
+                if (!warungMap[d.id]) {
                     warungMap[d.id] = w;
                     listenBookings(d.id, w.totalTables);
                 }
-            });
-            renderGrid();
+            }
         });
+        renderGrid();
+    };
+const qAll = query(collection(db, "warungs"));
+    
+    onSnapshot(qAll, snap => {
+        Object.keys(warungMap).forEach(k => delete warungMap[k]);
+        processWarungs(snap);
     });
-}
+}        
 
 // ══════════════════════════════════
 // 4. BOOKING SYSTEM
