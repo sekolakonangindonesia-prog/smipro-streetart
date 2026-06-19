@@ -273,15 +273,24 @@ window.saveMitraData = async function() {
 
     if(!nameInput || !venueInput) return alert("Nama Warung dan Lokasi wajib diisi!");
 
-    const data = {
-        name: nameInput,
-        owner: document.getElementById('m-owner').value,
-        venueName: venueInput,
-        totalTables: parseInt(document.getElementById('m-meja').value) || 0,
-        phone: document.getElementById('m-wa').value,
-        adminApproved: true,
-        updatedAt: new Date()
-    };
+    let venueDocId = "";
+try {
+    const venueSnap = await getDocs(query(collection(db, "venues"), where("name", "==", venueInput)));
+    if (!venueSnap.empty) {
+        venueDocId = venueSnap.docs[0].id;
+    }
+} catch(e) { console.error("Gagal ambil venueId:", e); }
+
+const data = {
+    name: nameInput,
+    owner: document.getElementById('m-owner').value,
+    venueName: venueInput,
+    venueId: venueDocId,      // ← TAMBAHAN INI
+    totalTables: parseInt(document.getElementById('m-meja').value) || 0,
+    phone: document.getElementById('m-wa').value,
+    adminApproved: true,
+    updatedAt: new Date()
+};
 
     if(currentMitraImgBase64) data.img = currentMitraImgBase64;
 
