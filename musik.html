@@ -22,6 +22,7 @@
             background:none; border:none; color:#fff; font-size:1rem;
             cursor:pointer; display:flex; align-items:center; gap:6px;
             font-weight:700; padding:4px 8px 4px 0; white-space:nowrap;
+            text-decoration:none;
         }
         .nav-divider { width:1px; height:20px; background:#2a2a2a; }
         .nav-logo { display:flex; align-items:center; gap:7px; text-decoration:none; }
@@ -181,6 +182,12 @@
             font-size:0.85rem; cursor:pointer; padding:4px; flex-shrink:0;
         }
         .tr-dot:hover { color:#fff; }
+        .tr-share {
+            background:none; border:none; color:rgba(255,255,255,0.3);
+            font-size:0.85rem; cursor:pointer; padding:4px 6px; flex-shrink:0;
+            transition:color 0.15s;
+        }
+        .tr-share:hover { color:#1DB954; }
 
         /* SKELETON */
         .skel-list { padding:0 14px; }
@@ -271,9 +278,9 @@
 
 <!-- NAVBAR -->
 <nav class="mu-nav">
-    <button class="btn-back" onclick="history.back()">
+    <a href="index.html" class="btn-back">
         <i class="fa-solid fa-arrow-left"></i> Kembali
-    </button>
+    </a>
     <div class="nav-divider"></div>
     <a href="index.html" class="nav-logo">
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo">
@@ -324,15 +331,7 @@
 
 <audio id="real-audio" preload="auto"></audio>
 
-<!-- LINK KE VIDEO -->
-<a href="podcast.html" class="video-banner">
-    <div class="vb-icon"><i class="fa-solid fa-clapperboard"></i></div>
-    <div>
-        <div class="vb-lbl">STREET STAGE</div>
-        <div class="vb-desc">Tonton Video Penampilan Live</div>
-    </div>
-    <div class="vb-arr"><i class="fa-solid fa-chevron-right"></i></div>
-</a>
+
 
 <!-- FILTER -->
 <div class="filter-bar">
@@ -446,7 +445,43 @@
         return url;
     }
 
-    // LOAD
+    // SHARE LAGU
+    window.shareTrack = function(e, id, title, artist, link) {
+        e.stopPropagation();
+        const shareUrl = window.location.origin + window.location.pathname + '?play=' + encodeURIComponent(id);
+        const shareText = '🎵 ' + title + ' — ' + artist + '\nDengarkan di SMIPRO Tunes:';
+        
+        if (navigator.share) {
+            navigator.share({
+                title: title + ' – SMIPRO Tunes',
+                text: shareText,
+                url: shareUrl
+            }).catch(() => {});
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('Link lagu disalin! 📋');
+            }).catch(() => {
+                showToast('Salin link: ' + shareUrl);
+            });
+        }
+    };
+
+    function showToast(msg) {
+        let t = document.getElementById('toast-msg');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'toast-msg';
+            t.style.cssText = 'position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:#1DB954;color:#000;font-size:0.78rem;font-weight:700;padding:9px 18px;border-radius:99px;z-index:9999;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,0.4);transition:opacity 0.3s;';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        clearTimeout(t._tm);
+        t._tm = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+    }
+
+        // LOAD
     async function loadTracks() {
         try {
             const snap = await getDocs(query(collection(db, "podcasts"), orderBy("timestamp","desc")));
@@ -497,7 +532,7 @@
                     <div class="tr-title">${d.title || 'Untitled'}</div>
                     <div class="tr-host">${d.host || 'Admin'}</div>
                 </div>
-                <button class="tr-dot" onclick="event.stopPropagation()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button class="tr-share" onclick="shareTrack(event, d.id, d.title||'Untitled', d.host||'Admin', d.link||d.url||'')"><i class="fa-solid fa-share-nodes"></i></button>
             </div>`;
         }).join('');
     }
