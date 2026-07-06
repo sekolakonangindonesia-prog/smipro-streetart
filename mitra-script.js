@@ -737,6 +737,31 @@ window.finishWebOrder = async function(orderId, totalUang) {
     }
 };
 
+// FIX: Fungsi edit jumlah total meja (dipanggil dari ikon pensil di kartu "Total Meja").
+// Sebelumnya tombol ini tidak berfungsi karena fungsinya belum dibuat.
+window.editTableCount = async function() {
+    const current = warungTotalCapacity || 15;
+    const input = prompt("Masukkan jumlah total meja warung Anda:", current);
+
+    if (input === null) return; // user tekan Cancel
+
+    const newCount = parseInt(input, 10);
+    if (isNaN(newCount) || newCount <= 0) {
+        alert("Jumlah meja tidak valid. Masukkan angka lebih dari 0.");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "warungs", WARUNG_ID), { totalTables: newCount });
+        warungTotalCapacity = newCount;
+        alert(`Jumlah meja berhasil diperbarui menjadi ${newCount}.`);
+        // Refresh tampilan sisa meja tanpa perlu reload halaman
+        setupBookingListener();
+    } catch (e) {
+        alert("Gagal menyimpan perubahan: " + e.message);
+    }
+};
+
 // Cek pergantian hari setiap menit, reload jika tanggal berganti
 setInterval(() => {
     const todayWIB = getTodayWIB();
