@@ -66,6 +66,22 @@
         input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(26px); }
         .order-card-web { background: #1a1a1a; border-left: 4px solid var(--gold); padding: 15px; border-radius: 8px; margin-bottom: 10px; animation: slideIn 0.3s ease; }
+        .order-card-web.status-pending { border-left-color: #ff4444; }
+        .order-card-web.status-diproses { border-left-color: #ffeb3b; }
+        .order-card-web.status-siap { border-left-color: #00e5ff; }
+        .order-chip { display: inline-block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; }
+        .order-chip.pending { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.4); }
+        .order-chip.diproses { background: rgba(255,235,59,0.15); color: #ffeb3b; border: 1px solid rgba(255,235,59,0.4); }
+        .order-chip.siap { background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid rgba(0,229,255,0.4); }
+        .order-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-order-action { flex: 1; border: none; padding: 9px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem; cursor: pointer; }
+        .btn-order-action:active { transform: scale(0.97); }
+        .btn-terima { background: #ffeb3b; color: #000; }
+        .btn-siap { background: #00e5ff; color: #000; }
+        .btn-lunas { background: #00ff00; color: #000; }
+        .btn-batal { background: transparent; color: #ff4444; border: 1px solid #ff4444 !important; flex: 0 0 auto; padding: 9px 14px; }
+        .order-timer { font-size: 0.68rem; color: #888; }
+        .order-timer.lama { color: #ff4444; font-weight: 700; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } }
         .unread-dot { width: 10px; height: 10px; background-color: #0084ff; border-radius: 50%; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
         .date-filter-wrapper { background: #1a1a1a; padding: 12px 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
