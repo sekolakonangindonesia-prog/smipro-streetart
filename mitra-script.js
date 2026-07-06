@@ -458,9 +458,31 @@ window.saveProfile = async function() {
 window.goHome = () => window.location.href = 'index.html';
 window.prosesLogout = () => { if(confirm("Logout?")) { localStorage.clear(); window.location.href = 'index.html'; } };
 
+const ORDER_CHIP_LABEL = { pending: 'Pesanan Baru', diproses: 'Sedang Dibuat', siap: 'Siap Diambil' };
+
+function renderOrderActions(orderId, status, totalOrder) {
+    if (status === 'pending') {
+        return `<div class="order-actions">
+            <button class="btn-order-action btn-terima" onclick="window.updateOrderStatus('${orderId}','diproses')">Terima Pesanan</button>
+            <button class="btn-order-action btn-batal" onclick="window.cancelWebOrder('${orderId}')"><i class="fa-solid fa-trash"></i></button>
+        </div>`;
+    }
+    if (status === 'diproses') {
+        return `<div class="order-actions">
+            <button class="btn-order-action btn-siap" onclick="window.updateOrderStatus('${orderId}','siap')">Siap Diambil</button>
+            <button class="btn-order-action btn-batal" onclick="window.cancelWebOrder('${orderId}')"><i class="fa-solid fa-trash"></i></button>
+        </div>`;
+    }
+    // status === 'siap'
+    return `<div class="order-actions">
+        <button class="btn-order-action btn-lunas" onclick="window.finishWebOrder('${orderId}', ${totalOrder})">LUNAS</button>
+        <button class="btn-order-action btn-batal" onclick="window.cancelWebOrder('${orderId}')"><i class="fa-solid fa-trash"></i></button>
+    </div>`;
+}
+
 function listenToWebOrders() {
     const warungId = localStorage.getItem('mitraId');
-    const q = query(collection(db, "warung_orders"), where("warungId", "==", warungId), where("status", "==", "pending"));
+    const q = query(collection(db, "warung_orders"), where("warungId", "==", warungId), where("status", "in", ["pending", "diproses", "siap"]));
     onSnapshot(q, (snapshot) => {
         // FIX BEL: Bunyikan notif saat ada pesanan menu BARU
         if (typeof isFirstOrderLoad === "undefined") window.isFirstOrderLoad = true;
@@ -491,17 +513,39 @@ function listenToWebOrders() {
         });
         
         window.refreshNotifBell();
-        container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan.</p>' : '';
-        snapshot.forEach(docSnap => {
+
+        // Urutkan: pending dulu, lalu diproses, lalu siap. Dalam tiap grup, yang paling lama nunggu di atas.
+        const urutanStatus = { pending: 0, diproses: 1, siap: 2 };
+        const docsSorted = [...snapshot.docs].sort((a, b) => {
+            const sa = urutanStatus[a.data().status] ?? 9;
+            const sb = urutanStatus[b.data().status] ?? 9;
+            if (sa !== sb) return sa - sb;
+            const ta = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+            const tb = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+            return ta - tb;
+        });
+
+        container.innerHTML = snapshot.empty ? '<p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan aktif saat ini.</p>' : '';
+        docsSorted.forEach(docSnap => {
             const order = docSnap.data();
             const orderId = docSnap.id;
+            const status = order.status || 'pending';
             const totalOrder = order.items.reduce((sum, item) => sum + item.price, 0);
-            
+            const waktuOrder = order.timestamp?.toDate ? order.timestamp.toDate() : new Date();
+            const menitLalu = Math.floor((Date.now() - waktuOrder.getTime()) / 60000);
+            const timerHtml = status !== 'siap'
+                ? `<span class="order-timer ${menitLalu >= 10 ? 'lama' : ''}"><i class="fa-regular fa-clock"></i> ${menitLalu < 1 ? 'baru saja' : menitLalu + ' menit lalu'}</span>`
+                : '';
+
             container.innerHTML += `
-            <div class="order-card-web">
-                <div style="display:flex; justify-content:space-between;">
-                    <b>Meja: ${order.tableNum}</b>
-                    <small>${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</small>
+            <div class="order-card-web status-${status}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b>Meja: ${order.tableNum || 'Take Away'}</b>
+                    <small>${waktuOrder.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</small>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                    <span class="order-chip ${status}">${ORDER_CHIP_LABEL[status] || status}</span>
+                    ${timerHtml}
                 </div>
                 <div style="margin:10px 0; color:#ccc; font-size:0.85rem;">
                     ${order.items.map(i => `• ${i.name}`).join('<br>')}
@@ -509,19 +553,23 @@ function listenToWebOrders() {
                 <hr style="border-color:#333;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <b style="color:gold;">Rp ${totalOrder.toLocaleString()}</b>
-                    <button onclick="window.finishWebOrder('${orderId}', ${totalOrder})" 
-                            style="background:#00ff00; color:black; border:none; padding:5px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">
-                        LUNAS
-                    </button>
                 </div>
+                ${renderOrderActions(orderId, status, totalOrder)}
             </div>`;
         });
     });
 }
 
-window.handleOrderAction = async function(id, status) {
-    await updateDoc(doc(db, "warung_orders", id), { status: status });
+window.updateOrderStatus = async function(id, status) {
+    try {
+        await updateDoc(doc(db, "warung_orders", id), { status: status });
+    } catch (e) {
+        alert("Gagal update status: " + e.message);
+    }
 };
+
+// Alias lama, tetap dipertahankan agar tidak merusak pemanggilan yang sudah ada
+window.handleOrderAction = window.updateOrderStatus;
 
 const qMenu = query(collection(db, "menus"), where("warungId", "==", WARUNG_ID));
 onSnapshot(qMenu, (snap) => {
