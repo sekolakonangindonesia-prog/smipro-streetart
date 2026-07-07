@@ -536,7 +536,7 @@
 import { db } from './firebase-config.js';
 import {
     doc, collection, query, where, onSnapshot, getDocs,
-    addDoc, updateDoc, increment
+    addDoc, updateDoc, increment, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ═══════════ INIT ═══════════
@@ -838,17 +838,28 @@ window.confirmOrder = async function() {
     const total     = myCart.reduce((s,i) => s + i.price, 0);
 
     try {
+        // Nomor antrian harian per warung (reset tiap hari, transaksi biar aman dari bentrok)
+        const counterRef = doc(db, "order_counters", `${warungId}_${tanggal}`);
+        const nomorAntrian = await runTransaction(db, async (t) => {
+            const snap = await t.get(counterRef);
+            const next = (snap.exists() ? snap.data().count : 0) + 1;
+            t.set(counterRef, { count: next }, { merge: true });
+            return next;
+        });
+
         await addDoc(collection(db, "warung_orders"), {
             warungId, customerName: nama, customerWA: wa,
             tableNum: meja, items: myCart, metodeBayar,
-            orderDate: tanggal, orderTime: jam,
+            orderDate: tanggal, orderTime: jam, orderNumber: nomorAntrian,
             status: 'pending', timestamp: new Date()
         });
 
         const daftar = myCart.map(i => `• ${i.name} – ${fmt(i.price)}`).join('\n');
+        const nomorAntrianStr = String(nomorAntrian).padStart(3, '0');
         const pesan  =
             `Halo ${nama} 👋\n\n` +
             `✅ Pesananmu di *${currentWarungName}* sudah masuk!\n\n` +
+            `🎫 Nomor Antrian: *#${nomorAntrianStr}*\n` +
             `📋 *Detail Pesanan:*\n${daftar}\n\n` +
             `🪑 Meja: *${meja}*\n` +
             `💰 Total: *${fmt(total)}*\n` +
