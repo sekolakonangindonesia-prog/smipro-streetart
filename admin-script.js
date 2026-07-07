@@ -371,6 +371,7 @@ window.loginAsMitra = function(id, name) {
         localStorage.setItem('userRole', 'mitra');
         localStorage.setItem('userName', name + " (Admin)");
         localStorage.setItem('mitraId', id); 
+        localStorage.setItem('adminOrigin', 'true');
         window.location.href = 'mitra-dashboard.html';
     }
 };
