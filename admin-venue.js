@@ -4,7 +4,7 @@
    ========================================= */
 import { db } from './firebase-config.js';
 import { 
-    collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot 
+    collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentVenueBase64 = null;
@@ -43,8 +43,40 @@ window.saveVenue = async function() {
     if(id) {
         // --- MODE EDIT ---
         if(confirm("Simpan perubahan venue?")) {
+            // FIX: Ambil nama lama dulu — kalau nama venue berubah, semua warung
+            // yang terdaftar di venue ini perlu ikut diperbarui venueName-nya,
+            // supaya tidak "hilang" (tidak terbaca) setelah venue di-rename.
+            const oldSnap = await getDoc(doc(db, "venues", id));
+            const oldName = oldSnap.exists() ? oldSnap.data().name : null;
+
             await updateDoc(doc(db, "venues", id), dataPayload);
-            alert("Venue Diupdate!");
+
+            let jumlahWarungIkutUpdate = 0;
+            if (oldName && oldName !== name) {
+                const updates = [];
+                const sudahDiupdate = new Set();
+
+                // Warung yang sudah punya venueId (link resmi ke venue ini)
+                const wSnapById = await getDocs(query(collection(db, "warungs"), where("venueId", "==", id)));
+                wSnapById.forEach(d => {
+                    sudahDiupdate.add(d.id);
+                    updates.push(updateDoc(doc(db, "warungs", d.id), { venueName: name }));
+                });
+
+                // Jaring pengaman: warung lama yang belum punya venueId,
+                // dicocokkan lewat venueName lama, sekalian dilengkapi venueId-nya.
+                const wSnapByName = await getDocs(query(collection(db, "warungs"), where("venueName", "==", oldName)));
+                wSnapByName.forEach(d => {
+                    if (sudahDiupdate.has(d.id)) return;
+                    sudahDiupdate.add(d.id);
+                    updates.push(updateDoc(doc(db, "warungs", d.id), { venueName: name, venueId: id }));
+                });
+
+                await Promise.all(updates);
+                jumlahWarungIkutUpdate = sudahDiupdate.size;
+            }
+
+            alert("Venue Diupdate!" + (jumlahWarungIkutUpdate > 0 ? `\n${jumlahWarungIkutUpdate} warung di venue ini ikut otomatis diperbarui.` : ""));
             resetVenueForm();
         }
     } else {
