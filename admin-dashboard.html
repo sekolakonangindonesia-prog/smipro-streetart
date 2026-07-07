@@ -3,357 +3,1137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Warung - SMIPRO</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>SMIPRO - Control Tower</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+
+    <!-- LIBRARY PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Plugin Tambahan untuk Tabel PDF Otomatis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
-        .mitra-header-bg { height: 150px; background: url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Bener%20Dasboard3.jpg') center/cover; position: relative; }
-        .mitra-header-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, #121212); }
-        .mitra-profile-pic { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); position: absolute; bottom: -40px; left: 20px; object-fit: cover; background: #000; cursor: pointer; z-index: 20; transition: transform 0.3s; }
-        .mitra-profile-pic:hover { transform: scale(1.1); border-color: white; }
-        .mitra-controls { padding: 50px 20px 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        .shop-switch { display: flex; align-items: center; gap: 10px; cursor: pointer; background: #222; padding: 5px 15px; border-radius: 20px; border: 1px solid #444; transition: 0.3s; }
-        .shop-switch.open { border-color: #00ff00; }
-        .shop-switch.closed { border-color: red; }
-        .indicator { width: 10px; height: 10px; border-radius: 50%; background: red; transition: 0.3s; }
-        .shop-switch.open .indicator { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        .stat-card-mitra { background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #333; position: relative; }
-        .edit-icon { position: absolute; top: 10px; right: 10px; color: #888; cursor: pointer; font-size: 0.9rem; }
-        .booking-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px; }
-        .card-booking.waiting { background: #332b00; border-left: 5px solid #ffeb3b; padding: 15px; border-radius: 8px; }
-        .card-booking.active { background: #2a0000; border-left: 5px solid red; padding: 15px; border-radius: 8px; }
-        .table-badge { font-size: 1.2rem; font-weight: bold; color: white; display: block; margin-bottom: 5px; }
-        .btn-delete { background: #333; color: #ff4444; border: 1px solid #555; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-        .menu-grid-display { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .menu-card { background: #222; border-radius: 10px; overflow: hidden; border: 1px solid #333; text-align: center; }
-        .menu-card img { width: 100%; height: 120px; object-fit: cover; }
-        .warung-info-box { display: flex; align-items: center; gap: 15px; margin: -35px 20px 0 20px; position: relative; z-index: 50; }
-        .warung-avatar { width: 85px; height: 85px; border-radius: 50%; border: 3px solid #121212; object-fit: cover; background: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-shrink: 0; }
-        .text-info-right { flex: 1; padding-top: 10px; }
-        .text-info-right h2 { margin: 0; font-size: 1.3rem; color: white !important; font-weight: 800; }
-        .text-info-right small { color: #aaa; display: block; margin-bottom: 5px; font-size: 0.8rem; }
-        .status-badge-inline { display: inline-flex !important; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid #444; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; color: white; width: fit-content !important; margin-top: 8px; transition: 0.3s; }
-        .status-badge-inline.open { border-color: #00ff00; color: #00ff00; }
-        .status-badge-inline.closed { border-color: #ff4444; color: #ff4444; }
-        .mitra-tabs { display: flex; background: #111; border-bottom: 1px solid #333; margin-top: 20px; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 15px 10px; background: none; border: none; color: #ffffff !important; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .tab-btn.active { color: #E50914 !important; border-bottom-color: #E50914; }
-        .profile-form label { display: block; color: #aaa; margin-top: 15px; font-size: 0.9rem; }
-        .input-mitra { width: 100%; background: #111; border: 1px solid #444; color: white; padding: 12px; border-radius: 5px; margin-top: 5px; box-sizing: border-box; }
-        .qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; margin-top: 20px; }
-        .qr-card { background: white; padding: 15px; border-radius: 10px; text-align: center; color: black; }
-        .qr-card img { width: 100%; max-width: 120px; }
-        .btn-download-qr { background: #333; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 10px; font-size: 0.8rem; cursor: pointer; }
-        .print-note { background: #222; padding: 15px; border-radius: 10px; border: 1px dashed #555; margin-bottom: 20px; font-size: 0.9rem; color: #ccc; }
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .modal-box { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 100%; max-width: 350px; border: 1px solid #444; }
-        .btn-small { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
-        .notification-wrapper { position: relative; }
-        .notif-panel { position: absolute; top: 45px; right: 0; width: 300px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: none; flex-direction: column; overflow: hidden; z-index: 2000; }
-        .notif-header { padding: 12px 15px; border-bottom: 1px solid #333; background: #222; text-align: left; }
-        .notif-list-body { max-height: 350px; overflow-y: auto; }
-        .notif-item { position: relative; display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid #222; cursor: pointer; transition: 0.3s; }
-        .notif-item:hover { background: #252525; }
-        #admin-floating-btn { display: none; position: fixed; left: 20px; bottom: 25px; z-index: 999999; }
-        @media (max-width: 600px) { #admin-floating-btn { bottom: 85px; left: 15px; } #admin-floating-btn button { padding: 8px 15px !important; font-size: 0.75rem !important; } }
-        .order-toggle-box { background: #252525; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--green); }
-        input:checked + .slider:before { transform: translateX(26px); }
-        .order-card-web { background: #1a1a1a; border-left: 4px solid var(--gold); padding: 15px; border-radius: 8px; margin-bottom: 10px; animation: slideIn 0.3s ease; }
-        .order-card-web.status-pending { border-left-color: #ff4444; }
-        .order-card-web.status-diproses { border-left-color: #ffeb3b; }
-        .order-card-web.status-siap { border-left-color: #00e5ff; }
-        .order-chip { display: inline-block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; }
-        .order-chip.pending { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.4); }
-        .order-chip.diproses { background: rgba(255,235,59,0.15); color: #ffeb3b; border: 1px solid rgba(255,235,59,0.4); }
-        .order-chip.siap { background: rgba(0,229,255,0.15); color: #00e5ff; border: 1px solid rgba(0,229,255,0.4); }
-        .order-actions { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-order-action { flex: 1; border: none; padding: 9px 8px; border-radius: 6px; font-weight: 800; font-size: 0.78rem; cursor: pointer; }
-        .btn-order-action:active { transform: scale(0.97); }
-        .btn-terima { background: #ffeb3b; color: #000; }
-        .btn-siap { background: #00e5ff; color: #000; }
-        .btn-lunas { background: #00ff00; color: #000; }
-        .btn-batal { background: transparent; color: #ff4444; border: 1px solid #ff4444 !important; flex: 0 0 auto; padding: 9px 14px; }
-        .btn-cetak { background: transparent; color: #ccc; border: 1px solid #555 !important; flex: 0 0 auto; padding: 9px 14px; }
-        .order-timer { font-size: 0.68rem; color: #888; }
-        .order-timer.lama { color: #ff4444; font-weight: 700; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } }
-        .unread-dot { width: 10px; height: 10px; background-color: #0084ff; border-radius: 50%; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
-        .date-filter-wrapper { background: #1a1a1a; padding: 12px 15px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .date-input-custom { background: #252525; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; outline: none; cursor: pointer; color-scheme: dark; }
-        .label-filter { font-size: 0.75rem; color: #888; font-weight: bold; text-transform: uppercase; }
+        /* === CSS ADMIN LAYOUT === */
+        body { background: #000; overflow-x: hidden; margin: 0; font-family: 'Segoe UI', sans-serif; }
+        
+        .admin-container { display: flex; min-height: 100vh; }
 
-        /* STYLE QRIS SECTION */
-        .qris-upload-box { background: #1a1a1a; border: 1px dashed #555; border-radius: 10px; padding: 20px; text-align: center; margin-top: 8px; }
-        .qris-preview { width: 180px; height: 180px; object-fit: contain; border-radius: 8px; background: white; padding: 8px; display: block; margin: 0 auto 12px auto; border: 2px solid #333; }
+        /* SIDEBAR */
+        .sidebar { width: 250px; background: #111; border-right: 1px solid #333; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #222; }
+        .sidebar-menu { flex: 1; padding: 20px 0; overflow-y: auto; }
+        .menu-item { padding: 15px 25px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.3s; text-decoration: none; font-size: 0.95rem; }
+        .menu-item:hover, .menu-item.active { background: #1a1a1a; color: #E50914; border-left: 4px solid #E50914; }
+        .menu-item i { width: 25px; text-align: center; }
 
-        /* FIX: Style untuk toast notifikasi (sebelumnya belum ada sama sekali) */
-        .toast-notif { display: flex; align-items: center; gap: 12px; background: #1e1e1e; border-radius: 10px; padding: 12px 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); cursor: pointer; animation: toastIn 0.3s ease; }
-        .toast-notif b { color: white; font-size: 0.85rem; }
-        .toast-notif small { color: #ccc; }
-        @keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-    </style>
+        /* MAIN CONTENT */
+        .main-content { flex: 1; margin-left: 250px; padding: 30px; background: #000; }
+
+        /* CARD STATISTIK */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #151515; padding: 20px; border-radius: 10px; border: 1px solid #333; display: flex; align-items: center; gap: 20px; }
+        .stat-icon { font-size: 2rem; color: #E50914; background: rgba(229, 9, 20, 0.1); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+
+        /* TABLE */
+        .admin-table { width: 100%; border-collapse: collapse; background: #151515; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        .admin-table th, .admin-table td { padding: 15px; text-align: left; border-bottom: 1px solid #222; color: #ddd; }
+        .admin-table th { background: #222; color: #E50914; text-transform: uppercase; font-size: 0.8rem; }
+        .admin-table tr:hover { background: #1a1a1a; }
+        
+        /* BUTTONS */
+        .btn-action { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; font-size: 0.8rem; color: white; margin-right: 5px; }
+        .btn-view { background: #00d2ff; color: black; }
+        .btn-edit { background: #FFD700; color: black; }
+        .btn-delete { background: #E50914; }
+
+        /* CMS FORM */
+        .sub-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .sub-tab-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; }
+        .sub-tab-btn.active { background: #E50914; color: white; border-color: #E50914; }
+        .cms-form-group { background: #151515; padding: 20px; border-radius: 10px; border: 1px solid #333; margin-bottom: 20px; }
+        .cms-input { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; margin-bottom: 15px; border-radius: 5px; box-sizing: border-box; }
+        .cms-label { color: #aaa; font-size: 0.85rem; margin-bottom: 5px; display: block; }
+
+        /* UTILS */
+        .hidden { display: none; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #333; padding-bottom: 10px; }
+        
+        /* MONITOR SPLIT */
+        .monitor-split-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; min-height: 400px; }
+        .monitor-panel { background: #0a0a0a; border: 1px solid #333; border-radius: 10px; display: flex; flex-direction: column; }
+        .panel-title { margin: 0; padding: 15px; background: #111; border-radius: 10px 10px 0 0; font-size: 1rem; text-align: center; font-weight: bold; }
+        .monitor-list { padding: 15px; flex: 1; overflow-y: auto; max-height: 500px; }
+        
+        .req-item { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; position: relative; animation: fadeIn 0.5s; }
+        .req-item.pending { border-left: 5px solid #ffeb3b; }
+        .req-item.live { border-left: 5px solid #00ff00; background: #051a05; }
+        .req-amount { position: absolute; top: 10px; right: 10px; background: #333; color: gold; padding: 3px 8px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; }
+        
+        .btn-control { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
+        .btn-approve { background: #00ff00; color: black; }
+        .btn-finish { background: #333; color: #ccc; border: 1px solid #555; }
+        .btn-finish:hover { background: white; color: black; }
+        .empty-state { text-align: center; color: #444; margin-top: 50px; font-style: italic; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; } .sidebar-header h3, .menu-item span { display: none; }
+            .main-content { margin-left: 60px; padding: 15px; }
+            .monitor-split-wrapper { grid-template-columns: 1fr; }
+        }
+
+        /* CSS KHUSUS NOTIFIKASI DASHBOARD */
+.notif-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Kartu Notifikasi */
+.notif-card {
+    background: #151515;
+    border: 1px solid #333;
+    border-left: 5px solid #888; /* Default abu-abu */
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.3s;
+    animation: fadeIn 0.5s;
+}
+
+/* Warna Warni Berdasarkan Tipe Notif */
+.notif-card.urgent { border-left-color: #E50914; background: #1a0505; } /* Merah (Penting) */
+.notif-card.warning { border-left-color: #ffeb3b; background: #1a1a00; } /* Kuning (Perlu Cek) */
+.notif-card.success { border-left-color: #00ff00; background: #051a05; } /* Hijau (Info) */
+
+/* Teks di dalam notif */
+.notif-content h4 { margin: 0 0 5px 0; color: white; font-size: 1rem; }
+.notif-content p { margin: 0; color: #aaa; font-size: 0.85rem; }
+
+/* Tombol Aksi di Kanan */
+.notif-action {
+    display: flex;
+    gap: 5px;
+}
+
+.empty-state-box {
+    text-align: center;
+    padding: 40px;
+    color: #444;
+    border: 1px dashed #333;
+    border-radius: 10px;
+}
+
+/* RESPONSIF HP: Tombol turun ke bawah jika layar sempit */
+@media (max-width: 600px) {
+    .notif-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .notif-action {
+        width: 100%;
+    }
+    .notif-action button {
+        flex: 1; /* Tombol jadi lebar penuh */
+        padding: 10px;
+    }
+}
+</style>
 </head>
 <body>
-
-<input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(this)">
-<input type="file" id="menu-file-input" style="display:none;" accept="image/*" onchange="previewMenuImage(this)">
-<input type="file" id="qris-file-input" style="display:none;" accept="image/*" onchange="previewQrisImage(this)">
-
-<div class="mitra-header-bg" id="banner-bg">
-    <div class="mitra-header-overlay"></div>
-    <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
-     style="position:absolute; top:15px; left:15px; width:45px; z-index:100; cursor:pointer;" onclick="goHome()">
+<div class="admin-container">
     
-    <div style="position:absolute; top:20px; right:20px; display:flex; align-items:center; gap:10px; z-index:1000;">
-        <div class="notification-wrapper" style="position: relative;">
-            <div class="notif-bell" onclick="toggleNotifPanel(event)" style="position:relative; cursor:pointer; background:rgba(0,0,0,0.5); width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid #444;">
-                <i class="fa-solid fa-bell" style="color:white; font-size:1.1rem;"></i>
-                <span id="web-notif-count" class="notif-badge" style="position:absolute; top:-2px; right:-2px; background:#E50914; color:white; font-size:0.65rem; padding:2px 6px; border-radius:50%; font-weight:bold; display:none; border: 2px solid #111;">0</span>
-            </div>
-            <div id="notif-panel" class="notif-panel" style="display:none; position: absolute; top: 45px; right: 0; width: 280px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.8); flex-direction: column; overflow: hidden; z-index: 2000;">
-                <div class="notif-header" style="padding: 12px 15px; border-bottom: 1px solid #333; background: #222; text-align: left;">
-                    <b style="font-size: 0.9rem; color: white;">Pemberitahuan</b>
-                </div>
-                <div id="notif-list-history" class="notif-list-body" style="max-height: 350px; overflow-y: auto;">
-                    <p style="text-align:center; padding:20px; color:#555; font-size:0.8rem;">Tidak ada riwayat baru.</p>
-                </div>
-            </div>
-        </div>
-        <button onclick="goHome()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid white; padding:7px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">
-            <i class="fa-solid fa-house"></i>
-        </button>
-        <button onclick="prosesLogout()" style="background:#E50914; color:white; border:none; padding:7px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">
-            <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
-    </div>
-</div>
-
-<div class="warung-info-box">
-    <img src="" id="header-profile-img" class="warung-avatar" onclick="triggerUpload()" onerror="this.src='https://placehold.co/150'">
-    <div class="text-info-right">
-        <h2 id="shop-name-display">Loading...</h2>
-        <small>Stadion Bayuangga Zone</small>
-        <div id="store-status-btn" class="status-badge-inline" onclick="toggleStoreStatus()">
-            <div style="width:8px; height:8px; border-radius:50%; background: currentColor;"></div>
-            <span id="store-status-text">...</span>
-        </div>
-    </div>
-</div>
-
-<div class="mitra-tabs">
-    <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> <span>Beranda</span></button>
-    <button class="tab-btn" onclick="switchTab('web-orders')"><i class="fa-solid fa-utensils"></i> <span>Pesanan</span></button>
-    <button class="tab-btn" onclick="switchTab('qr')"><i class="fa-solid fa-print"></i> <span>QR Meja</span></button>
-    <button class="tab-btn" onclick="switchTab('menu')"><i class="fa-solid fa-bowl-food"></i> <span>Menu</span></button>
-    <button class="tab-btn" onclick="switchTab('profile')"><i class="fa-solid fa-gear"></i> <span>Profil</span></button>
-</div>
-
-<div class="container">
-    <!-- TAB BERANDA -->
-    <div id="tab-home" class="tab-content active">
-        <div class="date-filter-wrapper">
-            <div style="flex:1;">
-                <span class="label-filter">Operasional Tanggal:</span><br>
-                <input type="date" id="filter-date-booking" class="date-input-custom" onchange="setupBookingListener()">
-            </div>
-            <div style="text-align: right;">
-                <button onclick="setTodayFilter()" style="background:none; border:1px solid var(--primary); color:white; padding:6px 12px; border-radius:15px; font-size:0.75rem; cursor:pointer; font-weight:bold;">HARI INI</button>
-            </div>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:30px;">
-            <div class="stat-card-mitra">
-                <i class="fa-solid fa-pen edit-icon" onclick="editTableCount()"></i>
-                <h1 id="total-table-count" style="margin:0; color:var(--primary); font-size:1.5rem;">-</h1>
-                <small style="font-size:0.7rem;">Total Meja</small>
-            </div>
-            <div class="stat-card-mitra" style="border-color:#ff4444;">
-                <h1 id="occupied-count" style="margin:0; color:#ff4444; font-size:1.5rem;">0</h1>
-                <small style="font-size:0.7rem;">Sedang Makan</small>
-            </div>
-            <div class="stat-card-mitra" style="border-color:#ffeb3b;">
-                <h1 id="booked-count" style="margin:0; color:#ffeb3b; font-size:1.5rem;">0</h1>
-                <small style="font-size:0.7rem;">Reservasi</small>
-            </div>
-        </div>
-        <div class="section-title"><i class="fa-solid fa-list-check"></i> Pesanan Masuk</div>
-        <div id="booking-container" class="booking-cards-grid"></div>
-    </div>
-
-    <!-- TAB PESANAN WEB -->
-    <div id="tab-web-orders" class="tab-content">
-        <div class="order-toggle-box">
-            <div>
-                <b style="display:block;">Order Lewat Web</b>
-                <small id="order-status-desc" style="color:#888;">Fitur sedang Mati</small>
-            </div>
-            <label class="switch">
-                <input type="checkbox" id="toggle-order-web" onchange="updateOrderSystemStatus(this.checked)">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div id="web-orders-container">
-            <p style="text-align:center; color:#555; margin-top:50px;">Tidak ada pesanan aktif saat ini.</p>
-        </div>
-    </div>
-
-    <!-- TAB QR MEJA -->
-    <div id="tab-qr" class="tab-content">
-        <div class="print-note">
-            <i class="fa-solid fa-circle-info" style="color:var(--accent);"></i>
-            <b>Panduan:</b> Klik "Download" untuk menyimpan QR, lalu cetak untuk meja.
-        </div>
-        <div id="qr-container" class="qr-grid"></div>
-    </div>
-
-    <!-- TAB MENU -->
-    <div id="tab-menu" class="tab-content">
-        <button class="btn-primary" onclick="openModalMenu()" style="margin-bottom:20px; width:100%; background:var(--primary); padding:12px; border:none; border-radius:5px; color:white; font-weight:bold; cursor:pointer;">
-            <i class="fa-solid fa-plus"></i> Tambah Menu Baru
-        </button>
-        <div id="menu-list-container" class="menu-grid-display"></div>
-    </div>
-
-    <!-- TAB PROFIL -->
-    <div id="tab-profile" class="tab-content">
-        <div class="profile-form" style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
-            <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">Pengaturan Akun</h3>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:50px;">
+            <h3 style="color:white; margin:10px 0 0; font-size:1rem;">CONTROL TOWER</h3>
+            <a href="#" onclick="goToHomeAsAdmin()" style="display:inline-block; margin-top:10px; color:#E50914; text-decoration:none; font-size:0.8rem; border:1px solid #E50914; padding:2px 8px; border-radius:4px;">
+                <i class="fa-solid fa-house"></i> Lihat Home
+            </a>
+        </div>            
+        
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active" onclick="showView('dashboard', this)"><i class="fa-solid fa-chart-line"></i> <span>Overview</span></a>
+            <a href="#" class="menu-item" onclick="showView('mitra', this)"><i class="fa-solid fa-store"></i> <span>Data Mitra</span></a>
+            <a href="#" class="menu-item" onclick="showView('venue', this)"><i class="fa-solid fa-map-location-dot"></i> <span>Data Venue Lokasi</span></a>
+            <a href="#" class="menu-item" onclick="showView('performer', this)"><i class="fa-solid fa-guitar"></i> <span>Data Performer</span></a>               
+            <a href="#" class="menu-item" onclick="showView('mentor', this)"><i class="fa-solid fa-chalkboard-user"></i> <span>Data Mentor</span></a>
+            <a href="#" class="menu-item" onclick="showView('cafe', this)"><i class="fa-solid fa-mug-hot"></i> <span>Data Cafe & Tour</span></a>
+            <a href="#" class="menu-item" onclick="showView('students', this)"><i class="fa-solid fa-user-graduate"></i> <span>Bengkel Siswa</span></a>
+            <a href="#" class="menu-item" onclick="showView('cms', this)"><i class="fa-solid fa-pen-to-square"></i> <span>Kelola Konten</span></a>
+             <a href="#" class="menu-item" onclick="showView('live', this)"><i class="fa-solid fa-satellite-dish"></i> <span>Control Room & Galeri</span></a>
+            <a href="#" class="menu-item" onclick="showView('finance', this)"><i class="fa-solid fa-money-bill-wave"></i> <span>Keuangan & Request</span></a>
             
-            <div style="text-align:center; margin-bottom:20px;">
-                <img src="" id="preview-profile-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); margin-bottom:10px;" onerror="this.src='https://via.placeholder.com/150'">
-                <br>
-                <input type="file" id="cover-file-input" style="display:none;" accept="image/*" onchange="previewCoverImage(this)">
-                <button class="btn-small" style="background:#333; border:1px solid #555; color:white;" onclick="triggerUpload()">
-                    <i class="fa-solid fa-camera"></i> Ganti Foto Profil
-                </button>
-                <button class="btn-small" style="background:#333; border:1px solid #555; color:white; margin-top:5px;" onclick="document.getElementById('cover-file-input').click()">
-                    <i class="fa-solid fa-image"></i> Ganti Foto Sampul
-                </button>
+            <div style="margin-top:auto; border-top:1px solid #222;">
+                <a href="#" class="menu-item" onclick="adminLogout()" style="color:#E50914;"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span></a>
             </div>
-
-            <label>Nama Warung</label>
-            <input type="text" id="edit-name" class="input-mitra">
-
-            <label>Nama Pemilik</label>
-            <input type="text" id="edit-owner" class="input-mitra" placeholder="Nama Pemilik">
-
-            <label>Nomor WhatsApp</label>
-            <input type="number" id="edit-phone" class="input-mitra" placeholder="08xxxxxxx">
-
-            <label>Email Login</label>
-            <input type="email" id="edit-email" class="input-mitra" placeholder="email@contoh.com">
-
-            <label>Password</label>
-            <input type="password" id="edit-pass" class="input-mitra" placeholder="******">
-
-            <!-- ===== SECTION QRIS (BARU) ===== -->
-            <label style="margin-top:25px; display:block; color:#FFD700; font-weight:bold; font-size:1rem;">
-                <i class="fa-solid fa-qrcode"></i> QR QRIS Pembayaran
-            </label>
-            <div class="qris-upload-box">
-                <img id="preview-qris-img" 
-                     src="https://via.placeholder.com/200x200?text=Belum+Ada+QRIS" 
-                     class="qris-preview">
-                <small style="color:#888; display:block; margin-bottom:12px; font-size:0.8rem;">
-                    Upload foto QR QRIS Anda.<br>Pelanggan akan scan ini saat bayar dengan QRIS.
-                </small>
-                <button class="btn-small" 
-                        style="background:#1a3320; border:1px solid #00ff00; color:#00ff00; padding:10px 20px;" 
-                        onclick="document.getElementById('qris-file-input').click()">
-                    <i class="fa-solid fa-upload"></i> Upload Foto QRIS
-                </button>
+        </div>
+    </nav>
+<!-- MAIN CONTENT -->
+    <main class="main-content">
+        
+        <!-- 1. OVERVIEW -->
+        <div id="view-dashboard" class="admin-view">
+            <div class="section-header">
+                <div><h2 style="margin:0; color:white;">Dashboard Overview</h2><span style="color:#888;" id="current-date">-</span></div>
+                <div style="text-align:right;"><b style="color:white;">Super Admin</b><br><small style="color:#00ff00;">● Online</small></div>
             </div>
-            <!-- ===== END SECTION QRIS ===== -->
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-store"></i></div><div><h3 style="margin:0; color:white;" id="count-mitra">0</h3><small style="color:#888;">Total Mitra</small></div></div>
+                <div class="stat-card"><div class="stat-icon" style="color:#FFD700; background:rgba(255, 215, 0, 0.1);"><i class="fa-solid fa-guitar"></i></div><div><h3 style="margin:0; color:white;" id="count-perf">0</h3><small style="color:#888;">Total Performer</small></div></div>
+                 <div class="stat-card">
+                    <div class="stat-icon" style="color:#00ff00; background:rgba(0, 255, 0, 0.1);">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <b style="color:white; font-size:0.9rem;">PEMASUKAN REAL</b>
+                        
+                        <!-- Rincian -->
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa; margin-top:5px; border-bottom:1px dashed #444; padding-bottom:5px;">
+                            <span>🏟️ Venue</span> <span id="rev-venue" style="color:white;">Rp 0</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa; margin-top:5px;">
+                            <span>☕ Cafe</span> <span id="rev-cafe" style="color:white;">Rp 0</span>
+                        </div>
+                        
+                        <!-- Total Besar -->
+                        <h3 style="margin:5px 0 0 0; color:#00ff00; text-align:right;" id="rev-total">Rp 0</h3>
+                    </div>
+</div>
+            </div>      
 
-            <button class="btn-primary" onclick="saveProfile()" style="margin-top:20px; width:100%; background:var(--green); border:none; padding:12px; border-radius:5px; color:black; font-weight:bold; cursor:pointer;">
-                SIMPAN PERUBAHAN
+<!-- ============================================ -->
+<!-- MODAL APPROVAL MITRA (WARUNG) -->
+<!-- ============================================ -->
+<div id="modal-approve-mitra" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:4000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e1e1e; width:100%; max-width:450px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
+        <button onclick="document.getElementById('modal-approve-mitra').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        
+        <!-- LOGO & JUDUL -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:70px; margin-bottom:10px;">
+            <h3 style="margin:0; color:white;">Verifikasi Mitra Baru</h3>
+        </div>
+
+        <!-- ISI DATA -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; font-size:0.9rem; color:#ccc; margin-bottom:20px;">
+            <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Nama Warung</label>
+                <b style="color:white;" id="app-mitra-name">-</b>
+            </div>
+            <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Pemilik</label>
+                <b style="color:white;" id="app-mitra-owner">-</b>
+            </div>
+            <div style="grid-column: span 2; background:#333; padding:10px; border-radius:5px; border-left:3px solid #E50914;">
+                <label style="display:block; color:#aaa; font-size:0.75rem;">LOKASI ZONA / VENUE</label>
+                <b style="color:#FFF; font-size:1.1rem;" id="app-mitra-venue">-</b>
+            </div>
+            <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Jumlah Meja</label>
+                <b style="color:white;" id="app-mitra-table">-</b>
+            </div>
+             <div>
+                <label style="display:block; color:#888; font-size:0.75rem;">Kontak / WA</label>
+                <b style="color:white;" id="app-mitra-phone">-</b>
+            </div>
+        </div>
+
+        <!-- TOMBOL AKSI -->
+        <div style="display:flex; gap:10px;">
+            <button id="btn-reject-mitra" class="btn-action btn-delete" style="flex:1; padding:12px;">
+                <i class="fa-solid fa-trash"></i> TOLAK
+            </button>
+            <button id="btn-accept-mitra" class="btn-action btn-view" style="flex:1; padding:12px; background:var(--green); color:black;">
+                <i class="fa-solid fa-check"></i> SETUJUI
             </button>
         </div>
+</div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL APPROVAL SISWA (LULUS) -->
+<!-- ============================================ -->
+<div id="modal-approve-siswa" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:4000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e1e1e; width:100%; max-width:500px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
+        <button onclick="document.getElementById('modal-approve-siswa').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        
+        <!-- LOGO & JUDUL -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:70px; margin-bottom:10px;">
+            <h3 style="margin:0; color:#2ecc71;">Verifikasi Kelulusan</h3>
+        </div>
+
+        <!-- INFO SISWA -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <img id="app-siswa-img" src="" style="width:80px; height:80px; border-radius:50%; border:2px solid #2ecc71; object-fit:cover; margin-bottom:10px;">
+            <h2 id="app-siswa-name" style="margin:0; color:white;">-</h2>
+            <small id="app-siswa-genre" style="color:#aaa;">-</small>
+        </div>
+
+        <!-- TABEL NILAI -->
+        <h4 style="margin:0 0 10px 0; color:#FFD700; border-bottom:1px dashed #444; padding-bottom:5px;">Rincian Nilai Mentor</h4>
+        <div style="max-height:150px; overflow-y:auto; margin-bottom:20px;">
+            <table class="admin-table" style="font-size:0.85rem;">
+                <tbody id="app-siswa-scores">
+                    <!-- Diisi JS -->
+                </tbody>
+            </table>
+</div>
+
+        <!-- TOMBOL AKSI -->
+        <button id="btn-accept-siswa" class="btn-action btn-edit" style="width:100%; padding:12px; font-size:1rem; font-weight:bold;">
+            <i class="fa-solid fa-graduation-cap"></i> TERBITKAN AKUN PERFORMER
+        </button>
+    </div>
+</div>
+            
+        <!-- JUDUL SECTION -->
+    <div class="section-header" style="margin-top: 40px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+        <h3 style="margin:0; color:#E50914; display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-bell"></i> PUSAT NOTIFIKASI & APPROVAL
+        </h3>
+    </div>
+
+    <!-- WADAH LIST NOTIFIKASI (Responsive) -->
+    <div id="admin-notification-area" class="notif-grid">
+        <!-- Nanti Javascript akan mengisi ini secara otomatis -->
+        <div class="empty-state-box">
+            <i class="fa-solid fa-check-circle"></i>
+            <p>Tidak ada notifikasi baru saat ini.</p>
+        </div>
     </div>
 </div>
 
-<!-- MODAL MENU -->
-<div id="modal-menu" class="modal-overlay">
-    <div class="modal-box">
-        <h3 style="margin-top:0;">Tambah Menu</h3>
-        <div style="text-align:center; margin-bottom:10px; border:1px dashed #555; padding:10px; border-radius:5px; cursor:pointer;" onclick="triggerMenuUpload()">
-            <img id="preview-menu-img" src="https://via.placeholder.com/100?text=Foto" style="width:100px; height:100px; object-fit:cover;">
-            <p style="font-size:0.8rem; color:#aaa; margin:5px 0;">Klik untuk Upload Foto</p>
+        <!-- VIEW 2: MANAJEMEN MITRA & STATISTIK (UPDATED) -->
+        <div id="view-mitra" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Data Mitra & Laporan</h2>
+</div>
+
+            <!-- SUB TABS -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchMitraTab('mitra-list', this)">Daftar Warung</button>
+                <button class="sub-tab-btn" onclick="switchMitraTab('mitra-stats', this)">Laporan Statistik</button>
+</div>
+            
+          <!-- TAB 1: TABEL DAFTAR WARUNG -->
+<div id="mitra-list" class="mitra-content">
+    
+    <!-- 1. FORMULIR INPUT/EDIT INLINE (MENEMPEL DI ATAS) -->
+    <div class="cms-form-group" style="display:flex; gap:20px; align-items:center; background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
+        <!-- Upload/Preview Logo -->
+        <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('m-file').click()">
+            <img id="m-preview" src="https://placehold.co/100?text=Logo" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+            <input type="file" id="m-file" style="display:none;" accept="image/*" onchange="previewMitraImg(this)">
+            <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Logo</div>
         </div>
-        <input type="text" id="new-menu-name" class="input-mitra" placeholder="Nama Makanan">
-        <input type="number" id="new-menu-price" class="input-mitra" placeholder="Harga (Rp)">
-        <textarea id="new-menu-desc" class="input-mitra" placeholder="Deskripsi singkat" style="height:60px;"></textarea>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeModalMenu()">Batal</button>
-            <button class="btn-small" style="background:var(--primary); color:white; flex:1;" onclick="addMenu()">Simpan</button>
+
+        <!-- Input Data -->
+        <div style="flex:1;">
+            <h4 id="m-form-title" style="margin-top:0; color:#E50914; margin-bottom:10px;">Tambah Mitra Baru</h4>
+            <input type="hidden" id="m-edit-id"> 
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                <input type="text" id="m-nama" class="cms-input" placeholder="Nama Warung" style="margin:0;">
+                <input type="text" id="m-owner" class="cms-input" placeholder="Nama Pemilik" style="margin:0;">
+                <select id="m-venue" class="cms-input" style="margin:0;">
+                    <!-- Dropdown Lokasi diisi oleh JS -->
+                </select>
+</div>
+
+            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px; margin-bottom:10px;">
+                <input type="number" id="m-meja" class="cms-input" placeholder="Jml Meja" style="margin:0;">
+                <input type="text" id="m-wa" class="cms-input" placeholder="No. WhatsApp (08xxx)" style="margin:0;">
+</div>
+
+            <div style="display:flex; gap:10px;">
+                <button id="btn-save-mitra" class="btn-action btn-view" onclick="saveMitraData()" style="width:100%;">+ Simpan Mitra</button>
+                <button id="btn-cancel-mitra" class="btn-action btn-delete" onclick="resetMitraForm()" style="width:auto; display:none;">Batal</button>
+</div>
         </div>
+</div>
+
+    <!-- 2. AREA FILTER TABEL -->
+    <div style="text-align:right; margin-bottom:10px;">
+        <select id="filter-warung-venue" onchange="loadMitraData()" class="cms-input" style="width:auto; margin:0; padding:8px;">
+            <option value="all">Semua Venue (Filter Tabel)</option>
+        </select>
+    </div>
+
+    <!-- 3. TABEL DATA (WAJIB ADA AGAR DATA MUNCUL) -->
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Nama Warung</th>
+                <th>Pemilik</th>
+                <th>Meja</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="mitra-table-body">
+            <!-- Data Mitra akan di-render di sini oleh JavaScript -->
+            <tr><td colspan="5" align="center">Memuat data...</td></tr>
+        </tbody>
+    </table>
+</div>
+            
+            <!-- TAB 2: STATISTIK & LAPORAN -->
+            <div id="mitra-stats" class="mitra-content hidden">
+                <div class="section-header" style="border:none;">
+                    <h3 style="margin:0; color:#E50914;">Analisa Performa UMKM</h3>
+                    
+                    <div style="display:flex; gap:10px;">
+                         <select id="filter-stats-venue" onchange="loadWarungStatistics()" class="cms-input" style="width:auto; padding:5px; margin:0;">
+                            <option value="all">Semua Venue</option>
+                            </select>
+                        
+                        <select id="report-filter" class="cms-input" style="width:auto; padding:5px; margin:0;">
+                            <option value="all">Semua Waktu</option>
+                            <option value="month">Bulan Ini</option>
+                            <option value="week">Minggu Ini</option>
+                        </select>
+                        
+                        <button class="btn-action btn-view" onclick="generateReportPDF()"><i class="fa-solid fa-print"></i> Cetak Laporan PDF</button>
+                    </div>
+                </div>
+              
+
+                <!-- RINGKASAN -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-users"></i></div>
+                        <div>
+                            <h3 style="margin:0; color:white;" id="stat-total-visitor">0</h3>
+                            <small style="color:#888;">Total Pengunjung (Pax)</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:gold; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-utensils"></i></div>
+                        <div>
+                            <h3 style="margin:0; color:white;" id="stat-total-trx">0</h3>
+                            <small style="color:#888;">Total Transaksi Meja</small>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                        <div>
+                            <h3 style="margin:0; color:white;" id="stat-total-omzet">Rp 0</h3>
+                            <small style="color:#888;">Estimasi Omzet Total</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RANKING WARUNG -->
+                <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333;">
+                    <h4 style="margin-top:0; color:#FFD700;">🏆 Top Warung Terlaris</h4>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Peringkat</th>
+                                <th>Nama Warung</th>
+                                <th>Jml Transaksi</th>
+                                <th>Total Pengunjung</th>
+                                <th>Total Omzet</th>
+                            </tr>
+                        </thead>
+                        <tbody id="warung-ranking-body">
+                            <tr><td colspan="5" style="text-align:center;">Menghitung data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+</div>
+</div>
+
+        <!-- 3. PERFORMER -->
+        <div id="view-performer" class="admin-view hidden">
+            <div class="section-header"><h2 style="margin:0; color:white;">Data Performer</h2></div>
+            <table class="admin-table">
+                <thead><tr><th>Nama Artis</th><th>Genre</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody id="perf-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- 4. MENTOR -->
+        <div id="view-mentor" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Data Mentor</h2>
+                <button class="btn-action btn-edit" onclick="seedMentors()">+ Generate Data Awal</button>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>Nama Mentor</th><th>Spesialisasi</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody id="mentor-table-body"><tr><td colspan="4" style="text-align:center;">Memuat...</td></tr></tbody>
+            </table>
+</div>
+
+        <!-- 9. VIEW CAFE & TOUR (STRUKTUR FINAL & RAPI) -->
+<div id="view-cafe" class="admin-view hidden">
+    <div class="section-header">
+        <h2 style="margin:0; color:white;">SMIPRO On Tour (Cafe Partner)</h2>
+    </div>
+
+    <!-- TAB NAVIGASI -->
+    <div class="sub-tabs">
+        <button class="sub-tab-btn active" onclick="switchCafeTab('cafe-data', this)">Data Cafe</button>
+        <button class="sub-tab-btn" onclick="switchCafeTab('cafe-report', this)">Pusat Kontrol (Laporan)</button>
+</div>
+
+    <!-- TAB 1: MANAJEMEN CAFE -->
+    <div id="cafe-data" class="cafe-content">
+        <!-- Form Input -->
+        <div class="cms-form-group" style="display:flex; gap:20px; align-items:center;">
+            <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('cafe-file').click()">
+                <img id="cafe-preview" src="https://via.placeholder.com/100?text=Logo" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                <input type="file" id="cafe-file" style="display:none;" accept="image/*" onchange="previewCafeImg(this)">
+                <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Logo</div>
+            </div>
+            <div style="flex:1;">
+                <h4 style="margin-top:0; color:#E50914; margin-bottom:10px;">Kelola Data Partner</h4>
+                <input type="hidden" id="cafe-edit-id">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="new-cafe-name" class="cms-input" placeholder="Nama Cafe" style="margin:0;">
+                    <input type="text" id="new-cafe-address" class="cms-input" placeholder="Alamat Singkat" style="margin:0;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button id="btn-save-cafe" class="btn-action btn-view" onclick="saveCafe()" style="width:100%;">+ Simpan Partner</button>
+                    <button id="btn-cancel-cafe" class="btn-action btn-delete" onclick="resetCafeForm()" style="width:auto; display:none;">Batal</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabel Daftar Cafe -->
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width:50px;">Logo</th>
+                    <th>Nama Cafe</th>
+                    <th>Alamat</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="cafe-table-body">
+                <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+            </tbody>
+        </table>
+</div>
+
+    <!-- TAB 2: LAPORAN (PUSAT KONTROL) -->
+    <div id="cafe-report" class="cafe-content hidden">
+        <div class="cms-form-group" style="background:#111; border:1px solid #444;">
+            <h4 style="margin-top:0; color:#00d2ff;">Filter Laporan Tour</h4>
+<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <!-- Filter Lokasi (KOSONGKAN MANUAL OPTION BIAR BERSIH) -->
+                <div>
+                    <label class="cms-label">Pilih Lokasi</label>
+                    <select id="rep-loc" class="cms-input">
+                        <option value="all">Semua Cafe Partner</option>
+                    </select>
+                </div>
+                <!-- Filter Waktu -->
+                <div>
+                    <label class="cms-label">Pilih Periode</label>
+                    <select id="rep-time" class="cms-input">
+                        <option value="today">Hari Ini</option>
+                        <option value="week">Minggu Ini</option>
+                        <option value="month">Bulan Ini</option>
+                        <option value="all">Semua Waktu</option>
+                    </select>
+                </div>
+                <!-- Filter Artis -->
+                <div>
+                    <label class="cms-label">Pilih Artis</label>
+                    <select id="rep-art" class="cms-input">
+                        <option value="all">Semua Artis</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn-action btn-edit" style="flex:1; font-weight:bold; padding:10px;" onclick="loadCafeReport()">
+                    <i class="fa-solid fa-filter"></i> TAMPILKAN DATA
+</button>
+                <button class="btn-action btn-view" style="width:auto; font-weight:bold; padding:10px 20px;" onclick="generateCafePDF()">
+                    <i class="fa-solid fa-print"></i> PDF
+  </button>
+            </div>
+        </div>
+
+        <!-- Statistik Angka -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div><h3 style="margin:0; color:white;" id="rep-total-money">Rp 0</h3><small style="color:#888;">Total Saweran</small></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color:#FFD700; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-music"></i></div>
+                <div><h3 style="margin:0; color:white;" id="rep-total-song">0</h3><small style="color:#888;">Lagu Direquest</small></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-trophy"></i></div>
+                <div><h3 style="margin:0; color:white; font-size:1rem;" id="rep-top-artist">-</h3><small style="color:#888;">Artis Terlaris</small></div>
+</div>
+        </div>
+  <!-- Tabel Detail -->
+        <h4 style="margin-top:20px; color:#aaa;">Rincian Transaksi</h4>
+        <div style="max-height:500px; overflow-y:auto;">
+            <table class="admin-table">
+                <thead><tr><th>Waktu</th><th>Lokasi</th><th>Artis</th><th>Lagu</th><th>Sawer</th></tr></thead>
+                <tbody id="rep-detail-body">
+                    <tr><td colspan="5" style="text-align:center;">Silakan filter data dulu.</td></tr>
+                </tbody>
+            </table>
+</div>
     </div>
 </div>
 
-<div id="admin-floating-btn">
-    <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,0.8); display:flex; align-items:center; gap:8px;">
-        <i class="fa-solid fa-user-shield"></i> KEMBALI KE ADMIN
-    </button>
+         <!-- VIEW KHUSUS: MANAJEMEN VENUE (LOKASI UTAMA) -->
+        <div id="view-venue" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Manajemen Venue Lokasi</h2>
+            </div>
+            
+            <!-- FORM INPUT VENUE -->
+            <div class="cms-form-group" style="display:flex; gap:20px; align-items:center;">
+                <!-- Upload Foto Venue -->
+                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('venue-file').click()">
+                    <img id="venue-preview" src="https://via.placeholder.com/100?text=Foto" style="width:100px; height:80px; object-fit:cover; border:2px dashed #555; border-radius:10px;">
+                    <input type="file" id="venue-file" style="display:none;" accept="image/*" onchange="previewVenueImg(this)">
+                    <div style="font-size:0.7rem; color:#888; margin-top:5px;">Foto Lokasi</div>
+                </div>
+
+                <!-- Input Data -->
+                <div style="flex:1;">
+                    <input type="hidden" id="venue-edit-id"> <!-- ID untuk Edit -->
+                    
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                        <div>
+                            <label class="cms-label">Nama Venue:</label>
+                            <input type="text" id="venue-name" class="cms-input" placeholder="Contoh: Taman Maramis Zone">
+                        </div>
+                        <div>
+                            <label class="cms-label">Urutan Tampil:</label>
+                            <input type="number" id="venue-order" class="cms-input" placeholder="Urutan (1,2,3)">
+                        </div>
+                    </div>
+                    
+                    <label class="cms-label">Deskripsi Singkat:</label>
+                    <input type="text" id="venue-desc" class="cms-input" placeholder="Contoh: Pusat Kuliner Malam">
+
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button id="btn-save-venue" class="btn-action btn-view" onclick="saveVenue()" style="width:100%;">+ Simpan Venue</button>
+                        <button id="btn-cancel-venue" class="btn-action btn-delete" onclick="resetVenueForm()" style="width:auto; display:none;">Batal</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABEL LIST VENUE -->
+            <table class="admin-table" style="margin-top:20px;">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">Img</th>
+                        <th>Urutan</th>
+                        <th>Nama Venue & Deskripsi</th>
+                        <th>Status</th>
+                        <th>Beranda</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="venue-table-body">
+                    <tr><td colspan="5" align="center">Memuat data...</td></tr>
+                </tbody>
+            </table>
+  </div>
+
+        <!-- 5. BENGKEL SISWA -->
+        <div id="view-students" class="admin-view hidden">
+            <div class="section-header"><h2 style="margin:0; color:white;">Bengkel Siswa</h2></div>
+            <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px; display:flex; gap:20px; align-items:center;">
+                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('student-file').click()">
+                    <img id="student-preview" src="https://via.placeholder.com/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                    <input type="file" id="student-file" style="display:none;" accept="image/*" onchange="previewStudentImg(this)">
+                    <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Foto</div>
+                </div>
+                <div style="flex:1;">
+                    <h4 style="margin-top:0; color:#FFD700; margin-bottom:10px;">Tambah Siswa Baru</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <input type="text" id="new-student-name" class="cms-input" placeholder="Nama Siswa / Grup" style="margin:0;">
+                        <input type="text" id="new-student-genre" class="cms-input" placeholder="Genre Musik" style="margin:0;">
+                    </div>
+                    <button class="btn-action btn-view" onclick="addStudent()" style="width:100%;">+ Masukkan ke Bengkel</button>
+                </div>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th style="width:50px;">Foto</th><th>Nama Siswa</th><th>Genre</th><th>Status Nilai</th><th>Aksi</th></tr></thead>
+                <tbody id="student-table-body"><tr><td colspan="5" style="text-align:center;">Memuat...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- VIEW 6: KELOLA KONTEN (STRUKTUR RAPI) -->
+        <div id="view-cms" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Kelola Konten Publik</h2>
+            </div>
+
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchCmsTab('cms-schedule', this)">Jadwal Event</button>
+                <button class="sub-tab-btn" onclick="switchCmsTab('cms-tour', this)">Jadwal Tour (Cafe)</button>
+                <button class="sub-tab-btn" onclick="switchCmsTab('cms-radio', this)">Radio/TikTok</button>
+                <button class="sub-tab-btn" onclick="switchCmsTab('cms-news', this)">Berita & Podcast</button>
+            </div>
+
+            <!-- 1. JADWAL UTAMA (STADION) -->
+            <div id="cms-schedule" class="cms-content">
+                <div class="cms-form-group">
+                    <h4 style="margin-top:0; color:#E50914;">Update Jadwal Utama (Stadion)</h4>
+                    <input type="text" id="sched-display-date" class="cms-input" placeholder="Tampilan: Sabtu, 03 JAN">
+                    <input type="date" id="sched-real-date" class="cms-input" style="color-scheme:dark;">
+                    <select id="sched-location" class="cms-input"><option value="Stadion Bayuangga Zone">Stadion Bayuangga Zone</option></select>
+                    <hr style="border-color:#333;">
+                    <select id="p1-name" class="cms-input"></select><input type="text" id="p1-time" class="cms-input" placeholder="Jam">
+                    <select id="p2-name" class="cms-input"></select><input type="text" id="p2-time" class="cms-input" placeholder="Jam">
+                    <select id="p3-name" class="cms-input"></select><input type="text" id="p3-time" class="cms-input" placeholder="Jam">
+                    <button class="btn-action btn-delete" style="width:100%; padding:15px;" onclick="saveSchedule()">PUBLISH JADWAL UTAMA</button>
+                </div>
+
+                <!-- LIST JADWAL UTAMA (SUDAH DI DALAM DIV CMS-SCHEDULE) -->
+                <div style="margin-top:30px; border-top:1px dashed #444; padding-top:20px;">
+                    <h4 style="color:#aaa;">Daftar Jadwal Tayang</h4>
+                    <table class="admin-table">
+                        <thead><tr><th>Tanggal</th><th>Lokasi</th><th>Aksi</th></tr></thead>
+                        <tbody id="cms-schedule-list-body"><tr><td colspan="3">Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. JADWAL TOUR -->
+            <div id="cms-tour" class="cms-content hidden">
+                <!-- Isi form tour tetap sama -->
+                <div class="cms-form-group" style="border-left:5px solid #ff9800;">
+                    <h4 style="margin-top:0; color:#ff9800;">Buat Jadwal Tour Cafe</h4>
+                    <input type="text" id="tour-display-date" class="cms-input" placeholder="Tampilan: MINGGU, 12 OKT">
+                    <input type="date" id="tour-real-date" class="cms-input" style="color-scheme:dark;">
+                    <select id="tour-location" class="cms-input"><option>-- Pilih Cafe --</option></select>
+                    <hr style="border-color:#333;">
+                    <select id="tour-perf-name" class="cms-input"></select>
+                    <input type="text" id="tour-perf-time" class="cms-input" placeholder="Jam (19:00)">
+                    <button class="btn-action btn-edit" style="width:100%; padding:15px; background:#ff9800; color:black;" onclick="saveTourSchedule()">PUBLISH JADWAL TOUR</button>
+                </div>
+                <div style="margin-top:20px;">
+                    <h4 style="color:#aaa;">Jadwal Tour Aktif</h4>
+                    <table class="admin-table">
+                        <tbody id="cms-tour-list-body"><tr><td colspan="3">Memuat...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. RADIO / TIKTOK -->
+            <div id="cms-radio" class="cms-content hidden">
+                <div class="cms-form-group">
+                    <h4 style="margin-top:0; color:#00d2ff;">Jadwal Radio</h4>
+                    <label class="cms-label">Pilih Sesi Siaran:</label>
+                    <select id="radio-session-select" class="cms-input" onchange="loadRadioSessionData()">
+                        <option value="">-- Pilih Sesi --</option>
+                        <option value="PAGI">PAGI</option><option value="SIANG">SIANG</option><option value="MALAM">MALAM</option>
+                    </select>
+                    
+                    <div id="radio-edit-area" style="display:none; margin-top:15px; border-top:1px dashed #333; padding-top:15px;">
+                        <input type="text" id="radio-title" class="cms-input" placeholder="Judul">
+                        <select id="radio-host" class="cms-input"></select>
+                        <input type="text" id="radio-topic" class="cms-input" placeholder="Topik">
+                        <input type="text" id="radio-link" class="cms-input" placeholder="Link Streaming">
+                        <label style="color:#00d2ff; font-weight:bold; display:block; margin-top:10px;">
+                            <input type="checkbox" id="radio-live-toggle"> SEDANG LIVE SEKARANG
+                        </label>
+                        <button class="btn-action btn-view" style="width:100%; margin-top:10px;" onclick="saveRadioUpdate()">SIMPAN PERUBAHAN</button>
+                    </div>
+                </div>
+
+                <!-- LIST SIARAN RADIO (Disini tempatnya) -->
+                <div style="margin-top:30px; border-top:1px dashed #444; padding-top:20px;">
+                    <h4 style="color:#aaa;">Daftar Siaran Radio/TikTok</h4>
+                    <table class="admin-table">
+                        <thead><tr><th>Sesi</th><th>Judul & Host</th><th>Status</th><th>Aksi</th></tr></thead>
+                        <tbody id="radio-list-body"><tr><td colspan="4">Memuat data...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. BERITA & PODCAST -->
+            <div id="cms-news" class="cms-content hidden">
+                <!-- ... (Kode berita tetap sama, tidak perlu diubah jika sudah jalan) ... -->
+                <div class="cms-form-group">
+                    <h4 style="margin-top:0; color:#E50914;">Publish Konten</h4>
+                    <select id="content-category" class="cms-input" onchange="toggleContentForm()">
+                        <option value="news">📰 Berita</option><option value="podcast">🎙️ Podcast</option>
+                    </select>
+                    <div id="form-news-container">
+                        <!-- Form Berita -->
+                        <input type="text" id="news-title" class="cms-input" placeholder="JUDUL HEADLINE">
+                        <input type="text" id="news-tag" class="cms-input" placeholder="Tag">
+                        <input type="text" id="news-thumb" class="cms-input" placeholder="Link Foto">
+                        <select id="news-type" class="cms-input" onchange="toggleNewsInput()"><option value="internal">Internal</option><option value="external">Eksternal</option></select>
+                        <div id="news-input-internal"><textarea id="news-content" class="cms-input" style="height:150px;" placeholder="Isi..."></textarea></div>
+                        <div id="news-input-external" style="display:none;"><input type="text" id="news-url" class="cms-input" placeholder="URL"></div>
+                        <button class="btn-action btn-view" onclick="saveNews()" style="width:100%; margin-top:10px;">PUBLISH BERITA</button>
+                    </div>
+                    <div id="form-podcast-container" style="display:none;">
+                        <!-- Form Podcast -->
+                         <input type="text" id="pod-title" class="cms-input" placeholder="Judul Eps">
+                         <input type="text" id="pod-host" class="cms-input" placeholder="Host">
+                         <input type="text" id="pod-duration" class="cms-input" placeholder="Durasi">
+                         <input type="text" id="pod-link" class="cms-input" placeholder="Link YT">
+                         <input type="text" id="pod-thumb" class="cms-input" placeholder="Thumb">
+                         <input type="number" id="pod-order" class="cms-input" value="1">
+                         <button class="btn-action btn-edit" onclick="savePodcast()" style="width:100%; margin-top:10px;">PUBLISH PODCAST</button>
+                    </div>
+                </div>
+            </div>
 </div>
 
-<!-- MODAL SELESAI TRANSAKSI -->
-<div id="modal-finish-transaction" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:5000; align-items:center; justify-content:center; padding:20px;">
-    <div style="background:#1e1e1e; width:100%; max-width:350px; padding:25px; border-radius:10px; border:1px solid #444; text-align:center;">
-        <div style="text-align: center; margin-bottom: 15px;">
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" 
-             style="width: 50px; height: 50px; border-radius: 50%; border: 1px solid #444; padding: 5px; background: #000;">
-        </div> 
-        <h3 style="margin-top:0; color:#00ff00;">Pesanan Selesai</h3>
-        <p style="color:#ccc; font-size:0.9rem;">Berapa total transaksi meja ini?</p>
-        <div style="margin:20px 0;">
-            <label style="display:block; text-align:left; color:#888; font-size:0.8rem; margin-bottom:5px;">Total Nominal (Rp)</label>
-            <input type="number" id="trx-amount" class="input-mitra" placeholder="Contoh: 50000" style="font-size:1.2rem; font-weight:bold; color:gold; border-color:gold;">
-        </div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-small" style="background:#444; color:white; flex:1;" onclick="closeFinishModal()">Batal</button>
-            <button class="btn-small" style="background:var(--green); color:black; flex:1;" onclick="submitTransaction()">SIMPAN & BERSIHKAN MEJA</button>
-        </div>
+        
+      <!-- VIEW KHUSUS: KONTROL LAYAR & GALERI -->
+        <div id="view-live" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:#00ff00;">📡 Control Room & Media</h2>
+            </div>
+
+            <!-- SUB TABS -->
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" onclick="switchLiveTab('panel-live', this)">🔴 Live Control (Venue)</button>
+                <button class="sub-tab-btn" onclick="switchLiveTab('panel-galeri', this)">🎬 Manajemen Galeri</button>
+                <button class="sub-tab-btn" onclick="switchLiveTab('panel-settings', this)">⚙️ Pengaturan Web</button>
+            </div>
+
+            <!-- PANEL 1: LIVE CONTROL (Untuk Layar TV di Lokasi) -->
+            <div id="panel-live" class="live-content">
+               <!-- MONITOR PREVIEW -->
+                <div class="cms-form-group" style="background:#000; border:1px solid #333; text-align:center; padding:0; overflow:hidden; position:relative; aspect-ratio:16/9; max-width:600px; margin:0 auto 20px auto;">
+                    <iframe id="admin-monitor-frame" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="display:none;"></iframe>
+                    <div id="admin-monitor-placeholder" style="padding-top:20%; color:#555;">
+                        <i class="fa-solid fa-tv" style="font-size:3rem;"></i><br>Pilih Venue untuk melihat tayangan.
+                    </div>
+                </div>
+
+                <div class="cms-form-group" style="background:#051a05; border:1px solid #00ff00;">
+                    <h3 style="margin-top:0; color:#00ff00;">📺 Layar Utama (Saat Ini)</h3>
+
+                     <label class="cms-label">Pilih Lokasi Tayang:</label>
+                     <select id="live-target-venue" class="cms-input" onchange="checkExistingLiveLink()">
+                         <option value="">-- Pilih Venue --</option>
+                          </select>
+                    
+                    <label class="cms-label">Paste Link YouTube (Live/Rekaman):</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="main-live-link" class="cms-input" 
+                               placeholder="https://youtube.com/..." style="margin:0;">
+                        <button class="btn-action btn-view" onclick="updateLiveLink()" 
+                                style="background:#00ff00; color:black; font-weight:bold;">
+                            TAYANGKAN
+                        </button>
+                    </div>
+                    <small style="color:#aaa;">*Video ini akan muncul otomatis di halaman Venue & Monitor di atas.</small>
+                </div>
+            </div>
+
+            <!-- PANEL 2: MANAJEMEN GALERI (UPDATE: FITUR EDIT) -->
+            <div id="panel-galeri" class="live-content hidden">
+                <div class="cms-form-group" style="background:#151515; border-left:5px solid #FFD700;">
+                    <h4 style="margin-top:0; color:#FFD700;">Kelola Koleksi (Video / Musik)</h4>
+                    
+                    <!-- ID UNTUK EDIT (TERSEMBUNYI) -->
+                    <input type="hidden" id="gallery-edit-id">
+
+                    <!-- PILIHAN TIPE KONTEN -->
+                    <label class="cms-label">Tipe Konten:</label>
+                    <select id="gallery-type" class="cms-input" onchange="toggleGalleryInput()">
+                        <option value="video">🎬 VIDEO (YouTube)</option>
+                        <option value="audio">🎵 MUSIK / MP3 (Spotify Style)</option>
+                    </select>
+
+                    <hr style="border-color:#333; margin-bottom:15px;">
+
+                    <!-- FORM KHUSUS VIDEO -->
+                    <div id="form-gallery-video">
+                        <label class="cms-label">Link YouTube:</label>
+                        <input type="text" id="vid-link" class="cms-input" placeholder="https://youtube.com/...">
+                        <small style="color:#666; display:block; margin-bottom:10px;">*Thumbnail diambil otomatis dari YouTube.</small>
+                        
+                        <label class="cms-label">Nama Kreator (YouTube Channel):</label>
+                        <input type="text" id="vid-creator" class="cms-input" placeholder="Contoh: Acoustic Boys">
+                    </div>
+
+                    <!-- FORM KHUSUS AUDIO (MP3) -->
+                    <div id="form-gallery-audio" style="display:none;">
+                        <label class="cms-label">Link File MP3 (Google Drive / Hosting Lain):</label>
+                        <input type="text" id="audio-link" class="cms-input" placeholder="Paste Link Google Drive di sini...">
+                        
+                        <div style="display:flex; gap:15px; margin-top:10px; align-items:center;">
+                            <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('audio-cover-file').click()">
+                                <img id="audio-cover-preview" src="https://via.placeholder.com/100?text=Cover" style="width:80px; height:80px; object-fit:cover; border-radius:5px; border:1px dashed #555;">
+                                <input type="file" id="audio-cover-file" style="display:none;" accept="image/*" onchange="previewAudioCover(this)">
+                                <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Cover</div>
+                            </div>
+                            <div style="flex:1;">
+                                <label class="cms-label">Nama Artis / Penyanyi:</label>
+                                <input type="text" id="audio-artist" class="cms-input" placeholder="Contoh: The Acoustic Boys">
+                            </div>
+                        </div>
+                    </div>                  
+
+                    <!-- INPUT UMUM (JUDUL & KATEGORI) -->
+                    <div style="margin-top:10px;">
+                        <label class="cms-label">Judul (Lagu / Video):</label>
+                        <input type="text" id="gallery-title" class="cms-input" placeholder="Judul Karya...">
+
+                        <label class="cms-label">Kategori (Untuk Filter):</label>
+                        <select id="gallery-category" class="cms-input">
+                            <option value="Live Perform">🎤 Live Perform (Konser)</option>
+                            <option value="Musik">🎵 Musik / Single (MP3)</option>
+                            <option value="Podcast">🎙️ Podcast & Talkshow</option>
+                            <option value="Dokumentasi">📷 Dokumentasi Event</option>
+                        </select>
+
+                        <label class="cms-label">Deskripsi Singkat:</label>
+                        <textarea id="gallery-desc" class="cms-input" style="height:60px;" placeholder="Keterangan tambahan..."></textarea>
+                    </div>
+
+                    <!-- TOMBOL AKSI -->
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button id="btn-save-gallery" class="btn-action btn-edit" style="width:100%; padding:12px; font-weight:bold;" onclick="saveGalleryItem()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> SIMPAN KE GALERI
+                        </button>
+                        <button id="btn-cancel-gallery" class="btn-action btn-delete" style="width:auto; display:none;" onclick="cancelGalleryEdit()">
+                            Batal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TABEL LIST GALERI -->
+                <h4 style="margin-top:20px; color:#aaa;">Daftar Galeri Tersimpan</h4>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">Media</th>
+                            <th>Info Karya</th>
+                            <th>Tipe</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gallery-list-body">
+                        <tr><td colspan="4" align="center">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+
+   <!-- PANEL 3: PENGATURAN WEB (VERSI COMPACT & POSISI ATAS) -->
+<div id="panel-settings" class="live-content hidden" style="margin-top: 10px; padding: 0;">
+    <div style="max-width: 500px; margin: 0 auto;">
+        
+        <div class="cms-form-group" style="background:#111; border:1px solid #333; border-top:4px solid #00d2ff; padding: 20px; border-radius: 8px;">
+            <h4 style="margin: 0 0 15px 0; color:#00d2ff; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-music"></i> Musik Welcome Screen
+            </h4>
+
+            <label class="cms-label" style="font-size: 0.75rem;">Link Poster Banner (Beranda):</label>
+<input type="text" id="banner-url-input" class="cms-input" placeholder="https://raw.githubusercontent.com/.../poster.jpg" style="margin-bottom: 10px; font-size: 0.85rem;">
+
+<div style="background:#1a1a1a; padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border: 1px solid #222;">
+    <div>
+        <b style="color:white; display:block; font-size:0.85rem;">Aktifkan Poster Banner</b>
+        <small id="banner-status-text" style="color:#666; font-size: 0.7rem;">Status: Memuat...</small>
     </div>
+    <label style="position:relative; display:inline-block; width:44px; height:22px; cursor:pointer;">
+        <input type="checkbox" id="banner-active-toggle" style="position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; z-index:2;">
+        <span style="position:absolute; inset:0; background:#333; border-radius:22px; transition:0.4s; pointer-events:none;" id="banner-toggle-slider"></span>
+        <span style="position:absolute; left:4px; bottom:4px; background:white; width:14px; height:14px; border-radius:50%; transition:0.4s;" id="banner-toggle-circle"></span>
+    </label>
 </div>
+<style>
+    #banner-active-toggle:checked ~ #banner-toggle-circle { transform: translateX(22px); }
+</style>
+<small style="color:#666; display:block; margin-bottom:15px;">*Saat MATI → banner default. Saat ada venue LIVE → otomatis override ke tampilan live.</small>
+<hr style="border-color:#333; margin-bottom:15px;">
 
-<!-- FIX: Container ini sebelumnya tidak ada di HTML, sehingga fungsi
-     tampilkanPesananBaru() di mitra-script.js gagal menampilkan pop-up
-     notifikasi (reservasi baru / tamu walk-in / tamu check-in). -->
-<div id="notif-toast-container" style="position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:10px; max-width:320px;"></div>
+            <hr style="border-color:#333; margin-bottom:15px;">
+            
+            <label class="cms-label" style="font-size: 0.75rem;">Upload Poster Banner (Beranda):</label>
+<div style="display:flex; align-items:center; gap:15px; margin-bottom:10px;">
+    <div style="cursor:pointer;" onclick="document.getElementById('banner-file-input').click()">
+        <img id="banner-preview" src="https://placehold.co/160x90?text=Poster" 
+             style="width:160px; height:90px; object-fit:cover; border-radius:6px; border:2px dashed #555;">
+        <div style="font-size:0.7rem; color:#888; margin-top:5px; text-align:center;">Klik untuk Upload</div>
+    </div>
+    <input type="file" id="banner-file-input" style="display:none;" accept="image/*" onchange="previewBannerImg(this)">
+    <input type="hidden" id="banner-url-input">
+    <small style="color:#666; flex:1;">Upload gambar poster event langsung dari perangkat.<br>Otomatis override ke LIVE saat ada siaran.</small>
+</div>
+            
+            <div style="background:#1a1a1a; padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border: 1px solid #222;">
+                <div>
+                    <b style="color:white; display:block; font-size:0.85rem;">Aktifkan Welcome Screen</b>
+                    <small id="bgm-status-text" style="color:#666; font-size: 0.7rem;">Status: Memuat...</small>
+                </div>
 
-<script>
-    if (localStorage.getItem('adminOrigin') === 'true') {
-        const floatBtn = document.getElementById('admin-floating-btn');
-        if(floatBtn) floatBtn.style.display = 'block';
+                <!-- Bagian Switch Toggle -->
+<label style="position:relative; display:inline-block; width:44px; height:22px; cursor:pointer;">
+    <!-- Pastikan checkbox TIDAK display:none, tapi disembunyikan lewat opacity -->
+    <input type="checkbox" id="bgm-active-toggle" style="position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; z-index:2;">
+    <span style="position:absolute; inset:0; background:#333; border-radius:22px; transition:0.4s; pointer-events:none;" id="toggle-slider"></span>
+    <!-- Dot (Buletan Putih) -->
+    <span style="position:absolute; left:4px; bottom:4px; background:white; width:14px; height:14px; border-radius:50%; transition:0.4s;" id="toggle-circle"></span>
+</label>
+
+<style>
+    /* Animasi Buletan Geser saat Checkbox ON */
+    #bgm-active-toggle:checked ~ #toggle-circle {
+        transform: translateX(22px);
     }
-    function backToAdminDashboard() {
-        if(confirm("Kembali ke Control Tower Admin?")) {
-            localStorage.setItem('userRole', 'admin');
-            localStorage.setItem('userName', 'Super Admin');
-            localStorage.setItem('userLink', 'admin-dashboard.html');
-            window.location.href = 'admin-dashboard.html';
-        }
-    }       
-</script>
+</style>
+            <!-- Tombol Aksi -->
+            <div style="display:flex; gap:10px;">
+                <button class="btn-action btn-view" style="flex:2; padding:10px; font-weight:bold; background:#00d2ff; color:black; border-radius: 4px;" onclick="saveBgmSettings()">
+                    <i class="fa-solid fa-save"></i> SIMPAN
+                </button>
+                <button class="btn-action btn-delete" style="flex:1; padding:10px; font-weight:bold; border-radius: 4px;" onclick="clearBgmSettings()">
+                    HAPUS
+                </button>
+            </div>
+        </div>
 
-<script type="module" src="mitra-script.js"></script>
+    </div>
+</div>
+</div>
+
+        
+        <!-- 7. KEUANGAN & COMMAND CENTER -->
+        <div id="view-finance" class="admin-view hidden">
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">💰 Live Saweran & Stage Control</h2>
+                <div style="text-align:right;"><span style="color:#00ff00; font-weight:bold;">● REALTIME</span></div>
+            </div>
+
+            <!-- MONITOR SPLIT -->
+            <div class="monitor-split-wrapper">
+                <div class="monitor-panel">
+                    <h3 class="panel-title" style="color:#ffeb3b; border-bottom:2px solid #ffeb3b;">⏳ MENUNGGU VALIDASI</h3>
+                    <div id="list-pending" class="monitor-list"><p class="empty-state">Kosong.</p></div>
+                </div>
+                <div class="monitor-panel">
+                    <h3 class="panel-title" style="color:#00ff00; border-bottom:2px solid #00ff00;">📡 LIVE ON STAGE</h3>
+                    <div id="list-approved" class="monitor-list"><p class="empty-state">Sepi.</p></div>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px dashed #333; margin:40px 0;">
+
+            <!-- STATISTIK -->
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Laporan & Analisa</h2>
+                <div style="display:flex; gap:10px;">
+                    <!-- Filter Lokasi Baru -->
+            <select id="filter-uang-lokasi" onchange="renderFinanceData()" class="cms-input" style="width:auto; padding:5px; margin:0;">
+                    <option value="all">Semua Lokasi</option>
+                    <option value="Stadion Bayuangga Zone">Stadion Pusat</option>
+                    <!-- Nanti nama Cafe masuk sini otomatis -->
+                </select>
+
+                    <!-- Filter Waktu (ID BARU: filter-laporan-waktu) -->
+ <select id="stats-time" onchange="renderFinanceData()" class="cms-input" style="width:auto; padding:5px; margin:0;">
+    <option value="today">Hari Ini</option>
+    <option value="week">Minggu Ini</option>
+    <option value="month">Bulan Ini</option>
+    <option value="all">Semua Waktu</option>
+</select>
+
+                    <!-- Tombol Print PDF -->
+                    <button class="btn-action btn-view" onclick="generateSawerPDF()">
+                        <i class="fa-solid fa-print"></i> PDF
+                    </button>
+                </div>
+            </div>
+             <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon" style="color:#00ff00; background:rgba(0,255,0,0.1);"><i class="fa-solid fa-sack-dollar"></i></div><div><h3 style="margin:0; color:white;" id="stat-total-money">Rp 0</h3><small style="color:#888;">Omzet</small></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#00d2ff; background:rgba(0,210,255,0.1);"><i class="fa-solid fa-music"></i></div><div><h3 style="margin:0; color:white;" id="stat-total-req">0</h3><small style="color:#888;">Request</small></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#FFD700; background:rgba(255,215,0,0.1);"><i class="fa-solid fa-trophy"></i></div><div><h3 style="margin:0; color:white; font-size:1rem;" id="stat-top-perf">-</h3><small style="color:#888;">Top Artis</small></div></div>
+</div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:20px;">
+            <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333;">
+                <h4 style="margin-top:0; color:#E50914;">🔥 Lagu Trending</h4>
+                <div id="chart-top-songs"></div>
+            </div>
+            <div style="background:#151515; padding:20px; border-radius:10px; border:1px solid #333; max-height:400px; overflow-y:auto;">
+                <h4 style="margin-top:0; color:#aaa;">Log Transaksi</h4>
+                <table class="admin-table">
+                    <thead><tr><th>Waktu</th><th>Lagu</th><th>Sawer</th></tr></thead>
+                    <tbody id="table-history-body"></tbody>
+                </table>
+            </div>
+</div>
+    </div>
+
+    </main>
+</div>
+
+     <!-- MODAL RAPORT SISWA -->
+<div id="modal-raport" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e1e1e; width:100%; max-width:500px; padding:25px; border-radius:10px; border:1px solid #444; position:relative;">
+        
+        <button onclick="document.getElementById('modal-raport').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        
+        <h3 style="margin-top:0; color:#FFD700; border-bottom:1px solid #333; padding-bottom:10px;">
+            <i class="fa-solid fa-list-check"></i> Raport Detail
+        </h3>
+<div style="display:flex; gap:15px; align-items:center; margin-bottom:20px;">
+            <img id="rap-img" src="" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
+            <div>
+                <h4 id="rap-name" style="margin:0; color:white; font-size:1.2rem;">-</h4>
+                <span id="rap-genre" style="color:#888; font-size:0.9rem;">-</span>
+            </div>
+        </div>
+
+        <!-- TABEL NILAI PER MENTOR -->
+        <table class="admin-table" style="font-size:0.9rem;">
+            <thead>
+                <tr>
+                    <th>Nama Mentor</th>
+                    <th>Spesialisasi</th>
+                    <th>Nilai</th>
+                </tr>
+            </thead>
+            <tbody id="raport-list-body">
+                <!-- Data akan masuk sini lewat JS -->
+            </tbody>
+        </table>
+
+        <div style="margin-top:20px; text-align:center; font-size:0.8rem; color:#666;">
+            *Siswa dinyatakan LULUS jika semua Mentor memberi nilai dan tidak ada yang dibawah 75.
+        </div>
+    </div>
+</div>
+<!-- LOAD SCRIPT -->
+<script type="module" src="admin-venue.js"></script> <!-- FILE BARU -->
+<script type="module" src="admin-script.js"></script>
 
 <script>
-    window.addEventListener('DOMContentLoaded', () => {
-        const now = new Date();
-        const wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-        const d = wib.toISOString().split('T')[0]; 
-        const dateInput = document.getElementById('filter-date-booking');
-        if(dateInput) {
-            dateInput.value = d;
-        }
-    });
-</script>
+    // Logic UI Sederhana (Non-Module)
+    if(localStorage.getItem('userRole') !== 'admin' && localStorage.getItem('adminOrigin') !== 'true') {
+    alert("Akses Ditolak!"); window.location.href = 'admin-login.html';
+}
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    function goToHomeAsAdmin() {
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userName', 'Super Admin');
+        window.location.href = 'index.html';
+    }
+</script>   
 </body>
 </html>
