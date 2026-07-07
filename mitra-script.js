@@ -461,21 +461,25 @@ window.prosesLogout = () => { if(confirm("Logout?")) { localStorage.clear(); win
 const ORDER_CHIP_LABEL = { pending: 'Pesanan Baru', diproses: 'Sedang Dibuat', siap: 'Siap Diambil' };
 
 function renderOrderActions(orderId, status, totalOrder) {
+    const cetakBtn = `<button class="btn-order-action btn-cetak" onclick="window.cetakStruk('${orderId}')" title="Cetak Struk"><i class="fa-solid fa-print"></i></button>`;
     if (status === 'pending') {
         return `<div class="order-actions">
             <button class="btn-order-action btn-terima" onclick="window.updateOrderStatus('${orderId}','diproses')">Terima Pesanan</button>
+            ${cetakBtn}
             <button class="btn-order-action btn-batal" onclick="window.cancelWebOrder('${orderId}')"><i class="fa-solid fa-trash"></i></button>
         </div>`;
     }
     if (status === 'diproses') {
         return `<div class="order-actions">
             <button class="btn-order-action btn-siap" onclick="window.updateOrderStatus('${orderId}','siap')">Siap Diambil</button>
+            ${cetakBtn}
             <button class="btn-order-action btn-batal" onclick="window.cancelWebOrder('${orderId}')"><i class="fa-solid fa-trash"></i></button>
         </div>`;
     }
     // status === 'siap'
     return `<div class="order-actions">
         <button class="btn-order-action btn-lunas" onclick="window.finishWebOrder('${orderId}', ${totalOrder})">LUNAS</button>
+        ${cetakBtn}
         <button class="btn-order-action btn-batal" onclick="window.cancelWebOrder('${orderId}')"><i class="fa-solid fa-trash"></i></button>
     </div>`;
 }
@@ -537,10 +541,18 @@ function listenToWebOrders() {
                 ? `<span class="order-timer ${menitLalu >= 10 ? 'lama' : ''}"><i class="fa-regular fa-clock"></i> ${menitLalu < 1 ? 'baru saja' : menitLalu + ' menit lalu'}</span>`
                 : '';
 
+            // simpan data lengkap untuk fitur cetak struk
+            window.orderDataCache = window.orderDataCache || {};
+            window.orderDataCache[orderId] = { ...order, id: orderId, totalOrder };
+
+            const nomorAntrianHtml = order.orderNumber
+                ? `<span style="background:#000; color:var(--gold); font-weight:900; padding:2px 8px; border-radius:4px; font-size:0.8rem; margin-right:6px;">#${String(order.orderNumber).padStart(3,'0')}</span>`
+                : '';
+
             container.innerHTML += `
             <div class="order-card-web status-${status}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b>Meja: ${order.tableNum || 'Take Away'}</b>
+                    <b>${nomorAntrianHtml}Meja: ${order.tableNum || 'Take Away'}</b>
                     <small>${waktuOrder.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</small>
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
@@ -566,6 +578,57 @@ window.updateOrderStatus = async function(id, status) {
     } catch (e) {
         alert("Gagal update status: " + e.message);
     }
+};
+
+window.cetakStruk = function(orderId) {
+    const order = (window.orderDataCache || {})[orderId];
+    if (!order) return alert('Data pesanan tidak ditemukan.');
+
+    const namaWarung = localStorage.getItem('mitraName') || 'SMIPRO Streetart';
+    const waktuOrder = order.timestamp?.toDate ? order.timestamp.toDate() : new Date();
+    const tanggalStr = waktuOrder.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const jamStr     = waktuOrder.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const nomorAntrian = order.orderNumber ? `#${String(order.orderNumber).padStart(3, '0')}` : '-';
+
+    const barisItem = order.items.map(i =>
+        `<div class="struk-item"><span>${i.name}</span><span>${Number(i.price).toLocaleString('id-ID')}</span></div>`
+    ).join('');
+
+    const struk = `
+    <html><head><title>Struk ${nomorAntrian}</title>
+    <style>
+        @page { margin: 0; size: 58mm auto; }
+        body { font-family: 'Courier New', monospace; width: 58mm; margin: 0 auto; padding: 8px; font-size: 12px; color:#000; }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+        .struk-item { display: flex; justify-content: space-between; margin: 2px 0; }
+        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; }
+        .antrian { font-size: 20px; font-weight: 900; text-align:center; margin: 4px 0; }
+    </style></head>
+    <body>
+        <div class="center bold">${namaWarung}</div>
+        <div class="center">SMIPRO Streetart.id</div>
+        <hr>
+        <div class="antrian">${nomorAntrian}</div>
+        <hr>
+        <div>Tanggal : ${tanggalStr} ${jamStr}</div>
+        <div>Meja    : ${order.tableNum || 'Take Away'}</div>
+        <div>Nama    : ${order.customerName || '-'}</div>
+        <hr>
+        ${barisItem}
+        <hr>
+        <div class="total-row"><span>TOTAL</span><span>Rp ${Number(order.totalOrder).toLocaleString('id-ID')}</span></div>
+        <div>Bayar   : ${(order.metodeBayar || '-').toUpperCase()}</div>
+        <hr>
+        <div class="center">Terima kasih 🙏</div>
+        <div class="center">streetart.id</div>
+    </body></html>`;
+
+    const win = window.open('', '_blank', 'width=380,height=600');
+    win.document.write(struk);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); };
 };
 
 // Alias lama, tetap dipertahankan agar tidak merusak pemanggilan yang sudah ada
