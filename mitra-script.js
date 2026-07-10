@@ -355,10 +355,95 @@ window.switchTab = function(tabId) {
     btns.forEach(btn => { if(btn.getAttribute('onclick').includes(`'${tabId}'`)) btn.classList.add('active'); });
 
     if (tabId === 'qr') renderQRCodes();
+    if (tabId === 'riwayat') window.loadRiwayat();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.renderQRCodes = function() {
+window.loadRiwayat = async function() {
+    const container = document.getElementById('riwayat-list-container');
+    if (!container) return;
+    container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Memuat data...</p>';
+
+    try {
+        const q = query(
+            collection(db, "bookings"),
+            where("warungId", "==", WARUNG_ID),
+            where("status", "==", "finished")
+        );
+        const snap = await getDocs(q);
+
+        // Batas waktu (WIB)
+        const nowWIB = new Date(Date.now() + 7 * 3600000);
+        const todayStr = nowWIB.toISOString().split('T')[0];
+
+        const startOfWeek = new Date(nowWIB);
+        const dayIdx = (startOfWeek.getUTCDay() + 6) % 7; // Senin = 0
+        startOfWeek.setUTCDate(startOfWeek.getUTCDate() - dayIdx);
+        const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+        const startOfMonthStr = todayStr.slice(0, 8) + '01';
+
+        let omzetHari = 0, trxHari = 0;
+        let omzetMinggu = 0, trxMinggu = 0;
+        let omzetBulan = 0, trxBulan = 0;
+
+        const rows = [];
+
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const revenue = parseInt(d.revenue) || 0;
+
+            let dateObj = null;
+            if (d.finishedAt && d.finishedAt.toDate) dateObj = d.finishedAt.toDate();
+            else if (d.timestamp && d.timestamp.toDate) dateObj = d.timestamp.toDate();
+            else dateObj = new Date();
+
+            const dateWIB = new Date(dateObj.getTime() + 7 * 3600000);
+            const dateStr = dateWIB.toISOString().split('T')[0];
+            const jamStr = dateWIB.toISOString().split('T')[1].slice(0, 5);
+
+            if (dateStr === todayStr) { omzetHari += revenue; trxHari++; }
+            if (dateStr >= startOfWeekStr) { omzetMinggu += revenue; trxMinggu++; }
+            if (dateStr >= startOfMonthStr) { omzetBulan += revenue; trxBulan++; }
+
+            rows.push({
+                dateStr, jamStr, revenue,
+                sumber: d.bookingCode === 'WEB-ORDER' ? 'Online' : ((d.onlineRevenue > 0 && d.manualRevenue > 0) ? 'Online+Manual' : (d.onlineRevenue > 0 ? 'Online' : 'Manual')),
+                customerName: d.customerName || '-',
+                nomorMeja: Array.isArray(d.tableNum) ? d.tableNum.join(',') : (d.tableNum || '-')
+            });
+        });
+
+        document.getElementById('riwayat-hari-omzet').innerText = 'Rp' + omzetHari.toLocaleString();
+        document.getElementById('riwayat-hari-trx').innerText = trxHari + ' transaksi';
+        document.getElementById('riwayat-minggu-omzet').innerText = 'Rp' + omzetMinggu.toLocaleString();
+        document.getElementById('riwayat-minggu-trx').innerText = trxMinggu + ' transaksi';
+        document.getElementById('riwayat-bulan-omzet').innerText = 'Rp' + omzetBulan.toLocaleString();
+        document.getElementById('riwayat-bulan-trx').innerText = trxBulan + ' transaksi';
+
+        rows.sort((a, b) => (b.dateStr + b.jamStr).localeCompare(a.dateStr + a.jamStr));
+        const recent = rows.slice(0, 50);
+
+        if (recent.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Belum ada transaksi selesai.</p>';
+            return;
+        }
+
+        container.innerHTML = recent.map(r => `
+            <div style="background:#1e1e1e; border:1px solid #333; border-radius:8px; padding:12px 15px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <b style="display:block;">${r.customerName} <span style="color:#888; font-weight:normal; font-size:0.8rem;">(Meja ${r.nomorMeja})</span></b>
+                    <small style="color:#888;">${r.dateStr} · ${r.jamStr} WIB · <span style="color:${r.sumber === 'Online' ? '#00d2ff' : (r.sumber === 'Manual' ? '#ffeb3b' : '#4caf50')};">${r.sumber}</span></small>
+                </div>
+                <b style="color:gold;">Rp ${r.revenue.toLocaleString()}</b>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = `<p style="text-align:center; color:#ff4444; margin-top:30px;">Gagal memuat riwayat: ${e.message}</p>`;
+    }
+};
+
+
     const container = document.getElementById('qr-container');
     if(!container) return;
     container.innerHTML = '';
@@ -608,7 +693,7 @@ window.cetakStruk = function(orderId) {
     const order = (window.orderDataCache || {})[orderId];
     if (!order) return alert('Data pesanan tidak ditemukan.');
 
-    const namaWarung = localStorage.getItem('mitraName') || 'SMIPRO Streetart';
+    const namaWarung = localStorage.getItem('mitraName') || 'STREETART Streetart';
     const waktuOrder = order.timestamp?.toDate ? order.timestamp.toDate() : new Date();
     const tanggalStr = waktuOrder.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const jamStr     = waktuOrder.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -632,7 +717,7 @@ window.cetakStruk = function(orderId) {
     </style></head>
     <body>
         <div class="center bold">${namaWarung}</div>
-        <div class="center">SMIPRO Streetart.id</div>
+        <div class="center">STREETART Streetart.id</div>
         <hr>
         <div class="antrian">${nomorAntrian}</div>
         <hr>
