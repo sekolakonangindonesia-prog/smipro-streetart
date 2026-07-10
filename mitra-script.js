@@ -443,7 +443,7 @@ window.loadRiwayat = async function() {
     }
 };
 
-
+window.renderQRCodes = function() {
     const container = document.getElementById('qr-container');
     if(!container) return;
     container.innerHTML = '';
