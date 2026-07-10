@@ -1,7 +1,7 @@
 // --- 1. IMPORT FIREBASE ---
 import { db } from './firebase-config.js';
 import { 
-    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, increment, orderBy, getDocs 
+    doc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, where, getDoc, setDoc, increment, orderBy, getDocs, arrayUnion, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- 2. AMBIL ID DARI LOCALSTORAGE ---
@@ -402,16 +402,38 @@ window.updateOrderSystemStatus = async function(isActive) {
     }
 };
 
-window.finishBooking = function(id, qty) {
+window.finishBooking = async function(id, qty) {
     window.selectedBookingId = id; window.selectedTableCount = qty;
-    document.getElementById('trx-amount').value = ''; 
+    document.getElementById('trx-amount').value = '';
+
+    const infoEl = document.getElementById('trx-online-info');
+    try {
+        const snap = await getDoc(doc(db, "bookings", id));
+        const online = snap.exists() ? (parseInt(snap.data().onlineRevenue) || 0) : 0;
+        window.selectedOnlineRevenue = online;
+        if (online > 0) {
+            infoEl.style.display = 'block';
+            infoEl.innerText = `Sudah ada order online masuk: Rp ${online.toLocaleString()}`;
+        } else {
+            infoEl.style.display = 'none';
+        }
+    } catch (e) {
+        window.selectedOnlineRevenue = 0;
+        infoEl.style.display = 'none';
+    }
+
     document.getElementById('modal-finish-transaction').style.display = 'flex';
 };
 
 window.submitTransaction = async function() {
-    const amt = document.getElementById('trx-amount').value;
-    if(!amt || amt <= 0) return alert("Masukkan Nominal!");
-    
+    const manualInput = document.getElementById('trx-amount').value;
+    const manualAmt   = manualInput ? parseInt(manualInput) : 0;
+    if (manualInput && manualAmt < 0) return alert("Nominal tidak valid!");
+
+    const onlineAmt = window.selectedOnlineRevenue || 0;
+    const totalAmt  = onlineAmt + manualAmt;
+    if (totalAmt <= 0) return alert("Masukkan nominal transaksi (tidak ada order online maupun manual)!");
+
     // FIX: Pastikan semua field yang dibutuhkan rekap admin tersimpan
     // Admin membaca: warungName, venueName, pax, revenue, finishedAt dari koleksi bookings
     const bookingSnap = await getDoc(doc(db, "bookings", window.selectedBookingId));
@@ -419,7 +441,9 @@ window.submitTransaction = async function() {
     
     await updateDoc(doc(db, "bookings", window.selectedBookingId), { 
         status: 'finished', 
-        revenue: parseInt(amt), 
+        revenue: totalAmt,
+        manualRevenue: manualAmt,
+        onlineRevenue: onlineAmt,
         finishedAt: new Date(),
         // Pastikan field rekap ada (fallback ke data warung jika kosong di booking)
         warungName: bookingData.warungName || currentWarungName,
@@ -811,36 +835,64 @@ window.cancelWebOrder = async function(orderId) {
 window.finishWebOrder = async function(orderId, totalUang) {
     if(!confirm(`Pesanan Meja ini sudah lunas sebesar Rp ${totalUang.toLocaleString()}?`)) return;
     try {
-        // 1. Update status pesanan web jadi finished
         const orderSnap = await getDoc(doc(db, "warung_orders", orderId));
         const orderData = orderSnap.exists() ? orderSnap.data() : {};
-        
+        const todayStr  = getTodayWIB();
+        const jumlah    = parseInt(totalUang) || 0;
+
         await updateDoc(doc(db, "warung_orders", orderId), { 
             status: "finished",
             paidAt: new Date()
         });
 
-        // 2. FIX: Catat ke koleksi bookings agar masuk rekap admin
-        // Format sama persis dengan submitTransaction agar terbaca di laporan PDF
-        const todayStr = getTodayWIB();
-        await addDoc(collection(db, "bookings"), {
-            warungId: WARUNG_ID,
-            warungName: currentWarungName,
-            venueName: orderData.venueName || "",
-            customerName: orderData.customerName || "Pelanggan Web",
-            tableNum: orderData.tableNum ? [orderData.tableNum] : [],
-            tablesNeeded: 0,
-            pax: orderData.items ? orderData.items.length : 0,
-            bookingCode: "WEB-ORDER",
-            bookingDate: todayStr,
-            status: "finished",
-            revenue: parseInt(totalUang),
-            finishedAt: new Date(),
-            timestamp: new Date(),
-            // Referensi ke pesanan asli
-            sourceOrderId: orderId,
-            metodeBayar: orderData.metodeBayar || "cod"
-        });
+        // FIX ENDING FLOW: cari sesi booking meja yang MASIH AKTIF untuk nomor meja ini.
+        // Kalau ketemu -> gabungkan omzet order online ke SATU dokumen booking yang sama.
+        // Ini mencegah 2 entri laporan terpisah (booking meja + order online) untuk 1 kunjungan
+        // yang sama, dan mencegah meja "nyangkut" aktif selamanya karena flow selesai order
+        // online sebelumnya tidak pernah menutup booking mejanya.
+        // Kalau TIDAK ketemu (take-away / order tanpa reservasi meja) -> tetap dicatat berdiri
+        // sendiri sebagai transaksi selesai, supaya tetap masuk laporan admin.
+        const tableNumInt = parseInt(orderData.tableNum, 10);
+        let linkedBookingId = null;
+
+        if (!isNaN(tableNumInt)) {
+            const qActive = query(
+                collection(db, "bookings"),
+                where("warungId", "==", WARUNG_ID),
+                where("status", "==", "active"),
+                where("bookingDate", "==", todayStr),
+                where("tableNum", "array-contains", tableNumInt)
+            );
+            const activeSnap = await getDocs(qActive);
+            if (!activeSnap.empty) linkedBookingId = activeSnap.docs[0].id;
+        }
+
+        if (linkedBookingId) {
+            await updateDoc(doc(db, "bookings", linkedBookingId), {
+                revenue: increment(jumlah),
+                onlineRevenue: increment(jumlah),
+                linkedOrderIds: arrayUnion(orderId)
+            });
+        } else {
+            await addDoc(collection(db, "bookings"), {
+                warungId: WARUNG_ID,
+                warungName: currentWarungName,
+                venueName: orderData.venueName || "",
+                customerName: orderData.customerName || "Pelanggan Web",
+                tableNum: orderData.tableNum ? [orderData.tableNum] : [],
+                tablesNeeded: 0,
+                pax: orderData.items ? orderData.items.length : 0,
+                bookingCode: "WEB-ORDER",
+                bookingDate: todayStr,
+                status: "finished",
+                revenue: jumlah,
+                onlineRevenue: jumlah,
+                finishedAt: new Date(),
+                timestamp: new Date(),
+                sourceOrderId: orderId,
+                metodeBayar: orderData.metodeBayar || "cod"
+            });
+        }
 
         alert("Pembayaran Berhasil! Data telah diarsipkan ke laporan.");
     } catch (e) {
