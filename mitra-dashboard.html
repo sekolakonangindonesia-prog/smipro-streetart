@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Warung - SMIPRO</title>
+    <title>Dashboard Warung - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -149,6 +149,7 @@
 <div class="mitra-tabs">
     <button class="tab-btn active" onclick="switchTab('home')"><i class="fa-solid fa-house"></i> <span>Beranda</span></button>
     <button class="tab-btn" onclick="switchTab('web-orders')"><i class="fa-solid fa-utensils"></i> <span>Pesanan</span></button>
+    <button class="tab-btn" onclick="switchTab('riwayat')"><i class="fa-solid fa-chart-line"></i> <span>Riwayat</span></button>
     <button class="tab-btn" onclick="switchTab('qr')"><i class="fa-solid fa-print"></i> <span>QR Meja</span></button>
     <button class="tab-btn" onclick="switchTab('menu')"><i class="fa-solid fa-bowl-food"></i> <span>Menu</span></button>
     <button class="tab-btn" onclick="switchTab('profile')"><i class="fa-solid fa-gear"></i> <span>Profil</span></button>
@@ -209,6 +210,29 @@
             <b>Panduan:</b> Klik "Download" untuk menyimpan QR, lalu cetak untuk meja.
         </div>
         <div id="qr-container" class="qr-grid"></div>
+    </div>
+
+    <!-- TAB RIWAYAT PENJUALAN -->
+    <div id="tab-riwayat" class="tab-content">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:20px;">
+            <div class="stat-card-mitra" style="border-color:var(--primary);">
+                <h1 id="riwayat-hari-omzet" style="margin:0; color:var(--primary); font-size:1.1rem;">Rp0</h1>
+                <small style="font-size:0.7rem;">Hari Ini</small>
+                <div id="riwayat-hari-trx" style="font-size:0.65rem; color:#888;">0 transaksi</div>
+            </div>
+            <div class="stat-card-mitra" style="border-color:#00d2ff;">
+                <h1 id="riwayat-minggu-omzet" style="margin:0; color:#00d2ff; font-size:1.1rem;">Rp0</h1>
+                <small style="font-size:0.7rem;">Minggu Ini</small>
+                <div id="riwayat-minggu-trx" style="font-size:0.65rem; color:#888;">0 transaksi</div>
+            </div>
+            <div class="stat-card-mitra" style="border-color:#ffeb3b;">
+                <h1 id="riwayat-bulan-omzet" style="margin:0; color:#ffeb3b; font-size:1.1rem;">Rp0</h1>
+                <small style="font-size:0.7rem;">Bulan Ini</small>
+                <div id="riwayat-bulan-trx" style="font-size:0.65rem; color:#888;">0 transaksi</div>
+            </div>
+        </div>
+        <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Transaksi Terakhir</div>
+        <div id="riwayat-list-container"><p style="text-align:center; color:#555; margin-top:30px;">Memuat data...</p></div>
     </div>
 
     <!-- TAB MENU -->
