@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0a0a">
-    <title>Profil Warung - SMIPRO</title>
+    <title>Profil Warung - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -33,7 +33,7 @@
             color: #fff; font-size: 0.82rem; font-weight: 700;
             padding: 7px 14px; text-decoration: none; cursor: pointer;
         }
-        .hero-smipro-logo {
+        .hero-streetart-logo {
             width: 36px; height: 36px; border-radius: 50%;
             border: 2px solid #E50914;
         }
@@ -348,7 +348,7 @@
             <i class="fa-solid fa-arrow-left"></i> Kembali
         </button>
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png"
-             class="hero-smipro-logo">
+             class="hero-streetart-logo">
     </div>
 </div>
 
@@ -461,8 +461,16 @@
         <span class="field-lbl">Nama Pemesan</span>
         <input type="text" id="order-nama" class="inp" placeholder="Nama kamu...">
 
-        <span class="field-lbl">Nomor Meja</span>
-        <input type="text" id="order-meja" class="inp" placeholder="cth: 3 atau 1,2">
+        <span class="field-lbl">Tipe Pesanan</span>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button type="button" id="btn-dinein" class="inp" style="cursor:pointer; font-weight:bold; background:#c0392b; color:white; border-color:#c0392b;" onclick="setOrderType('dinein')">🍽️ Dine-in</button>
+            <button type="button" id="btn-takeaway" class="inp" style="cursor:pointer; font-weight:bold;" onclick="setOrderType('takeaway')">🥡 Take Away</button>
+        </div>
+
+        <div id="wrapper-order-meja">
+            <span class="field-lbl">Nomor Meja</span>
+            <input type="text" id="order-meja" class="inp" placeholder="cth: 3 atau 1,2">
+        </div>
 
         <span class="field-lbl">WhatsApp</span>
         <input type="number" id="order-wa" class="inp" placeholder="08xxxxxxxxxx">
@@ -819,13 +827,32 @@ window.pilihMetode = function(m) {
     document.getElementById('btn-qris').classList.toggle('selected', m === 'qris');
 };
 
+let orderType = 'dinein';
+window.setOrderType = function(type) {
+    orderType = type;
+    const btnDine = document.getElementById('btn-dinein');
+    const btnTA   = document.getElementById('btn-takeaway');
+    const wrapMeja = document.getElementById('wrapper-order-meja');
+
+    if (type === 'takeaway') {
+        btnTA.style.background = '#c0392b'; btnTA.style.borderColor = '#c0392b'; btnTA.style.color = 'white';
+        btnDine.style.background = ''; btnDine.style.borderColor = ''; btnDine.style.color = '';
+        wrapMeja.style.display = 'none';
+    } else {
+        btnDine.style.background = '#c0392b'; btnDine.style.borderColor = '#c0392b'; btnDine.style.color = 'white';
+        btnTA.style.background = ''; btnTA.style.borderColor = ''; btnTA.style.color = '';
+        wrapMeja.style.display = 'block';
+    }
+};
+
+
 window.confirmOrder = async function() {
     const nama  = document.getElementById('order-nama').value.trim();
-    const meja  = document.getElementById('order-meja').value.trim();
+    const meja  = orderType === 'takeaway' ? 'Take Away' : document.getElementById('order-meja').value.trim();
     let   wa    = document.getElementById('order-wa').value.trim();
 
     if (!nama)        return toast('Isi nama pemesan!');
-    if (!meja)        return toast('Isi nomor meja!');
+    if (orderType === 'dinein' && !meja) return toast('Isi nomor meja!');
     if (!wa)          return toast('Isi nomor WhatsApp!');
     if (!metodeBayar) return toast('Pilih metode pembayaran!');
     if (myCart.length === 0) return toast('Keranjang kosong!');
@@ -956,7 +983,7 @@ window.confirmBooking = async function() {
             `🎟️ Kode: *${kode}*\n\n` +
             `⚠️ Scan QR di meja untuk check-in.\n` +
             `Batas check-in: *19:30 WIB*\n\n` +
-            `Sampai jumpa di SMIPRO StreetArt! 🎵`;
+            `Sampai jumpa di STREETART StreetArt! 🎵`;
 
         if (confirm(`✅ Booking berhasil!\nMeja: ${mejaStr}\n\nKirim tiket ke WhatsApp?`))
             window.open(`https://wa.me/${wa}?text=${encodeURIComponent(pesan)}`, '_blank');
