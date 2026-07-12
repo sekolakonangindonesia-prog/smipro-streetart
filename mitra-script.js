@@ -355,11 +355,74 @@ window.switchTab = function(tabId) {
     btns.forEach(btn => { if(btn.getAttribute('onclick').includes(`'${tabId}'`)) btn.classList.add('active'); });
 
     if (tabId === 'qr') renderQRCodes();
-    if (tabId === 'riwayat') window.loadRiwayat();
+    if (tabId === 'riwayat') { window.loadRiwayat(); window.loadSesiBelumDitutup(); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.loadRiwayat = async function() {
+function getMonthRangeWIB(offsetMonths) {
+    const nowWIB = new Date(Date.now() + 7 * 3600000);
+    let year = nowWIB.getUTCFullYear();
+    let month = nowWIB.getUTCMonth() + offsetMonths;
+    while (month < 0) { month += 12; year -= 1; }
+    while (month > 11) { month -= 12; year += 1; }
+    const pad = n => String(n).padStart(2, '0');
+    const startStr = `${year}-${pad(month + 1)}-01`;
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const endStr = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
+    return { startStr, endStr };
+}
+
+window.loadSesiBelumDitutup = async function() {
+    const panel = document.getElementById('sesi-belum-ditutup-panel');
+    const listEl = document.getElementById('sesi-belum-ditutup-list');
+    if (!panel || !listEl) return;
+
+    try {
+        const q = query(
+            collection(db, "bookings"),
+            where("warungId", "==", WARUNG_ID),
+            where("status", "==", "active")
+        );
+        const snap = await getDocs(q);
+        const todayStr = getTodayWIB();
+        const stale = [];
+
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            if (d.bookingDate !== todayStr) {
+                stale.push({ id: docSnap.id, ...d });
+            }
+        });
+
+        if (stale.length === 0) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        panel.style.display = 'block';
+        stale.sort((a, b) => (a.bookingDate || '').localeCompare(b.bookingDate || ''));
+
+        listEl.innerHTML = stale.map(b => {
+            const nomorMeja = Array.isArray(b.tableNum) ? b.tableNum.join(', ') : (b.tableNum || '-');
+            const qty = b.tablesNeeded || 1;
+            return `
+                <div style="background:#1e1e1e; border:1px solid #444; border-radius:8px; padding:12px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                        <b>Meja ${nomorMeja}</b>
+                        <span style="color:#ff9800; font-size:0.8rem;">Tanggal: ${b.bookingDate}</span>
+                    </div>
+                    <div style="color:#ccc; font-size:0.9rem; margin-bottom:10px;">${b.customerName || '-'} (${b.pax || '?'} orang)</div>
+                    <button class="btn-small" style="background:#ff4444; color:white; width:100%; padding:8px;" onclick="finishBooking('${b.id}', ${qty})">Tutup Sesi Ini</button>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        panel.style.display = 'block';
+        listEl.innerHTML = `<p style="color:#ff4444;">Gagal memuat: ${e.message}</p>`;
+    }
+};
+
+
     const container = document.getElementById('riwayat-list-container');
     if (!container) return;
     container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Memuat data...</p>';
@@ -372,23 +435,7 @@ window.loadRiwayat = async function() {
         );
         const snap = await getDocs(q);
 
-        // Batas waktu (WIB)
-        const nowWIB = new Date(Date.now() + 7 * 3600000);
-        const todayStr = nowWIB.toISOString().split('T')[0];
-
-        const startOfWeek = new Date(nowWIB);
-        const dayIdx = (startOfWeek.getUTCDay() + 6) % 7; // Senin = 0
-        startOfWeek.setUTCDate(startOfWeek.getUTCDate() - dayIdx);
-        const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
-
-        const startOfMonthStr = todayStr.slice(0, 8) + '01';
-
-        let omzetHari = 0, trxHari = 0;
-        let omzetMinggu = 0, trxMinggu = 0;
-        let omzetBulan = 0, trxBulan = 0;
-
         const rows = [];
-
         snap.forEach(docSnap => {
             const d = docSnap.data();
             const revenue = parseInt(d.revenue) || 0;
@@ -402,16 +449,40 @@ window.loadRiwayat = async function() {
             const dateStr = dateWIB.toISOString().split('T')[0];
             const jamStr = dateWIB.toISOString().split('T')[1].slice(0, 5);
 
-            if (dateStr === todayStr) { omzetHari += revenue; trxHari++; }
-            if (dateStr >= startOfWeekStr) { omzetMinggu += revenue; trxMinggu++; }
-            if (dateStr >= startOfMonthStr) { omzetBulan += revenue; trxBulan++; }
-
             rows.push({
                 dateStr, jamStr, revenue,
                 sumber: d.bookingCode === 'WEB-ORDER' ? 'Online' : ((d.onlineRevenue > 0 && d.manualRevenue > 0) ? 'Online+Manual' : (d.onlineRevenue > 0 ? 'Online' : 'Manual')),
                 customerName: d.customerName || '-',
                 nomorMeja: Array.isArray(d.tableNum) ? d.tableNum.join(',') : (d.tableNum || '-')
             });
+        });
+        rows.sort((a, b) => (b.dateStr + b.jamStr).localeCompare(a.dateStr + a.jamStr));
+        window._riwayatRows = rows; // cache untuk filter tanpa fetch ulang
+
+        // Batas waktu (WIB)
+        const nowWIB = new Date(Date.now() + 7 * 3600000);
+        const todayStr = nowWIB.toISOString().split('T')[0];
+
+        const startOfWeek = new Date(nowWIB);
+        const dayIdx = (startOfWeek.getUTCDay() + 6) % 7; // Senin = 0
+        startOfWeek.setUTCDate(startOfWeek.getUTCDate() - dayIdx);
+        const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+        const { startStr: startBulanIni } = getMonthRangeWIB(0);
+        const { startStr: startBulanLalu, endStr: endBulanLalu } = getMonthRangeWIB(-1);
+
+        let omzetHari = 0, trxHari = 0;
+        let omzetMinggu = 0, trxMinggu = 0;
+        let omzetBulan = 0, trxBulan = 0;
+        let omzetBulanLalu = 0;
+        let omzetTotal = 0, trxTotal = 0;
+
+        rows.forEach(r => {
+            omzetTotal += r.revenue; trxTotal++;
+            if (r.dateStr === todayStr) { omzetHari += r.revenue; trxHari++; }
+            if (r.dateStr >= startOfWeekStr) { omzetMinggu += r.revenue; trxMinggu++; }
+            if (r.dateStr >= startBulanIni) { omzetBulan += r.revenue; trxBulan++; }
+            if (r.dateStr >= startBulanLalu && r.dateStr <= endBulanLalu) { omzetBulanLalu += r.revenue; }
         });
 
         document.getElementById('riwayat-hari-omzet').innerText = 'Rp' + omzetHari.toLocaleString();
@@ -420,26 +491,98 @@ window.loadRiwayat = async function() {
         document.getElementById('riwayat-minggu-trx').innerText = trxMinggu + ' transaksi';
         document.getElementById('riwayat-bulan-omzet').innerText = 'Rp' + omzetBulan.toLocaleString();
         document.getElementById('riwayat-bulan-trx').innerText = trxBulan + ' transaksi';
+        document.getElementById('riwayat-total-omzet').innerText = 'Rp' + omzetTotal.toLocaleString();
+        document.getElementById('riwayat-total-trx').innerText = trxTotal + ' transaksi';
 
-        rows.sort((a, b) => (b.dateStr + b.jamStr).localeCompare(a.dateStr + a.jamStr));
-        const recent = rows.slice(0, 50);
-
-        if (recent.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Belum ada transaksi selesai.</p>';
-            return;
+        // Badge naik/turun vs bulan lalu
+        const badgeEl = document.getElementById('riwayat-bulan-badge');
+        if (omzetBulanLalu > 0) {
+            const pct = Math.round(((omzetBulan - omzetBulanLalu) / omzetBulanLalu) * 100);
+            if (pct > 0) badgeEl.innerHTML = `<span style="color:#4caf50;">▲ ${pct}% dari bulan lalu</span>`;
+            else if (pct < 0) badgeEl.innerHTML = `<span style="color:#ff4444;">▼ ${Math.abs(pct)}% dari bulan lalu</span>`;
+            else badgeEl.innerHTML = `<span style="color:#888;">Sama seperti bulan lalu</span>`;
+        } else if (omzetBulan > 0) {
+            badgeEl.innerHTML = `<span style="color:#4caf50;">Bulan lalu tidak ada transaksi</span>`;
+        } else {
+            badgeEl.innerHTML = '';
         }
+        window._omzetBulanLalu = omzetBulanLalu;
 
-        container.innerHTML = recent.map(r => `
-            <div style="background:#1e1e1e; border:1px solid #333; border-radius:8px; padding:12px 15px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <b style="display:block;">${r.customerName} <span style="color:#888; font-weight:normal; font-size:0.8rem;">(Meja ${r.nomorMeja})</span></b>
-                    <small style="color:#888;">${r.dateStr} · ${r.jamStr} WIB · <span style="color:${r.sumber === 'Online' ? '#00d2ff' : (r.sumber === 'Manual' ? '#ffeb3b' : '#4caf50')};">${r.sumber}</span></small>
-                </div>
-                <b style="color:gold;">Rp ${r.revenue.toLocaleString()}</b>
-            </div>
-        `).join('');
+        // Render daftar sesuai filter yang lagi aktif
+        window.renderRiwayatByFilter();
     } catch (e) {
         container.innerHTML = `<p style="text-align:center; color:#ff4444; margin-top:30px;">Gagal memuat riwayat: ${e.message}</p>`;
+    }
+};
+
+window.handleRiwayatFilterChange = function() {
+    const period = document.getElementById('riwayat-filter-period').value;
+    document.getElementById('riwayat-custom-range').style.display = (period === 'custom') ? 'block' : 'none';
+    if (period !== 'custom') window.renderRiwayatByFilter();
+};
+
+window.applyRiwayatCustomRange = function() {
+    const from = document.getElementById('riwayat-from').value;
+    const to = document.getElementById('riwayat-to').value;
+    if (!from || !to) return alert('Isi tanggal dari & sampai dulu!');
+    if (from > to) return alert('Tanggal "Dari" tidak boleh lebih besar dari "Sampai"!');
+    window.renderRiwayatByFilter();
+};
+
+window.renderRiwayatByFilter = function() {
+    const rows = window._riwayatRows || [];
+    const period = document.getElementById('riwayat-filter-period').value;
+    const container = document.getElementById('riwayat-list-container');
+    const titleEl = document.getElementById('riwayat-list-title');
+    const summaryEl = document.getElementById('riwayat-period-summary');
+
+    const nowWIB = new Date(Date.now() + 7 * 3600000);
+    const todayStr = nowWIB.toISOString().split('T')[0];
+    let fromStr, toStr, label;
+
+    if (period === 'hari_ini') {
+        fromStr = toStr = todayStr; label = 'Hari Ini';
+    } else if (period === 'minggu_ini') {
+        const startOfWeek = new Date(nowWIB);
+        const dayIdx = (startOfWeek.getUTCDay() + 6) % 7;
+        startOfWeek.setUTCDate(startOfWeek.getUTCDate() - dayIdx);
+        fromStr = startOfWeek.toISOString().split('T')[0]; toStr = todayStr; label = 'Minggu Ini';
+    } else if (period === 'bulan_lalu') {
+        const r = getMonthRangeWIB(-1); fromStr = r.startStr; toStr = r.endStr; label = 'Bulan Lalu';
+    } else if (period === 'semua') {
+        fromStr = '0000-01-01'; toStr = '9999-12-31'; label = 'Semua (Total Keseluruhan)';
+    } else if (period === 'custom') {
+        fromStr = document.getElementById('riwayat-from').value;
+        toStr = document.getElementById('riwayat-to').value;
+        if (!fromStr || !toStr) { container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Pilih tanggal dulu, lalu klik Terapkan.</p>'; titleEl.innerText = 'Pilih Tanggal'; summaryEl.innerText = ''; return; }
+        label = `${fromStr} s/d ${toStr}`;
+    } else { // bulan_ini (default)
+        const r = getMonthRangeWIB(0); fromStr = r.startStr; toStr = todayStr; label = 'Bulan Ini';
+    }
+
+    const filtered = rows.filter(r => r.dateStr >= fromStr && r.dateStr <= toStr);
+    const totalOmzet = filtered.reduce((s, r) => s + r.revenue, 0);
+
+    titleEl.innerText = `Transaksi ${label}`;
+    summaryEl.innerText = `${filtered.length} transaksi · Total Rp ${totalOmzet.toLocaleString()}`;
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Tidak ada transaksi pada periode ini.</p>';
+        return;
+    }
+
+    const shown = filtered.slice(0, 100);
+    container.innerHTML = shown.map(r => `
+        <div style="background:#1e1e1e; border:1px solid #333; border-radius:8px; padding:12px 15px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <b style="display:block;">${r.customerName} <span style="color:#888; font-weight:normal; font-size:0.8rem;">(Meja ${r.nomorMeja})</span></b>
+                <small style="color:#888;">${r.dateStr} · ${r.jamStr} WIB · <span style="color:${r.sumber === 'Online' ? '#00d2ff' : (r.sumber === 'Manual' ? '#ffeb3b' : '#4caf50')};">${r.sumber}</span></small>
+            </div>
+            <b style="color:gold;">Rp ${r.revenue.toLocaleString()}</b>
+        </div>
+    `).join('');
+    if (filtered.length > 100) {
+        container.innerHTML += `<p style="text-align:center; color:#666; font-size:0.8rem;">Menampilkan 100 dari ${filtered.length} transaksi. Persempit tanggal untuk lihat semua.</p>`;
     }
 };
 
@@ -517,7 +660,6 @@ window.submitTransaction = async function() {
 
     const onlineAmt = window.selectedOnlineRevenue || 0;
     const totalAmt  = onlineAmt + manualAmt;
-    if (totalAmt <= 0) return alert("Masukkan nominal transaksi (tidak ada order online maupun manual)!");
 
     // FIX: Pastikan semua field yang dibutuhkan rekap admin tersimpan
     // Admin membaca: warungName, venueName, pax, revenue, finishedAt dari koleksi bookings
@@ -537,6 +679,12 @@ window.submitTransaction = async function() {
     });
     await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-window.selectedTableCount) });
     document.getElementById('modal-finish-transaction').style.display = 'none';
+
+    // Refresh panel "Sesi Belum Ditutup" & Riwayat kalau lagi kebuka
+    if (document.getElementById('tab-riwayat')?.classList.contains('active')) {
+        window.loadSesiBelumDitutup();
+        window.loadRiwayat();
+    }
 };
 
 window.cancelBooking = async function(id, qty) {
