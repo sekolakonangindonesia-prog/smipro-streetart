@@ -423,6 +423,7 @@ window.loadSesiBelumDitutup = async function() {
 };
 
 
+window.loadRiwayat = async function() {
     const container = document.getElementById('riwayat-list-container');
     if (!container) return;
     container.innerHTML = '<p style="text-align:center; color:#555; margin-top:30px;">Memuat data...</p>';
