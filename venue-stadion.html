@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stadion Bayuangga - SMIPRO</title>
+    <title>Stadion Bayuangga - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -68,7 +68,7 @@
     <nav class="top-nav">
         <a href="index.html" class="logo-container" style="display:flex; align-items:center; text-decoration:none; gap:10px;">
             <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:35px; height:35px; border-radius:50%; border:2px solid #E50914;">
-            <span style="font-weight:800; color:#E50914; font-size:1.1rem;">SMIPRO</span>
+            <span style="font-weight:800; color:#E50914; font-size:1.1rem;">STREETART</span>
         </a>
         <button onclick="location.href='index.html'" class="btn-back"><i class="fa-solid fa-arrow-left"></i> Dashboard</button>
     </nav>
@@ -183,7 +183,7 @@
             <div style="text-align:center; background:white; padding:10px; border-radius:10px; margin:10px 0;">
                 <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" style="width:150px;">
                 <br>
-                <a href="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" download="QRIS_SMIPRO.png" class="btn-small" style="background:#333; color:white; display:inline-block; margin-top:5px; text-decoration:none;">
+                <a href="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/qris.png" download="QRIS_STREETART.png" class="btn-small" style="background:#333; color:white; display:inline-block; margin-top:5px; text-decoration:none;">
                     <i class="fa-solid fa-download"></i> Download QR
                 </a>
             </div>
@@ -258,7 +258,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
-        &copy; 2025 Yayasan Sekolah Konang Indonesia - SMIPRO StreetArt.ID
+        &copy; 2025 Yayasan Sekolah Konang Indonesia - STREETART StreetArt.ID
     </div>
         
    <!-- SCRIPT LOGIC BARU (FULL FEATURE: BOOKING, WA, LIVE, REVIEW) -->
@@ -287,7 +287,7 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 venueNameGlobal = data.name;
-                document.title = data.name + " - SMIPRO";
+                document.title = data.name + " - STREETART";
 
                 // --- UPDATE TAMPILAN REVIEW (Supaya Gambarnya Sesuai Lokasi) ---
                 const reviewImg = document.querySelector('.venue-photo-review');
@@ -497,9 +497,13 @@
 
         try {
             // CEK MEJA KOSONG (Query ini butuh Index Firebase)
+            // FIX: Filter sesuai bookingDate yang dipilih -- sebelumnya cek SEMUA
+            // booking aktif tanpa batas tanggal, jadi booking macet dari hari lain
+            // ikut ngeblokir slot meja untuk tanggal manapun yang mau dibooking.
             const q = query(collection(db, "bookings"), 
                 where("warungId", "==", warungId), 
-                where("status", "in", ["booked", "active"])
+                where("status", "in", ["booked", "active"]),
+                where("bookingDate", "==", dateVal)
             );
             const snapshot = await getDocs(q);
 
