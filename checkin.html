@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check-In Meja - SMIPRO</title>
+    <title>Check-In Meja - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
@@ -186,8 +186,8 @@
             }
         }
 
-        // FIX: Query semua booking hari ini, TANPA filter tableNum
-        // sehingga semua meja yang terpakai benar-benar terdeteksi
+        // FIX: Cari meja kosong HANYA berdasar booking hari ini (booking macet dari
+        // hari lain tidak lagi dianggap menempati meja)
         async function findEmptyTables(targetElementId) {
             const el = document.getElementById(targetElementId);
             if (!el) return;
@@ -195,7 +195,6 @@
 
             const todayStr = getTodayWIB();
 
-            // FIX: Ambil SEMUA booking hari ini untuk warung ini (tidak filter per meja)
             const q = query(collection(db, "bookings"), 
                 where("warungId", "==", warungId),
                 where("status", "in", ["booked", "active"]),
@@ -210,24 +209,10 @@
                 else if (nums) usedTables.add(nums);
             });
 
-            // Juga tambahkan booking active dari hari lain yang belum selesai
-            const qActive = query(collection(db, "bookings"),
-                where("warungId", "==", warungId),
-                where("status", "==", "active")
-            );
-            const snapActive = await getDocs(qActive);
-            snapActive.forEach(d => {
-                const nums = d.data().tableNum;
-                if (Array.isArray(nums)) nums.forEach(n => usedTables.add(n));
-                else if (nums) usedTables.add(nums);
-            });
-
             const totalMeja = warungData.totalTables || 15;
             let html = "";
             for (let i = 1; i <= totalMeja; i++) {
                 if (!usedTables.has(i)) {
-                    // FIX FITUR: Badge jadi link yang bisa diklik langsung
-                    // Klik → langsung buka checkin.html untuk meja tersebut
                     const url = `checkin.html?w=${warungId}&t=${i}`;
                     html += `<a href="${url}" class="free-table-badge">Meja ${i}</a>`;
                 }
@@ -236,7 +221,9 @@
             el.innerHTML = html || "<span style='color:red'>Semua meja penuh</span>";
         }
 
-        // WALK-IN — FIX: Tambah filter tanggal WIB
+        // WALK-IN — FIX: Cek bentrok meja HANYA untuk hari ini (booking lama yg lupa
+        // ditutup tidak lagi mengunci meja selamanya), dan validasi meja yang di-scan
+        // (dulu dipaksa masuk tanpa dicek dulu -> bisa double-booking).
         window.submitWalkIn = async function() {
             const name = document.getElementById('walkin-name').value.trim();
             const pax = parseInt(document.getElementById('walkin-pax').value) || 0;
@@ -250,7 +237,8 @@
             try {
                 const todayStr = getTodayWIB();
 
-                // FIX: Query pakai tanggal WIB hari ini
+                // FIX: Cek bentrok HANYA booking hari ini (booking macet dari hari
+                // lain tidak lagi dianggap "menempati" meja hari ini)
                 const qCek = query(collection(db, "bookings"), 
                     where("warungId", "==", warungId),
                     where("status", "in", ["booked", "active"]),
@@ -265,19 +253,14 @@
                     else if (data.tableNum) usedTables.add(data.tableNum);
                 });
 
-                // Juga cek booking active dari hari lain
-                const qActive = query(collection(db, "bookings"),
-                    where("warungId", "==", warungId),
-                    where("status", "==", "active")
-                );
-                const snapActive = await getDocs(qActive);
-                snapActive.forEach(d => {
-                    const data = d.data();
-                    if (Array.isArray(data.tableNum)) data.tableNum.forEach(n => usedTables.add(n));
-                    else if (data.tableNum) usedTables.add(data.tableNum);
-                });
+                // FIX: Validasi meja yang di-scan -- kalau ternyata sudah kepakai
+                // (misal ke-refresh telat / ada yang barusan check-in duluan), jangan
+                // dipaksa, tolak dan minta scan ulang.
+                if (usedTables.has(tableNum)) {
+                    btn.innerText = "CHECK-IN SEKARANG"; btn.disabled = false;
+                    return alert(`Meja ${tableNum} baru saja terisi orang lain. Silakan refresh halaman atau pilih meja kosong lain.`);
+                }
 
-                // Mulai dari meja yang di-scan, tambah meja lain jika perlu
                 let assignedTables = [tableNum];
                 if (qtyNeeded > 1) {
                     const limitMeja = warungData.totalTables || 15;
@@ -317,6 +300,10 @@
                 document.getElementById('form-free').style.display = 'none';
                 document.getElementById('state-success').style.display = 'block';
                 document.getElementById('status-badge-area').innerHTML = "";
+
+                // FIX: Tampilkan SEMUA nomor meja yang ke-assign, bukan cuma yang di-scan
+                document.getElementById('table-display').innerText =
+                    assignedTables.length > 1 ? "MEJA " + assignedTables.join(', ') : "MEJA " + assignedTables[0];
 
                 document.getElementById('btn-pesan-menu').onclick = function() {
                     window.location.href = `warung-profile.html?id=${warungId}&meja=${assignedTables.join(',')}&nama=${encodeURIComponent(name)}`;
