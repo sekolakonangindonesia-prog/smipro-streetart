@@ -3260,15 +3260,14 @@ async function loadBgmSettings() {
             toggle.checked = data.bgmEnabled || false;
             bannerToggle.checked = data.bannerEnabled || false; // BARU
 
-            // FIX: bedain isinya -- kalau base64 (dari upload), taruh di hidden field &
-            // kasih keterangan di kotak URL manual, jangan dump base64 mentah ke situ
+            // FIX: hidden field SELALU disinkronkan dengan bannerUrl tersimpan (baik base64
+            // maupun URL biasa), supaya klik Simpan tanpa ubah apapun gak nge-wipe datanya
             const bUrl = data.bannerUrl || "";
+            document.getElementById('banner-url-input-hidden').value = bUrl;
             if (bUrl.startsWith('data:image')) {
-                document.getElementById('banner-url-input-hidden').value = bUrl;
                 document.getElementById('banner-url-input').value = '';
-                document.getElementById('banner-url-input').placeholder = '(Gambar sudah diupload -- kosongkan ini kalau mau pakai gambar upload)';
+                document.getElementById('banner-url-input').placeholder = '(Gambar sudah diupload -- ketik URL baru atau upload ulang untuk mengganti)';
             } else {
-                document.getElementById('banner-url-input-hidden').value = '';
                 document.getElementById('banner-url-input').value = bUrl;
             }
             if (bUrl) document.getElementById('banner-preview').src = bUrl;
@@ -3326,10 +3325,9 @@ function updateBannerUI(isEnabled) {
 // Tombol Simpan
 window.saveBgmSettings = async function() {
     const isEnabled = document.getElementById('bgm-active-toggle').checked;
-    // FIX: prioritas ambil dari gambar yang diupload (hidden field), kalau kosong baru pakai URL manual
-    const uploadedBanner = document.getElementById('banner-url-input-hidden').value.trim();
-    const manualBannerUrl = document.getElementById('banner-url-input').value.trim();
-    const bannerUrl = uploadedBanner || manualBannerUrl;
+    // FIX: hidden field sekarang selalu sinkron (baik dari ketik manual maupun upload),
+    // jadi cukup baca dari situ -- gak ada lagi ambiguitas "mana yang dipakai"
+    const bannerUrl = document.getElementById('banner-url-input-hidden').value.trim();
     const bannerEnabled = document.getElementById('banner-active-toggle').checked; // BARU
 
     try {
