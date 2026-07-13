@@ -3149,9 +3149,12 @@ window.checkExistingLiveLink = async function() {
     const inputLink = document.getElementById('main-live-link');
     const iframe = document.getElementById('admin-monitor-frame');
     const placeholder = document.getElementById('admin-monitor-placeholder');
+    const statusArea = document.getElementById('live-status-area');
 
     if(!venueId) {
-        iframe.style.display = 'none'; placeholder.style.display = 'block'; inputLink.value = ''; return;
+        iframe.style.display = 'none'; placeholder.style.display = 'block'; inputLink.value = '';
+        statusArea.style.display = 'none';
+        return;
     }
     const docSnap = await getDoc(doc(db, "venues", venueId));
     if (docSnap.exists()) {
@@ -3165,6 +3168,23 @@ window.checkExistingLiveLink = async function() {
         } else {
             inputLink.value = ''; iframe.style.display = 'none'; placeholder.style.display = 'block';
         }
+        // FIX: tampilkan status LIVE & tombol Stop, karena sebelumnya isLiveNow
+        // gak pernah bisa dimatikan lagi setelah diaktifkan sekali
+        statusArea.style.display = data.isLiveNow ? 'flex' : 'none';
+    }
+}
+
+// FIX: tombol baru buat matiin status LIVE -- sebelumnya isLiveNow gak pernah di-reset
+window.stopLiveLink = async function() {
+    const venueId = document.getElementById('live-target-venue').value;
+    if (!venueId) return;
+    if (!confirm("Matikan status LIVE untuk venue ini? Badge LIVE di halaman utama akan hilang.")) return;
+    try {
+        await updateDoc(doc(db, "venues", venueId), { isLiveNow: false });
+        alert("✅ Status LIVE dimatikan.");
+        checkExistingLiveLink();
+    } catch (e) {
+        alert("Gagal: " + e.message);
     }
 }
 
@@ -3185,6 +3205,11 @@ window.updateLiveLink = async function() {
     if(!videoId) return alert("Link YouTube tidak valid!");
 
     try {
+        // FIX: cek dulu apakah link ini SAMA dengan yang sudah live sekarang -- kalau iya,
+        // jangan bikin entri galeri baru (sebelumnya selalu bikin baru walau cuma refresh/re-submit)
+        const existingSnap = await getDoc(doc(db, "venues", venueId));
+        const isSameLink = existingSnap.exists() && existingSnap.data().youtubeId === videoId;
+
         // 1. UPDATE VENUE (TAYANGKAN LIVE)
         await updateDoc(doc(db, "venues", venueId), {
             liveLink: fullLink,
@@ -3192,23 +3217,25 @@ window.updateLiveLink = async function() {
             isLiveNow: true 
         });
         
-        // 2. AUTO-SAVE KE GALERI
-        const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-        await addDoc(collection(db, "podcasts"), {
-            title: `Live Replay: ${venueName}`,
-            host: venueName,
-            link: fullLink,
-            youtubeId: videoId,
-            thumb: thumb,
-            category: "Live Perform",
-            mediaType: "video",
-            desc: `Rekaman tayangan live dari ${venueName}.`,
-            timestamp: new Date()
-        });
+        if (!isSameLink) {
+            // 2. AUTO-SAVE KE GALERI (cuma kalau ini link/sesi BARU)
+            const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            await addDoc(collection(db, "podcasts"), {
+                title: `Live Replay: ${venueName}`,
+                host: venueName,
+                link: fullLink,
+                youtubeId: videoId,
+                thumb: thumb,
+                category: "Live Perform",
+                mediaType: "video",
+                desc: `Rekaman tayangan live dari ${venueName}.`,
+                timestamp: new Date()
+            });
+            loadGalleryVideos(); 
+        }
         
-        alert(`✅ SUKSES!\n1. Tayangan Live di ${venueName} dimulai.\n2. Video otomatis disimpan ke Galeri.`);
+        alert(`✅ SUKSES!\n1. Tayangan Live di ${venueName} dimulai.${isSameLink ? '' : '\n2. Video otomatis disimpan ke Galeri.'}`);
         checkExistingLiveLink();
-        loadGalleryVideos(); 
         
     } catch(e) {
         alert("Gagal update: " + e.message);
@@ -3230,11 +3257,21 @@ async function loadBgmSettings() {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            document.getElementById('bgm-url-input').value = data.bgmUrl || "";
             toggle.checked = data.bgmEnabled || false;
             bannerToggle.checked = data.bannerEnabled || false; // BARU
-            document.getElementById('banner-url-input').value = data.bannerUrl || "";
-            if (data.bannerUrl) document.getElementById('banner-preview').src = data.bannerUrl;
+
+            // FIX: bedain isinya -- kalau base64 (dari upload), taruh di hidden field &
+            // kasih keterangan di kotak URL manual, jangan dump base64 mentah ke situ
+            const bUrl = data.bannerUrl || "";
+            if (bUrl.startsWith('data:image')) {
+                document.getElementById('banner-url-input-hidden').value = bUrl;
+                document.getElementById('banner-url-input').value = '';
+                document.getElementById('banner-url-input').placeholder = '(Gambar sudah diupload -- kosongkan ini kalau mau pakai gambar upload)';
+            } else {
+                document.getElementById('banner-url-input-hidden').value = '';
+                document.getElementById('banner-url-input').value = bUrl;
+            }
+            if (bUrl) document.getElementById('banner-preview').src = bUrl;
             updateBgmUI(data.bgmEnabled);
             updateBannerUI(data.bannerEnabled); // BARU
         } else {
@@ -3288,14 +3325,15 @@ function updateBannerUI(isEnabled) {
 
 // Tombol Simpan
 window.saveBgmSettings = async function() {
-    const url = document.getElementById('bgm-url-input').value;
     const isEnabled = document.getElementById('bgm-active-toggle').checked;
-    const bannerUrl = document.getElementById('banner-url-input').value;
+    // FIX: prioritas ambil dari gambar yang diupload (hidden field), kalau kosong baru pakai URL manual
+    const uploadedBanner = document.getElementById('banner-url-input-hidden').value.trim();
+    const manualBannerUrl = document.getElementById('banner-url-input').value.trim();
+    const bannerUrl = uploadedBanner || manualBannerUrl;
     const bannerEnabled = document.getElementById('banner-active-toggle').checked; // BARU
 
     try {
         await setDoc(doc(db, "settings", "general"), {
-            bgmUrl: url,
             bgmEnabled: isEnabled,
             bannerUrl: bannerUrl,
             bannerEnabled: bannerEnabled, // BARU
@@ -3310,9 +3348,12 @@ window.saveBgmSettings = async function() {
 
 // Tombol Hapus
 window.clearBgmSettings = async function() {
-    if(confirm("Hapus lagu utama?")) {
-        document.getElementById('bgm-url-input').value = "";
+    if(confirm("Hapus & matikan Welcome Screen (termasuk poster banner)?")) {
         document.getElementById('bgm-active-toggle').checked = false;
+        document.getElementById('banner-active-toggle').checked = false;
+        document.getElementById('banner-url-input').value = "";
+        document.getElementById('banner-url-input-hidden').value = "";
+        document.getElementById('banner-preview').src = "https://placehold.co/160x90?text=Poster";
         await saveBgmSettings();
     }
 }
@@ -3331,9 +3372,13 @@ window.previewBannerImg = function(input) {
                 canvas.height = img.height * scale;
                 canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                 const base64 = canvas.toDataURL('image/jpeg', 0.8);
-                // Simpan ke hidden input & preview
-                document.getElementById('banner-url-input').value = base64;
+                // FIX: id hidden input sebelumnya bentrok dengan input teks URL (2 elemen id sama),
+                // jadi base64 malah numpuk ke kotak teks URL yang keliatan. Sekarang ID-nya unik.
+                document.getElementById('banner-url-input-hidden').value = base64;
                 document.getElementById('banner-preview').src = base64;
+                // Kosongkan & tandai kotak URL manual, biar gak bingung dengan base64 yang panjang
+                document.getElementById('banner-url-input').value = '';
+                document.getElementById('banner-url-input').placeholder = '(Gambar sudah diupload -- kosongkan ini kalau mau pakai gambar upload)';
             }
             img.src = e.target.result;
         }
