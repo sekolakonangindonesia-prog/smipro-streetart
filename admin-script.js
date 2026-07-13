@@ -158,6 +158,7 @@ async function populateVenueFilters() {
    ========================================= */
 
 let currentMitraImgBase64 = null;
+let currentPerfImgBase64 = null;
 let mitraUnsubscribe = null; 
 
 // A. Preview Gambar Logo Mitra
@@ -767,6 +768,28 @@ window.generateReportPDF = async function() {
 /* =========================================
    3. MANAJEMEN PERFORMER
    ========================================= */
+window.previewPerfImg = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 400;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                currentPerfImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('p-preview').src = currentPerfImgBase64;
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
 async function loadPerformerData() {
     const tbody = document.getElementById('perf-table-body');
     if(!tbody) return;
@@ -785,7 +808,15 @@ async function loadPerformerData() {
                 `<span style="color:#00ff00;">✅ Verified</span>` : 
                 `<button class="btn-action btn-edit" onclick="verifyPerformer('${id}')">Verifikasi</button>`;
 
+            const pinStatus = data.pinHash
+                ? `<br><small style="color:#00d2ff;">🔒 PIN sudah dibuat</small>`
+                : `<br><small style="color:#ff9800;">🔓 Belum buat PIN</small>`;
+
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
+            const btnEdit = `<button class="btn-action btn-edit" onclick="startEditPerf('${id}', '${(data.name||'').replace(/'/g,"\\'")}', '${(data.genre||'').replace(/'/g,"\\'")}', '${data.phone||""}', '${data.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
+            const btnResetPin = data.pinHash
+                ? `<button class="btn-action" style="background:#ff9800;" title="Reset PIN (kalau performer lupa PIN)" onclick="resetPerfPin('${id}', '${(data.name||'').replace(/'/g,"\\'")}')"><i class="fa-solid fa-key"></i></button>`
+                : '';
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
             
              tbody.innerHTML += `
@@ -797,12 +828,81 @@ async function loadPerformerData() {
                     </div>
                 </td>
                 <td>${data.genre}</td>
-                <td>${statusIcon}</td>
-                <td>${btnLogin} ${btnDel}</td>
+                <td>${statusIcon}${pinStatus}</td>
+                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnResetPin} ${btnDel}</div></td>
             </tr>`;
         });
     });
 }
+
+// FORM TAMBAH/EDIT PERFORMER (dari Admin) -- PIN dibuat sendiri oleh performer saat login pertama,
+// sama seperti pola mitra, jadi form ini gak perlu input PIN.
+window.savePerformerData = async function() {
+    const id = document.getElementById('p-edit-id').value;
+    const nama = document.getElementById('p-nama').value.trim();
+    const genre = document.getElementById('p-genre').value.trim();
+    const phone = document.getElementById('p-wa').value.trim();
+
+    if (!nama || !genre) return alert("Nama Panggung dan Genre wajib diisi!");
+
+    const data = {
+        name: nama,
+        genre: genre,
+        phone: phone,
+        verified: true, // Dibuat langsung oleh Admin, jadi otomatis terverifikasi
+        updatedAt: new Date()
+    };
+    if (currentPerfImgBase64) data.img = currentPerfImgBase64;
+
+    try {
+        if (id) {
+            await updateDoc(doc(db, "performers", id), data);
+            alert("✅ Perubahan disimpan!");
+        } else {
+            data.joinedAt = new Date();
+            data.rating = 0;
+            await addDoc(collection(db, "performers"), data);
+            alert("✅ Performer ditambahkan!");
+        }
+        resetPerfForm();
+    } catch (e) { alert("Gagal: " + e.message); }
+};
+
+window.startEditPerf = function(id, nama, genre, phone, img) {
+    document.getElementById('p-edit-id').value = id;
+    document.getElementById('p-nama').value = nama;
+    document.getElementById('p-genre').value = genre;
+    document.getElementById('p-wa').value = phone;
+    document.getElementById('p-preview').src = img || 'https://placehold.co/100?text=Foto';
+    currentPerfImgBase64 = null;
+    document.getElementById('p-form-title').innerText = "Edit Performer";
+    document.getElementById('btn-save-perf').innerText = "Simpan Perubahan";
+    document.getElementById('btn-cancel-perf').style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.resetPerfForm = function() {
+    document.getElementById('p-edit-id').value = '';
+    document.getElementById('p-nama').value = '';
+    document.getElementById('p-genre').value = '';
+    document.getElementById('p-wa').value = '';
+    document.getElementById('p-preview').src = 'https://placehold.co/100?text=Foto';
+    currentPerfImgBase64 = null;
+    document.getElementById('p-form-title').innerText = "Tambah Performer Baru";
+    document.getElementById('btn-save-perf').innerText = "+ Simpan Performer";
+    document.getElementById('btn-cancel-perf').style.display = 'none';
+};
+
+// FIX KEAMANAN: Reset PIN performer (dipakai kalau performer lupa PIN)
+window.resetPerfPin = async function(id, nama) {
+    if (!confirm(`Reset PIN untuk "${nama}"?\n\nPastikan Anda sudah verifikasi ini benar performernya sebelum reset. Setelah direset, mereka wajib buat PIN baru saat login berikutnya.`)) return;
+    try {
+        await updateDoc(doc(db, "performers", id), { pinHash: null });
+        alert(`PIN "${nama}" berhasil direset. Suruh mereka login lagi -- sistem akan minta buat PIN baru.`);
+    } catch (e) {
+        alert("Gagal reset PIN: " + e.message);
+    }
+};
 
 window.verifyPerformer = async function(id) {
     if(confirm("Luluskan performer ini?")) {
