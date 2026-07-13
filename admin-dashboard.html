@@ -454,6 +454,31 @@
         <!-- 3. PERFORMER -->
         <div id="view-performer" class="admin-view hidden">
             <div class="section-header"><h2 style="margin:0; color:white;">Data Performer</h2></div>
+
+            <!-- FORM TAMBAH/EDIT PERFORMER -->
+            <div class="cms-form-group" style="display:flex; gap:20px; align-items:center; background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
+                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('p-file').click()">
+                    <img id="p-preview" src="https://placehold.co/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                    <input type="file" id="p-file" style="display:none;" accept="image/*" onchange="previewPerfImg(this)">
+                    <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Foto</div>
+                </div>
+                <div style="flex:1;">
+                    <h4 id="p-form-title" style="margin-top:0; color:#E50914; margin-bottom:10px;">Tambah Performer Baru</h4>
+                    <input type="hidden" id="p-edit-id">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <input type="text" id="p-nama" class="cms-input" placeholder="Nama Panggung / Artis" style="margin:0;">
+                        <input type="text" id="p-genre" class="cms-input" placeholder="Genre (cth: Pop Jawa)" style="margin:0;">
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:10px;">
+                        <input type="text" id="p-wa" class="cms-input" placeholder="No. WhatsApp (08xxx)" style="margin:0;">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="btn-save-perf" class="btn-action btn-view" onclick="savePerformerData()" style="width:100%;">+ Simpan Performer</button>
+                        <button id="btn-cancel-perf" class="btn-action btn-delete" onclick="resetPerfForm()" style="width:auto; display:none;">Batal</button>
+                    </div>
+                </div>
+            </div>
+
             <table class="admin-table">
                 <thead><tr><th>Nama Artis</th><th>Genre</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody id="perf-table-body"></tbody>
