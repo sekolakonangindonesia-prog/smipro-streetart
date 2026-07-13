@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akses Sistem SMIPRO</title>
+    <title>Akses Sistem STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -47,7 +47,7 @@
         <div id="view-menu" class="section-view">
             <div class="auth-header">
                 <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="app-logo">
-                <h2>Akses Sistem SMIPRO</h2>
+                <h2>Akses Sistem STREETART</h2>
                 <p>Silakan pilih peran Anda:</p>
             </div>
             <div class="role-grid">
@@ -73,8 +73,26 @@
         <label>Nama Warung (Sesuai Pendaftaran)</label>
         <input type="text" id="mitra-name-login" class="form-input" placeholder="Contoh: Warung Bu Sri">
     </div>
+    <div class="form-group" id="mitra-pin-group">
+        <label>PIN (4-6 digit)</label>
+        <input type="password" id="mitra-pin-login" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+    </div>
     <button id="btn-login-mitra" class="role-btn" style="background:#E50914; width:100%; border:none; margin-top:10px;">MASUK DASHBOARD</button>
-    
+
+    <!-- Muncul otomatis untuk warung lama yang belum pernah bikin PIN -->
+    <div id="mitra-setup-pin-area" style="display:none; margin-top:15px; padding:15px; background:#1a1a1a; border:1px solid #FFD700; border-radius:8px;">
+        <p style="color:#FFD700; font-size:0.85rem; margin:0 0 10px;"><i class="fa-solid fa-shield-halved"></i> Warung Anda belum punya PIN. Buat PIN sekali ini untuk login selanjutnya.</p>
+        <div class="form-group">
+            <label>Buat PIN Baru (4-6 digit)</label>
+            <input type="password" id="mitra-new-pin" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+        </div>
+        <div class="form-group">
+            <label>Ulangi PIN</label>
+            <input type="password" id="mitra-new-pin-confirm" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+        </div>
+        <button id="btn-setup-pin" class="role-btn" style="background:#FFD700; color:black; width:100%; border:none;">SIMPAN PIN & MASUK</button>
+    </div>
+
     <span class="link-text" onclick="location.href='mitra-login.html'">Belum daftar? Buat Akun Baru</span>
 </div>
 
@@ -145,7 +163,14 @@
 
     <script type="module">
     import { db } from './firebase-config.js';
-    import { collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Hash PIN pakai Web Crypto (SHA-256) -- PIN tidak pernah disimpan mentah di Firestore
+    async function hashPin(pin) {
+        const enc = new TextEncoder().encode(pin);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     // 1. FUNGSI PINDAH TAMPILAN
     window.pindahKe = function(tujuan) {
@@ -158,40 +183,97 @@
         else if (tujuan === 'register-mentor') document.getElementById('view-register-mentor').style.display = 'block';
     }
 
-    // 2. LOGIKA LOGIN MITRA (PENTING: INI SINKRON DENGAN ADMIN)
+    // 2. LOGIKA LOGIN MITRA (SEKARANG DENGAN PIN + CEK PERSETUJUAN ADMIN)
+    let mitraLoginPending = null; // simpan sementara {id, data} kalau perlu setup PIN dulu
+
+    function doMitraLogin(id, data) {
+        localStorage.clear();
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userRole', 'mitra');
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('mitraId', id); // <--- KUNCI UTAMA
+        localStorage.setItem('userLink', 'mitra-dashboard.html');
+        window.location.href = 'mitra-dashboard.html';
+    }
+
     document.getElementById('btn-login-mitra').addEventListener('click', async () => {
-        const name = document.getElementById('mitra-name-login').value;
-        const btn = document.getElementById('btn-login-mitra');
+        const name = document.getElementById('mitra-name-login').value.trim();
+        const pin  = document.getElementById('mitra-pin-login').value.trim();
+        const btn  = document.getElementById('btn-login-mitra');
         
         if(!name) return alert("Masukkan Nama Warung!");
         btn.innerText = "Memeriksa...";
         
         try {
-            // Cari data di Firebase berdasarkan Nama Warung
             const q = query(collection(db, "warungs"), where("name", "==", name));
             const querySnapshot = await getDocs(q);
 
-            if (!querySnapshot.empty) {
-                const doc = querySnapshot.docs[0];
-                const data = doc.data();
-
-                // SIMPAN KUNCI (SAMA PERSIS DENGAN ADMIN)
-                localStorage.clear();
-                localStorage.setItem('userLoggedIn', 'true');
-                localStorage.setItem('userRole', 'mitra');
-                localStorage.setItem('userName', data.name);
-                localStorage.setItem('mitraId', doc.id); // <--- KUNCI UTAMA
-                localStorage.setItem('userLink', 'mitra-dashboard.html');
-
-                window.location.href = 'mitra-dashboard.html';
-            } else {
+            if (querySnapshot.empty) {
                 alert("Nama Warung tidak ditemukan. Pastikan penulisan benar.");
                 btn.innerText = "MASUK DASHBOARD";
+                return;
             }
+
+            const mitraDoc = querySnapshot.docs[0];
+            const data = mitraDoc.data();
+
+            // FIX KEAMANAN: wajib disetujui admin dulu sebelum bisa login
+            if (!data.adminApproved) {
+                alert("Pendaftaran Anda masih menunggu persetujuan Admin. Silakan hubungi Admin via WhatsApp.");
+                btn.innerText = "MASUK DASHBOARD";
+                return;
+            }
+
+            // FIX KEAMANAN: warung lama yang belum punya PIN -> minta buat PIN dulu
+            if (!data.pinHash) {
+                mitraLoginPending = { id: mitraDoc.id, data: data };
+                document.getElementById('mitra-setup-pin-area').style.display = 'block';
+                btn.style.display = 'none';
+                btn.innerText = "MASUK DASHBOARD";
+                return;
+            }
+
+            // Sudah punya PIN -> wajib cocok
+            if (!pin) {
+                alert("Masukkan PIN Anda!");
+                btn.innerText = "MASUK DASHBOARD";
+                return;
+            }
+            const inputHash = await hashPin(pin);
+            if (inputHash !== data.pinHash) {
+                alert("PIN salah. Coba lagi, atau hubungi Admin untuk reset PIN kalau lupa.");
+                btn.innerText = "MASUK DASHBOARD";
+                return;
+            }
+
+            doMitraLogin(mitraDoc.id, data);
+
         } catch (e) {
             console.error(e);
             alert("Gagal koneksi: " + e.message);
             btn.innerText = "MASUK DASHBOARD";
+        }
+    });
+
+    // 2b. SIMPAN PIN BARU (untuk warung lama yang belum punya PIN)
+    document.getElementById('btn-setup-pin').addEventListener('click', async () => {
+        const p1 = document.getElementById('mitra-new-pin').value.trim();
+        const p2 = document.getElementById('mitra-new-pin-confirm').value.trim();
+        const btn = document.getElementById('btn-setup-pin');
+
+        if (!mitraLoginPending) return alert("Sesi tidak valid, silakan ulangi dari nama warung.");
+        if (!/^\d{4,6}$/.test(p1)) return alert("PIN harus 4-6 digit angka!");
+        if (p1 !== p2) return alert("PIN dan ulangi PIN tidak sama!");
+
+        btn.innerText = "Menyimpan...";
+        try {
+            const pinHash = await hashPin(p1);
+            await updateDoc(doc(db, "warungs", mitraLoginPending.id), { pinHash: pinHash });
+            doMitraLogin(mitraLoginPending.id, mitraLoginPending.data);
+        } catch (e) {
+            console.error(e);
+            alert("Gagal menyimpan PIN: " + e.message);
+            btn.innerText = "SIMPAN PIN & MASUK";
         }
     });
 
