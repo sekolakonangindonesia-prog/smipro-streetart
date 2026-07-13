@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Mitra Baru - SMIPRO</title>
+    <title>Daftar Mitra Baru - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -35,7 +35,7 @@
 
     <div class="auth-card">
         <div class="auth-header">
-            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo SMIPRO" class="register-logo">
+            <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Logo_Stretart.png" alt="Logo STREETART" class="register-logo">
             <h2>Daftar Mitra Baru</h2>
             <p>Isi formulir untuk verifikasi admin</p>
         </div>
@@ -75,6 +75,16 @@
             <input type="email" id="reg-email" class="form-input" placeholder="email@anda.com">
         </div>
 
+        <div class="form-group">
+            <label>Buat PIN Login (4-6 digit)</label>
+            <input type="password" id="reg-pin" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+            <small style="color:#666; font-size:0.7rem;">*PIN ini dipakai untuk login nanti, jangan sampai lupa.</small>
+        </div>
+        <div class="form-group">
+            <label>Ulangi PIN</label>
+            <input type="password" id="reg-pin-confirm" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+        </div>
+
         <button id="btn-submit" class="form-input" style="background:#00d2ff; color:black; font-weight:bold; cursor:pointer; margin-top:10px;">KIRIM PENDAFTARAN</button>
 
         <br><br>
@@ -110,6 +120,12 @@
             }
         }
 
+        async function hashPin(pin) {
+            const enc = new TextEncoder().encode(pin);
+            const buf = await crypto.subtle.digest('SHA-256', enc);
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         // 2. PROSES SIMPAN PENDAFTARAN
         document.getElementById('btn-submit').addEventListener('click', async () => {
             const lokasi = document.getElementById('reg-location').value;
@@ -118,6 +134,8 @@
             const meja = parseInt(document.getElementById('reg-table').value);
             const wa = document.getElementById('reg-wa').value;
             const email = document.getElementById('reg-email').value;
+            const pin = document.getElementById('reg-pin').value.trim();
+            const pinConfirm = document.getElementById('reg-pin-confirm').value.trim();
             const btn = document.getElementById('btn-submit');
 
             // Validasi
@@ -127,11 +145,18 @@
             if(meja > 15) {
                 return alert("Maksimal 15 meja untuk pendaftaran online.");
             }
+            if(!/^\d{4,6}$/.test(pin)) {
+                return alert("PIN harus 4-6 digit angka!");
+            }
+            if(pin !== pinConfirm) {
+                return alert("PIN dan ulangi PIN tidak sama!");
+            }
 
             btn.innerText = "Mengirim Data...";
             btn.disabled = true;
 
             try {
+                const pinHash = await hashPin(pin);
                 // Simpan ke Koleksi 'warungs' (Status Pending / Perlu Approval)
                 await addDoc(collection(db, "warungs"), {
                     name: warung,
@@ -141,12 +166,13 @@
                     bookedTables: 0,
                     phone: wa,
                     email: email,
+                    pinHash: pinHash, // FIX KEAMANAN: PIN login (di-hash, bukan disimpan mentah)
                     adminApproved: false, // Belum disetujui admin
                     joinedAt: new Date(),
                     img: "" // Kosong dulu
                 });
 
-                alert("✅ Pendaftaran Berhasil!\n\nSilakan tunggu konfirmasi Admin melalui WhatsApp.\nSetelah disetujui, nama warung Anda akan muncul di menu Login.");
+                alert("✅ Pendaftaran Berhasil!\n\nSilakan tunggu konfirmasi Admin melalui WhatsApp.\nSetelah disetujui, login pakai nama warung + PIN yang tadi Anda buat.");
                 window.location.href = 'login.html'; // Kembali ke halaman login utama
 
             } catch (e) {
