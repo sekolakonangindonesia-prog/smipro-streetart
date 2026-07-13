@@ -109,7 +109,25 @@
                 <label>Nama Panggung (Sesuai Data Admin)</label>
                 <input type="text" id="perf-name-login" class="form-input" placeholder="Contoh: The Acoustic Boys">
             </div>
+            <div class="form-group" id="perf-pin-group">
+                <label>PIN (4-6 digit)</label>
+                <input type="password" id="perf-pin-login" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+            </div>
             <button id="btn-login-perf" style="background:var(--accent); width:100%; padding:10px; border:none; color:black; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK STUDIO</button>
+
+            <!-- Muncul otomatis untuk performer yang belum pernah bikin PIN -->
+            <div id="perf-setup-pin-area" style="display:none; margin-top:15px; padding:15px; background:#1a1a1a; border:1px solid #FFD700; border-radius:8px;">
+                <p style="color:#FFD700; font-size:0.85rem; margin:0 0 10px;"><i class="fa-solid fa-shield-halved"></i> Anda belum punya PIN. Buat PIN sekali ini untuk login selanjutnya.</p>
+                <div class="form-group">
+                    <label>Buat PIN Baru (4-6 digit)</label>
+                    <input type="password" id="perf-new-pin" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Ulangi PIN</label>
+                    <input type="password" id="perf-new-pin-confirm" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
+                </div>
+                <button id="btn-setup-perf-pin" style="background:#FFD700; color:black; width:100%; padding:10px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">SIMPAN PIN & MASUK</button>
+            </div>
         </div>
 
         <!-- LOGIN MENTOR -->
@@ -277,10 +295,23 @@
         }
     });
 
-    // 3. LOGIKA LOGIN PERFORMER
+    // 3. LOGIKA LOGIN PERFORMER (SEKARANG DENGAN PIN)
+    let perfLoginPending = null;
+
+    function doPerfLogin(id, data) {
+        localStorage.clear();
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userRole', 'performer');
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('performerId', id); // <--- KUNCI UTAMA
+        localStorage.setItem('userLink', 'performer-dashboard.html');
+        window.location.href = 'performer-dashboard.html';
+    }
+
     document.getElementById('btn-login-perf').addEventListener('click', async () => {
-        const name = document.getElementById('perf-name-login').value;
-        const btn = document.getElementById('btn-login-perf');
+        const name = document.getElementById('perf-name-login').value.trim();
+        const pin  = document.getElementById('perf-pin-login').value.trim();
+        const btn  = document.getElementById('btn-login-perf');
         
         if(!name) return alert("Masukkan Nama Panggung!");
         btn.innerText = "Memeriksa...";
@@ -289,26 +320,64 @@
             const q = query(collection(db, "performers"), where("name", "==", name));
             const querySnapshot = await getDocs(q);
 
-            if (!querySnapshot.empty) {
-                const doc = querySnapshot.docs[0];
-                const data = doc.data();
-                
-                localStorage.clear();
-                localStorage.setItem('userLoggedIn', 'true');
-                localStorage.setItem('userRole', 'performer');
-                localStorage.setItem('userName', data.name);
-                localStorage.setItem('performerId', doc.id); // <--- KUNCI UTAMA
-                localStorage.setItem('userLink', 'performer-dashboard.html');
-                
-                window.location.href = 'performer-dashboard.html';
-            } else {
+            if (querySnapshot.empty) {
                 alert("Nama Performer tidak ditemukan.");
                 btn.innerText = "MASUK STUDIO";
+                return;
             }
+
+            const perfDoc = querySnapshot.docs[0];
+            const data = perfDoc.data();
+
+            // FIX KEAMANAN: performer yang belum punya PIN -> minta buat PIN dulu
+            if (!data.pinHash) {
+                perfLoginPending = { id: perfDoc.id, data: data };
+                document.getElementById('perf-setup-pin-area').style.display = 'block';
+                btn.style.display = 'none';
+                btn.innerText = "MASUK STUDIO";
+                return;
+            }
+
+            if (!pin) {
+                alert("Masukkan PIN Anda!");
+                btn.innerText = "MASUK STUDIO";
+                return;
+            }
+            const inputHash = await hashPin(pin);
+            if (inputHash !== data.pinHash) {
+                alert("PIN salah. Coba lagi, atau hubungi Admin untuk reset PIN kalau lupa.");
+                btn.innerText = "MASUK STUDIO";
+                return;
+            }
+
+            doPerfLogin(perfDoc.id, data);
+
         } catch (error) {
             console.error(error);
             alert("Error: " + error.message);
             btn.innerText = "MASUK STUDIO";
+        }
+    });
+
+    // 3b. SIMPAN PIN BARU (untuk performer yang belum punya PIN)
+    document.getElementById('btn-setup-perf-pin').addEventListener('click', async () => {
+        const p1 = document.getElementById('perf-new-pin').value.trim();
+        const p2 = document.getElementById('perf-new-pin-confirm').value.trim();
+        const btn = document.getElementById('btn-setup-perf-pin');
+
+        if (!perfLoginPending) return alert("Sesi tidak valid, silakan ulangi dari nama panggung.");
+        if (!/^\d{4,6}$/.test(p1)) return alert("PIN harus 4-6 digit angka!");
+        if (p1 !== p2) return alert("PIN dan ulangi PIN tidak sama!");
+
+        btn.innerText = "Menyimpan...";
+        try {
+            const pinHash = await hashPin(p1);
+            await updateDoc(doc(db, "performers", perfLoginPending.id), { pinHash: pinHash });
+            doPerfLogin(perfLoginPending.id, perfLoginPending.data);
+        } catch (e) {
+            console.error(e);
+            alert("Gagal menyimpan PIN: " + e.message);
+            btn.innerText = "SIMPAN PIN & MASUK";
         }
     });
 
