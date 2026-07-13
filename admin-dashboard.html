@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMIPRO - Control Tower</title>
+    <title>STREETART - Control Tower</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 
@@ -475,7 +475,7 @@
         <!-- 9. VIEW CAFE & TOUR (STRUKTUR FINAL & RAPI) -->
 <div id="view-cafe" class="admin-view hidden">
     <div class="section-header">
-        <h2 style="margin:0; color:white;">SMIPRO On Tour (Cafe Partner)</h2>
+        <h2 style="margin:0; color:white;">STREETART On Tour (Cafe Partner)</h2>
     </div>
 
     <!-- TAB NAVIGASI -->
@@ -838,6 +838,11 @@
                         </button>
                     </div>
                     <small style="color:#aaa;">*Video ini akan muncul otomatis di halaman Venue & Monitor di atas.</small>
+
+                    <div id="live-status-area" style="display:none; margin-top:15px; padding:10px; background:#1a0505; border:1px solid #ff4444; border-radius:6px; align-items:center; justify-content:space-between;">
+                        <span style="color:#ff4444; font-weight:bold;">🔴 Venue ini sedang berstatus LIVE</span>
+                        <button class="btn-action btn-delete" onclick="stopLiveLink()">STOP LIVE</button>
+                    </div>
                 </div>
             </div>
 
@@ -942,7 +947,7 @@
             </h4>
 
             <label class="cms-label" style="font-size: 0.75rem;">Link Poster Banner (Beranda):</label>
-<input type="text" id="banner-url-input" class="cms-input" placeholder="https://raw.githubusercontent.com/.../poster.jpg" style="margin-bottom: 10px; font-size: 0.85rem;">
+<input type="text" id="banner-url-input" class="cms-input" placeholder="https://raw.githubusercontent.com/.../poster.jpg" style="margin-bottom: 10px; font-size: 0.85rem;" oninput="document.getElementById('banner-url-input-hidden').value=''">
 
 <div style="background:#1a1a1a; padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border: 1px solid #222;">
     <div>
@@ -971,7 +976,7 @@
         <div style="font-size:0.7rem; color:#888; margin-top:5px; text-align:center;">Klik untuk Upload</div>
     </div>
     <input type="file" id="banner-file-input" style="display:none;" accept="image/*" onchange="previewBannerImg(this)">
-    <input type="hidden" id="banner-url-input">
+    <input type="hidden" id="banner-url-input-hidden">
     <small style="color:#666; flex:1;">Upload gambar poster event langsung dari perangkat.<br>Otomatis override ke LIVE saat ada siaran.</small>
 </div>
             
