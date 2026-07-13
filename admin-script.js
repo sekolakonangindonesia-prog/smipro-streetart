@@ -221,6 +221,17 @@ window.populateMitraFilters = async function() {
 };
 
 // C. LOAD DATA KE TABEL
+// FIX KEAMANAN: Reset PIN mitra (dipakai kalau warung lupa PIN-nya)
+window.resetMitraPin = async function(id, nama) {
+    if (!confirm(`Reset PIN untuk "${nama}"?\n\nPastikan Anda sudah verifikasi ini benar pemilik warungnya (misal lewat telepon/WA) sebelum reset. Setelah direset, mereka wajib buat PIN baru saat login berikutnya.`)) return;
+    try {
+        await updateDoc(doc(db, "warungs", id), { pinHash: null });
+        alert(`PIN "${nama}" berhasil direset. Suruh mereka login lagi seperti biasa -- sistem akan minta buat PIN baru.`);
+    } catch (e) {
+        alert("Gagal reset PIN: " + e.message);
+    }
+};
+
 window.loadMitraData = async function() {
     const tbody = document.getElementById('mitra-table-body');
     const filterEl = document.getElementById('filter-warung-venue');
@@ -253,13 +264,24 @@ window.loadMitraData = async function() {
             
             const delBtn = `<button class="btn-action btn-delete" onclick="deleteMitra('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
 
+            // FIX KEAMANAN: tombol reset PIN -- kalau warung lupa PIN, admin klik ini
+            // supaya PIN mereka terhapus dan bisa bikin PIN baru lagi pas login berikutnya
+            const resetPinBtn = d.pinHash 
+                ? `<button class="btn-action" style="background:#ff9800;" title="Reset PIN (kalau warung lupa PIN)" onclick="resetMitraPin('${id}', '${d.name.replace(/'/g,"\\'")}')"><i class="fa-solid fa-key"></i></button>`
+                : '';
+
+            // FIX: status approval sebelumnya hardcode "Verified" utk semua baris, sekarang sesuai data asli
+            const statusLabel = !d.adminApproved
+                ? '<span style="color:#ff9800;">Menunggu Approval</span>'
+                : (d.pinHash ? '<span style="color:#00ff00;">Aktif</span>' : '<span style="color:#00d2ff;">Approved (Belum Buat PIN)</span>');
+
             tbody.innerHTML += `
             <tr>
                 <td><b>${d.name}</b><br><small style="color:#aaa;">${d.venueName || '-'}</small></td>
                 <td>${d.owner || '-'}</td>
                 <td><i class="fa-solid fa-chair"></i> ${d.totalTables || 0}</td>
-                <td><span style="color:#00ff00;">Verified</span></td>
-                <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${delBtn}</div></td>
+                <td>${statusLabel}</td>
+                <td><div style="display:flex; gap:5px;">${impersonateBtn} ${editBtn} ${resetPinBtn} ${delBtn}</div></td>
             </tr>`;
         });
     });
@@ -587,7 +609,7 @@ window.generateReportPDF = async function() {
             // Judul (2 Baris)
             doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0,0,0);
             doc.text("LAPORAN DETAIL TRANSAKSI", 40, 18); 
-            doc.text("MITRA ANGKRINGAN SMIPRO", 40, 24);
+            doc.text("MITRA ANGKRINGAN STREETART", 40, 24);
             
             // Info Filter
             doc.setFontSize(9); doc.setFont("helvetica", "normal");
@@ -602,7 +624,7 @@ window.generateReportPDF = async function() {
         const drawFooter = () => {
             doc.setFontSize(8); 
             doc.setTextColor(150, 150, 150); // Abu-abu samar
-            doc.text("@ Yayasan Sekola Konang Indonesia - SMIPRO StreetArt.id", 105, pageHeight - 10, null, null, "center");
+            doc.text("@ Yayasan Sekola Konang Indonesia - STREETART StreetArt.id", 105, pageHeight - 10, null, null, "center");
             doc.setTextColor(0,0,0); // Balikin jadi hitam
         };
 
@@ -1810,7 +1832,7 @@ window.generateSawerPDF = async function() {
         const pageHeight = doc.internal.pageSize.height || 297;
         const printTime = new Date().toLocaleString('id-ID');
 
-        // --- A. LOAD LOGO SMIPRO ---
+        // --- A. LOAD LOGO STREETART ---
         const getBase64FromUrl = async (url) => {
             try {
                 const res = await fetch(url);
@@ -1918,7 +1940,7 @@ window.generateSawerPDF = async function() {
             body: tableBody,
             theme: 'grid',
             styles: { fontSize: 8, cellPadding: 3 },
-            headStyles: { fillColor: [229, 9, 20] }, // Merah SMIPRO
+            headStyles: { fillColor: [229, 9, 20] }, // Merah STREETART
             
             // FUNGSI UNTUK LOGO & HEADER DI SETIAP HALAMAN
             didDrawPage: function (data) {
@@ -1940,10 +1962,10 @@ window.generateSawerPDF = async function() {
                 doc.setLineWidth(0.5); doc.setDrawColor(0,0,0);
                 doc.line(15, 40, 195, 40);
 
-                // 5. FOOTER / MARKER (Watermark SMIPRO)
+                // 5. FOOTER / MARKER (Watermark STREETART)
                 doc.setFontSize(8); 
                 doc.setTextColor(150, 150, 150);
-                doc.text("@ Yayasan Sekola Konang Indonesia - SMIPRO StreetArt.id", 105, pageHeight - 10, null, null, "center");
+                doc.text("@ Yayasan Sekola Konang Indonesia - STREETART StreetArt.id", 105, pageHeight - 10, null, null, "center");
             }
         });
 
@@ -2006,7 +2028,7 @@ window.generateStudentPDF = async function(studentData, averageScore) {
         doc.setTextColor(255, 215, 0); // Emas
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
-        doc.text("SMIPRO MUSIC ACADEMY", 115, 23, null, null, "center");
+        doc.text("STREETART MUSIC ACADEMY", 115, 23, null, null, "center");
         
         doc.setTextColor(255, 255, 255); // Putih
         doc.setFontSize(10);
@@ -2338,7 +2360,7 @@ window.luluskanSiswa = async function(studentId, name, genre, imgUrl) {
             rating: 5.0, // Rating awal
             verified: true,
             joinedAt: new Date(),
-            desc: "Alumni Bengkel SMIPRO"
+            desc: "Alumni Bengkel STREETART"
         });
 
         // B. Update Status Siswa jadi 'graduated' (Agar hilang dari notif)
@@ -2817,7 +2839,7 @@ window.generateCafePDF = async function() {
                 // 2. Judul Laporan (2 Baris)
                 doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0,0,0);
                 doc.text("LAPORAN DETAIL APRESIASI", 40, 18);
-                doc.text("TOUR MITRA CAFE SMIPRO", 40, 24);
+                doc.text("TOUR MITRA CAFE STREETART", 40, 24);
 
                 // 3. Info Filter
                 doc.setFontSize(9); doc.setFont("helvetica", "normal");
@@ -2831,7 +2853,7 @@ window.generateCafePDF = async function() {
                 // 5. Footer (Watermark)
                 doc.setFontSize(8); 
                 doc.setTextColor(150, 150, 150); // Abu-abu samar
-                doc.text("@ Yayasan Sekola Konang Indonesia - SMIPRO StreetArt.id", 105, pageHeight - 10, null, null, "center");
+                doc.text("@ Yayasan Sekola Konang Indonesia - STREETART StreetArt.id", 105, pageHeight - 10, null, null, "center");
             }
         });
 
