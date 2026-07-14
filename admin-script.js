@@ -838,38 +838,37 @@ async function loadPerformerData() {
     });
 }
 
-// FIX: sambungkan lagi ke generateStudentPDF yang sudah ada tapi sempat orphan.
-// FIX TAMBAHAN: performer yang lulus SEBELUM perbaikan luluskanSiswa (nilai belum
-// ikut disalin) -- dicek dulu ke koleksi 'students' lama berdasarkan nama yang cocok,
-// supaya data lama gak dianggap hilang.
+// FIX: pakai printRaportDirect (fungsi yang SAMA dengan tombol cetak di tab Bengkel
+// Siswa, sudah terbukti jalan) alih-alih generateStudentPDF yang ternyata kurang
+// lengkap. printRaportDirect butuh ID dokumen 'students', jadi kita cari/simpan
+// referensinya dulu di performer (studentId).
 window.cetakRaportPerformer = async function(id) {
     try {
         const docSnap = await getDoc(doc(db, "performers", id));
         if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
         const d = docSnap.data();
-        let scores = d.scores || {};
 
-        if (Object.keys(scores).length === 0) {
-            // Coba cari data siswa lama (sebelum fix) berdasarkan nama yang sama persis
+        let studentId = d.studentId || null;
+
+        if (!studentId) {
+            // Fallback: cari data siswa lama berdasarkan nama yang sama persis
             const qOld = query(collection(db, "students"), where("name", "==", d.name));
             const oldSnap = await getDocs(qOld);
             if (!oldSnap.empty) {
-                const oldData = oldSnap.docs[0].data();
-                scores = oldData.scores || {};
-                if (Object.keys(scores).length > 0) {
-                    // Backfill sekalian ke performer supaya klik berikutnya lebih cepat & konsisten
-                    await updateDoc(doc(db, "performers", id), { scores: scores, studentId: oldSnap.docs[0].id });
-                }
+                studentId = oldSnap.docs[0].id;
+                // Backfill studentId ke performer biar klik berikutnya gak perlu cari lagi
+                await updateDoc(doc(db, "performers", id), { studentId: studentId });
             }
         }
 
-        const nilaiList = Object.values(scores);
-        if (nilaiList.length === 0) {
+        if (!studentId) {
             return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
         }
 
-        const avg = nilaiList.reduce((a, b) => a + parseInt(b), 0) / nilaiList.length;
-        await generateStudentPDF({ name: d.name, genre: d.genre, img: d.img, scores: scores }, avg);
+        if (typeof window.printRaportDirect !== 'function') {
+            return alert("Fungsi cetak raport (printRaportDirect) tidak ditemukan di file ini.");
+        }
+        await window.printRaportDirect(studentId);
     } catch (e) {
         alert("Gagal cetak raport: " + e.message);
     }
