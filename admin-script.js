@@ -851,11 +851,13 @@ window.cetakRaportPerformer = async function(id) {
         let studentId = d.studentId || null;
 
         if (!studentId) {
-            // Fallback: cari data siswa lama berdasarkan nama yang sama persis
-            const qOld = query(collection(db, "students"), where("name", "==", d.name));
-            const oldSnap = await getDocs(qOld);
-            if (!oldSnap.empty) {
-                studentId = oldSnap.docs[0].id;
+            // FIX: pencarian case-insensitive -- performer "Ismail" vs siswa "ismail"
+            // sebelumnya gak ketemu karena Firestore where("==") itu peka huruf besar/kecil
+            const allStudents = await getDocs(collection(db, "students"));
+            const targetName = (d.name || "").trim().toLowerCase();
+            const match = allStudents.docs.find(s => (s.data().name || "").trim().toLowerCase() === targetName);
+            if (match) {
+                studentId = match.id;
                 // Backfill studentId ke performer biar klik berikutnya gak perlu cari lagi
                 await updateDoc(doc(db, "performers", id), { studentId: studentId });
             }
