@@ -819,6 +819,7 @@ async function loadPerformerData() {
                 : '';
             // FIX: pasang lagi tombol Cetak Raport Nilai (sempat orphan/gak ada tombolnya
             // sejak sebelum kita mulai kerja bareng) -- hanya aktif kalau ada data scores
+            const btnLihat = `<button class="btn-action btn-view" title="Lihat Nilai Mentor" onclick="lihatNilaiPerformer('${id}')"><i class="fa-solid fa-eye"></i></button>`;
             const btnCetak = `<button class="btn-action" style="background:#00d2ff; color:black;" title="Cetak Raport Nilai Mentor" onclick="cetakRaportPerformer('${id}')"><i class="fa-solid fa-print"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
             
@@ -832,10 +833,30 @@ async function loadPerformerData() {
                 </td>
                 <td>${data.genre}</td>
                 <td>${statusIcon}${pinStatus}</td>
-                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnCetak} ${btnResetPin} ${btnDel}</div></td>
+                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnLihat} ${btnCetak} ${btnResetPin} ${btnDel}</div></td>
             </tr>`;
         });
     });
+}
+
+// Helper bersama: cari ID dokumen 'students' asli milik performer ini (dari field
+// studentId kalau sudah ada, atau cari manual by nama case-insensitive kalau belum).
+// Dipakai oleh tombol Cetak Raport & Lihat Nilai.
+async function findStudentIdForPerformer(id, d) {
+    let studentId = d.studentId || null;
+    if (!studentId) {
+        // FIX: pencarian case-insensitive -- performer "Ismail" vs siswa "ismail"
+        // sebelumnya gak ketemu karena Firestore where("==") itu peka huruf besar/kecil
+        const allStudents = await getDocs(collection(db, "students"));
+        const targetName = (d.name || "").trim().toLowerCase();
+        const match = allStudents.docs.find(s => (s.data().name || "").trim().toLowerCase() === targetName);
+        if (match) {
+            studentId = match.id;
+            // Backfill studentId ke performer biar klik berikutnya gak perlu cari lagi
+            await updateDoc(doc(db, "performers", id), { studentId: studentId });
+        }
+    }
+    return studentId;
 }
 
 // FIX: pakai printRaportDirect (fungsi yang SAMA dengan tombol cetak di tab Bengkel
@@ -848,20 +869,7 @@ window.cetakRaportPerformer = async function(id) {
         if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
         const d = docSnap.data();
 
-        let studentId = d.studentId || null;
-
-        if (!studentId) {
-            // FIX: pencarian case-insensitive -- performer "Ismail" vs siswa "ismail"
-            // sebelumnya gak ketemu karena Firestore where("==") itu peka huruf besar/kecil
-            const allStudents = await getDocs(collection(db, "students"));
-            const targetName = (d.name || "").trim().toLowerCase();
-            const match = allStudents.docs.find(s => (s.data().name || "").trim().toLowerCase() === targetName);
-            if (match) {
-                studentId = match.id;
-                // Backfill studentId ke performer biar klik berikutnya gak perlu cari lagi
-                await updateDoc(doc(db, "performers", id), { studentId: studentId });
-            }
-        }
+        const studentId = await findStudentIdForPerformer(id, d);
 
         if (!studentId) {
             return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
@@ -873,6 +881,29 @@ window.cetakRaportPerformer = async function(id) {
         await window.printRaportDirect(studentId);
     } catch (e) {
         alert("Gagal cetak raport: " + e.message);
+    }
+};
+
+// FIX: pasang lagi tombol "Lihat Nilai" (icon mata) yang bukanya modal-raport
+// (sama seperti yang dipakai di tab Bengkel Siswa lewat openRaport)
+window.lihatNilaiPerformer = async function(id) {
+    try {
+        const docSnap = await getDoc(doc(db, "performers", id));
+        if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
+        const d = docSnap.data();
+
+        const studentId = await findStudentIdForPerformer(id, d);
+
+        if (!studentId) {
+            return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
+        }
+
+        if (typeof window.openRaport !== 'function') {
+            return alert("Fungsi Lihat Nilai (openRaport) tidak ditemukan di file ini.");
+        }
+        window.openRaport(studentId);
+    } catch (e) {
+        alert("Gagal memuat nilai: " + e.message);
     }
 };
 
