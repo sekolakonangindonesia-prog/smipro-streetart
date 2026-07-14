@@ -817,6 +817,9 @@ async function loadPerformerData() {
             const btnResetPin = data.pinHash
                 ? `<button class="btn-action" style="background:#ff9800;" title="Reset PIN (kalau performer lupa PIN)" onclick="resetPerfPin('${id}', '${(data.name||'').replace(/'/g,"\\'")}')"><i class="fa-solid fa-key"></i></button>`
                 : '';
+            // FIX: pasang lagi tombol Cetak Raport Nilai (sempat orphan/gak ada tombolnya
+            // sejak sebelum kita mulai kerja bareng) -- hanya aktif kalau ada data scores
+            const btnCetak = `<button class="btn-action" style="background:#00d2ff; color:black;" title="Cetak Raport Nilai Mentor" onclick="cetakRaportPerformer('${id}')"><i class="fa-solid fa-print"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
             
              tbody.innerHTML += `
@@ -829,11 +832,33 @@ async function loadPerformerData() {
                 </td>
                 <td>${data.genre}</td>
                 <td>${statusIcon}${pinStatus}</td>
-                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnResetPin} ${btnDel}</div></td>
+                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnCetak} ${btnResetPin} ${btnDel}</div></td>
             </tr>`;
         });
     });
 }
+
+// FIX: sambungkan lagi ke generateStudentPDF yang sudah ada tapi sempat orphan.
+// Performer yang didaftarkan langsung admin (tanpa lewat Bengkel Siswa) tidak
+// punya data scores, jadi dikasih tau dengan jelas alih-alih PDF kosong.
+window.cetakRaportPerformer = async function(id) {
+    try {
+        const docSnap = await getDoc(doc(db, "performers", id));
+        if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
+        const d = docSnap.data();
+        const scores = d.scores || {};
+        const nilaiList = Object.values(scores);
+
+        if (nilaiList.length === 0) {
+            return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
+        }
+
+        const avg = nilaiList.reduce((a, b) => a + parseInt(b), 0) / nilaiList.length;
+        await generateStudentPDF({ name: d.name, genre: d.genre, img: d.img, scores: scores }, avg);
+    } catch (e) {
+        alert("Gagal cetak raport: " + e.message);
+    }
+};
 
 // FORM TAMBAH/EDIT PERFORMER (dari Admin) -- PIN dibuat sendiri oleh performer saat login pertama,
 // sama seperti pola mitra, jadi form ini gak perlu input PIN.
@@ -2440,7 +2465,7 @@ window.openSiswaApproval = async function(id) {
 
     // Set Tombol
     document.getElementById('btn-accept-siswa').onclick = function() { 
-        luluskanSiswa(id, d.name, d.genre); 
+        luluskanSiswa(id, d.name, d.genre, d.img, scores); 
         document.getElementById('modal-approve-siswa').style.display='none'; 
     }
 
@@ -2448,11 +2473,14 @@ window.openSiswaApproval = async function(id) {
 }
 
 // 3. FUNGSI BARU: EKSEKUSI KELULUSAN (Menambah ke Performer & Update Siswa)
-window.luluskanSiswa = async function(studentId, name, genre, imgUrl) {
+window.luluskanSiswa = async function(studentId, name, genre, imgUrl, scores) {
     if(!confirm(`Yakin meluluskan ${name}? \nAkun Performer akan otomatis dibuat.`)) return;
 
     try {
         // A. Buat Akun Baru di Koleksi 'performers'
+        // FIX: scores dari mentor & studentId asal ikut disimpan, supaya nanti bisa
+        // ditampilkan/dicetak lagi di tab Data Performer (sebelumnya nilai hilang
+        // begitu siswa lulus, karena tidak pernah ikut disalin)
         await addDoc(collection(db, "performers"), {
             name: name,
             genre: genre,
@@ -2460,7 +2488,9 @@ window.luluskanSiswa = async function(studentId, name, genre, imgUrl) {
             rating: 5.0, // Rating awal
             verified: true,
             joinedAt: new Date(),
-            desc: "Alumni Bengkel STREETART"
+            desc: "Alumni Bengkel STREETART",
+            scores: scores || {},
+            studentId: studentId
         });
 
         // B. Update Status Siswa jadi 'graduated' (Agar hilang dari notif)
