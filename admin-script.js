@@ -839,16 +839,31 @@ async function loadPerformerData() {
 }
 
 // FIX: sambungkan lagi ke generateStudentPDF yang sudah ada tapi sempat orphan.
-// Performer yang didaftarkan langsung admin (tanpa lewat Bengkel Siswa) tidak
-// punya data scores, jadi dikasih tau dengan jelas alih-alih PDF kosong.
+// FIX TAMBAHAN: performer yang lulus SEBELUM perbaikan luluskanSiswa (nilai belum
+// ikut disalin) -- dicek dulu ke koleksi 'students' lama berdasarkan nama yang cocok,
+// supaya data lama gak dianggap hilang.
 window.cetakRaportPerformer = async function(id) {
     try {
         const docSnap = await getDoc(doc(db, "performers", id));
         if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
         const d = docSnap.data();
-        const scores = d.scores || {};
-        const nilaiList = Object.values(scores);
+        let scores = d.scores || {};
 
+        if (Object.keys(scores).length === 0) {
+            // Coba cari data siswa lama (sebelum fix) berdasarkan nama yang sama persis
+            const qOld = query(collection(db, "students"), where("name", "==", d.name));
+            const oldSnap = await getDocs(qOld);
+            if (!oldSnap.empty) {
+                const oldData = oldSnap.docs[0].data();
+                scores = oldData.scores || {};
+                if (Object.keys(scores).length > 0) {
+                    // Backfill sekalian ke performer supaya klik berikutnya lebih cepat & konsisten
+                    await updateDoc(doc(db, "performers", id), { scores: scores, studentId: oldSnap.docs[0].id });
+                }
+            }
+        }
+
+        const nilaiList = Object.values(scores);
         if (nilaiList.length === 0) {
             return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
         }
