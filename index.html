@@ -257,7 +257,7 @@
             <span class="logo-text">STREETART.ID</span>
         </a>
         <div class="menu" style="display:flex; align-items:center;">
-            <a href="about.html" style="color:var(--primary); text-decoration:none; margin-right:15px; font-size:1.2rem;" title="Tentang SMIPRO">
+            <a href="about.html" style="color:var(--primary); text-decoration:none; margin-right:15px; font-size:1.2rem;" title="Tentang STREETART">
                 <i class="fa-solid fa-circle-info"></i>
             </a>
             <div id="nav-btn-area">
@@ -346,7 +346,7 @@
             <h3 style="margin:0; color:white;">Dukung Street.Art</h3>
             <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
             <div class="social-icons">
-                <a href="https://www.youtube.com/@SmiproStreetart" target="_blank" style="color:red;" title="YouTube SMIPRO">
+                <a href="https://www.youtube.com/@SmiproStreetart" target="_blank" style="color:red;" title="YouTube STREETART">
                     <i class="fa-brands fa-youtube"></i>
                 </a>
                 <a href="https://www.tiktok.com/@smipro_streetart" target="_blank" style="color:#00f2ea;" title="TikTok">
@@ -654,7 +654,7 @@ area.innerHTML = `
                             <span style="font-size:2.5rem; font-weight:800; line-height:1;">${tgl}</span>
                         </div>
                         <div class="msc-info">
-                            <div class="msc-badge" style="background:#ff9800; color:black; border:none; font-weight:bold;">SMIPRO ON TOUR</div>
+                            <div class="msc-badge" style="background:#ff9800; color:black; border:none; font-weight:bold;">STREETART ON TOUR</div>
                             <h3 style="margin:5px 0 5px 0; color:white;">${data.location}</h3>
                             <p style="color:#ccc; font-size:0.9rem; margin:0;">
                                 <i class="fa-solid fa-guitar" style="color:#ff9800;"></i> ${artistName}
@@ -722,7 +722,7 @@ area.innerHTML = `
             container.innerHTML = '';
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                const defaultImg = "https://via.placeholder.com/150";
+                const defaultImg = "https://placehold.co/150";
                 container.innerHTML += `
                 <div class="artist-card" onclick="location.href='profile.html?id=${doc.id}'">
                     <img src="${data.img || defaultImg}" class="artist-img">
@@ -839,7 +839,7 @@ area.innerHTML = `
                     const ytId = getYtId(item.youtubeId || item.youtube_id || item.videoId || item.link || item.url || '');
                     if (ytId) thumbImg = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
                 }
-                if (!thumbImg) thumbImg = 'https://via.placeholder.com/400x200/111/444?text=' + label;
+                if (!thumbImg) thumbImg = 'https://placehold.co/400x200/111/444?text=' + label;
  
                 return `
                 <div onclick="location.href='${targetPage}'"
@@ -857,7 +857,7 @@ area.innerHTML = `
                     <div style="position:relative; height:108px; overflow:hidden;">
                         <img src="${thumbImg}"
                              style="width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
-                             onerror="this.src='https://via.placeholder.com/400x200/111/444?text=${label}'">
+                             onerror="this.src='https://placehold.co/400x200/111/444?text=${label}'">
  
                         <!-- Badge tipe -->
                         <span style="position:absolute; top:8px; left:8px; z-index:3;
@@ -884,7 +884,7 @@ area.innerHTML = `
                         </h4>
                         <small style="color:#555; font-size:0.68rem;">
                             ${item.host || 'Admin'} &nbsp;·&nbsp;
-                            <span style="color:${accent};">Buka ${type === 'video' ? 'Street Stage' : 'SMIPRO Tunes'} →</span>
+                            <span style="color:${accent};">Buka ${type === 'video' ? 'Street Stage' : 'STREETART Tunes'} →</span>
                         </small>
                     </div>
                 </div>`;
@@ -933,7 +933,7 @@ area.innerHTML = `
                             const playPromise = player.play();
                             if (playPromise !== undefined) {
                                 playPromise.then(() => {
-                                    console.log("🎶 MUSIK SMIPRO BERHASIL DIPUTAR!");
+                                    console.log("🎶 MUSIK STREETART BERHASIL DIPUTAR!");
                                 }).catch(error => {
                                     console.error("❌ Browser memblokir suara: ", error);
                                 });
