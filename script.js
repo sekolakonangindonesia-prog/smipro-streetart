@@ -94,7 +94,7 @@ async function renderDashboard() {
                 const p = docSnap.data();
                 pList.innerHTML += `
                 <div class="artist-card-ss1">
-                    <img src="${p.img || 'https://via.placeholder.com/150'}" class="artist-img-ss1">
+                    <img src="${p.img || 'https://placehold.co/150'}" class="artist-img-ss1">
                     <h4>${p.name}</h4>
                 </div>`;
             });
@@ -150,7 +150,7 @@ function renderWarungs() {
                 `<button class="btn-book" onclick="openBooking('${wId}')">Booking</button>`;
                 
             let statusClass = isFull ? 'full' : '';
-            let imgUrl = w.img || "https://via.placeholder.com/200"; // Gambar default jika kosong
+            let imgUrl = w.img || "https://placehold.co/200"; // Gambar default jika kosong
 
             // Render HTML Kartu Warung
             grid.innerHTML += `
