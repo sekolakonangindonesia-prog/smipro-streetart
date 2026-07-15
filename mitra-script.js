@@ -899,7 +899,7 @@ onSnapshot(qMenu, (snap) => {
     container.innerHTML = '';
     snap.forEach(dSnap => {
         const m = dSnap.data();
-        container.innerHTML += `<div class="menu-card" style="background:#222; border-radius:10px; overflow:hidden; border:1px solid #333; text-align:center;"><img src="${m.img || 'https://via.placeholder.com/150'}" style="width:100%; height:120px; object-fit:cover;"><div style="padding:10px;"><b>${m.name}</b><br><span style="color:gold;">Rp ${parseInt(m.price).toLocaleString()}</span><br><button onclick="deleteMenu('${dSnap.id}')" style="background:#333; color:red; border:1px solid #444; width:100%; margin-top:5px; cursor:pointer; height:30px;">Hapus</button></div></div>`;
+        container.innerHTML += `<div class="menu-card" style="background:#222; border-radius:10px; overflow:hidden; border:1px solid #333; text-align:center;"><img src="${m.img || 'https://placehold.co/150'}" style="width:100%; height:120px; object-fit:cover;"><div style="padding:10px;"><b>${m.name}</b><br><span style="color:gold;">Rp ${parseInt(m.price).toLocaleString()}</span><br><button onclick="deleteMenu('${dSnap.id}')" style="background:#333; color:red; border:1px solid #444; width:100%; margin-top:5px; cursor:pointer; height:30px;">Hapus</button></div></div>`;
     });
 });
 
