@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil Performer - SMIPRO</title>
+    <title>Profil Performer - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
@@ -195,7 +195,7 @@
     <div class="profile-banner" id="hero-banner">
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="profile-logo-corner" alt="Logo">
         <div class="profile-avatar-container">
-            <img src="" id="p-img" class="profile-avatar" onerror="this.src='https://via.placeholder.com/150'">
+            <img src="" id="p-img" class="profile-avatar" onerror="this.src='https://placehold.co/150'">
         </div>
     </div>
 
@@ -237,7 +237,7 @@
         </div>
         
         <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
-        &copy; 2025 Yayasan Sekolah Konang Indonesia - SMIPRO StreetArt.ID
+        &copy; 2025 Yayasan Sekolah Konang Indonesia - STREETART StreetArt.ID
     </div>
 
         <br><br><br>
@@ -256,7 +256,7 @@
                 <img src="" id="track-cover" class="mini-cover" crossorigin="anonymous">
                 <div class="mini-text">
                     <span id="track-title" class="mini-title">-</span>
-                    <span id="track-artist" class="mini-artist">SMIPRO Performer</span>
+                    <span id="track-artist" class="mini-artist">STREETART Performer</span>
                 </div>
             </div>
 
@@ -330,7 +330,7 @@
             if(data.link_tiktok) socialContainer.innerHTML += `<a href="${data.link_tiktok}" target="_blank"><i class="fa-brands fa-tiktok" style="color:#00f2ea;"></i></a>`;
             if(data.link_yt) socialContainer.innerHTML += `<a href="${data.link_yt}" target="_blank"><i class="fa-brands fa-youtube" style="color:#ff0000;"></i></a>`;
 
-            const textWA = `Halo Admin SMIPRO, saya ingin info booking talent *${data.name}*.`;
+            const textWA = `Halo Admin STREETART, saya ingin info booking talent *${data.name}*.`;
             document.getElementById('wa-link').href = `https://wa.me/6281234567890?text=${encodeURIComponent(textWA)}`;
 
             // --- EKSEKUSI JADWAL (Kode Lama Anda) ---
@@ -344,7 +344,7 @@
         }
     }
 
-    // --- 2. FUNGSI RENDER SHOWCASE (STREET STAGE & SMIPRO TUNES) ---
+    // --- 2. FUNGSI RENDER SHOWCASE (STREET STAGE & STREETART TUNES) ---
     function renderSmartShowcase(gallery, artistName) {
         const container = document.getElementById('gallery-container');
         if(!container) return;
@@ -359,7 +359,7 @@
                 container.innerHTML += `<div class="section-divider">🎬 STREET STAGE</div><div class="gallery-grid video-aspect"></div>`;
                 const vGrid = container.lastElementChild;
                 videos.forEach((v, idx) => {
-                   const thumb = v.youtubeId ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/300x168");
+                   const thumb = v.youtubeId ? `https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg` : (v.cover || "https://placehold.co/300x168");
                     
                     // KUNCI: Pakai playInside, jangan window.open!
                     vGrid.innerHTML += `
@@ -375,9 +375,9 @@
                 });
             }
 
-       // B. Render SMIPRO TUNES
+       // B. Render STREETART TUNES
         if (playlist.length > 0) {
-            container.innerHTML += `<div class="section-divider">🎧 SMIPRO TUNES</div><div class="gallery-grid"></div>`;
+            container.innerHTML += `<div class="section-divider">🎧 STREETART TUNES</div><div class="gallery-grid"></div>`;
             const aGrid = container.lastElementChild;
             
             playlist.forEach((track, index) => {
@@ -427,7 +427,7 @@
 
         if(audio && playerBar) {
             playerBar.style.display = 'block';
-            document.getElementById('track-cover').src = track.cover || "https://via.placeholder.com/150";
+            document.getElementById('track-cover').src = track.cover || "https://placehold.co/150";
             document.getElementById('track-title').innerText = track.title;
             
             audio.src = cleanLink(track.url);
@@ -555,7 +555,7 @@
                             <i class="fa-solid ${event.type === 'tour' ? 'fa-mug-hot' : 'fa-microphone-lines'}"></i>
                         </div>
                         <div>
-                            <b style="color:white;">${event.type === 'tour' ? 'SMIPRO ON TOUR' : 'SMIPRO Live Stage'}</b><br>
+                            <b style="color:white;">${event.type === 'tour' ? 'STREETART ON TOUR' : 'STREETART Live Stage'}</b><br>
                             <small style="color:#ccc;">${event.displayDate} @ ${event.location}</small>
                         </div>
                     </div>`;
