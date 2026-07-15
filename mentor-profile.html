@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil Mentor Profesional - SMIPRO</title>
+    <title>Profil Mentor Profesional - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -266,7 +266,7 @@
     <div class="profile-hero">
         <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" class="hero-logo">
         <div class="avatar-wrapper">
-            <img src="" id="m-img" class="profile-avatar-big" onerror="this.src='https://via.placeholder.com/150'">
+            <img src="" id="m-img" class="profile-avatar-big" onerror="this.src='https://placehold.co/150'">
             <div class="verified-badge"><i class="fa-solid fa-check"></i></div>
         </div>
         <h1 class="mentor-name" id="m-name">Memuat Data...</h1>
@@ -323,7 +323,7 @@
             <img src="" id="track-cover" class="mini-cover" crossorigin="anonymous">
             <div class="mini-text">
                 <span id="track-title" class="mini-title">-</span>
-                <span id="track-artist" class="mini-artist">SMIPRO Mentor</span>
+                <span id="track-artist" class="mini-artist">STREETART Mentor</span>
             </div>
         </div>
         <div class="player-controls">
@@ -418,7 +418,7 @@
                 }
 
                 // E. TOMBOL WA
-                const text = `Halo Admin SMIPRO, saya tertarik dengan profil mentor *${data.name}* (${data.specialist}). Mohon info lebih lanjut.`;
+                const text = `Halo Admin STREETART, saya tertarik dengan profil mentor *${data.name}* (${data.specialist}). Mohon info lebih lanjut.`;
                 document.getElementById('btn-wa').href = `https://wa.me/6281234567890?text=${encodeURIComponent(text)}`;
 
                 // F. PANGGIL FUNGSI SHOWCASE (Karya)
@@ -451,7 +451,7 @@
                     else if (v.url.includes('youtu.be/')) vId = v.url.split('youtu.be/')[1].split('?')[0];
                     else if (v.url.includes('embed/')) vId = v.url.split('embed/')[1].split('?')[0];
 
-                    const thumb = vId ? `https://img.youtube.com/vi/${vId}/hqdefault.jpg` : (v.cover || "https://via.placeholder.com/300x168");
+                    const thumb = vId ? `https://img.youtube.com/vi/${vId}/hqdefault.jpg` : (v.cover || "https://placehold.co/300x168");
                     
                     vGrid.innerHTML += `
                     <div class="gallery-item" onclick="playInside('v-${idx}', 'video', '${v.url}')" id="v-${idx}">
@@ -466,7 +466,7 @@
 
             // RENDER AUDIO
             if (playlist.length > 0) {
-                container.innerHTML += `<div class="section-divider">🎧 SMIPRO TUNES</div><div class="gallery-grid"></div>`;
+                container.innerHTML += `<div class="section-divider">🎧 STREETART TUNES</div><div class="gallery-grid"></div>`;
                 const aGrid = container.lastElementChild;
                 
                 playlist.forEach((track, index) => {
