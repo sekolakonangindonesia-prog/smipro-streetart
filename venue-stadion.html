@@ -76,7 +76,10 @@
     <div class="container">
         
         <!-- BAGIAN ATAS: LIVE & REQUEST -->
-        <div class="split-view">
+        <!-- FIX: default disembunyikan, cuma dimunculkan JS kalau beneran isLiveNow=true.
+             Sebelumnya selalu render (spinner "Memuat Siaran..." lalu iframe autoplay)
+             walau sudah di-Stop Live, karena cuma cek ada-tidaknya link tersimpan. -->
+        <div class="split-view" id="live-section-wrapper" style="display:none;">
             <div class="live-frame"id="main-stage-container">                                
                 <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br>
                 Memuat Siaran...
@@ -293,24 +296,24 @@
                 const reviewImg = document.querySelector('.venue-photo-review');
                 if (reviewImg) {
                     // Pakai foto venue, kalau tidak ada pakai placeholder
-                    reviewImg.src = data.img || "https://via.placeholder.com/150";
+                    reviewImg.src = data.img || "https://placehold.co/150";
                 }
 
                 // A. Load Video Live
+                // FIX: cek beneran isLiveNow=true (bukan cuma ada link tersimpan).
+                // Kalau tidak live, seluruh section (video + request lagu) disembunyikan
+                // total -- gak ada lagi spinner "Memuat Siaran..." nongol percuma di HP.
+                const liveWrapper = document.getElementById('live-section-wrapper');
                 const videoContainer = document.getElementById('main-stage-container');
-                if (data.youtubeId && data.liveLink) {
+                if (data.isLiveNow && data.youtubeId && data.liveLink) {
+                    liveWrapper.style.display = '';
                     videoContainer.innerHTML = `
                         <iframe width="100%" height="100%" 
                             src="https://www.youtube.com/embed/${data.youtubeId}?autoplay=1&mute=0&rel=0" 
                             title="Live" frameborder="0" allowfullscreen style="border-radius:15px;">
                         </iframe>`;
                 } else {
-                    videoContainer.innerHTML = `
-                        <div style="text-align:center; color:#555;">
-                            <i class="fa-solid fa-video-slash fa-3x"></i><br>
-                            <h3 style="margin:10px 0 0; color:#E50914;">${data.name}</h3>
-                            <p>Siaran Offline / Belum Dimulai</p>
-                        </div>`;
+                    liveWrapper.style.display = 'none';
                 }
 
                 // B. Panggil Data Lain (HANYA DI SINI)
@@ -355,11 +358,11 @@
                     btnHtml = `<button class="btn-book-ss3" onclick="window.openBooking('${w.name.replace(/'/g,"\\'")}', '${id}')">Booking</button>`;
                 }
 
-                const imgUrl = w.img || "https://via.placeholder.com/200?text=Warung";
+                const imgUrl = w.img || "https://placehold.co/200?text=Warung";
                 container.innerHTML += `
                 <div class="warung-card">
                     <img src="${imgUrl}" class="warung-img" onclick="window.location.href='warung-profile.html?id=${id}'"
-                         onerror="this.src='https://via.placeholder.com/200?text=Warung'">
+                         onerror="this.src='https://placehold.co/200?text=Warung'">
                     <div class="warung-body">
                         <span class="warung-name" onclick="window.location.href='warung-profile.html?id=${id}'">${w.name}</span>
                         <span class="warung-stats" style="color:${isFull || isClosed ? 'red' : '#00ff00'}">
