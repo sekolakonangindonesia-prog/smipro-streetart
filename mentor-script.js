@@ -133,7 +133,7 @@ function listenStudents(mentorId) {
                     </div>`;
             }
 
-            const imgUrl = s.img || "https://via.placeholder.com/150";
+            const imgUrl = s.img || "https://placehold.co/150";
 
             container.innerHTML += `
             <div style="background:#222; padding:15px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:15px; margin-bottom:10px;">
@@ -366,7 +366,7 @@ window.renderGallery = function(galleryArray) {
             thumb = item.cover;
         } else {
             // Jika tidak ada keduanya, pakai gambar standar
-            thumb = "https://via.placeholder.com/400x225?text=SMIPRO+Media";
+            thumb = "https://placehold.co/400x225?text=STREETART+Media";
         }
 
         container.innerHTML += `
