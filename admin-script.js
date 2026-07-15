@@ -827,7 +827,7 @@ async function loadPerformerData() {
             <tr>
                 <td>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${data.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <img src="${data.img || 'https://placehold.co/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333;">
                         <b>${data.name}</b>
                     </div>
                 </td>
@@ -1034,7 +1034,7 @@ async function loadMentorData() {
             <tr>
                 <td>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${data.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+                        <img src="${data.img || 'https://placehold.co/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333;">
                         <b>${data.name}</b>
                     </div>
                 </td>
@@ -1048,9 +1048,9 @@ async function loadMentorData() {
 
 window.seedMentors = async function() {
     const mentorsData = [
-        { name: "Andik Laksono", specialist: "Musik & Audio Engineering", img: "https://via.placeholder.com/150", email: "andigomusicpro@gmail.com" },
-        { name: "Ervansyah", specialist: "Visual Management", img: "https://via.placeholder.com/150", email: "yusufkonang33@gmail.com" },
-        { name: "Antony", specialist: "Public Relations", img: "https://via.placeholder.com/150", email: "gustinara.top@gmail.com" }
+        { name: "Andik Laksono", specialist: "Musik & Audio Engineering", img: "https://placehold.co/150", email: "andigomusicpro@gmail.com" },
+        { name: "Ervansyah", specialist: "Visual Management", img: "https://placehold.co/150", email: "yusufkonang33@gmail.com" },
+        { name: "Antony", specialist: "Public Relations", img: "https://placehold.co/150", email: "gustinara.top@gmail.com" }
     ];
     if(confirm("Buat Data Mentor Awal?")) {
         for (const m of mentorsData) { await addDoc(collection(db, "mentors"), m); }
@@ -1093,7 +1093,7 @@ window.previewStudentImg = function(input) {
 window.addStudent = async function() {
     const name = document.getElementById('new-student-name').value;
     const genre = document.getElementById('new-student-genre').value;
-    const img = currentStudentBase64 || "https://via.placeholder.com/150"; 
+    const img = currentStudentBase64 || "https://placehold.co/150"; 
     if(!name || !genre) return alert("Isi Nama dan Genre!");
     if(confirm("Masukkan siswa ini ke Bengkel?")) {
         await addDoc(collection(db, "students"), { name, genre, img, scores: {}, status: "training", timestamp: new Date() });
@@ -1197,7 +1197,7 @@ window.openRaport = async function(studentId) {
 
         document.getElementById('rap-name').innerText = sData.name;
         document.getElementById('rap-genre').innerText = sData.genre;
-        document.getElementById('rap-img').src = sData.img || "https://via.placeholder.com/150";
+        document.getElementById('rap-img').src = sData.img || "https://placehold.co/150";
 
         const mentorSnap = await getDocs(collection(db, "mentors"));
         tbody.innerHTML = ''; 
@@ -2481,7 +2481,7 @@ window.openSiswaApproval = async function(id) {
     // Isi Header
     document.getElementById('app-siswa-name').innerText = d.name;
     document.getElementById('app-siswa-genre').innerText = d.genre;
-    document.getElementById('app-siswa-img').src = d.img || "https://via.placeholder.com/150";
+    document.getElementById('app-siswa-img').src = d.img || "https://placehold.co/150";
 
     // Isi Tabel Nilai
     const tbody = document.getElementById('app-siswa-scores');
@@ -2600,7 +2600,7 @@ window.resetCafeForm = function() {
     document.getElementById('cafe-edit-id').value = "";
     document.getElementById('new-cafe-name').value = "";
     document.getElementById('new-cafe-address').value = "";
-    document.getElementById('cafe-preview').src = "https://via.placeholder.com/100?text=Logo";
+    document.getElementById('cafe-preview').src = "https://placehold.co/100?text=Logo";
     currentCafeBase64 = null;
     document.getElementById('btn-save-cafe').innerText = "+ Simpan Partner";
     document.getElementById('btn-save-cafe').style.background = "";
@@ -2652,7 +2652,7 @@ window.loadCafeData = function() {
 
             tbody.innerHTML += `
             <tr>
-                <td><img src="${d.img || 'https://via.placeholder.com/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"></td>
+                <td><img src="${d.img || 'https://placehold.co/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;"></td>
                 <td><b>${d.name}</b></td>
                 <td>${d.address}</td>
                 <td>${btnEdit} ${btnDel}</td>
@@ -2665,7 +2665,7 @@ window.editCafe = function(id, name, addr, img) {
     document.getElementById('cafe-edit-id').value = id; 
     document.getElementById('new-cafe-name').value = name;
     document.getElementById('new-cafe-address').value = addr;
-    document.getElementById('cafe-preview').src = img || "https://via.placeholder.com/100?text=Logo";
+    document.getElementById('cafe-preview').src = img || "https://placehold.co/100?text=Logo";
     currentCafeBase64 = null; 
 
     const btnSave = document.getElementById('btn-save-cafe');
@@ -3172,7 +3172,7 @@ window.saveGalleryItem = async function() {
         else if (link.includes("youtu.be/")) videoId = link.split("youtu.be/")[1];
         else if (link.includes("embed/")) videoId = link.split("embed/")[1];
         
-        let thumb = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "https://via.placeholder.com/300";
+        let thumb = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "https://placehold.co/300";
 
         payload.link = link;
         payload.youtubeId = videoId;
@@ -3189,7 +3189,7 @@ window.saveGalleryItem = async function() {
         if(currentAudioCoverBase64) {
             payload.thumb = currentAudioCoverBase64;
         } else if (!id) {
-            payload.thumb = "https://via.placeholder.com/150?text=Music"; // Default hanya saat create
+            payload.thumb = "https://placehold.co/150?text=Music"; // Default hanya saat create
         }
         payload.host = artist || "Unknown Artist"; 
     }
@@ -3232,7 +3232,7 @@ window.editGalleryItem = function(id, type, title, link, host, category, desc, t
     } else {
         document.getElementById('audio-link').value = link;
         document.getElementById('audio-artist').value = host;
-        document.getElementById('audio-cover-preview').src = thumb || "https://via.placeholder.com/100";
+        document.getElementById('audio-cover-preview').src = thumb || "https://placehold.co/100";
         currentAudioCoverBase64 = null; // Reset buffer, biar kalau ga ganti gambar, pake yg lama
     }
 
@@ -3256,7 +3256,7 @@ window.cancelGalleryEdit = function() {
     document.getElementById('audio-link').value = '';
     document.getElementById('audio-artist').value = '';
     
-    document.getElementById('audio-cover-preview').src = "https://via.placeholder.com/100?text=Cover";
+    document.getElementById('audio-cover-preview').src = "https://placehold.co/100?text=Cover";
     currentAudioCoverBase64 = null;
 
     // Balikkan Tombol
