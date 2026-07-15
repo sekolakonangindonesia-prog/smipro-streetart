@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#000">
-    <title>SMIPRO Tunes – STREETART.ID</title>
+    <title>STREETART Tunes – STREETART.ID</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -305,7 +305,7 @@
                 </div>
             </div>
             <div class="sp-info">
-                <div class="sp-lbl">🎧 SMIPRO TUNES</div>
+                <div class="sp-lbl">🎧 STREETART TUNES</div>
                 <div id="ap-title">-</div>
                 <div id="ap-artist">-</div>
             </div>
@@ -455,12 +455,12 @@
         const artist = d.host   || 'Admin';
         // Link share: URL halaman ini + query param id lagu
         const shareUrl  = window.location.href.split('?')[0] + '?play=' + encodeURIComponent(d.id);
-        const shareText = '🎵 ' + title + '\nOleh: ' + artist + '\nDengarkan di SMIPRO Tunes STREETART.ID';
+        const shareText = '🎵 ' + title + '\nOleh: ' + artist + '\nDengarkan di STREETART Tunes STREETART.ID';
 
         if (navigator.share) {
             // Native share sheet (HP Android/iOS)
             navigator.share({
-                title : title + ' – SMIPRO Tunes',
+                title : title + ' – STREETART Tunes',
                 text  : shareText,
                 url   : shareUrl
             }).catch(() => {});
@@ -546,8 +546,8 @@
                         <span class="ne-b"></span><span class="ne-b"></span><span class="ne-b"></span>
                     </span>
                 </div>
-                <img class="tr-img" src="${d.thumb || 'https://via.placeholder.com/44?text=%E2%99%AA'}" loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/44?text=%E2%99%AA'">
+                <img class="tr-img" src="${d.thumb || 'https://placehold.co/44?text=%E2%99%AA'}" loading="lazy"
+                     onerror="this.src='https://placehold.co/44?text=%E2%99%AA'">
                 <div class="tr-info">
                     <div class="tr-title">${d.title || 'Untitled'}</div>
                     <div class="tr-host">${d.host || 'Admin'}</div>
@@ -570,7 +570,7 @@
     };
 
     function updateAllUI(d) {
-        const cover = d.thumb || 'https://via.placeholder.com/140?text=%E2%99%AA';
+        const cover = d.thumb || 'https://placehold.co/140?text=%E2%99%AA';
         const title = d.title || 'Untitled';
         const artist = d.host || 'Admin';
         // Stage
