@@ -355,7 +355,7 @@
 <!-- ═══════════ IDENTITY ═══════════ -->
 <div class="warung-identity">
     <img src="" id="w-img" class="warung-avatar"
-         onerror="this.src='https://via.placeholder.com/84?text=W'">
+         onerror="this.src='https://placehold.co/84?text=W'">
     <div class="warung-identity-text">
         <h2 class="warung-name-big" id="w-name">Memuat...</h2>
         <div class="warung-meta">
@@ -444,7 +444,7 @@
 
         <div class="order-header">
             <img src="" id="modal-warung-img" class="order-warung-img"
-                 onerror="this.src='https://via.placeholder.com/46'">
+                 onerror="this.src='https://placehold.co/46'">
             <div>
                 <div class="order-warung-name" id="modal-warung-name-order">-</div>
                 <div class="order-warung-sub">Ringkasan Pesanan</div>
@@ -676,12 +676,12 @@ onSnapshot(query(collection(db, "menus"), where("warungId","==",warungId)), snap
     snap.forEach(dSnap => {
         const m = dSnap.data();
         menuData[dSnap.id] = { name: m.name, price: m.price, img: m.img || '' };
-        const imgSrc = m.img || 'https://via.placeholder.com/200?text=Menu';
+        const imgSrc = m.img || 'https://placehold.co/200?text=Menu';
 
         grid.innerHTML += `
         <div class="menu-card">
             <img src="${imgSrc}" class="menu-img"
-                 onerror="this.src='https://via.placeholder.com/200?text=Menu'">
+                 onerror="this.src='https://placehold.co/200?text=Menu'">
             <div class="menu-body">
                 <span class="menu-name">${m.name}</span>
                 <span class="menu-price">${fmt(m.price)}</span>
@@ -785,10 +785,10 @@ function renderCartItems() {
     let total = 0;
     list.innerHTML = myCart.map((item, i) => {
         total += item.price;
-        const img = item.img || 'https://via.placeholder.com/44?text=M';
+        const img = item.img || 'https://placehold.co/44?text=M';
         return `
         <div class="cart-item">
-            <img src="${img}" class="ci-img" onerror="this.src='https://via.placeholder.com/44?text=M'">
+            <img src="${img}" class="ci-img" onerror="this.src='https://placehold.co/44?text=M'">
             <div class="ci-info">
                 <div class="ci-name">${item.name}</div>
                 <div class="ci-price">${fmt(item.price)}</div>
