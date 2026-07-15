@@ -188,7 +188,7 @@ window.editVenue = function(id, name, order, desc, img) {
     document.getElementById('venue-desc').value = desc;
     
     if(img && img.length > 100) document.getElementById('venue-preview').src = img;
-    else document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
+    else document.getElementById('venue-preview').src = "https://placehold.co/100?text=Foto";
     
     currentVenueBase64 = null;
     
@@ -203,7 +203,7 @@ window.resetVenueForm = function() {
     document.getElementById('venue-name').value = "";
     document.getElementById('venue-order').value = "";
     document.getElementById('venue-desc').value = "";
-    document.getElementById('venue-preview').src = "https://via.placeholder.com/100?text=Foto";
+    document.getElementById('venue-preview').src = "https://placehold.co/100?text=Foto";
     currentVenueBase64 = null;
 
     document.getElementById('btn-save-venue').innerText = "+ Simpan Venue";
