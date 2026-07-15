@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio Performer - SMIPRO</title>
+    <title>Studio Performer - STREETART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -104,7 +104,7 @@
         <div class="perf-info">
             <div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Certified Performer</div>
             <h1>The Acoustic Boys</h1>
-            <p>ID: SMIPRO-024 • Pop Jawa & Koplo</p>
+            <p>ID: STREETART-024 • Pop Jawa & Koplo</p>
         </div>
     </div>
 
@@ -468,17 +468,17 @@
         videos.forEach((item, index) => {
             // Temukan index asli di galleryData untuk keperluan hapus
             const originalIdx = galleryData.findIndex(g => g.id === item.id);
-            const thumb = item.youtubeId ? `https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg` : (item.cover || "https://via.placeholder.com/300x168");
+            const thumb = item.youtubeId ? `https://img.youtube.com/vi/${item.youtubeId}/hqdefault.jpg` : (item.cover || "https://placehold.co/300x168");
             container.innerHTML += createCardHTML(item, thumb, LOGO_STAGE, originalIdx, 'video');
         });
     }
 
-    // 2. RENDER SEKSI AUDIO (SMIPRO TUNES)
+    // 2. RENDER SEKSI AUDIO (STREETART TUNES)
     if(audios.length > 0) {
-        container.innerHTML += `<div style="grid-column:1/-1; color:#00d2ff; font-weight:800; margin-top:30px; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px;">🎧 SMIPRO TUNES</div>`;
+        container.innerHTML += `<div style="grid-column:1/-1; color:#00d2ff; font-weight:800; margin-top:30px; font-size:1.1rem; border-bottom:1px solid #333; padding-bottom:5px;">🎧 STREETART TUNES</div>`;
         audios.forEach((item, index) => {
             const originalIdx = galleryData.findIndex(g => g.id === item.id);
-            const thumb = item.cover || "https://via.placeholder.com/300?text=Audio+Cover";
+            const thumb = item.cover || "https://placehold.co/300?text=Audio+Cover";
             container.innerHTML += createCardHTML(item, thumb, LOGO_TUNE, originalIdx, 'audio');
         });
     }
@@ -626,7 +626,7 @@ function createCardHTML(item, thumb, logo, originalIndex, type) {
             const name = document.querySelector('.perf-info h1').innerText;
             const doc = new jsPDF({ orientation: "landscape", unit: "px", format: [800, 600] });
             let templateURL = type === 'sertifikat' ? "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/cert_template_dummy.jpg" : "https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/mou_template_dummy.jpg";
-            let fileName = type === 'sertifikat' ? "Sertifikat_SMIPRO.pdf" : "MOU_Kontrak.pdf";
+            let fileName = type === 'sertifikat' ? "Sertifikat_STREETART.pdf" : "MOU_Kontrak.pdf";
 
             try {
                 document.body.style.cursor = 'wait';
