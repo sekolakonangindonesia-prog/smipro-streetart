@@ -88,9 +88,6 @@
 
         /* === AUDIO TAB (diadaptasi dari musik.html, class/id yang bentrok sudah di-namespace) === */
         #panel-audio #player-stage{margin-top:0;min-height:260px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#1a1a1a 0%,#000 100%);transition:background 1.2s ease;padding:28px 20px 18px}
-        #panel-audio .idle-msg{text-align:center;opacity:0.3}
-        #panel-audio .idle-msg i{font-size:3rem;color:#1DB954;display:block;margin-bottom:10px}
-        #panel-audio .idle-msg p{font-size:0.82rem}
         #panel-audio #audio-player{display:none;width:100%;max-width:680px}
         #panel-audio #audio-player.on{display:block}
         #panel-audio .sp-top{display:flex;align-items:flex-end;gap:20px;margin-bottom:18px}
@@ -182,6 +179,13 @@
         .fp-c.on{color:#1DB954}
         .fp-play{width:60px;height:60px;border-radius:50%;background:#fff;color:#000;border:none;font-size:1.4rem;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center}
         .fp-play:hover{transform:scale(1.06)}
+
+        /* === PANEL LIRIK (SINKRON DENGAN WAKTU LAGU) === */
+        #fp-lyrics{display:none;flex:1;overflow-y:auto;padding:10px 4px;-webkit-overflow-scrolling:touch;}
+        #fp-lyrics.show{display:block;}
+        .lyric-line{font-size:1.05rem;font-weight:700;color:rgba(255,255,255,0.32);padding:11px 10px;text-align:center;transition:color 0.25s ease,transform 0.25s ease;line-height:1.4;}
+        .lyric-line.active{color:#fff;transform:scale(1.05);}
+        .lyric-empty{text-align:center;color:rgba(255,255,255,0.35);padding:50px 20px;font-size:0.85rem;}
     </style>
 </head>
 <body>
@@ -196,8 +200,8 @@
 </nav>
 
 <div class="gtab-bar">
+    <button class="gtab-btn" id="gtab-audio" onclick="switchGalleryTab('audio')"><i class="fa-solid fa-music"></i> Musik</button>
     <button class="gtab-btn active" id="gtab-video" onclick="switchGalleryTab('video')"><i class="fa-solid fa-clapperboard"></i> Video</button>
-    <button class="gtab-btn" id="gtab-audio" onclick="switchGalleryTab('audio')"><i class="fa-solid fa-music"></i> Audio</button>
 </div>
 
 <div id="panel-video">
@@ -248,10 +252,6 @@
 
 <div id="panel-audio" style="display:none;">
     <div id="player-stage">
-        <div class="idle-msg" id="idle-msg">
-            <i class="fa-solid fa-headphones"></i>
-            <p>Pilih lagu untuk diputar</p>
-        </div>
         <div id="audio-player">
             <div class="sp-top">
                 <div class="sp-cover-box">
@@ -324,19 +324,20 @@
         <div class="fp-hdr">
             <button class="fp-btn" onclick="closeFullPlayer()"><i class="fa-solid fa-chevron-down"></i></button>
             <span class="fp-lbl">SEDANG DIPUTAR</span>
-            <button class="fp-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+            <button class="fp-btn" id="fp-lyrics-toggle" onclick="toggleLyricsView()" title="Lirik"><i class="fa-solid fa-align-left"></i></button>
         </div>
-        <div class="fp-cover-box">
+        <div class="fp-cover-box" id="fp-cover-box">
             <img id="fp-cover" src="" alt="">
             <div class="fp-eq-box" id="fp-eq">
                 <div class="eq-b"></div><div class="eq-b"></div>
                 <div class="eq-b"></div><div class="eq-b"></div>
             </div>
         </div>
-        <div class="fp-info">
+        <div class="fp-info" id="fp-info-box">
             <div id="fp-title">-</div>
             <div id="fp-artist">-</div>
         </div>
+        <div id="fp-lyrics"></div>
         <div class="fp-prog-bg" onclick="seekFP(event)">
             <div id="fp-prog"></div>
         </div>
@@ -496,6 +497,8 @@ let currentIdx = -1;
 let isShuffle = false;
 let isRepeat = false;
 let currentFilterAudio = 'all';
+let currentLyrics = [];
+let activeLyricIdx = -1;
 
 const fmt = s => {
     if (!s || isNaN(s)) return '0:00';
@@ -515,6 +518,77 @@ function resolveUrl(url) {
     }
     return url;
 }
+
+// PARSER LIRIK FORMAT LRC -- contoh baris: [00:12.50]Teks lirik di sini
+// Mendukung banyak timestamp dalam satu baris (umum dipakai buat reff yang berulang).
+function parseLRC(text) {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/);
+    const re = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g;
+    const result = [];
+    lines.forEach(line => {
+        const matches = [...line.matchAll(re)];
+        if (!matches.length) return;
+        const content = line.replace(re, '').trim();
+        matches.forEach(m => {
+            const min = parseInt(m[1], 10);
+            const sec = parseInt(m[2], 10);
+            const ms = m[3] ? parseInt(m[3].padEnd(3, '0'), 10) : 0;
+            result.push({ time: min * 60 + sec + ms / 1000, text: content });
+        });
+    });
+    result.sort((a, b) => a.time - b.time);
+    return result;
+}
+
+function renderLyricsPanel() {
+    const box = document.getElementById('fp-lyrics');
+    if (!currentLyrics.length) {
+        box.innerHTML = '<p class="lyric-empty">Lirik belum tersedia untuk lagu ini.</p>';
+        return;
+    }
+    box.innerHTML = currentLyrics.map((l, i) => `<div class="lyric-line" id="lyric-${i}">${l.text || '♪'}</div>`).join('');
+}
+
+function updateLyricsHighlight() {
+    if (!currentLyrics.length) return;
+    const t = ra.currentTime;
+    let idx = -1;
+    for (let i = 0; i < currentLyrics.length; i++) {
+        if (currentLyrics[i].time <= t) idx = i; else break;
+    }
+    if (idx === activeLyricIdx) return;
+    activeLyricIdx = idx;
+    document.querySelectorAll('#fp-lyrics .lyric-line').forEach(el => el.classList.remove('active'));
+    if (idx >= 0) {
+        const el = document.getElementById('lyric-' + idx);
+        if (el) {
+            el.classList.add('active');
+            if (document.getElementById('fp-lyrics').classList.contains('show')) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+}
+
+window.toggleLyricsView = function() {
+    const lyricsBox = document.getElementById('fp-lyrics');
+    const coverBox = document.getElementById('fp-cover-box');
+    const infoBox = document.getElementById('fp-info-box');
+    const btn = document.getElementById('fp-lyrics-toggle');
+    const showing = lyricsBox.classList.contains('show');
+    if (showing) {
+        lyricsBox.classList.remove('show');
+        coverBox.style.display = '';
+        infoBox.style.display = '';
+        btn.style.color = '';
+    } else {
+        lyricsBox.classList.add('show');
+        coverBox.style.display = 'none';
+        infoBox.style.display = 'none';
+        btn.style.color = '#1DB954';
+    }
+};
 
 window.shareTrack = function(e, idx) {
     e.stopPropagation();
@@ -623,13 +697,17 @@ window.playTrack = function(idx) {
     updateAllUI(d);
     highlightRow(d.id);
     setDynBg(d.thumb || '');
+
+    // Siapkan lirik lagu yang baru diputar (reset dari lagu sebelumnya)
+    currentLyrics = parseLRC(d.lyrics || '');
+    activeLyricIdx = -1;
+    renderLyricsPanel();
 };
 
 function updateAllUI(d) {
     const cover = d.thumb || 'https://placehold.co/140?text=%E2%99%AA';
     const title = d.title || 'Untitled';
     const artist = d.host || 'Admin';
-    document.getElementById('idle-msg').style.display = 'none';
     document.getElementById('audio-player').classList.add('on');
     document.getElementById('ap-cover').src = cover;
     document.getElementById('ap-title').textContent = title;
@@ -705,6 +783,7 @@ ra.ontimeupdate = () => {
     ['ap-prog','fb-prog','fp-prog'].forEach(id => { const el=document.getElementById(id); if(el) el.style.width=pct+'%'; });
     ['t-cur','fp-cur'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=cur; });
     ['t-tot','fp-tot'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=tot; });
+    updateLyricsHighlight();
 };
 ra.onended = () => {
     if (isRepeat) { ra.currentTime=0; ra.play(); }
