@@ -375,6 +375,14 @@
                 return;
             }
 
+            // FIX KEAMANAN: cek apakah akun sedang terkunci karena kebanyakan salah PIN
+            if (data.pinLockedUntil && data.pinLockedUntil > Date.now()) {
+                const sisaMenit = Math.ceil((data.pinLockedUntil - Date.now()) / 60000);
+                alert(`Akun terkunci sementara karena PIN salah berkali-kali.\n\nCoba lagi dalam ${sisaMenit} menit, atau hubungi Admin untuk reset PIN kalau butuh segera.`);
+                btn.innerText = "MASUK STUDIO";
+                return;
+            }
+
             if (!pin) {
                 alert("Masukkan PIN Anda!");
                 btn.innerText = "MASUK STUDIO";
@@ -382,9 +390,24 @@
             }
             const inputHash = await hashPin(pin);
             if (inputHash !== data.pinHash) {
-                alert("PIN salah. Coba lagi, atau hubungi Admin untuk reset PIN kalau lupa.");
+                const gagalKe = (data.pinFailCount || 0) + 1;
+                if (gagalKe >= MAX_PIN_ATTEMPT) {
+                    await updateDoc(doc(db, "performers", perfDoc.id), {
+                        pinFailCount: 0,
+                        pinLockedUntil: Date.now() + LOCK_DURATION_MS
+                    });
+                    alert(`PIN salah ${MAX_PIN_ATTEMPT}x. Akun dikunci sementara selama 15 menit demi keamanan.\n\nHubungi Admin kalau butuh reset PIN segera.`);
+                } else {
+                    await updateDoc(doc(db, "performers", perfDoc.id), { pinFailCount: gagalKe });
+                    alert(`PIN salah. Percobaan ke-${gagalKe} dari ${MAX_PIN_ATTEMPT}. Setelah ${MAX_PIN_ATTEMPT}x salah, akun akan dikunci sementara.`);
+                }
                 btn.innerText = "MASUK STUDIO";
                 return;
+            }
+
+            // Login berhasil -> reset hitungan gagal
+            if (data.pinFailCount || data.pinLockedUntil) {
+                await updateDoc(doc(db, "performers", perfDoc.id), { pinFailCount: 0, pinLockedUntil: null });
             }
 
             doPerfLogin(perfDoc.id, data);
