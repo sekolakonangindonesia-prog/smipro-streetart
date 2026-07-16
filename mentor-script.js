@@ -38,6 +38,7 @@ function initMentorDashboard() {
     // JALANKAN LISTENER DATA (Ganti getDoc jadi onSnapshot biar Realtime)
     listenMentorProfile(MENTOR_ID);
     listenStudents(MENTOR_ID);
+    listenPerformers();
 }
 
 // --- 2. LISTENER PROFIL MENTOR (PENTING: GANTI KE ONSNAPSHOT) ---
@@ -147,6 +148,73 @@ function listenStudents(mentorId) {
         });
     });
 }
+
+// --- 3B. LISTENER DATA PERFORMER (READ-ONLY UNTUK MENTOR) ---
+// Simpan salinan lokal biar search/filter gak perlu query ulang ke Firestore.
+let allPerformersCache = [];
+
+function listenPerformers() {
+    const container = document.getElementById('performer-list-container');
+    if (!container) return;
+
+    onSnapshot(collection(db, "performers"), (snapshot) => {
+        allPerformersCache = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPerformerList(allPerformersCache);
+    });
+}
+
+function renderPerformerList(list) {
+    const container = document.getElementById('performer-list-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (list.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666;">Tidak ada performer ditemukan.</p>';
+        return;
+    }
+
+    list.forEach(p => {
+        const imgUrl = p.img || "https://placehold.co/150";
+        const sourceLabel = p.source === 'graduated' || p.studentId ? '🎓 Alumni Bengkel' : '➕ Daftar Manual';
+
+        container.innerHTML += `
+        <div style="background:#222; padding:15px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:15px; margin-bottom:10px;">
+            <img src="${imgUrl}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #555;">
+            <div style="flex:1;">
+                <h4 style="margin:0; color:white;">${p.name || '-'}</h4>
+                <span style="color:var(--accent); font-size:0.8rem;">${p.genre || '-'}</span><br>
+                <small style="color:#888;">${sourceLabel}</small>
+            </div>
+            <button onclick="openPerformerProfile('${p.id}')" style="background:#00d2ff; color:black; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; font-weight:bold;">Lihat Profil</button>
+        </div>`;
+    });
+}
+
+// Cari berdasarkan nama atau genre (client-side, dari cache)
+window.filterPerformerList = function(keyword) {
+    const k = (keyword || '').trim().toLowerCase();
+    if (!k) return renderPerformerList(allPerformersCache);
+    const filtered = allPerformersCache.filter(p =>
+        (p.name || '').toLowerCase().includes(k) || (p.genre || '').toLowerCase().includes(k)
+    );
+    renderPerformerList(filtered);
+};
+
+// Modal profil read-only -- sengaja TIDAK menampilkan nilai mentor (lihat spesifikasi:
+// nilai cukup ada di tab Bengkel Siswa).
+window.openPerformerProfile = function(id) {
+    const p = allPerformersCache.find(x => x.id === id);
+    if (!p) return alert("Data performer tidak ditemukan.");
+
+    document.getElementById('pp-img').src = p.img || "https://placehold.co/150";
+    document.getElementById('pp-name').innerText = p.name || '-';
+    document.getElementById('pp-genre').innerText = p.genre || '-';
+    document.getElementById('pp-phone').innerText = p.phone || '-';
+    document.getElementById('pp-status').innerText = p.verified ? '✅ Verified' : '🔓 Belum verifikasi';
+    document.getElementById('pp-source').innerText = (p.source === 'graduated' || p.studentId) ? '🎓 Alumni Bengkel' : '➕ Daftar Manual';
+
+    document.getElementById('modal-performer-profile').style.display = 'flex';
+};
 
 // --- 4. FUNGSI GLOBAL (WINDOW) ---
 
