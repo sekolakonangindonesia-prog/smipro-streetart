@@ -453,7 +453,10 @@
 
         <!-- 3. PERFORMER -->
         <div id="view-performer" class="admin-view hidden">
-            <div class="section-header"><h2 style="margin:0; color:white;">Data Performer</h2></div>
+            <div class="section-header">
+                <h2 style="margin:0; color:white;">Data Performer</h2>
+                <button class="btn-action btn-edit" onclick="migratePerformerSource()" title="Jalankan sekali saja untuk kasih penanda Sumber ke data performer lama">+ Migrasi Data Lama</button>
+            </div>
 
             <!-- FORM TAMBAH/EDIT PERFORMER -->
             <div class="cms-form-group" style="display:flex; gap:20px; align-items:center; background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
@@ -480,7 +483,7 @@
             </div>
 
             <table class="admin-table">
-                <thead><tr><th>Nama Artis</th><th>Genre</th><th>Status</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Nama Artis</th><th>Genre</th><th>Sumber</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody id="perf-table-body"></tbody>
             </table>
         </div>
