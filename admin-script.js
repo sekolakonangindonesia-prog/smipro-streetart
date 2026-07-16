@@ -969,7 +969,7 @@ window.resetPerfForm = function() {
 window.resetPerfPin = async function(id, nama) {
     if (!confirm(`Reset PIN untuk "${nama}"?\n\nPastikan Anda sudah verifikasi ini benar performernya sebelum reset. Setelah direset, mereka wajib buat PIN baru saat login berikutnya.`)) return;
     try {
-        await updateDoc(doc(db, "performers", id), { pinHash: null });
+        await updateDoc(doc(db, "performers", id), { pinHash: null, pinFailCount: 0, pinLockedUntil: null });
         alert(`PIN "${nama}" berhasil direset. Suruh mereka login lagi -- sistem akan minta buat PIN baru.`);
     } catch (e) {
         alert("Gagal reset PIN: " + e.message);
