@@ -797,7 +797,7 @@ async function loadPerformerData() {
     onSnapshot(collection(db, "performers"), (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
             return;
         }
         
@@ -817,12 +817,16 @@ async function loadPerformerData() {
             const btnResetPin = data.pinHash
                 ? `<button class="btn-action" style="background:#ff9800;" title="Reset PIN (kalau performer lupa PIN)" onclick="resetPerfPin('${id}', '${(data.name||'').replace(/'/g,"\\'")}')"><i class="fa-solid fa-key"></i></button>`
                 : '';
-            // FIX: pasang lagi tombol Cetak Raport Nilai (sempat orphan/gak ada tombolnya
-            // sejak sebelum kita mulai kerja bareng) -- hanya aktif kalau ada data scores
-            const btnLihat = `<button class="btn-action btn-view" title="Lihat Nilai Mentor" onclick="lihatNilaiPerformer('${id}')"><i class="fa-solid fa-eye"></i></button>`;
-            const btnCetak = `<button class="btn-action" style="background:#00d2ff; color:black;" title="Cetak Raport Nilai Mentor" onclick="cetakRaportPerformer('${id}')"><i class="fa-solid fa-print"></i></button>`;
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
-            
+
+            // Badge sumber: bedakan performer hasil lulusan Bengkel Siswa vs didaftarkan
+            // langsung oleh admin. Nilai mentor TIDAK lagi ditampilkan di sini -- lihat
+            // nilai lengkap cukup di tab Bengkel Siswa.
+            const source = data.source || (data.studentId ? 'graduated' : 'manual');
+            const sourceBadge = source === 'graduated'
+                ? `<span style="color:#FFD700;">🎓 Alumni Bengkel</span>`
+                : `<span style="color:#888;">➕ Daftar Manual</span>`;
+
              tbody.innerHTML += `
             <tr>
                 <td>
@@ -832,80 +836,13 @@ async function loadPerformerData() {
                     </div>
                 </td>
                 <td>${data.genre}</td>
+                <td>${sourceBadge}</td>
                 <td>${statusIcon}${pinStatus}</td>
-                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnLihat} ${btnCetak} ${btnResetPin} ${btnDel}</div></td>
+                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnResetPin} ${btnDel}</div></td>
             </tr>`;
         });
     });
 }
-
-// Helper bersama: cari ID dokumen 'students' asli milik performer ini (dari field
-// studentId kalau sudah ada, atau cari manual by nama case-insensitive kalau belum).
-// Dipakai oleh tombol Cetak Raport & Lihat Nilai.
-async function findStudentIdForPerformer(id, d) {
-    let studentId = d.studentId || null;
-    if (!studentId) {
-        // FIX: pencarian case-insensitive -- performer "Ismail" vs siswa "ismail"
-        // sebelumnya gak ketemu karena Firestore where("==") itu peka huruf besar/kecil
-        const allStudents = await getDocs(collection(db, "students"));
-        const targetName = (d.name || "").trim().toLowerCase();
-        const match = allStudents.docs.find(s => (s.data().name || "").trim().toLowerCase() === targetName);
-        if (match) {
-            studentId = match.id;
-            // Backfill studentId ke performer biar klik berikutnya gak perlu cari lagi
-            await updateDoc(doc(db, "performers", id), { studentId: studentId });
-        }
-    }
-    return studentId;
-}
-
-// FIX: pakai printRaportDirect (fungsi yang SAMA dengan tombol cetak di tab Bengkel
-// Siswa, sudah terbukti jalan) alih-alih generateStudentPDF yang ternyata kurang
-// lengkap. printRaportDirect butuh ID dokumen 'students', jadi kita cari/simpan
-// referensinya dulu di performer (studentId).
-window.cetakRaportPerformer = async function(id) {
-    try {
-        const docSnap = await getDoc(doc(db, "performers", id));
-        if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
-        const d = docSnap.data();
-
-        const studentId = await findStudentIdForPerformer(id, d);
-
-        if (!studentId) {
-            return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
-        }
-
-        if (typeof window.printRaportDirect !== 'function') {
-            return alert("Fungsi cetak raport (printRaportDirect) tidak ditemukan di file ini.");
-        }
-        await window.printRaportDirect(studentId);
-    } catch (e) {
-        alert("Gagal cetak raport: " + e.message);
-    }
-};
-
-// FIX: pasang lagi tombol "Lihat Nilai" (icon mata) yang bukanya modal-raport
-// (sama seperti yang dipakai di tab Bengkel Siswa lewat openRaport)
-window.lihatNilaiPerformer = async function(id) {
-    try {
-        const docSnap = await getDoc(doc(db, "performers", id));
-        if (!docSnap.exists()) return alert("Data performer tidak ditemukan.");
-        const d = docSnap.data();
-
-        const studentId = await findStudentIdForPerformer(id, d);
-
-        if (!studentId) {
-            return alert(`"${d.name}" tidak punya data evaluasi mentor (didaftarkan langsung oleh Admin, bukan lulusan Bengkel Siswa).`);
-        }
-
-        if (typeof window.openRaport !== 'function') {
-            return alert("Fungsi Lihat Nilai (openRaport) tidak ditemukan di file ini.");
-        }
-        window.openRaport(studentId);
-    } catch (e) {
-        alert("Gagal memuat nilai: " + e.message);
-    }
-};
 
 // FORM TAMBAH/EDIT PERFORMER (dari Admin) -- PIN dibuat sendiri oleh performer saat login pertama,
 // sama seperti pola mitra, jadi form ini gak perlu input PIN.
@@ -933,6 +870,7 @@ window.savePerformerData = async function() {
         } else {
             data.joinedAt = new Date();
             data.rating = 0;
+            data.source = 'manual'; // Didaftarkan langsung admin, bukan lulusan Bengkel Siswa -- tidak butuh nilai mentor
             await addDoc(collection(db, "performers"), data);
             alert("✅ Performer ditambahkan!");
         }
@@ -989,7 +927,8 @@ window.seedPerformer = async function() {
         genre: "Pop Jawa",
         verified: true,
         img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100",
-        rating: 4.8
+        rating: 4.8,
+        source: 'manual'
     });
     alert("Performer Dibuat!");
 }
@@ -1007,6 +946,29 @@ window.loginAsPerf = function(id, name) {
     }
 }
 window.deletePerf = async function(id) { if(confirm("Hapus?")) await deleteDoc(doc(db, "performers", id)); }
+
+// MIGRASI SATU KALI: performer lama (dibuat sebelum field 'source' ada) belum
+// punya penanda sumbernya. Isi otomatis: kalau ada studentId -> 'graduated',
+// kalau tidak -> 'manual'. Aman dijalankan berkali-kali (skip yang sudah punya source).
+window.migratePerformerSource = async function() {
+    if (!confirm("Jalankan migrasi data performer lama? Ini akan mengisi field 'Sumber' untuk data yang belum punya.")) return;
+    try {
+        const snap = await getDocs(collection(db, "performers"));
+        let updated = 0;
+        for (const docSnap of snap.docs) {
+            const d = docSnap.data();
+            if (!d.source) {
+                await updateDoc(doc(db, "performers", docSnap.id), {
+                    source: d.studentId ? 'graduated' : 'manual'
+                });
+                updated++;
+            }
+        }
+        alert(`✅ Migrasi selesai. ${updated} data performer diperbarui.`);
+    } catch (e) {
+        alert("Gagal migrasi: " + e.message);
+    }
+};
 
 
 /* =========================================
@@ -2537,7 +2499,8 @@ window.luluskanSiswa = async function(studentId, name, genre, imgUrl, scores) {
             joinedAt: new Date(),
             desc: "Alumni Bengkel STREETART",
             scores: scores || {},
-            studentId: studentId
+            studentId: studentId,
+            source: 'graduated'
         });
 
         // B. Update Status Siswa jadi 'graduated' (Agar hilang dari notif)
