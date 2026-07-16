@@ -70,8 +70,8 @@
         <h2>Login Mitra</h2><p>Kelola Warung & Pesanan</p>
     </div>
     <div class="form-group">
-        <label>Nama Warung (Sesuai Pendaftaran)</label>
-        <input type="text" id="mitra-name-login" class="form-input" placeholder="Contoh: Warung Bu Sri">
+        <label>Nomor HP (Sesuai Pendaftaran)</label>
+        <input type="tel" id="mitra-phone-login" class="form-input" placeholder="08xxxxxxxxxx" inputmode="numeric">
     </div>
     <div class="form-group" id="mitra-pin-group">
         <label>PIN (4-6 digit)</label>
@@ -190,6 +190,18 @@
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // Cocokkan nomor HP walau formatnya beda-beda (08xx / 62xx / +62xx)
+    function phoneVariants(raw) {
+        let d = raw.replace(/[^0-9]/g, '');
+        if (d.startsWith('62')) d = d.slice(2);
+        if (d.startsWith('0')) d = d.slice(1);
+        if (!d) return [];
+        return ['0' + d, '62' + d, '+62' + d, d];
+    }
+
+    const MAX_PIN_ATTEMPT = 5;
+    const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 menit
+
     // 1. FUNGSI PINDAH TAMPILAN
     window.pindahKe = function(tujuan) {
         document.querySelectorAll('.section-view').forEach(e => e.style.display = 'none');
@@ -215,19 +227,21 @@
     }
 
     document.getElementById('btn-login-mitra').addEventListener('click', async () => {
-        const name = document.getElementById('mitra-name-login').value.trim();
+        const phoneInput = document.getElementById('mitra-phone-login').value.trim();
         const pin  = document.getElementById('mitra-pin-login').value.trim();
         const btn  = document.getElementById('btn-login-mitra');
         
-        if(!name) return alert("Masukkan Nama Warung!");
+        if(!phoneInput) return alert("Masukkan Nomor HP!");
+        const variants = phoneVariants(phoneInput);
+        if (variants.length === 0) return alert("Nomor HP tidak valid!");
         btn.innerText = "Memeriksa...";
         
         try {
-            const q = query(collection(db, "warungs"), where("name", "==", name));
+            const q = query(collection(db, "warungs"), where("phone", "in", variants));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                alert("Nama Warung tidak ditemukan. Pastikan penulisan benar.");
+                alert("Nomor HP tidak ditemukan. Pastikan sama dengan saat pendaftaran.");
                 btn.innerText = "MASUK DASHBOARD";
                 return;
             }
@@ -251,6 +265,14 @@
                 return;
             }
 
+            // FIX KEAMANAN: cek apakah akun sedang terkunci karena kebanyakan salah PIN
+            if (data.pinLockedUntil && data.pinLockedUntil > Date.now()) {
+                const sisaMenit = Math.ceil((data.pinLockedUntil - Date.now()) / 60000);
+                alert(`Akun terkunci sementara karena PIN salah berkali-kali.\n\nCoba lagi dalam ${sisaMenit} menit, atau hubungi Admin untuk reset PIN kalau butuh segera.`);
+                btn.innerText = "MASUK DASHBOARD";
+                return;
+            }
+
             // Sudah punya PIN -> wajib cocok
             if (!pin) {
                 alert("Masukkan PIN Anda!");
@@ -259,9 +281,24 @@
             }
             const inputHash = await hashPin(pin);
             if (inputHash !== data.pinHash) {
-                alert("PIN salah. Coba lagi, atau hubungi Admin untuk reset PIN kalau lupa.");
+                const gagalKe = (data.pinFailCount || 0) + 1;
+                if (gagalKe >= MAX_PIN_ATTEMPT) {
+                    await updateDoc(doc(db, "warungs", mitraDoc.id), {
+                        pinFailCount: 0,
+                        pinLockedUntil: Date.now() + LOCK_DURATION_MS
+                    });
+                    alert(`PIN salah ${MAX_PIN_ATTEMPT}x. Akun dikunci sementara selama 15 menit demi keamanan.\n\nHubungi Admin kalau butuh reset PIN segera.`);
+                } else {
+                    await updateDoc(doc(db, "warungs", mitraDoc.id), { pinFailCount: gagalKe });
+                    alert(`PIN salah. Percobaan ke-${gagalKe} dari ${MAX_PIN_ATTEMPT}. Setelah ${MAX_PIN_ATTEMPT}x salah, akun akan dikunci sementara.`);
+                }
                 btn.innerText = "MASUK DASHBOARD";
                 return;
+            }
+
+            // Login berhasil -> reset hitungan gagal
+            if (data.pinFailCount || data.pinLockedUntil) {
+                await updateDoc(doc(db, "warungs", mitraDoc.id), { pinFailCount: 0, pinLockedUntil: null });
             }
 
             doMitraLogin(mitraDoc.id, data);
