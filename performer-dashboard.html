@@ -111,6 +111,7 @@
     <!-- 2. TAB MENU -->
     <div class="mitra-tabs">
         <button class="tab-btn active" onclick="switchTab('galeri')">🎵 Galeri</button>
+        <button class="tab-btn" onclick="switchTab('fotogaleri')">📸 Galeri Foto</button>
         <button class="tab-btn" onclick="switchTab('dokumen')">📄 Dokumen</button>
         <button class="tab-btn" onclick="switchTab('ulasan')">⭐ Ulasan</button>
         <button class="tab-btn" onclick="switchTab('profil')">⚙️ Profil</button>
@@ -138,7 +139,25 @@
             </div>
         </div>
 
-        <!-- TAB 2: DOKUMEN (FIXED BUTTONS) -->
+        <!-- TAB 2: GALERI FOTO (BARU -- KHUSUS ADMIN YANG BISA ISI) -->
+        <div id="tab-fotogaleri" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 style="color:var(--accent); margin-top:0;">Galeri Foto</h3>
+                    <p style="color:#888; font-size:0.9rem; margin-top:-5px;">Dokumentasi foto kegiatan performer.</p>
+                </div>
+                <!-- TOMBOL KHUSUS ADMIN (bukan mentor, bukan performer) -->
+                <button id="btn-add-photo" onclick="openAddPhotoModal()" style="display:none; background:var(--primary); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    <i class="fa-solid fa-plus"></i> Tambah Foto
+                </button>
+            </div>
+
+            <div class="track-grid" id="photo-gallery-container">
+                <p style="color:#666;">Memuat galeri foto...</p>
+            </div>
+        </div>
+
+        <!-- TAB 3: DOKUMEN (FIXED BUTTONS) -->
         <div id="tab-dokumen" class="tab-content">
             <h3>Dokumen Legalitas</h3>
             
@@ -295,6 +314,38 @@
         </div>
     </div>
 
+    <!-- MODAL TAMBAH FOTO (KHUSUS ADMIN) -->
+    <div id="modal-add-photo" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
+            <div style="text-align:center;">
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:40px; margin-bottom:10px;">
+            </div>
+            <h3 style="margin-top:0; color:white;">Tambah Foto</h3>
+
+            <label style="color:#aaa; font-size:0.8rem;">Foto</label>
+            <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
+                <div onclick="document.getElementById('photo-file-input').click()" style="width:80px; height:80px; border:2px dashed #555; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:#111;">
+                    <img id="photo-preview-img" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+                    <i id="photo-placeholder-icon" class="fa-solid fa-image" style="color:#444; font-size:1.5rem;"></i>
+                </div>
+                <div style="flex:1;">
+                    <button type="button" onclick="document.getElementById('photo-file-input').click()" style="background:#333; color:white; border:1px solid #444; padding:8px 12px; border-radius:5px; font-size:0.8rem; cursor:pointer;">
+                        Pilih Foto dari HP/Laptop
+                    </button>
+                    <input type="file" id="photo-file-input" style="display:none;" accept="image/*" onchange="window.previewPhotoImage(this)">
+                </div>
+            </div>
+
+            <label style="color:#aaa; font-size:0.8rem;">Keterangan (opsional)</label>
+            <input type="text" id="photo-caption" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;" placeholder="Contoh: Manggung di Alun-alun Probolinggo">
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('modal-add-photo').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
+                <button onclick="savePhoto()" style="flex:1; padding:10px; background:var(--primary); border:none; color:white; border-radius:5px; cursor:pointer;">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL PLAYER -->
     <div id="modal-player" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:4000; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
         <button onclick="closePlayer()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
@@ -341,6 +392,10 @@
                 // Tampilkan Tombol Tambah Galeri HANYA untuk Admin/Mentor
                 document.getElementById('btn-add-gallery').style.display = 'block';
             }
+            // Galeri Foto: KHUSUS Admin saja (mentor & performer tidak boleh isi)
+            if (isAdmin) {
+                document.getElementById('btn-add-photo').style.display = 'block';
+            }
 
             // B. NAVIGASI KHUSUS MENTOR
             if(userRole === 'mentor') {
@@ -372,6 +427,7 @@
 
             // D. LOAD GALERI
             loadGallery();
+            loadPhotoGallery();
         };
 
         // --- 2. FUNGSI LOAD DATA ---
@@ -494,7 +550,7 @@ function createCardHTML(item, thumb, logo, originalIndex, type) {
         <button onclick="deleteGalleryItem(${originalIndex}); event.stopPropagation();" style="margin-top:10px; background:#b71c1c; color:white; border:none; width:100%; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
             <i class="fa-solid fa-trash"></i> Hapus
         </button>` : '';
-    
+
     // Gaya kartu: Video agak lebar, Audio kotak 1:1
     const aspectRatio = type === 'video' ? '16/9' : '1/1';
 
@@ -513,6 +569,95 @@ function createCardHTML(item, thumb, logo, originalIndex, type) {
         ${deleteBtn}
     </div>`;
 }
+
+// --- GALERI FOTO (KHUSUS ADMIN YANG BISA ISI/HAPUS) ---
+let photoGalleryData = [];
+
+function loadPhotoGallery() {
+    getDoc(doc(db, "performers", PERF_ID)).then((snap) => {
+        if (snap.exists()) {
+            renderPhotoGallery(snap.data().photoGallery || []);
+        }
+    });
+}
+
+function renderPhotoGallery(data) {
+    photoGalleryData = data;
+    const container = document.getElementById('photo-gallery-container');
+    if (!container) return;
+
+    if (photoGalleryData.length === 0) {
+        container.innerHTML = '<p style="color:#666; text-align:center; width:100%; padding:20px;">Belum ada foto di galeri ini.</p>';
+        return;
+    }
+
+    container.innerHTML = photoGalleryData.map((item, index) => {
+        const delBtn = isAdmin ? `
+            <button onclick="deletePhoto(${index}); event.stopPropagation();" style="margin-top:10px; background:#b71c1c; color:white; border:none; width:100%; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
+                <i class="fa-solid fa-trash"></i> Hapus
+            </button>` : '';
+        return `
+        <div style="background:#1a1a1a; border-radius:8px; overflow:hidden; border:1px solid #333;">
+            <img src="${item.url}" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
+            <div style="padding:8px;">
+                ${item.caption ? `<p style="color:#ccc; font-size:0.78rem; margin:0;">${item.caption}</p>` : ''}
+                ${delBtn}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.openAddPhotoModal = function() {
+    if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa menambah foto di galeri ini.");
+    document.getElementById('modal-add-photo').style.display = 'flex';
+};
+
+let currentPhotoBase64 = null;
+window.previewPhotoImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentPhotoBase64 = e.target.result;
+            document.getElementById('photo-preview-img').src = e.target.result;
+            document.getElementById('photo-preview-img').style.display = 'block';
+            document.getElementById('photo-placeholder-icon').style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+window.savePhoto = async function() {
+    if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa menambah foto di galeri ini.");
+    if (!currentPhotoBase64) return alert("Mohon pilih foto terlebih dahulu!");
+
+    const caption = document.getElementById('photo-caption').value;
+    const newItem = { id: Date.now(), url: currentPhotoBase64, caption: caption || "" };
+    const newPhotoGallery = [...photoGalleryData, newItem];
+
+    try {
+        await updateDoc(doc(db, "performers", PERF_ID), { photoGallery: newPhotoGallery });
+        alert("✅ Foto Berhasil Ditambahkan!");
+
+        document.getElementById('modal-add-photo').style.display = 'none';
+        document.getElementById('photo-caption').value = '';
+        document.getElementById('photo-preview-img').style.display = 'none';
+        document.getElementById('photo-placeholder-icon').style.display = 'block';
+        currentPhotoBase64 = null;
+
+        loadPhotoGallery();
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
+};
+
+window.deletePhoto = async function(index) {
+    if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa menghapus foto di galeri ini.");
+    if (confirm("Hapus foto ini?")) {
+        const newPhotoGallery = photoGalleryData.filter((_, i) => i !== index);
+        await updateDoc(doc(db, "performers", PERF_ID), { photoGallery: newPhotoGallery });
+        loadPhotoGallery();
+    }
+};
 
         window.saveGalleryItem = async function() {
     // Cek Hak Akses Lagi (Keamanan)
