@@ -3154,7 +3154,8 @@ window.saveGalleryItem = async function() {
         } else if (!id) {
             payload.thumb = "https://placehold.co/150?text=Music"; // Default hanya saat create
         }
-        payload.host = artist || "Unknown Artist"; 
+        payload.host = artist || "Unknown Artist";
+        payload.lyrics = document.getElementById('audio-lyrics').value || "";
     }
 
     try {
@@ -3197,6 +3198,14 @@ window.editGalleryItem = function(id, type, title, link, host, category, desc, t
         document.getElementById('audio-artist').value = host;
         document.getElementById('audio-cover-preview').src = thumb || "https://placehold.co/100";
         currentAudioCoverBase64 = null; // Reset buffer, biar kalau ga ganti gambar, pake yg lama
+
+        // Lirik diambil terpisah langsung dari Firestore (bukan lewat parameter tombol
+        // edit) karena teks lirik banyak baris (multi-line) -- kalau dipaksa lewat
+        // onclick="editGalleryItem(...)" bisa merusak sintaks JS-nya.
+        document.getElementById('audio-lyrics').value = "Memuat lirik...";
+        getDoc(doc(db, "podcasts", id)).then(snap => {
+            document.getElementById('audio-lyrics').value = (snap.exists() && snap.data().lyrics) || "";
+        }).catch(() => { document.getElementById('audio-lyrics').value = ""; });
     }
 
     // 2. Ubah Tombol
@@ -3218,6 +3227,7 @@ window.cancelGalleryEdit = function() {
     document.getElementById('vid-creator').value = '';
     document.getElementById('audio-link').value = '';
     document.getElementById('audio-artist').value = '';
+    document.getElementById('audio-lyrics').value = '';
     
     document.getElementById('audio-cover-preview').src = "https://placehold.co/100?text=Cover";
     currentAudioCoverBase64 = null;
