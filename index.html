@@ -325,10 +325,15 @@
             </p>
         </div>
 
-        <!-- 2. TOP 5 PERFORMER -->
-        <div class="section-title"><i class="fa-solid fa-guitar"></i> Top 5 Performers (Profil)</div>
+        <!-- 2. TOP PERFORMER -->
+        <div class="section-title"><i class="fa-solid fa-guitar"></i> Top Performers (Profil)</div>
         <div class="performer-wrap" id="top-performer-container">
             <p style="text-align:center; width:100%; color:#888;">Memuat Artis...</p>
+        </div>
+        <div id="pf-see-all-wrap" style="display:none; text-align:center; margin-top:14px;">
+            <a href="performers.html" style="display:inline-flex; align-items:center; gap:6px; color:var(--accent); font-size:0.8rem; font-weight:700; text-decoration:none;">
+                Lihat Semua Performer <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
        
         <!-- 4. PODCAST HIGHLIGHT -->
@@ -711,7 +716,8 @@ area.innerHTML = `
         // TOP PERFORMERS
         async function loadTopPerformers() {
             const container = document.getElementById('top-performer-container');
-            const q = query(collection(db, "performers"), orderBy("rating", "desc"), limit(5));
+            // Ambil 13 (1 lebih banyak dari yg ditampilkan) buat deteksi apakah perlu tombol "Lihat Semua"
+            const q = query(collection(db, "performers"), orderBy("rating", "desc"), limit(13));
             const querySnapshot = await getDocs(q);
 
             if(querySnapshot.empty) {
@@ -719,8 +725,9 @@ area.innerHTML = `
                 return;
             }
 
+            const docs = querySnapshot.docs.slice(0, 12);
             container.innerHTML = '';
-            querySnapshot.forEach((doc) => {
+            docs.forEach((doc) => {
                 const data = doc.data();
                 const defaultImg = "https://placehold.co/150";
                 container.innerHTML += `
@@ -729,6 +736,11 @@ area.innerHTML = `
                     <div>${data.name}</div>
                 </div>`;
             });
+
+            // Kalau datanya lebih dari 12, tampilkan link "Lihat Semua Performer"
+            if (querySnapshot.docs.length > 12) {
+                document.getElementById('pf-see-all-wrap').style.display = 'block';
+            }
         }
 
         // BERITA
