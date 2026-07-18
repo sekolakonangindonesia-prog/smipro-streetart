@@ -11,7 +11,7 @@
     <style>
         /* CONTAINER BANNER */
         .profile-banner {
-            height: 250px;
+            height: 280px;
             background: linear-gradient(to bottom, rgba(0,0,0,0.3), #121212), url('https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/refs/heads/main/Baground%20Performer.jpg');
             background-size: cover;
             background-position: center;
@@ -150,13 +150,14 @@
         /* === FIX TAMPILAN HP (GANTI BARIS 150-156) === */
         @media (max-width: 600px) {
             /* Banner di HP jangan terlalu tinggi */
-            .profile-banner { height: 180px !important; }
+            .profile-banner { height: 200px !important; }
 
             /* Logo pojok sedikit dikecilkan di HP biar proporsional, jangan kekecilan */
             .profile-logo-corner { width: 46px !important; height: 46px !important; top: 62px !important; }
             
             /* Foto profil & Wadahnya diperkecil agar tidak menutupi layar */
-            .profile-avatar-container { bottom: -50px !important; }
+            /* PENTING: ukuran wadah (container) dan fotonya harus SAMA biar gak ada celah/cincin hitam */
+            .profile-avatar-container { bottom: -50px !important; width: 120px !important; height: 120px !important; }
             .profile-avatar { width: 110px !important; height: 110px !important; }
 
             /* Grid karya jadi 2 kolom rapi */
