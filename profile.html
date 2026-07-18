@@ -21,7 +21,7 @@
 
         /* LOGO KECIL */
         .profile-logo-corner {
-            position: absolute; top: 20px; left: 20px;
+            position: absolute; top: 68px; left: 20px;
             width: 60px !important; height: 60px !important;
             object-fit: contain; z-index: 20;
             filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));
@@ -151,6 +151,9 @@
         @media (max-width: 600px) {
             /* Banner di HP jangan terlalu tinggi */
             .profile-banner { height: 180px !important; }
+
+            /* Logo pojok sedikit dikecilkan di HP biar proporsional, jangan kekecilan */
+            .profile-logo-corner { width: 46px !important; height: 46px !important; top: 62px !important; }
             
             /* Foto profil & Wadahnya diperkecil agar tidak menutupi layar */
             .profile-avatar-container { bottom: -50px !important; }
