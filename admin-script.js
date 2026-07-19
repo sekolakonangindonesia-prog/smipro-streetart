@@ -1081,7 +1081,7 @@ window.previewMentorImg = function(input) {
                 canvas.height = img.height * scaleSize;
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 currentMentorImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                document.getElementById('m-preview').src = currentMentorImgBase64;
+                document.getElementById('mn-preview').src = currentMentorImgBase64;
             }
             img.src = e.target.result;
         }
@@ -1092,10 +1092,10 @@ window.previewMentorImg = function(input) {
 // TAMBAH MENTOR BARU -- mentor login pakai email+password (Firebase Auth), bukan lagi
 // "masukkan email saja tanpa password" seperti sebelumnya.
 window.saveMentorData = async function() {
-    const nama = document.getElementById('m-nama').value.trim();
-    const spesialis = document.getElementById('m-spesialis').value.trim();
-    const email = document.getElementById('m-email').value.trim();
-    const password = document.getElementById('m-password').value;
+    const nama = document.getElementById('mn-nama').value.trim();
+    const spesialis = document.getElementById('mn-spesialis').value.trim();
+    const email = document.getElementById('mn-email').value.trim();
+    const password = document.getElementById('mn-password').value;
 
     if (!nama || !spesialis) return alert("Nama dan Spesialisasi wajib diisi!");
     if (!email) return alert("Email wajib diisi (dipakai untuk login mentor)!");
@@ -1116,11 +1116,11 @@ window.saveMentorData = async function() {
         await addDoc(collection(db, "mentors"), data);
         alert("✅ Mentor ditambahkan! Bisa login pakai email: " + email);
 
-        document.getElementById('m-nama').value = '';
-        document.getElementById('m-spesialis').value = '';
-        document.getElementById('m-email').value = '';
-        document.getElementById('m-password').value = '';
-        document.getElementById('m-preview').src = 'https://placehold.co/100?text=Foto';
+        document.getElementById('mn-nama').value = '';
+        document.getElementById('mn-spesialis').value = '';
+        document.getElementById('mn-email').value = '';
+        document.getElementById('mn-password').value = '';
+        document.getElementById('mn-preview').src = 'https://placehold.co/100?text=Foto';
         currentMentorImgBase64 = null;
     } catch (e) {
         let msg = e.message;
