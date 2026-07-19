@@ -59,6 +59,7 @@
 <div class="mitra-tabs">
     <button class="tab-btn active" onclick="switchTab('bengkel')">🛠️ Bengkel Siswa</button>
     <button class="tab-btn" onclick="switchTab('galeri')">🎵 Galeri Karya</button> <!-- BARU -->
+    <button class="tab-btn" onclick="switchTab('fotogaleri')">📸 Galeri Foto</button>
     <button class="tab-btn" onclick="switchTab('performer')">🎸 Manaj. Performer</button>
     <button class="tab-btn" onclick="switchTab('profil')">👤 Profil Saya</button>
 </div>
@@ -121,6 +122,24 @@
         </div>
     </div>
 </div>
+
+    <!-- TAB BARU: GALERI FOTO (KHUSUS ADMIN YANG BISA ISI) -->
+    <div id="tab-fotogaleri" class="tab-content">
+        <div style="background:#1e1e1e; padding:20px; border-radius:10px; border:1px solid #333;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div>
+                    <h3 style="margin:0; color:white;">Galeri Foto</h3>
+                    <p style="color:#888; font-size:0.85rem; margin:5px 0 0;">Dokumentasi foto kegiatan mentor. Cuma Admin yang bisa isi.</p>
+                </div>
+                <button id="btn-add-mentor-photo" onclick="openAddMentorPhotoModal()" style="display:none; background:var(--primary); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    <i class="fa-solid fa-plus"></i> Tambah Foto
+                </button>
+            </div>
+            <div id="mentor-photo-gallery-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:15px;">
+                <p style="color:#666;">Memuat galeri foto...</p>
+            </div>
+        </div>
+    </div>
 
     <!-- TAB 3: PROFIL SAYA (7 SLOT FIX) -->
     <div id="tab-profil" class="tab-content">
@@ -190,6 +209,11 @@
             <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:40px; margin-bottom:10px;">
         </div>
         <h3 style="margin-top:0; color:white;">Tambah Karya</h3>
+
+        <button type="button" onclick="openPickPodcastModalMentor()" style="width:100%; background:rgba(0,210,255,0.12); border:1px solid #00d2ff; color:#00d2ff; padding:10px; border-radius:6px; font-size:0.82rem; font-weight:bold; cursor:pointer; margin-bottom:15px;">
+            <i class="fa-solid fa-folder-open"></i> Pilih dari Galeri Utama (Video/Musik)
+        </button>
+        <p style="text-align:center; color:#555; font-size:0.72rem; margin:-10px 0 15px;">— atau isi manual di bawah —</p>
         
         <label style="color:#aaa; font-size:0.8rem;">Judul Karya</label>
         <input type="text" id="gal-title" class="input-mentor" placeholder="Contoh: Single Hits 2025">
@@ -236,7 +260,50 @@
         </div>
     </div>
    
-        
+    <!-- MODAL PILIH DARI GALERI UTAMA (biar gak input 2x) -->
+    <div id="modal-pick-podcast-mentor" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3500; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#1a1a1a; width:100%; max-width:420px; max-height:80vh; padding:20px; border-radius:10px; border:1px solid #444; display:flex; flex-direction:column;">
+            <h3 style="margin-top:0; color:white;">Pilih dari Galeri Utama</h3>
+            <input type="text" id="pick-podcast-search-mentor" placeholder="Cari judul..." oninput="filterPickPodcastMentor(this.value)" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:12px; border-radius:5px;">
+            <div id="pick-podcast-list-mentor" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px;">
+                <p style="text-align:center; color:#666;">Memuat...</p>
+            </div>
+            <button onclick="document.getElementById('modal-pick-podcast-mentor').style.display='none'" style="margin-top:15px; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH/EDIT FOTO (KHUSUS ADMIN) -->
+    <div id="modal-add-mentor-photo" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#222; width:100%; max-width:400px; padding:20px; border-radius:10px; border:1px solid #444;">
+            <div style="text-align:center;">
+                <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:40px; margin-bottom:10px;">
+            </div>
+            <h3 style="margin-top:0; color:white;" id="mentor-photo-modal-title">Tambah Foto</h3>
+
+            <label style="color:#aaa; font-size:0.8rem;">Foto</label>
+            <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
+                <div onclick="document.getElementById('mentor-photo-file-input').click()" style="width:80px; height:80px; border:2px dashed #555; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; background:#111;">
+                    <img id="mentor-photo-preview-img" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+                    <i id="mentor-photo-placeholder-icon" class="fa-solid fa-image" style="color:#444; font-size:1.5rem;"></i>
+                </div>
+                <div style="flex:1;">
+                    <button type="button" onclick="document.getElementById('mentor-photo-file-input').click()" style="background:#333; color:white; border:1px solid #444; padding:8px 12px; border-radius:5px; font-size:0.8rem; cursor:pointer;">
+                        Pilih Foto dari HP/Laptop
+                    </button>
+                    <input type="file" id="mentor-photo-file-input" style="display:none;" accept="image/*" onchange="window.previewMentorPhotoImage(this)">
+                </div>
+            </div>
+
+            <label style="color:#aaa; font-size:0.8rem;">Keterangan (opsional)</label>
+            <input type="text" id="mentor-photo-caption" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:15px; border-radius:5px;" placeholder="Contoh: Sesi mentoring Bengkel Siswa">
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('modal-add-mentor-photo').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
+                <button onclick="saveMentorPhoto()" style="flex:1; padding:10px; background:var(--primary); border:none; color:white; border-radius:5px; cursor:pointer;">Simpan</button>
+            </div>
+        </div>
+    </div>
+
 <!-- TOMBOL ADMIN -->
 <div id="admin-floating-btn" style="display:none; position:fixed; bottom:20px; right:20px; z-index:9999;">
     <button onclick="backToAdminDashboard()" style="background:#E50914; color:white; padding:12px 20px; border:2px solid white; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 5px 20px rgba(0,0,0,0.8); display:flex; align-items:center; gap:10px;">
