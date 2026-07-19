@@ -13,14 +13,23 @@ import { getAuth, createUserWithEmailAndPassword, signOut as secondarySignOut, s
    supaya proses createUserWithEmailAndPassword() TIDAK menggantikan sesi login
    admin yang sedang aktif dengan akun baru itu.
 */
-async function createLoginAccount(email, password) {
+async function createLoginAccount(email) {
+    // Password sementara acak -- cuma dipakai internal untuk memenuhi syarat Firebase,
+    // TIDAK PERNAH diberitahukan ke siapa pun. Orangnya akan bikin password sendiri
+    // lewat email "Setel Password" yang dikirim otomatis di bawah.
+    const tempPassword = (crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36) + Date.now())) + "Aa1!";
+
     const tempApp = initializeSecondaryApp(firebaseConfig, 'temp-create-' + Date.now());
     const tempAuth = getAuth(tempApp);
     try {
-        const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
+        const cred = await createUserWithEmailAndPassword(tempAuth, email, tempPassword);
         const uid = cred.user.uid;
         await secondarySignOut(tempAuth);
         await deleteApp(tempApp);
+
+        // Kirim email resmi dari Firebase supaya orangnya bisa bikin password sendiri
+        await sendPasswordResetEmail(auth, email);
+
         return uid;
     } catch (err) {
         await deleteApp(tempApp).catch(()=>{});
@@ -931,7 +940,6 @@ window.savePerformerData = async function() {
     const genre = document.getElementById('p-genre').value.trim();
     const phone = document.getElementById('p-wa').value.trim();
     const email = document.getElementById('p-email').value.trim();
-    const password = document.getElementById('p-password').value;
 
     if (!nama || !genre) return alert("Nama Panggung dan Genre wajib diisi!");
 
@@ -950,16 +958,15 @@ window.savePerformerData = async function() {
             alert("✅ Perubahan disimpan!");
         } else {
             if (!email) return alert("Email wajib diisi untuk performer baru (dipakai untuk login)!");
-            if (!password || password.length < 8) return alert("Password awal minimal 8 karakter!");
 
-            await createLoginAccount(email, password); // bikin akun Firebase Auth dulu
+            await createLoginAccount(email); // bikin akun Firebase Auth + kirim email "Setel Password"
 
             data.email = email;
             data.joinedAt = new Date();
             data.rating = 0;
             data.source = 'manual'; // Didaftarkan langsung admin, bukan lulusan Bengkel Siswa -- tidak butuh nilai mentor
             await addDoc(collection(db, "performers"), data);
-            alert("✅ Performer ditambahkan! Bisa login pakai email: " + email);
+            alert("✅ Performer ditambahkan! Email undangan setel password sudah dikirim ke: " + email);
         }
         resetPerfForm();
     } catch (e) {
@@ -992,7 +999,6 @@ window.resetPerfForm = function() {
     document.getElementById('p-genre').value = '';
     document.getElementById('p-wa').value = '';
     document.getElementById('p-email').value = '';
-    document.getElementById('p-password').value = '';
     document.getElementById('p-preview').src = 'https://placehold.co/100?text=Foto';
     currentPerfImgBase64 = null;
     const emailGroup = document.getElementById('p-email-group');
@@ -1095,14 +1101,12 @@ window.saveMentorData = async function() {
     const nama = document.getElementById('mn-nama').value.trim();
     const spesialis = document.getElementById('mn-spesialis').value.trim();
     const email = document.getElementById('mn-email').value.trim();
-    const password = document.getElementById('mn-password').value;
 
     if (!nama || !spesialis) return alert("Nama dan Spesialisasi wajib diisi!");
     if (!email) return alert("Email wajib diisi (dipakai untuk login mentor)!");
-    if (!password || password.length < 8) return alert("Password awal minimal 8 karakter!");
 
     try {
-        await createLoginAccount(email, password); // bikin akun Firebase Auth dulu
+        await createLoginAccount(email); // bikin akun Firebase Auth + kirim email "Setel Password"
 
         const data = {
             name: nama,
@@ -1114,12 +1118,11 @@ window.saveMentorData = async function() {
         if (currentMentorImgBase64) data.img = currentMentorImgBase64;
 
         await addDoc(collection(db, "mentors"), data);
-        alert("✅ Mentor ditambahkan! Bisa login pakai email: " + email);
+        alert("✅ Mentor ditambahkan! Email undangan setel password sudah dikirim ke: " + email);
 
         document.getElementById('mn-nama').value = '';
         document.getElementById('mn-spesialis').value = '';
         document.getElementById('mn-email').value = '';
-        document.getElementById('mn-password').value = '';
         document.getElementById('mn-preview').src = 'https://placehold.co/100?text=Foto';
         currentMentorImgBase64 = null;
     } catch (e) {
