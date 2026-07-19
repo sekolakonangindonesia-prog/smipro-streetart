@@ -475,9 +475,9 @@
                     <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:10px;">
                         <input type="text" id="p-wa" class="cms-input" placeholder="No. WhatsApp (08xxx)" style="margin:0;">
                     </div>
-                    <div id="p-email-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                        <input type="email" id="p-email" class="cms-input" placeholder="Email login performer" style="margin:0;">
-                        <input type="text" id="p-password" class="cms-input" placeholder="Password awal (min 8 karakter)" style="margin:0;">
+                    <div id="p-email-group" style="margin-bottom:10px;">
+                        <input type="email" id="p-email" class="cms-input" placeholder="Email login performer" style="margin:0; width:100%; box-sizing:border-box;">
+                        <small style="color:#888; font-size:0.75rem;">Performer akan menerima email untuk membuat password sendiri.</small>
                     </div>
                     <div style="display:flex; gap:10px;">
                         <button id="btn-save-perf" class="btn-action btn-view" onclick="savePerformerData()" style="width:100%;">+ Simpan Performer</button>
@@ -511,9 +511,9 @@
                         <input type="text" id="mn-nama" class="cms-input" placeholder="Nama Mentor" style="margin:0;">
                         <input type="text" id="mn-spesialis" class="cms-input" placeholder="Spesialisasi (cth: Musik & Audio)" style="margin:0;">
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                        <input type="email" id="mn-email" class="cms-input" placeholder="Email login mentor" style="margin:0;">
-                        <input type="text" id="mn-password" class="cms-input" placeholder="Password awal (min 8 karakter)" style="margin:0;">
+                    <div style="margin-bottom:10px;">
+                        <input type="email" id="mn-email" class="cms-input" placeholder="Email login mentor" style="margin:0; width:100%; box-sizing:border-box;">
+                        <small style="color:#888; font-size:0.75rem;">Mentor akan menerima email untuk membuat password sendiri.</small>
                     </div>
                     <button id="btn-save-mentor" class="btn-action btn-view" onclick="saveMentorData()" style="width:100%;">+ Simpan Mentor</button>
                 </div>
