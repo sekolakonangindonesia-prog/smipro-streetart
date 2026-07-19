@@ -107,6 +107,8 @@
         #panel-audio .sp-lbl{font-size:0.6rem;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,0.4);margin-bottom:6px}
         #panel-audio #ap-title{font-size:clamp(1.3rem,4.5vw,2.4rem);font-weight:900;line-height:1.1;letter-spacing:-0.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
         #panel-audio #ap-artist{font-size:0.85rem;color:rgba(255,255,255,0.6);margin-top:6px;font-weight:600}
+        #panel-audio .sp-lyrics-btn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:rgba(29,185,84,0.14);border:1px solid rgba(29,185,84,0.4);color:#1DB954;font-size:0.72rem;font-weight:800;padding:6px 12px;border-radius:20px;cursor:pointer}
+        #panel-audio .sp-lyrics-btn:hover{background:rgba(29,185,84,0.24)}
         #panel-audio .sp-prog-wrap{margin-top:14px}
         #panel-audio .sp-prog-bg{width:100%;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;cursor:pointer;position:relative}
         #panel-audio #ap-prog{height:100%;background:#fff;border-radius:2px;width:0%;pointer-events:none}
@@ -185,7 +187,7 @@
         #fp-lyrics{display:none;flex:1;overflow-y:auto;padding:10px 4px;-webkit-overflow-scrolling:touch;}
         #fp-lyrics.show{display:block;}
         .lyric-line{font-size:1.05rem;font-weight:700;color:rgba(255,255,255,0.32);padding:11px 10px;text-align:center;transition:color 0.25s ease,transform 0.25s ease;line-height:1.4;}
-        .lyric-line.active{color:#fff;transform:scale(1.05);}
+        .lyric-line.active{color:#1DB954;font-size:1.2rem;transform:scale(1.08);text-shadow:0 0 18px rgba(29,185,84,0.5);}
         .lyric-empty{text-align:center;color:rgba(255,255,255,0.35);padding:50px 20px;font-size:0.85rem;}
     </style>
 </head>
@@ -266,6 +268,7 @@
                     <div class="sp-lbl">🎧 STREETART TUNES</div>
                     <div id="ap-title">-</div>
                     <div id="ap-artist">-</div>
+                    <button class="sp-lyrics-btn" onclick="openLyrics()"><i class="fa-solid fa-align-left"></i> Lirik</button>
                 </div>
             </div>
             <div class="sp-prog-wrap">
@@ -392,6 +395,10 @@ async function loadVideos() {
             }
         });
         renderGrid();
+
+        // Kalau datang dari link "?play=id&type=video" (misal dari kartu preview di beranda),
+        // langsung pindah ke tab Video dan mainkan video-nya otomatis.
+        checkAutoPlayVideo();
     } catch(e) {
         console.error("Gagal load:", e);
         document.getElementById('skel').style.display = 'none';
@@ -436,6 +443,24 @@ function renderGrid() {
         el.addEventListener('click', () => playVideo(d.id, el.dataset));
         grid.appendChild(el);
     });
+}
+
+// Cek URL kalau ada instruksi auto-play video spesifik (dari kartu preview beranda / link share)
+let autoPlayHandled = false;
+function checkAutoPlayVideo() {
+    if (autoPlayHandled) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type') !== 'video') return;
+    const playId = params.get('play');
+    if (!playId) return;
+
+    const found = allVideos.find(v => v.id === playId);
+    if (!found) return;
+
+    autoPlayHandled = true;
+    if (typeof window.switchGalleryTab === 'function') window.switchGalleryTab('video');
+    const thumb = found.ytId ? 'https://img.youtube.com/vi/' + found.ytId + '/hqdefault.jpg' : (found.thumb || '');
+    playVideo(found.id, { ytid: found.ytId || '', title: found.title || 'Untitled', host: found.host || 'Admin', thumb });
 }
 
 function playVideo(id, ds) {
@@ -642,6 +667,10 @@ async function loadTracks() {
             if (d.mediaType === 'audio') allTracks.push({ id:doc.id, ...d });
         });
         renderList();
+
+        // Kalau datang dari link "?play=id&type=audio" (kartu preview beranda / link share),
+        // langsung mainkan lagunya otomatis (tab Musik memang sudah default aktif).
+        checkAutoPlayAudio();
     } catch(e) {
         console.error("Error:", e);
         document.getElementById('skel-list').style.display = 'none';
@@ -686,6 +715,22 @@ function renderList() {
             <button class="tr-share" onclick="shareTrack(event,${i})" title="Bagikan lagu ini"><i class="fa-solid fa-share-nodes"></i></button>
         </div>`;
     }).join('');
+}
+
+// Cek URL kalau ada instruksi auto-play lagu spesifik (dari kartu preview beranda / link share)
+let audioAutoPlayHandled = false;
+function checkAutoPlayAudio() {
+    if (audioAutoPlayHandled) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type') !== 'audio') return;
+    const playId = params.get('play');
+    if (!playId) return;
+
+    const idx = filteredTracks.findIndex(t => t.id === playId);
+    if (idx < 0) return;
+
+    audioAutoPlayHandled = true;
+    window.playTrack(idx);
 }
 
 window.playTrack = function(idx) {
@@ -803,6 +848,15 @@ window.seekFP = e => {
 
 window.openFullPlayer = function() { document.getElementById('full-player').classList.add('open'); };
 window.closeFullPlayer = function() { document.getElementById('full-player').classList.remove('open'); };
+
+// Akses cepat lirik langsung dari player utama (nggak perlu buka full player manual dulu)
+window.openLyrics = function() {
+    if (currentIdx < 0) return; // Belum ada lagu diputar
+    openFullPlayer();
+    if (!document.getElementById('fp-lyrics').classList.contains('show')) {
+        toggleLyricsView();
+    }
+};
 
 window.setFilterAudio = function(f,btn) {
     currentFilterAudio = f;
