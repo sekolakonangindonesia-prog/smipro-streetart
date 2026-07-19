@@ -76,9 +76,9 @@
         </div>
 
         <div class="form-group">
-            <label>Buat PIN Login (4-6 digit)</label>
-            <input type="password" id="reg-pin" class="form-input" placeholder="****" inputmode="numeric" maxlength="6">
-            <small style="color:#666; font-size:0.7rem;">*PIN ini dipakai untuk login nanti, jangan sampai lupa.</small>
+            <label>Buat PIN Login (6 digit)</label>
+            <input type="password" id="reg-pin" class="form-input" placeholder="******" inputmode="numeric" maxlength="6" minlength="6">
+            <small style="color:#666; font-size:0.7rem;">*PIN 6 digit angka. Dipakai untuk login nanti, jangan sampai lupa.</small>
         </div>
         <div class="form-group">
             <label>Ulangi PIN</label>
@@ -145,8 +145,8 @@
             if(meja > 15) {
                 return alert("Maksimal 15 meja untuk pendaftaran online.");
             }
-            if(!/^\d{4,6}$/.test(pin)) {
-                return alert("PIN harus 4-6 digit angka!");
+            if(!/^\d{6}$/.test(pin)) {
+                return alert("PIN harus 6 digit angka!");
             }
             if(pin !== pinConfirm) {
                 return alert("PIN dan ulangi PIN tidak sama!");
