@@ -320,7 +320,7 @@
             <div style="text-align:center;">
                 <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:40px; margin-bottom:10px;">
             </div>
-            <h3 style="margin-top:0; color:white;">Tambah Foto</h3>
+            <h3 style="margin-top:0; color:white;" id="photo-modal-title">Tambah Foto</h3>
 
             <label style="color:#aaa; font-size:0.8rem;">Foto</label>
             <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px;">
@@ -592,23 +592,52 @@ function renderPhotoGallery(data) {
     }
 
     container.innerHTML = photoGalleryData.map((item, index) => {
-        const delBtn = isAdmin ? `
-            <button onclick="deletePhoto(${index}); event.stopPropagation();" style="margin-top:10px; background:#b71c1c; color:white; border:none; width:100%; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
-                <i class="fa-solid fa-trash"></i> Hapus
-            </button>` : '';
+        const actionBtns = isAdmin ? `
+            <div style="display:flex; gap:5px; margin-top:10px;">
+                <button onclick="openEditPhotoModal(${index}); event.stopPropagation();" style="flex:1; background:#333; color:white; border:1px solid #555; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button onclick="deletePhoto(${index}); event.stopPropagation();" style="flex:1; background:#b71c1c; color:white; border:none; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
+                    <i class="fa-solid fa-trash"></i> Hapus
+                </button>
+            </div>` : '';
         return `
         <div style="background:#1a1a1a; border-radius:8px; overflow:hidden; border:1px solid #333;">
             <img src="${item.url}" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
             <div style="padding:8px;">
                 ${item.caption ? `<p style="color:#ccc; font-size:0.78rem; margin:0;">${item.caption}</p>` : ''}
-                ${delBtn}
+                ${actionBtns}
             </div>
         </div>`;
     }).join('');
 }
 
+// null = mode Tambah (foto baru). Angka = mode Edit (index foto yg lagi diedit di photoGalleryData).
+let editingPhotoIndex = null;
+
 window.openAddPhotoModal = function() {
     if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa menambah foto di galeri ini.");
+    editingPhotoIndex = null;
+    currentPhotoBase64 = null;
+    document.getElementById('photo-modal-title').innerText = 'Tambah Foto';
+    document.getElementById('photo-caption').value = '';
+    document.getElementById('photo-preview-img').style.display = 'none';
+    document.getElementById('photo-placeholder-icon').style.display = 'block';
+    document.getElementById('modal-add-photo').style.display = 'flex';
+};
+
+window.openEditPhotoModal = function(index) {
+    if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa mengedit foto di galeri ini.");
+    const item = photoGalleryData[index];
+    if (!item) return;
+
+    editingPhotoIndex = index;
+    currentPhotoBase64 = null; // Kosong berarti: kalau disimpan tanpa pilih foto baru, foto lama tetap dipakai
+    document.getElementById('photo-modal-title').innerText = 'Edit Foto';
+    document.getElementById('photo-caption').value = item.caption || '';
+    document.getElementById('photo-preview-img').src = item.url;
+    document.getElementById('photo-preview-img').style.display = 'block';
+    document.getElementById('photo-placeholder-icon').style.display = 'none';
     document.getElementById('modal-add-photo').style.display = 'flex';
 };
 
@@ -627,22 +656,34 @@ window.previewPhotoImage = function(input) {
 };
 
 window.savePhoto = async function() {
-    if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa menambah foto di galeri ini.");
-    if (!currentPhotoBase64) return alert("Mohon pilih foto terlebih dahulu!");
+    if (!isAdmin) return alert("Akses Ditolak! Hanya Admin yang bisa menambah/mengedit foto di galeri ini.");
 
     const caption = document.getElementById('photo-caption').value;
-    const newItem = { id: Date.now(), url: currentPhotoBase64, caption: caption || "" };
-    const newPhotoGallery = [...photoGalleryData, newItem];
+    let newPhotoGallery;
+
+    if (editingPhotoIndex !== null) {
+        // MODE EDIT: update entri yg sudah ada. Foto cuma diganti kalau user pilih file baru,
+        // kalau nggak, foto lama (url lama) tetap dipakai -- tidak perlu hapus+tambah ulang.
+        const existing = photoGalleryData[editingPhotoIndex];
+        const updatedItem = { ...existing, caption: caption || "", url: currentPhotoBase64 || existing.url };
+        newPhotoGallery = photoGalleryData.map((item, i) => i === editingPhotoIndex ? updatedItem : item);
+    } else {
+        // MODE TAMBAH: foto wajib dipilih
+        if (!currentPhotoBase64) return alert("Mohon pilih foto terlebih dahulu!");
+        const newItem = { id: Date.now(), url: currentPhotoBase64, caption: caption || "" };
+        newPhotoGallery = [...photoGalleryData, newItem];
+    }
 
     try {
         await updateDoc(doc(db, "performers", PERF_ID), { photoGallery: newPhotoGallery });
-        alert("✅ Foto Berhasil Ditambahkan!");
+        alert(editingPhotoIndex !== null ? "✅ Foto Berhasil Diperbarui!" : "✅ Foto Berhasil Ditambahkan!");
 
         document.getElementById('modal-add-photo').style.display = 'none';
         document.getElementById('photo-caption').value = '';
         document.getElementById('photo-preview-img').style.display = 'none';
         document.getElementById('photo-placeholder-icon').style.display = 'block';
         currentPhotoBase64 = null;
+        editingPhotoIndex = null;
 
         loadPhotoGallery();
     } catch (e) {
