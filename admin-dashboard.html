@@ -1186,11 +1186,35 @@
 <script src="image-utils.js"></script>
 <script type="module" src="admin-script.js"></script>
 
+<!-- FIX KEAMANAN: Guard admin sekarang verifikasi Firebase Auth beneran (bukan cuma
+     baca localStorage yang bisa dipalsukan siapa saja lewat DevTools). Kalau belum
+     login Firebase ATAU email-nya bukan email admin resmi, langsung tendang keluar. -->
+<script type="module">
+    import { auth } from './firebase-config.js';
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const ADMIN_EMAIL = "smipro.streetart@gmail.com";
+
+    onAuthStateChanged(auth, (user) => {
+        if (!user || user.email !== ADMIN_EMAIL) {
+            signOut(auth).catch(()=>{});
+            localStorage.clear();
+            alert("Akses Ditolak! Silakan login sebagai admin.");
+            window.location.href = 'admin-login.html';
+            return;
+        }
+
+        // Auth valid -- pastikan localStorage konsisten (dipakai halaman lain utk tampilan nav)
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('userName', 'Super Admin');
+    });
+
+    // Dipakai tombol Logout (adminLogout di admin-script.js) supaya sesi Firebase ikut ditutup
+    window.__firebaseSignOut = () => signOut(auth);
+</script>
+
 <script>
-    // Logic UI Sederhana (Non-Module)
-    if(localStorage.getItem('userRole') !== 'admin' && localStorage.getItem('adminOrigin') !== 'true') {
-    alert("Akses Ditolak!"); window.location.href = 'admin-login.html';
-}
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
     function goToHomeAsAdmin() {
