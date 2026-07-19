@@ -372,38 +372,80 @@
 
     <!-- SCRIPT TUNGGAL DAN LENGKAP -->
     <script type="module">
-        import { db } from './firebase-config.js';
-        import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { db, auth } from './firebase-config.js';
+        import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         let currentAddBase64 = null; // Penampung gambar cover baru
         
         // --- IMPORT JSPDF ---
         const { jsPDF } = window.jspdf;
 
-        // ID Performer yang sedang login/diedit
-        const PERF_ID = localStorage.getItem('performerId');
-        
-        // Cek Hak Akses (Privilege)
-        const userRole = localStorage.getItem('userRole');
-        const isAdmin = localStorage.getItem('adminOrigin') === 'true';
-        // Hanya Admin atau Mentor yang boleh Edit (Tambah/Hapus)
-        const canEdit = isAdmin || userRole === 'mentor';
+        const ADMIN_EMAIL = "smipro.streetart@gmail.com";
 
-        // --- 1. LOGIKA UTAMA SAAT LOAD ---
-        window.onload = function() {
-            // Validasi Login
-            if(!localStorage.getItem('userLoggedIn')) {
-                window.location.href = 'index.html';
+        // FIX KEAMANAN: variabel-variabel ini dulu langsung dipercaya dari localStorage
+        // (gampang dipalsukan lewat DevTools). Sekarang baru di-set SETELAH Firebase Auth
+        // memverifikasi siapa yang benar-benar login -- lihat onAuthStateChanged() di bawah.
+        let PERF_ID = null;
+        let userRole = null;
+        let isAdmin = false;
+        let canEdit = false;
+
+        // --- 0. GUARD: verifikasi Firebase Auth sebelum halaman dimuat ---
+        onAuthStateChanged(auth, async (user) => {
+            const adminOriginFlag = localStorage.getItem('adminOrigin') === 'true';
+
+            if (!user) {
+                window.location.href = 'login.html';
                 return;
             }
 
+            if (adminOriginFlag && user.email === ADMIN_EMAIL) {
+                // Admin (Firebase Auth asli) sedang impersonate / meninjau lewat admin dashboard
+                isAdmin = true;
+                userRole = 'admin';
+                PERF_ID = localStorage.getItem('performerId');
+            } else {
+                // Cek apakah ini mentor terverifikasi (mentor boleh menilai/tambah galeri performer)
+                const mq = query(collection(db, "mentors"), where("email", "==", user.email));
+                const mSnap = await getDocs(mq);
+                if (!mSnap.empty) {
+                    userRole = 'mentor';
+                    PERF_ID = localStorage.getItem('performerId');
+                } else {
+                    // Bukan admin/mentor -- cek apakah ini performer yang login sebagai dirinya sendiri
+                    const pq = query(collection(db, "performers"), where("email", "==", user.email));
+                    const pSnap = await getDocs(pq);
+                    if (pSnap.empty) {
+                        alert("Akun ini tidak dikenali. Hubungi Admin.");
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    PERF_ID = pSnap.docs[0].id;
+                    userRole = 'performer';
+                }
+            }
+
+            canEdit = isAdmin || userRole === 'mentor';
+
+            if (!PERF_ID) {
+                alert("Error: ID Performer tidak ditemukan. Silakan login ulang.");
+                window.location.href = 'login.html';
+                return;
+            }
+
+            localStorage.setItem('userLoggedIn', 'true');
+            localStorage.setItem('performerId', PERF_ID);
+            localStorage.setItem('userRole', userRole);
+
+            runPerformerDashboard();
+        });
+
+        // --- 1. LOGIKA UTAMA (dipanggil dari guard di atas, setelah Auth terverifikasi) ---
+        function runPerformerDashboard() {
             const navBtn = document.getElementById('nav-home-btn');
 
             // Load Data Profil dari Firebase
-            if(PERF_ID) {
-                loadProfileData();
-            } else {
-                alert("Error: ID Performer tidak ditemukan. Silakan login ulang.");
-            }
+            loadProfileData();
 
             // A. LOGIKA TAMPILAN SESUAI HAK AKSES
             if (canEdit) {
