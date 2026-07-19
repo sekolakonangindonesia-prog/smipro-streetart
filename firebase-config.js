@@ -19,4 +19,7 @@ const db = getFirestore(app);
 const auth = getAuth(app); // FIX KEAMANAN: Firebase Authentication untuk Admin & Mentor
 
 // Export agar bisa dipakai di file lain
-export { db, auth };
+// firebaseConfig ikut diekspor supaya admin-script.js bisa bikin "instance Firebase kedua"
+// saat admin membuat akun mentor/performer baru -- tanpa itu, createUserWithEmailAndPassword()
+// akan otomatis nge-logout sesi admin yang sedang aktif dan gantikan dengan akun baru itu.
+export { db, auth, firebaseConfig };
