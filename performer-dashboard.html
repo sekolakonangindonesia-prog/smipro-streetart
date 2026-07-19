@@ -84,6 +84,7 @@
     </style>
     <!-- Library untuk Cetak PDF Otomatis -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="image-utils.js"></script>
 </head>
 <body>
 
@@ -659,16 +660,16 @@ window.openEditPhotoModal = function(index) {
 };
 
 let currentPhotoBase64 = null;
-window.previewPhotoImage = function(input) {
+window.previewPhotoImage = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentPhotoBase64 = e.target.result;
-            document.getElementById('photo-preview-img').src = e.target.result;
+        try {
+            currentPhotoBase64 = await compressImage(input.files[0], 700, 0.75);
+            document.getElementById('photo-preview-img').src = currentPhotoBase64;
             document.getElementById('photo-preview-img').style.display = 'block';
             document.getElementById('photo-placeholder-icon').style.display = 'none';
-        };
-        reader.readAsDataURL(input.files[0]);
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
+        }
     }
 };
 
@@ -761,7 +762,7 @@ window.filterPickPodcast = function(keyword) {
     renderPickPodcastList(allPodcastsCache.filter(p => (p.title || '').toLowerCase().includes(k)));
 };
 
-window.selectPickedPodcast = function(index) {
+window.selectPickedPodcast = async function(index) {
     const item = allPodcastsCache[index];
     if (!item) return;
 
@@ -771,10 +772,18 @@ window.selectPickedPodcast = function(index) {
     document.getElementById('add-url').value = item.link || '';
 
     if (item.thumb) {
-        document.getElementById('add-preview-img').src = item.thumb;
+        // PENTING: kompres ULANG cover-nya sebelum disalin ke sini -- kalau cover
+        // aslinya base64 gede peninggalan lama, jangan disalin mentah-mentah, nanti
+        // ikut numpuk lagi di dokumen ini (bisa bikin gagal simpan krn lewat 1MB).
+        document.getElementById('add-preview-img').src = item.thumb; // preview cepat dulu
         document.getElementById('add-preview-img').style.display = 'block';
         document.getElementById('add-placeholder-icon').style.display = 'none';
-        currentAddBase64 = item.thumb; // dipakai langsung sebagai cover, gak perlu upload ulang
+        try {
+            currentAddBase64 = await compressImageFromUrl(item.thumb, 500, 0.75);
+            document.getElementById('add-preview-img').src = currentAddBase64;
+        } catch (e) {
+            currentAddBase64 = item.thumb; // fallback kalau gagal kompres
+        }
     }
 
     document.getElementById('modal-pick-podcast').style.display = 'none';
@@ -865,28 +874,26 @@ window.saveGalleryItem = async function() {
         window.triggerUpload = function() { document.getElementById('file-input').click(); }
         window.previewImage = function(input) {
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = async function (e) {
+                compressImage(input.files[0], 500, 0.75).then(async (compressed) => {
                     if(confirm("Simpan foto profil baru?")) {
-                        await updateDoc(doc(db, "performers", PERF_ID), { img: e.target.result });
-                        document.getElementById('header-profile-img').src = e.target.result;
+                        await updateDoc(doc(db, "performers", PERF_ID), { img: compressed });
+                        document.getElementById('header-profile-img').src = compressed;
                         alert("Foto tersimpan!");
                     }
-                };
-                reader.readAsDataURL(input.files[0]);
+                }).catch(e => alert("Gagal memproses gambar: " + e.message));
             }
         }
 
-        window.previewAddImage = function(input) {
+        window.previewAddImage = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentAddBase64 = e.target.result;
-            document.getElementById('add-preview-img').src = e.target.result;
+        try {
+            currentAddBase64 = await compressImage(input.files[0], 500, 0.75);
+            document.getElementById('add-preview-img').src = currentAddBase64;
             document.getElementById('add-preview-img').style.display = 'block';
             document.getElementById('add-placeholder-icon').style.display = 'none';
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
         }
-        reader.readAsDataURL(input.files[0]);
     }
 }
         
