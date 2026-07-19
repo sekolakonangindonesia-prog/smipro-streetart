@@ -351,16 +351,16 @@
             <h3 style="margin:0; color:white;">Dukung Street.Art</h3>
             <p style="font-size:0.9rem; color:#888;">Follow akun resmi kami untuk update terbaru.</p>
             <div class="social-icons">
-                <a href="https://www.youtube.com/@SmiproStreetart" target="_blank" style="color:red;" title="YouTube STREETART">
+                <a href="https://www.youtube.com/@SmiproStreetart" target="_blank" id="social-link-youtube" style="color:red;" title="YouTube STREETART">
                     <i class="fa-brands fa-youtube"></i>
                 </a>
-                <a href="https://www.tiktok.com/@smipro_streetart" target="_blank" style="color:#00f2ea;" title="TikTok">
+                <a href="https://www.tiktok.com/@smipro_streetart" target="_blank" id="social-link-tiktok" style="color:#00f2ea;" title="TikTok">
                     <i class="fa-brands fa-tiktok"></i>
                 </a>
-                <a href="https://www.instagram.com/smipro.streetart/" target="_blank" style="color:#C13584;" title="Instagram">
+                <a href="https://www.instagram.com/smipro.streetart/" target="_blank" id="social-link-instagram" style="color:#C13584;" title="Instagram">
                     <i class="fa-brands fa-instagram"></i>
                 </a>
-                <a href="https://www.facebook.com/profile.php?id=61586115930975&locale=id_ID" target="_blank" style="color:#1877F2;" title="Facebook">
+                <a href="https://www.facebook.com/profile.php?id=61586115930975&locale=id_ID" target="_blank" id="social-link-facebook" style="color:#1877F2;" title="Facebook">
                     <i class="fa-brands fa-facebook-f"></i>
                 </a>
             </div>
@@ -830,8 +830,9 @@ area.innerHTML = `
             }
  
             const renderCard = (item, type) => {
-                // Tujuan link: video → podcast.html, audio → musik.html
-                const targetPage = type === 'video' ? 'podcast.html' : 'musik.html';
+                // Kedua tipe sekarang ke podcast.html (sudah gabungan Musik+Video),
+                // bawa ?play=id&type=... biar podcast.html bisa langsung muterin item ini otomatis.
+                const targetPage = item ? `podcast.html?play=${encodeURIComponent(item.id)}&type=${type}` : 'podcast.html';
                 const label      = type === 'video' ? 'VIDEO'  : 'AUDIO';
                 const accent     = type === 'video' ? '#E50914' : '#1DB954';
                 const accentBg   = type === 'video' ? 'rgba(229,9,20,0.12)'  : 'rgba(30,215,96,0.12)';
@@ -972,6 +973,24 @@ area.innerHTML = `
         // ==========================================
         // 5. EKSEKUSI
         // ==========================================
+        // Ambil link sosial media dari Firestore (diisi admin di Kelola Konten > Sosial Media).
+        // Kalau belum pernah diisi / field kosong, href bawaan di HTML (fallback) tetap dipakai.
+        async function loadSocialLinksHome() {
+            try {
+                const snap = await getDoc(doc(db, "settings", "social"));
+                if (!snap.exists()) return;
+                const d = snap.data();
+                const map = { youtube: d.youtube, tiktok: d.tiktok, instagram: d.instagram, facebook: d.facebook };
+                Object.keys(map).forEach(key => {
+                    const url = map[key];
+                    const el = document.getElementById('social-link-' + key);
+                    if (el && url) el.href = url;
+                });
+            } catch (e) {
+                console.error("Gagal memuat link sosial media:", e);
+            }
+        }
+
         checkAuthStatus();
         loadHeroBanner();
         loadMainSchedule();
@@ -981,6 +1000,7 @@ area.innerHTML = `
         loadTopPerformers();
         loadNews();
         loadPodcastHighlight();
+        loadSocialLinksHome();
         initWelcomeScreen();
 
     </script>
