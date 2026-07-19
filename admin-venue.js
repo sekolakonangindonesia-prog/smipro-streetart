@@ -9,6 +9,12 @@ import {
 
 let currentVenueBase64 = null;
 
+// Helper: escape nama/deskripsi sebelum disisipkan ke atribut onclick="..."
+// (mencegah tombol Edit patah/error kalau nama venue mengandung tanda kutip)
+function safeAttr(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
 // 1. PREVIEW GAMBAR
 window.previewVenueImg = function(input) {
     if (input.files && input.files[0]) {
@@ -147,7 +153,7 @@ window.loadVenueManagement = function() {
                     <div style="font-size:0.7rem; margin-top:3px;">${activeBadge}</div>
                 </td>
                 <td>
-                    <button class="btn-action btn-edit" onclick="editVenue('${docSnap.id}', '${d.name}', '${d.order}', '${d.desc}', '${d.img||''}')">
+                    <button class="btn-action btn-edit" onclick="editVenue('${docSnap.id}', '${safeAttr(d.name)}', '${d.order}', '${safeAttr(d.desc)}', '${d.img||''}')">
                         <i class="fa-solid fa-pen"></i>
                     </button>
                     <button class="btn-action btn-delete" onclick="deleteVenue('${docSnap.id}')">
