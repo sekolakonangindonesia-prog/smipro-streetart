@@ -128,15 +128,15 @@
 
         <form onsubmit="handleLogin(event)">
             <div class="input-group">
-                <label>ADMIN ID</label>
-                <input type="text" id="admin-id" class="input-field" placeholder="root_admin">
+                <label>EMAIL ADMIN</label>
+                <input type="email" id="admin-id" class="input-field" placeholder="admin@email.com" autocomplete="username">
             </div>
             <div class="input-group">
-                <label>ACCESS KEY</label>
-                <input type="password" id="admin-pass" class="input-field" placeholder="••••••••">
+                <label>PASSWORD</label>
+                <input type="password" id="admin-pass" class="input-field" placeholder="••••••••" autocomplete="current-password">
             </div>
             
-            <button type="submit" class="btn-login">
+            <button type="submit" class="btn-login" id="btn-admin-login">
                 <i class="fa-solid fa-key"></i> Access Dashboard
             </button>
         </form>
@@ -144,35 +144,61 @@
         <a href="index.html" class="footer-link">← Kembali ke Halaman Publik</a>
     </div>
 
-    <script>
-        function handleLogin(e) {
+    <!-- FIX KEAMANAN: Login admin sekarang pakai Firebase Authentication (email+password),
+         bukan lagi dicek manual di JS. Cuma 1 email admin yang diizinkan. -->
+    <script type="module">
+        import { auth } from './firebase-config.js';
+        import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Satu-satunya email yang boleh jadi admin. Ubah di sini kalau suatu saat perlu ganti akun.
+        const ADMIN_EMAIL = "smipro.streetart@gmail.com";
+
+        window.handleLogin = async function(e) {
             e.preventDefault();
-            const id = document.getElementById('admin-id').value;
+            const email = document.getElementById('admin-id').value.trim();
             const pass = document.getElementById('admin-pass').value;
+            const btn = document.getElementById('btn-admin-login');
 
-            // SIMULASI LOGIN ADMIN (Hardcoded)
-            // Nanti bisa diganti verifikasi Firebase Auth jika mau lebih aman
-            if(id === 'admin' && pass === 'admin123') {
-                
-                // Simpan status Admin
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> VERIFYING...';
+            btn.style.background = '#333';
+
+            try {
+                const cred = await signInWithEmailAndPassword(auth, email, pass);
+
+                // Pengaman tambahan: walau login Firebase berhasil, WAJIB email-nya
+                // persis email admin yang diizinkan. Kalau suatu saat ada akun lain
+                // ke-invite tanpa sengaja, ini menutup pintunya.
+                if (cred.user.email !== ADMIN_EMAIL) {
+                    await signOut(auth);
+                    alert("AKSES DITOLAK: Akun ini bukan akun admin resmi.");
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-key"></i> Access Dashboard';
+                    btn.style.background = '#E50914';
+                    return;
+                }
+
                 localStorage.setItem('userLoggedIn', 'true');
-                localStorage.setItem('userRole', 'admin'); // ROLE PENTING!
+                localStorage.setItem('userRole', 'admin');
                 localStorage.setItem('userName', 'Super Admin');
-                
-                // Animasi dikit biar keren
-                const btn = document.querySelector('.btn-login');
-                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> VERIFYING...';
-                btn.style.background = '#333';
-                
-                setTimeout(() => {
-                    window.location.href = 'admin-dashboard.html';
-                }, 1000);
 
-            } else {
-                alert("AKSES DITOLAK: ID atau Password Salah!");
+                window.location.href = 'admin-dashboard.html';
+
+            } catch (err) {
+                console.error(err);
+                let msg = "Email atau password salah!";
+                if (err.code === 'auth/too-many-requests') {
+                    msg = "Terlalu banyak percobaan gagal. Coba lagi beberapa menit lagi.";
+                } else if (err.code === 'auth/invalid-email') {
+                    msg = "Format email tidak valid.";
+                }
+                alert("AKSES DITOLAK: " + msg);
                 document.getElementById('admin-pass').value = '';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-key"></i> Access Dashboard';
+                btn.style.background = '#E50914';
             }
-        }
+        };
     </script>
 
 </body>
