@@ -106,7 +106,40 @@ window.switchCmsTab = function(tabId, btn) {
         if(typeof loadActiveTourSchedules === 'function') loadActiveTourSchedules();    
         if(typeof loadArtistDropdowns === 'function') loadArtistDropdowns();
     }
+
+    if(tabId === 'cms-social') {
+        if(typeof loadSocialLinks === 'function') loadSocialLinks();
+    }
     
+};
+
+// LINK SOSIAL MEDIA (dipakai di section "Dukung Street.Art" beranda)
+async function loadSocialLinks() {
+    try {
+        const snap = await getDoc(doc(db, "settings", "social"));
+        const d = snap.exists() ? snap.data() : {};
+        document.getElementById('social-youtube').value = d.youtube || '';
+        document.getElementById('social-tiktok').value = d.tiktok || '';
+        document.getElementById('social-instagram').value = d.instagram || '';
+        document.getElementById('social-facebook').value = d.facebook || '';
+    } catch (e) {
+        console.error("Gagal memuat link sosial media:", e);
+    }
+}
+
+window.saveSocialLinks = async function() {
+    const data = {
+        youtube: document.getElementById('social-youtube').value.trim(),
+        tiktok: document.getElementById('social-tiktok').value.trim(),
+        instagram: document.getElementById('social-instagram').value.trim(),
+        facebook: document.getElementById('social-facebook').value.trim()
+    };
+    try {
+        await setDoc(doc(db, "settings", "social"), data, { merge: true });
+        alert("✅ Link sosial media berhasil disimpan!");
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
 };
 
 window.adminLogout = function() {
@@ -1041,14 +1074,14 @@ window.deleteMentor = async function(id) { if(confirm("Hapus?")) await deleteDoc
    ========================================= */
 let currentStudentBase64 = null; 
 
-window.previewStudentImg = function(input) {
+window.previewStudentImg = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentStudentBase64 = e.target.result;
+        try {
+            currentStudentBase64 = await compressImage(input.files[0], 500, 0.75);
             document.getElementById('student-preview').src = currentStudentBase64;
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
         }
-        reader.readAsDataURL(input.files[0]);
     }
 }
 
@@ -2548,14 +2581,14 @@ window.switchCafeTab = function(tabId, btn) {
 // B. MANAJEMEN CAFE (CRUD)
 let currentCafeBase64 = null;
 
-window.previewCafeImg = function(input) {
+window.previewCafeImg = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentCafeBase64 = e.target.result;
+        try {
+            currentCafeBase64 = await compressImage(input.files[0], 600, 0.75);
             document.getElementById('cafe-preview').src = currentCafeBase64;
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
         }
-        reader.readAsDataURL(input.files[0]);
     }
 }
 
@@ -3096,14 +3129,14 @@ window.toggleGalleryInput = function() {
     }
 }
 
-window.previewAudioCover = function(input) {
+window.previewAudioCover = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentAudioCoverBase64 = e.target.result;
+        try {
+            currentAudioCoverBase64 = await compressImage(input.files[0], 500, 0.75);
             document.getElementById('audio-cover-preview').src = currentAudioCoverBase64;
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
         }
-        reader.readAsDataURL(input.files[0]);
     }
 }
 
