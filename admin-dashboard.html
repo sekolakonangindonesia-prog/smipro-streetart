@@ -500,20 +500,20 @@
 
             <!-- FORM TAMBAH MENTOR -->
             <div class="cms-form-group" style="display:flex; gap:20px; align-items:center; background:#151515; padding:20px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
-                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('m-file').click()">
-                    <img id="m-preview" src="https://placehold.co/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
-                    <input type="file" id="m-file" style="display:none;" accept="image/*" onchange="previewMentorImg(this)">
+                <div style="text-align:center; cursor:pointer;" onclick="document.getElementById('mn-file').click()">
+                    <img id="mn-preview" src="https://placehold.co/100?text=Foto" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px dashed #555;">
+                    <input type="file" id="mn-file" style="display:none;" accept="image/*" onchange="previewMentorImg(this)">
                     <div style="font-size:0.7rem; color:#888; margin-top:5px;">Upload Foto</div>
                 </div>
                 <div style="flex:1;">
                     <h4 style="margin-top:0; color:#E50914; margin-bottom:10px;">Tambah Mentor Baru</h4>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                        <input type="text" id="m-nama" class="cms-input" placeholder="Nama Mentor" style="margin:0;">
-                        <input type="text" id="m-spesialis" class="cms-input" placeholder="Spesialisasi (cth: Musik & Audio)" style="margin:0;">
+                        <input type="text" id="mn-nama" class="cms-input" placeholder="Nama Mentor" style="margin:0;">
+                        <input type="text" id="mn-spesialis" class="cms-input" placeholder="Spesialisasi (cth: Musik & Audio)" style="margin:0;">
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                        <input type="email" id="m-email" class="cms-input" placeholder="Email login mentor" style="margin:0;">
-                        <input type="text" id="m-password" class="cms-input" placeholder="Password awal (min 8 karakter)" style="margin:0;">
+                        <input type="email" id="mn-email" class="cms-input" placeholder="Email login mentor" style="margin:0;">
+                        <input type="text" id="mn-password" class="cms-input" placeholder="Password awal (min 8 karakter)" style="margin:0;">
                     </div>
                     <button id="btn-save-mentor" class="btn-action btn-view" onclick="saveMentorData()" style="width:100%;">+ Simpan Mentor</button>
                 </div>
