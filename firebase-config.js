@@ -1,6 +1,7 @@
 // Import fungsi Firebase dari Server Google (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // Konfigurasi Kunci Anda
 const firebaseConfig = {
@@ -15,6 +16,7 @@ const firebaseConfig = {
 // Mulai Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app); // FIX KEAMANAN: Firebase Authentication untuk Admin & Mentor
 
 // Export agar bisa dipakai di file lain
-export { db };
+export { db, auth };
