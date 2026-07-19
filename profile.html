@@ -239,6 +239,9 @@
         <div id="gallery-container" style="margin-top: 30px;">
             <p style="text-align:center; color:#444;">Memuat karya...</p>
         </div>
+
+        <!-- GALERI FOTO (DOKUMENTASI KEGIATAN, DIISI ADMIN) -->
+        <div id="photo-gallery-container" style="margin-top: 30px;"></div>
         
         <div style="text-align:center; padding:30px 10px; color:#555; font-size:0.8rem; border-top:1px solid #222; margin-top:20px;">
         &copy; 2025 Yayasan Sekolah Konang Indonesia - STREETART StreetArt.ID
@@ -343,6 +346,9 @@
             // --- EKSEKUSI SHOWCASE (Kode Baru) ---
             renderSmartShowcase(data.gallery || [], data.name);
 
+            // --- EKSEKUSI GALERI FOTO (dokumentasi kegiatan, diisi admin) ---
+            renderPhotoGallery(data.photoGallery || []);
+
         } else {
             document.querySelector('.container').innerHTML = "<h3 style='text-align:center; margin-top:50px;'>Artis tidak ditemukan.</h3>";
         }
@@ -406,6 +412,27 @@
         }
         }
         
+
+    // --- 2B. RENDER GALERI FOTO (dokumentasi kegiatan, diisi admin) ---
+    function renderPhotoGallery(photos) {
+        const container = document.getElementById('photo-gallery-container');
+        if (!container) return;
+
+        if (!photos.length) {
+            container.innerHTML = ""; // Kosongkan aja, gak perlu tampilin section kalau belum ada foto
+            return;
+        }
+
+        const cards = photos.map(p => `
+            <div style="background:#1a1a1a; border-radius:8px; overflow:hidden; border:1px solid #262626;">
+                <img src="${p.url}" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
+                ${p.caption ? `<p style="color:#aaa; font-size:0.75rem; margin:0; padding:8px;">${p.caption}</p>` : ''}
+            </div>`).join('');
+
+        container.innerHTML = `
+            <div class="section-divider">📸 GALERI FOTO</div>
+            <div class="gallery-grid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));">${cards}</div>`;
+    }
 
    // --- 3. SMART PLAYER FUNCTIONS ---
    window.playTrack = function(index) {
