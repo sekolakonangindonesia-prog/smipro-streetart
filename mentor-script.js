@@ -1,29 +1,67 @@
-import { db } from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 import { 
-    doc, updateDoc, collection, onSnapshot, query, orderBy, getDoc, getDocs 
+    doc, updateDoc, collection, onSnapshot, query, orderBy, getDoc, getDocs, where 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const ADMIN_EMAIL = "smipro.streetart@gmail.com";
 
 // --- GLOBAL VARIABLES ---
-const MENTOR_ID = localStorage.getItem('mentorId');
+// FIX KEAMANAN: MENTOR_ID dulu langsung dipercaya dari localStorage (bisa dipalsukan
+// siapa saja lewat DevTools, apalagi data mentor bisa dibaca publik). Sekarang MENTOR_ID
+// baru di-set SETELAH Firebase Auth memverifikasi email-nya benar-benar mentor terdaftar
+// -- lihat onAuthStateChanged() di bawah.
+let MENTOR_ID = null;
 let currentGalleryBase64 = null; // Menyimpan sementara gambar yang dipilih
-const IS_ADMIN = localStorage.getItem('adminOrigin') === 'true';
+let IS_ADMIN = false;
 
-// --- 1. INISIALISASI (JALANKAN LANGSUNG) ---
+// --- 0. GUARD: verifikasi Firebase Auth sebelum dashboard dimuat ---
+onAuthStateChanged(auth, async (user) => {
+    const adminOriginFlag = localStorage.getItem('adminOrigin') === 'true';
+
+    if (!user) {
+        alert("Sesi login habis atau belum login. Silakan login ulang.");
+        window.location.href = 'login.html';
+        return;
+    }
+
+    if (adminOriginFlag && user.email === ADMIN_EMAIL) {
+        // Admin (Firebase Auth asli) sedang impersonate lewat tombol "Masuk" di admin dashboard.
+        MENTOR_ID = localStorage.getItem('mentorId');
+        IS_ADMIN = true;
+        if (!MENTOR_ID || MENTOR_ID === 'undefined') {
+            alert("Sesi impersonate tidak valid. Kembali ke Admin Dashboard.");
+            window.location.href = 'admin-dashboard.html';
+            return;
+        }
+        initMentorDashboard();
+        return;
+    }
+
+    // Bukan sesi admin -- pastikan email yang login ini benar terdaftar sebagai mentor
+    try {
+        const q = query(collection(db, "mentors"), where("email", "==", user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            alert("Akun ini belum terdaftar sebagai mentor. Hubungi Admin.");
+            window.location.href = 'login.html';
+            return;
+        }
+        MENTOR_ID = snap.docs[0].id;
+        localStorage.setItem('mentorId', MENTOR_ID);
+        localStorage.setItem('userLoggedIn', 'true');
+        localStorage.setItem('userRole', 'mentor');
+        localStorage.setItem('userName', snap.docs[0].data().name || '');
+        initMentorDashboard();
+    } catch (e) {
+        console.error(e);
+        alert("Gagal memverifikasi akun mentor. Coba muat ulang halaman.");
+    }
+});
+
+// --- 1. INISIALISASI (dipanggil dari guard di atas, setelah Auth terverifikasi) ---
 function initMentorDashboard() {
     console.log("Memulai Dashboard Mentor. ID:", MENTOR_ID);
-
-    // Cek Login Dasar
-    if(!localStorage.getItem('userLoggedIn')) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    // Cek ID Mentor (Kritis)
-    if(!MENTOR_ID || MENTOR_ID === 'undefined') {
-        alert("ID Mentor tidak valid atau sesi habis. Silakan login ulang lewat Admin.");
-        window.location.href = 'admin-dashboard.html';
-        return;
-    }
 
     // Tampilkan Tombol Admin (Jika Admin)
     if(IS_ADMIN) {
@@ -383,8 +421,9 @@ function setupAdminHome() {
     }, 500);
 }
 
-// --- JALANKAN SAAT SCRIPT DIMUAT ---
-initMentorDashboard();
+// --- Dashboard sekarang dijalankan dari dalam onAuthStateChanged() guard di atas,
+// bukan langsung dipanggil di sini, supaya data tidak sempat ke-load sebelum
+// Firebase Auth selesai memverifikasi siapa yang login. ---
 
 /* =========================================
    FITUR BARU: GALERI KARYA MENTOR
