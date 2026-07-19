@@ -767,16 +767,10 @@
         document.getElementById('rate-perf-modal').style.display = 'flex';
     }
 
-    // B. Klik Bintang (Bisa dipakai untuk Venue & Performer)
-    window.rateStar = function(type, n) {
-        if(type === 'perf') {
-            currentPerfRating = n;
-            document.querySelectorAll('#perf-stars i').forEach((s, i) => s.classList.toggle('active', i < n));
-        } else if (type === 'venue') {
-            window.currentVenueRating = n;
-            document.querySelectorAll('#venue-stars i').forEach((s, i) => s.classList.toggle('active', i < n));
-        }
-    }
+    // B. FIX: rateStar sebelumnya didefinisikan DUA KALI (di sini dan di bawah dekat
+    // "SISTEM REVIEW"), definisi kedua menimpa yang ini dan hanya menangani 'venue',
+    // jadi klik bintang di modal rating performer tidak pernah berfungsi.
+    // Definisi final (gabungan perf + venue) ada di bagian "UTILS: rateStar (final)".
 
     // C. Kirim Penilaian ke Firebase
     window.submitPerfRating = async function() {
@@ -810,9 +804,13 @@
 
     // --- 6. SISTEM REVIEW ---
     window.currentVenueRating = 0;
-    
+
+    // UTILS: rateStar (final) — satu-satunya definisi, menangani 'perf' & 'venue'
     window.rateStar = function(type, n) {
-        if(type === 'venue') {
+        if (type === 'perf') {
+            currentPerfRating = n;
+            document.querySelectorAll('#perf-stars i').forEach((s, i) => s.classList.toggle('active', i < n));
+        } else if (type === 'venue') {
             window.currentVenueRating = n;
             document.querySelectorAll('#venue-stars i').forEach((s, i) => s.classList.toggle('active', i < n));
         }
