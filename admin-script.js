@@ -144,8 +144,15 @@ window.saveSocialLinks = async function() {
 
 window.adminLogout = function() {
     if(confirm("Keluar dari Panel Admin?")) {
-        localStorage.clear();
-        window.location.href = 'index.html';
+        if (typeof window.__firebaseSignOut === 'function') {
+            window.__firebaseSignOut().finally(() => {
+                localStorage.clear();
+                window.location.href = 'admin-login.html';
+            });
+        } else {
+            localStorage.clear();
+            window.location.href = 'admin-login.html';
+        }
     }
 };
 
