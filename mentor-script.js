@@ -246,21 +246,21 @@ window.submitScore = async function(studentId) {
 }
 
 // Fungsi untuk menampilkan gambar yang dipilih dari HP/Laptop ke kotak kecil di modal
-window.previewGalleryImage = function(input) {
+window.previewGalleryImage = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentGalleryBase64 = e.target.result; // Simpan data gambar ke variabel tadi
+        try {
+            currentGalleryBase64 = await compressImage(input.files[0], 500, 0.75);
             const img = document.getElementById('gal-preview-img');
             const icon = document.getElementById('gal-placeholder-icon');
-            
+
             if(img) {
-                img.src = e.target.result;
-                img.style.display = 'block'; // Munculkan gambar
+                img.src = currentGalleryBase64;
+                img.style.display = 'block';
             }
-            if(icon) icon.style.display = 'none'; // Sembunyikan ikon gambar abu-abu
+            if(icon) icon.style.display = 'none';
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
         }
-        reader.readAsDataURL(input.files[0]);
     }
 }
 
@@ -302,14 +302,12 @@ window.triggerUpload = function() {
     input.type = 'file'; input.accept = 'image/*';
     input.onchange = e => {
         if(e.target.files[0]) {
-            const r = new FileReader();
-            r.onload = async (ev) => {
+            compressImage(e.target.files[0], 500, 0.75).then(async (compressed) => {
                 if(confirm("Ganti Foto Profil?")) {
-                    await updateDoc(doc(db, "mentors", MENTOR_ID), { img: ev.target.result });
+                    await updateDoc(doc(db, "mentors", MENTOR_ID), { img: compressed });
                     // onSnapshot akan mengurus update tampilan
                 }
-            };
-            r.readAsDataURL(e.target.files[0]);
+            }).catch(err => alert("Gagal memproses gambar: " + err.message));
         }
     };
     input.click();
@@ -650,16 +648,16 @@ window.openEditMentorPhotoModal = function(index) {
     document.getElementById('modal-add-mentor-photo').style.display = 'flex';
 };
 
-window.previewMentorPhotoImage = function(input) {
+window.previewMentorPhotoImage = async function(input) {
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentMentorPhotoBase64 = e.target.result;
-            document.getElementById('mentor-photo-preview-img').src = e.target.result;
+        try {
+            currentMentorPhotoBase64 = await compressImage(input.files[0], 700, 0.75);
+            document.getElementById('mentor-photo-preview-img').src = currentMentorPhotoBase64;
             document.getElementById('mentor-photo-preview-img').style.display = 'block';
             document.getElementById('mentor-photo-placeholder-icon').style.display = 'none';
-        };
-        reader.readAsDataURL(input.files[0]);
+        } catch (e) {
+            alert("Gagal memproses gambar: " + e.message);
+        }
     }
 };
 
@@ -751,7 +749,7 @@ window.filterPickPodcastMentor = function(keyword) {
     renderPickPodcastListMentor(allPodcastsCacheMentor.filter(p => (p.title || '').toLowerCase().includes(k)));
 };
 
-window.selectPickedPodcastMentor = function(index) {
+window.selectPickedPodcastMentor = async function(index) {
     const item = allPodcastsCacheMentor[index];
     if (!item) return;
 
@@ -760,10 +758,17 @@ window.selectPickedPodcastMentor = function(index) {
     document.getElementById('gal-url').value = item.link || '';
 
     if (item.thumb) {
-        document.getElementById('gal-preview-img').src = item.thumb;
+        // PENTING: kompres ULANG cover-nya -- ini yang kemarin bikin gagal simpan
+        // (dokumen mentor kelewat 1MB karena cover base64 gede ke-copy mentah-mentah)
+        document.getElementById('gal-preview-img').src = item.thumb; // preview cepat dulu
         document.getElementById('gal-preview-img').style.display = 'block';
         document.getElementById('gal-placeholder-icon').style.display = 'none';
-        currentGalleryBase64 = item.thumb; // langsung dipakai sebagai cover
+        try {
+            currentGalleryBase64 = await compressImageFromUrl(item.thumb, 500, 0.75);
+            document.getElementById('gal-preview-img').src = currentGalleryBase64;
+        } catch (e) {
+            currentGalleryBase64 = item.thumb; // fallback kalau gagal kompres
+        }
     }
 
     document.getElementById('modal-pick-podcast-mentor').style.display = 'none';
