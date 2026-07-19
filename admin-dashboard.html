@@ -713,6 +713,7 @@
                 <button class="sub-tab-btn" onclick="switchCmsTab('cms-tour', this)">Jadwal Tour (Cafe)</button>
                 <button class="sub-tab-btn" onclick="switchCmsTab('cms-radio', this)">Radio/TikTok</button>
                 <button class="sub-tab-btn" onclick="switchCmsTab('cms-news', this)">Berita & Podcast</button>
+                <button class="sub-tab-btn" onclick="switchCmsTab('cms-social', this)">Sosial Media</button>
             </div>
 
             <!-- 1. JADWAL UTAMA (STADION) -->
@@ -822,9 +823,30 @@
                     </div>
                 </div>
             </div>
-</div>
 
-        
+            <!-- 5. SOSIAL MEDIA (link "Dukung Street.Art" di beranda) -->
+            <div id="cms-social" class="cms-content hidden">
+                <div class="cms-form-group">
+                    <h4 style="margin-top:0; color:#E50914;">Link Sosial Media "Dukung Street.Art"</h4>
+                    <p style="color:#888; font-size:0.85rem; margin-top:-5px;">Ini yang muncul di beranda (icon YouTube/TikTok/Instagram/Facebook). Kosongkan kalau mau sembunyikan salah satu icon.</p>
+
+                    <label class="cms-label"><i class="fa-brands fa-youtube" style="color:red;"></i> YouTube</label>
+                    <input type="text" id="social-youtube" class="cms-input" placeholder="https://www.youtube.com/@akunmu">
+
+                    <label class="cms-label"><i class="fa-brands fa-tiktok" style="color:#00f2ea;"></i> TikTok</label>
+                    <input type="text" id="social-tiktok" class="cms-input" placeholder="https://www.tiktok.com/@akunmu">
+
+                    <label class="cms-label"><i class="fa-brands fa-instagram" style="color:#C13584;"></i> Instagram</label>
+                    <input type="text" id="social-instagram" class="cms-input" placeholder="https://www.instagram.com/akunmu">
+
+                    <label class="cms-label"><i class="fa-brands fa-facebook-f" style="color:#1877F2;"></i> Facebook</label>
+                    <input type="text" id="social-facebook" class="cms-input" placeholder="https://www.facebook.com/akunmu">
+
+                    <button class="btn-action btn-delete" style="width:100%; padding:15px; margin-top:15px;" onclick="saveSocialLinks()">SIMPAN LINK SOSIAL MEDIA</button>
+                </div>
+            </div>
+        </div>
+
       <!-- VIEW KHUSUS: KONTROL LAYAR & GALERI -->
         <div id="view-live" class="admin-view hidden">
             <div class="section-header">
@@ -1161,6 +1183,7 @@
 </div>
 <!-- LOAD SCRIPT -->
 <script type="module" src="admin-venue.js"></script> <!-- FILE BARU -->
+<script src="image-utils.js"></script>
 <script type="module" src="admin-script.js"></script>
 
 <script>
