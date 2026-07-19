@@ -279,6 +279,11 @@
                 <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="width:40px; margin-bottom:10px;">
             </div>
             <h3 style="margin-top:0; color:white;">Tambah Galeri</h3>
+
+            <button type="button" onclick="openPickPodcastModal()" style="width:100%; background:rgba(0,210,255,0.12); border:1px solid #00d2ff; color:#00d2ff; padding:10px; border-radius:6px; font-size:0.82rem; font-weight:bold; cursor:pointer; margin-bottom:15px;">
+                <i class="fa-solid fa-folder-open"></i> Pilih dari Galeri Utama (Video/Musik)
+            </button>
+            <p style="text-align:center; color:#555; font-size:0.72rem; margin:-10px 0 15px;">— atau isi manual di bawah —</p>
             
             <label style="color:#aaa; font-size:0.8rem;">Judul Lagu/Video</label>
             <input type="text" id="add-title" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:10px; border-radius:5px;">
@@ -311,6 +316,18 @@
                 <button onclick="document.getElementById('modal-add-gallery').style.display='none'" style="flex:1; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Batal</button>
                 <button onclick="saveGalleryItem()" style="flex:1; padding:10px; background:var(--primary); border:none; color:white; border-radius:5px; cursor:pointer;">Simpan</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL PILIH DARI GALERI UTAMA (biar gak input 2x) -->
+    <div id="modal-pick-podcast" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3500; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#1a1a1a; width:100%; max-width:420px; max-height:80vh; padding:20px; border-radius:10px; border:1px solid #444; display:flex; flex-direction:column;">
+            <h3 style="margin-top:0; color:white;">Pilih dari Galeri Utama</h3>
+            <input type="text" id="pick-podcast-search" placeholder="Cari judul..." oninput="filterPickPodcast(this.value)" style="width:100%; padding:10px; background:#111; border:1px solid #444; color:white; margin-bottom:12px; border-radius:5px;">
+            <div id="pick-podcast-list" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px;">
+                <p style="text-align:center; color:#666;">Memuat...</p>
+            </div>
+            <button onclick="document.getElementById('modal-pick-podcast').style.display='none'" style="margin-top:15px; padding:10px; background:#444; border:none; color:white; border-radius:5px; cursor:pointer;">Tutup</button>
         </div>
     </div>
 
@@ -355,7 +372,7 @@
     <!-- SCRIPT TUNGGAL DAN LENGKAP -->
     <script type="module">
         import { db } from './firebase-config.js';
-        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         let currentAddBase64 = null; // Penampung gambar cover baru
         
         // --- IMPORT JSPDF ---
@@ -700,7 +717,70 @@ window.deletePhoto = async function(index) {
     }
 };
 
-        window.saveGalleryItem = async function() {
+        // --- PILIH DARI GALERI UTAMA (biar admin gak perlu input ulang video/audio yg sudah ada) ---
+let allPodcastsCache = [];
+
+window.openPickPodcastModal = async function() {
+    document.getElementById('modal-pick-podcast').style.display = 'flex';
+    document.getElementById('pick-podcast-search').value = '';
+
+    const listEl = document.getElementById('pick-podcast-list');
+    listEl.innerHTML = '<p style="text-align:center; color:#666;">Memuat...</p>';
+
+    try {
+        const snap = await getDocs(query(collection(db, "podcasts"), orderBy("timestamp", "desc")));
+        allPodcastsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPickPodcastList(allPodcastsCache);
+    } catch (e) {
+        listEl.innerHTML = '<p style="text-align:center; color:#b71c1c;">Gagal memuat data.</p>';
+    }
+};
+
+function renderPickPodcastList(list) {
+    const listEl = document.getElementById('pick-podcast-list');
+    if (!list.length) {
+        listEl.innerHTML = '<p style="text-align:center; color:#666;">Tidak ada konten ditemukan.</p>';
+        return;
+    }
+    listEl.innerHTML = list.map((item, i) => {
+        const badge = item.mediaType === 'video' ? '🎬 Video' : '🎵 Audio';
+        return `
+        <div onclick="selectPickedPodcast(${i})" style="display:flex; align-items:center; gap:10px; background:#111; padding:8px; border-radius:8px; cursor:pointer; border:1px solid #2a2a2a;">
+            <img src="${item.thumb || 'https://placehold.co/50'}" style="width:44px; height:44px; border-radius:6px; object-fit:cover; flex-shrink:0;">
+            <div style="flex:1; overflow:hidden;">
+                <div style="color:white; font-size:0.82rem; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.title || 'Untitled'}</div>
+                <small style="color:#888;">${badge} · ${item.host || ''}</small>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.filterPickPodcast = function(keyword) {
+    const k = (keyword || '').trim().toLowerCase();
+    if (!k) return renderPickPodcastList(allPodcastsCache);
+    renderPickPodcastList(allPodcastsCache.filter(p => (p.title || '').toLowerCase().includes(k)));
+};
+
+window.selectPickedPodcast = function(index) {
+    const item = allPodcastsCache[index];
+    if (!item) return;
+
+    // Isi otomatis form Tambah Galeri, admin tinggal cek & klik Simpan
+    document.getElementById('add-title').value = item.title || '';
+    document.getElementById('add-type').value = item.mediaType || 'video';
+    document.getElementById('add-url').value = item.link || '';
+
+    if (item.thumb) {
+        document.getElementById('add-preview-img').src = item.thumb;
+        document.getElementById('add-preview-img').style.display = 'block';
+        document.getElementById('add-placeholder-icon').style.display = 'none';
+        currentAddBase64 = item.thumb; // dipakai langsung sebagai cover, gak perlu upload ulang
+    }
+
+    document.getElementById('modal-pick-podcast').style.display = 'none';
+};
+
+window.saveGalleryItem = async function() {
     // Cek Hak Akses Lagi (Keamanan)
     if(!canEdit) return alert("Hanya Admin/Mentor yang bisa menambah konten.");
 
