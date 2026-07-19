@@ -617,9 +617,10 @@ onSnapshot(doc(db, "warungs", warungId), snap => {
         pill.className = 'status-pill closed'; txt.textContent = 'TUTUP';
     }
 
-    // tombol add-to-cart: tampil hanya jika enableOrder
+    // tombol add-to-cart: tampil hanya jika enableOrder DAN warung tidak sedang tutup
+    const canOrderNow = d.enableOrder && d.status !== 'closed';
     document.querySelectorAll('.btn-add-item').forEach(b => {
-        b.style.display = d.enableOrder ? 'flex' : 'none';
+        b.style.display = canOrderNow ? 'flex' : 'none';
     });
 
     if (cachedAvailable !== null) updateStatusBar(d, cachedAvailable);
@@ -675,7 +676,7 @@ onSnapshot(query(collection(db, "menus"), where("warungId","==",warungId)), snap
         return;
     }
 
-    const enableOrder = cachedWarungData?.enableOrder ?? false;
+    const enableOrder = (cachedWarungData?.enableOrder ?? false) && cachedWarungData?.status !== 'closed';
     menuData = {};
     grid.innerHTML = '';
 
@@ -853,6 +854,9 @@ window.setOrderType = function(type) {
 
 
 window.confirmOrder = async function() {
+    if (cachedWarungData?.status === 'closed') {
+        return toast('⚠️ Warung sedang tutup, tidak bisa memesan.');
+    }
     const nama  = document.getElementById('order-nama').value.trim();
     const meja  = orderType === 'takeaway' ? 'Take Away' : document.getElementById('order-meja').value.trim();
     let   wa    = document.getElementById('order-wa').value.trim();
