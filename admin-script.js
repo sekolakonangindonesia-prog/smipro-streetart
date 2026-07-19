@@ -1,7 +1,44 @@
-import { db } from './firebase-config.js';
+import { db, auth, firebaseConfig } from './firebase-config.js';
 import { 
     collection, getDocs, query, orderBy, doc, updateDoc, addDoc, deleteDoc, onSnapshot, where, limit, setDoc, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp as initializeSecondaryApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signOut as secondarySignOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+/* =========================================
+   0.B AKUN LOGIN (Firebase Authentication) UNTUK MENTOR & PERFORMER
+   =========================================
+   Dipakai saat admin membuat akun mentor/performer baru dari dashboard.
+   Pakai "instance Firebase kedua" (bukan `auth` utama yang dipakai admin login)
+   supaya proses createUserWithEmailAndPassword() TIDAK menggantikan sesi login
+   admin yang sedang aktif dengan akun baru itu.
+*/
+async function createLoginAccount(email, password) {
+    const tempApp = initializeSecondaryApp(firebaseConfig, 'temp-create-' + Date.now());
+    const tempAuth = getAuth(tempApp);
+    try {
+        const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
+        const uid = cred.user.uid;
+        await secondarySignOut(tempAuth);
+        await deleteApp(tempApp);
+        return uid;
+    } catch (err) {
+        await deleteApp(tempApp).catch(()=>{});
+        throw err;
+    }
+}
+
+// Dipakai tombol "Reset Password" mentor/performer -- kirim email reset resmi dari Firebase,
+// bukan reset PIN manual seperti mitra (mentor/performer sudah pakai email+password asli).
+window.sendResetPasswordEmail = async function(email) {
+    if (!confirm(`Kirim email reset password ke ${email}?`)) return;
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert("✅ Email reset password terkirim ke " + email);
+    } catch (e) {
+        alert("Gagal kirim: " + e.message);
+    }
+};
 
 /* =========================================
    0. LOGIKA NAVIGASI (VERSI PAKSA MUNCUL)
@@ -848,14 +885,14 @@ async function loadPerformerData() {
                 `<span style="color:#00ff00;">✅ Verified</span>` : 
                 `<button class="btn-action btn-edit" onclick="verifyPerformer('${id}')">Verifikasi</button>`;
 
-            const pinStatus = data.pinHash
-                ? `<br><small style="color:#00d2ff;">🔒 PIN sudah dibuat</small>`
-                : `<br><small style="color:#ff9800;">🔓 Belum buat PIN</small>`;
+            const emailInfo = data.email
+                ? `<br><small style="color:#00d2ff;">✉️ ${data.email}</small>`
+                : `<br><small style="color:#ff9800;">⚠️ Belum ada akun login (performer lama)</small>`;
 
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsPerf('${id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i></button>`;
             const btnEdit = `<button class="btn-action btn-edit" onclick="startEditPerf('${id}', '${(data.name||'').replace(/'/g,"\\'")}', '${(data.genre||'').replace(/'/g,"\\'")}', '${data.phone||""}', '${data.img||""}')"><i class="fa-solid fa-pen"></i></button>`;
-            const btnResetPin = data.pinHash
-                ? `<button class="btn-action" style="background:#ff9800;" title="Reset PIN (kalau performer lupa PIN)" onclick="resetPerfPin('${id}', '${(data.name||'').replace(/'/g,"\\'")}')"><i class="fa-solid fa-key"></i></button>`
+            const btnResetPass = data.email
+                ? `<button class="btn-action" style="background:#ff9800;" title="Kirim email reset password" onclick="sendResetPasswordEmail('${data.email}')"><i class="fa-solid fa-key"></i></button>`
                 : '';
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
 
@@ -877,20 +914,24 @@ async function loadPerformerData() {
                 </td>
                 <td>${data.genre}</td>
                 <td>${sourceBadge}</td>
-                <td>${statusIcon}${pinStatus}</td>
-                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnResetPin} ${btnDel}</div></td>
+                <td>${statusIcon}${emailInfo}</td>
+                <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnResetPass} ${btnDel}</div></td>
             </tr>`;
         });
     });
 }
 
-// FORM TAMBAH/EDIT PERFORMER (dari Admin) -- PIN dibuat sendiri oleh performer saat login pertama,
-// sama seperti pola mitra, jadi form ini gak perlu input PIN.
+// FORM TAMBAH/EDIT PERFORMER (dari Admin) -- performer sekarang login pakai
+// email+password (Firebase Auth), sama seperti mentor. Email+password cuma
+// diminta saat MEMBUAT performer baru; saat edit, akun login tidak diubah di sini
+// (pakai tombol "Reset Password" terpisah kalau performer lupa password).
 window.savePerformerData = async function() {
     const id = document.getElementById('p-edit-id').value;
     const nama = document.getElementById('p-nama').value.trim();
     const genre = document.getElementById('p-genre').value.trim();
     const phone = document.getElementById('p-wa').value.trim();
+    const email = document.getElementById('p-email').value.trim();
+    const password = document.getElementById('p-password').value;
 
     if (!nama || !genre) return alert("Nama Panggung dan Genre wajib diisi!");
 
@@ -908,14 +949,25 @@ window.savePerformerData = async function() {
             await updateDoc(doc(db, "performers", id), data);
             alert("✅ Perubahan disimpan!");
         } else {
+            if (!email) return alert("Email wajib diisi untuk performer baru (dipakai untuk login)!");
+            if (!password || password.length < 8) return alert("Password awal minimal 8 karakter!");
+
+            await createLoginAccount(email, password); // bikin akun Firebase Auth dulu
+
+            data.email = email;
             data.joinedAt = new Date();
             data.rating = 0;
             data.source = 'manual'; // Didaftarkan langsung admin, bukan lulusan Bengkel Siswa -- tidak butuh nilai mentor
             await addDoc(collection(db, "performers"), data);
-            alert("✅ Performer ditambahkan!");
+            alert("✅ Performer ditambahkan! Bisa login pakai email: " + email);
         }
         resetPerfForm();
-    } catch (e) { alert("Gagal: " + e.message); }
+    } catch (e) {
+        let msg = e.message;
+        if (e.code === 'auth/email-already-in-use') msg = "Email ini sudah dipakai akun lain.";
+        if (e.code === 'auth/invalid-email') msg = "Format email tidak valid.";
+        alert("Gagal: " + msg);
+    }
 };
 
 window.startEditPerf = function(id, nama, genre, phone, img) {
@@ -928,6 +980,9 @@ window.startEditPerf = function(id, nama, genre, phone, img) {
     document.getElementById('p-form-title').innerText = "Edit Performer";
     document.getElementById('btn-save-perf').innerText = "Simpan Perubahan";
     document.getElementById('btn-cancel-perf').style.display = 'inline-block';
+    // Email & password login TIDAK diubah lewat form edit ini (pakai tombol Reset Password kalau perlu)
+    const emailGroup = document.getElementById('p-email-group');
+    if (emailGroup) emailGroup.style.display = 'none';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -936,23 +991,19 @@ window.resetPerfForm = function() {
     document.getElementById('p-nama').value = '';
     document.getElementById('p-genre').value = '';
     document.getElementById('p-wa').value = '';
+    document.getElementById('p-email').value = '';
+    document.getElementById('p-password').value = '';
     document.getElementById('p-preview').src = 'https://placehold.co/100?text=Foto';
     currentPerfImgBase64 = null;
+    const emailGroup = document.getElementById('p-email-group');
+    if (emailGroup) emailGroup.style.display = 'block';
     document.getElementById('p-form-title').innerText = "Tambah Performer Baru";
     document.getElementById('btn-save-perf').innerText = "+ Simpan Performer";
     document.getElementById('btn-cancel-perf').style.display = 'none';
 };
 
-// FIX KEAMANAN: Reset PIN performer (dipakai kalau performer lupa PIN)
-window.resetPerfPin = async function(id, nama) {
-    if (!confirm(`Reset PIN untuk "${nama}"?\n\nPastikan Anda sudah verifikasi ini benar performernya sebelum reset. Setelah direset, mereka wajib buat PIN baru saat login berikutnya.`)) return;
-    try {
-        await updateDoc(doc(db, "performers", id), { pinHash: null, pinFailCount: 0, pinLockedUntil: null });
-        alert(`PIN "${nama}" berhasil direset. Suruh mereka login lagi -- sistem akan minta buat PIN baru.`);
-    } catch (e) {
-        alert("Gagal reset PIN: " + e.message);
-    }
-};
+// Catatan: reset akses performer sekarang pakai sendResetPasswordEmail() (Firebase Auth),
+// bukan lagi resetPerfPin() manual seperti sistem PIN lama.
 
 window.verifyPerformer = async function(id) {
     if(confirm("Luluskan performer ini?")) {
@@ -1014,6 +1065,71 @@ window.migratePerformerSource = async function() {
 /* =========================================
    4. MANAJEMEN MENTOR
    ========================================= */
+let currentMentorImgBase64 = null;
+
+window.previewMentorImg = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 400;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                currentMentorImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('m-preview').src = currentMentorImgBase64;
+            }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+// TAMBAH MENTOR BARU -- mentor login pakai email+password (Firebase Auth), bukan lagi
+// "masukkan email saja tanpa password" seperti sebelumnya.
+window.saveMentorData = async function() {
+    const nama = document.getElementById('m-nama').value.trim();
+    const spesialis = document.getElementById('m-spesialis').value.trim();
+    const email = document.getElementById('m-email').value.trim();
+    const password = document.getElementById('m-password').value;
+
+    if (!nama || !spesialis) return alert("Nama dan Spesialisasi wajib diisi!");
+    if (!email) return alert("Email wajib diisi (dipakai untuk login mentor)!");
+    if (!password || password.length < 8) return alert("Password awal minimal 8 karakter!");
+
+    try {
+        await createLoginAccount(email, password); // bikin akun Firebase Auth dulu
+
+        const data = {
+            name: nama,
+            specialist: spesialis,
+            email: email,
+            status: 'active',
+            joinedAt: new Date()
+        };
+        if (currentMentorImgBase64) data.img = currentMentorImgBase64;
+
+        await addDoc(collection(db, "mentors"), data);
+        alert("✅ Mentor ditambahkan! Bisa login pakai email: " + email);
+
+        document.getElementById('m-nama').value = '';
+        document.getElementById('m-spesialis').value = '';
+        document.getElementById('m-email').value = '';
+        document.getElementById('m-password').value = '';
+        document.getElementById('m-preview').src = 'https://placehold.co/100?text=Foto';
+        currentMentorImgBase64 = null;
+    } catch (e) {
+        let msg = e.message;
+        if (e.code === 'auth/email-already-in-use') msg = "Email ini sudah dipakai akun lain.";
+        if (e.code === 'auth/invalid-email') msg = "Format email tidak valid.";
+        alert("Gagal: " + msg);
+    }
+};
+
 async function loadMentorData() {
     const tbody = document.getElementById('mentor-table-body');
     if(!tbody) return;
@@ -1021,7 +1137,7 @@ async function loadMentorData() {
     onSnapshot(collection(db, "mentors"), (snapshot) => {
         tbody.innerHTML = '';
         
-        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Klik Generate.</td></tr>'; return; }
+        if(snapshot.empty) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada mentor. Isi form di atas.</td></tr>'; return; }
         
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
@@ -1029,8 +1145,15 @@ async function loadMentorData() {
              const statusLabel = (data.status === 'pending') 
                 ? '<span style="color:orange;">Menunggu</span>' 
                 : '<span style="color:#00ff00;">Aktif</span>';
-            
+
+            const emailInfo = data.email
+                ? `<br><small style="color:#00d2ff;">✉️ ${data.email}</small>`
+                : `<br><small style="color:#ff9800;">⚠️ Belum ada akun login</small>`;
+
             const btnLogin = `<button class="btn-action btn-view" onclick="loginAsMentor('${docSnap.id}', '${data.name}')"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>`;
+            const btnResetPass = data.email
+                ? `<button class="btn-action" style="background:#ff9800;" title="Kirim email reset password" onclick="sendResetPasswordEmail('${data.email}')"><i class="fa-solid fa-key"></i></button>`
+                : '';
             const btnDel = `<button class="btn-action btn-delete" onclick="deleteMentor('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>`;
             tbody.innerHTML += `
             <tr>
@@ -1040,9 +1163,9 @@ async function loadMentorData() {
                         <b>${data.name}</b>
                     </div>
                 </td>
-                <td>${data.specialist || data.specialty}</td>
+                <td>${data.specialist || data.specialty}${emailInfo}</td>
                 <td>${statusLabel}</td>
-                <td>${btnLogin} ${btnDel}</td>
+                <td>${btnLogin} ${btnResetPass} ${btnDel}</td>
             </tr>`;
         });
     });
