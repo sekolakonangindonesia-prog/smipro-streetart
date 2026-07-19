@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { 
-    doc, updateDoc, collection, onSnapshot, query, orderBy, getDoc 
+    doc, updateDoc, collection, onSnapshot, query, orderBy, getDoc, getDocs 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- GLOBAL VARIABLES ---
@@ -30,6 +30,10 @@ function initMentorDashboard() {
         const floatBtn = document.getElementById('admin-floating-btn');
         if(floatBtn) floatBtn.style.display = 'block';
         setupAdminHome();
+
+        // Galeri Foto: cuma Admin yang boleh isi
+        const btnAddPhoto = document.getElementById('btn-add-mentor-photo');
+        if(btnAddPhoto) btnAddPhoto.style.display = 'block';
     }
 
     // Render Form Input Kosong Dulu
@@ -39,6 +43,7 @@ function initMentorDashboard() {
     listenMentorProfile(MENTOR_ID);
     listenStudents(MENTOR_ID);
     listenPerformers();
+    loadMentorPhotoGallery();
 }
 
 // --- 2. LISTENER PROFIL MENTOR (PENTING: GANTI KE ONSNAPSHOT) ---
@@ -572,3 +577,194 @@ window.closeDashboardPlayer = function() {
     modal.style.display = 'none';
     content.innerHTML = ''; // Hentikan suara/video
 }
+
+// =========================================================
+// GALERI FOTO MENTOR (KHUSUS ADMIN YANG BISA ISI/EDIT/HAPUS)
+// =========================================================
+let mentorPhotoGalleryData = [];
+let editingMentorPhotoIndex = null; // null = mode Tambah, angka = mode Edit
+let currentMentorPhotoBase64 = null;
+
+function loadMentorPhotoGallery() {
+    getDoc(doc(db, "mentors", MENTOR_ID)).then((snap) => {
+        if (snap.exists()) {
+            renderMentorPhotoGallery(snap.data().photoGallery || []);
+        }
+    });
+}
+
+function renderMentorPhotoGallery(data) {
+    mentorPhotoGalleryData = data;
+    const container = document.getElementById('mentor-photo-gallery-container');
+    if (!container) return;
+
+    if (mentorPhotoGalleryData.length === 0) {
+        container.innerHTML = '<p style="color:#666; text-align:center; grid-column:1/-1; padding:20px;">Belum ada foto di galeri ini.</p>';
+        return;
+    }
+
+    container.innerHTML = mentorPhotoGalleryData.map((item, index) => {
+        const actionBtns = IS_ADMIN ? `
+            <div style="display:flex; gap:5px; margin-top:10px;">
+                <button onclick="openEditMentorPhotoModal(${index}); event.stopPropagation();" style="flex:1; background:#333; color:white; border:1px solid #555; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button onclick="deleteMentorPhoto(${index}); event.stopPropagation();" style="flex:1; background:#b71c1c; color:white; border:none; border-radius:4px; padding:6px; font-weight:bold; cursor:pointer; font-size:0.75rem;">
+                    <i class="fa-solid fa-trash"></i> Hapus
+                </button>
+            </div>` : '';
+        return `
+        <div style="background:#1a1a1a; border-radius:8px; overflow:hidden; border:1px solid #333;">
+            <img src="${item.url}" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
+            <div style="padding:8px;">
+                ${item.caption ? `<p style="color:#ccc; font-size:0.78rem; margin:0;">${item.caption}</p>` : ''}
+                ${actionBtns}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.openAddMentorPhotoModal = function() {
+    if (!IS_ADMIN) return alert("Akses Ditolak! Hanya Admin yang bisa menambah foto di galeri ini.");
+    editingMentorPhotoIndex = null;
+    currentMentorPhotoBase64 = null;
+    document.getElementById('mentor-photo-modal-title').innerText = 'Tambah Foto';
+    document.getElementById('mentor-photo-caption').value = '';
+    document.getElementById('mentor-photo-preview-img').style.display = 'none';
+    document.getElementById('mentor-photo-placeholder-icon').style.display = 'block';
+    document.getElementById('modal-add-mentor-photo').style.display = 'flex';
+};
+
+window.openEditMentorPhotoModal = function(index) {
+    if (!IS_ADMIN) return alert("Akses Ditolak! Hanya Admin yang bisa mengedit foto di galeri ini.");
+    const item = mentorPhotoGalleryData[index];
+    if (!item) return;
+
+    editingMentorPhotoIndex = index;
+    currentMentorPhotoBase64 = null; // Kosong = kalau disimpan tanpa pilih foto baru, foto lama tetap dipakai
+    document.getElementById('mentor-photo-modal-title').innerText = 'Edit Foto';
+    document.getElementById('mentor-photo-caption').value = item.caption || '';
+    document.getElementById('mentor-photo-preview-img').src = item.url;
+    document.getElementById('mentor-photo-preview-img').style.display = 'block';
+    document.getElementById('mentor-photo-placeholder-icon').style.display = 'none';
+    document.getElementById('modal-add-mentor-photo').style.display = 'flex';
+};
+
+window.previewMentorPhotoImage = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentMentorPhotoBase64 = e.target.result;
+            document.getElementById('mentor-photo-preview-img').src = e.target.result;
+            document.getElementById('mentor-photo-preview-img').style.display = 'block';
+            document.getElementById('mentor-photo-placeholder-icon').style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+window.saveMentorPhoto = async function() {
+    if (!IS_ADMIN) return alert("Akses Ditolak! Hanya Admin yang bisa menambah/mengedit foto di galeri ini.");
+
+    const caption = document.getElementById('mentor-photo-caption').value;
+    let newPhotoGallery;
+
+    if (editingMentorPhotoIndex !== null) {
+        const existing = mentorPhotoGalleryData[editingMentorPhotoIndex];
+        const updatedItem = { ...existing, caption: caption || "", url: currentMentorPhotoBase64 || existing.url };
+        newPhotoGallery = mentorPhotoGalleryData.map((item, i) => i === editingMentorPhotoIndex ? updatedItem : item);
+    } else {
+        if (!currentMentorPhotoBase64) return alert("Mohon pilih foto terlebih dahulu!");
+        const newItem = { id: Date.now(), url: currentMentorPhotoBase64, caption: caption || "" };
+        newPhotoGallery = [...mentorPhotoGalleryData, newItem];
+    }
+
+    try {
+        await updateDoc(doc(db, "mentors", MENTOR_ID), { photoGallery: newPhotoGallery });
+        alert(editingMentorPhotoIndex !== null ? "✅ Foto Berhasil Diperbarui!" : "✅ Foto Berhasil Ditambahkan!");
+
+        document.getElementById('modal-add-mentor-photo').style.display = 'none';
+        document.getElementById('mentor-photo-caption').value = '';
+        document.getElementById('mentor-photo-preview-img').style.display = 'none';
+        document.getElementById('mentor-photo-placeholder-icon').style.display = 'block';
+        currentMentorPhotoBase64 = null;
+        editingMentorPhotoIndex = null;
+
+        loadMentorPhotoGallery();
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
+    }
+};
+
+window.deleteMentorPhoto = async function(index) {
+    if (!IS_ADMIN) return alert("Akses Ditolak! Hanya Admin yang bisa menghapus foto di galeri ini.");
+    if (confirm("Hapus foto ini?")) {
+        const newPhotoGallery = mentorPhotoGalleryData.filter((_, i) => i !== index);
+        await updateDoc(doc(db, "mentors", MENTOR_ID), { photoGallery: newPhotoGallery });
+        loadMentorPhotoGallery();
+    }
+};
+
+// =========================================================
+// PILIH DARI GALERI UTAMA (biar admin/mentor gak perlu input ulang video/audio yg sudah ada)
+// =========================================================
+let allPodcastsCacheMentor = [];
+
+window.openPickPodcastModalMentor = async function() {
+    document.getElementById('modal-pick-podcast-mentor').style.display = 'flex';
+    document.getElementById('pick-podcast-search-mentor').value = '';
+
+    const listEl = document.getElementById('pick-podcast-list-mentor');
+    listEl.innerHTML = '<p style="text-align:center; color:#666;">Memuat...</p>';
+
+    try {
+        const snap = await getDocs(query(collection(db, "podcasts"), orderBy("timestamp", "desc")));
+        allPodcastsCacheMentor = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPickPodcastListMentor(allPodcastsCacheMentor);
+    } catch (e) {
+        listEl.innerHTML = '<p style="text-align:center; color:#b71c1c;">Gagal memuat data.</p>';
+    }
+};
+
+function renderPickPodcastListMentor(list) {
+    const listEl = document.getElementById('pick-podcast-list-mentor');
+    if (!list.length) {
+        listEl.innerHTML = '<p style="text-align:center; color:#666;">Tidak ada konten ditemukan.</p>';
+        return;
+    }
+    listEl.innerHTML = list.map((item, i) => {
+        const badge = item.mediaType === 'video' ? '🎬 Video' : '🎵 Audio';
+        return `
+        <div onclick="selectPickedPodcastMentor(${i})" style="display:flex; align-items:center; gap:10px; background:#111; padding:8px; border-radius:8px; cursor:pointer; border:1px solid #2a2a2a;">
+            <img src="${item.thumb || 'https://placehold.co/50'}" style="width:44px; height:44px; border-radius:6px; object-fit:cover; flex-shrink:0;">
+            <div style="flex:1; overflow:hidden;">
+                <div style="color:white; font-size:0.82rem; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.title || 'Untitled'}</div>
+                <small style="color:#888;">${badge} · ${item.host || ''}</small>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.filterPickPodcastMentor = function(keyword) {
+    const k = (keyword || '').trim().toLowerCase();
+    if (!k) return renderPickPodcastListMentor(allPodcastsCacheMentor);
+    renderPickPodcastListMentor(allPodcastsCacheMentor.filter(p => (p.title || '').toLowerCase().includes(k)));
+};
+
+window.selectPickedPodcastMentor = function(index) {
+    const item = allPodcastsCacheMentor[index];
+    if (!item) return;
+
+    document.getElementById('gal-title').value = item.title || '';
+    document.getElementById('gal-type').value = item.mediaType || 'video';
+    document.getElementById('gal-url').value = item.link || '';
+
+    if (item.thumb) {
+        document.getElementById('gal-preview-img').src = item.thumb;
+        document.getElementById('gal-preview-img').style.display = 'block';
+        document.getElementById('gal-placeholder-icon').style.display = 'none';
+        currentGalleryBase64 = item.thumb; // langsung dipakai sebagai cover
+    }
+
+    document.getElementById('modal-pick-podcast-mentor').style.display = 'none';
+};
