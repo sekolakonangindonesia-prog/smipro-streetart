@@ -8,6 +8,10 @@ import {
 let WARUNG_ID = localStorage.getItem('mitraId');
 if (!WARUNG_ID) { window.location.href = 'login.html'; } 
 
+// Cuma Admin (lewat "Login as Mitra") yang boleh hapus data transaksi -- buat bersihin
+// data hasil uji coba, mitra sendiri tidak dikasih akses ini.
+const IS_ADMIN = localStorage.getItem('adminOrigin') === 'true';
+
 // Variable Global
 window.currentActiveBookings = [];
 window.currentActiveOrders = [];
@@ -451,7 +455,7 @@ window.loadRiwayat = async function() {
             const jamStr = dateWIB.toISOString().split('T')[1].slice(0, 5);
 
             rows.push({
-                dateStr, jamStr, revenue,
+                id: docSnap.id, dateStr, jamStr, revenue,
                 sumber: d.bookingCode === 'WEB-ORDER' ? 'Online' : ((d.onlineRevenue > 0 && d.manualRevenue > 0) ? 'Online+Manual' : (d.onlineRevenue > 0 ? 'Online' : 'Manual')),
                 customerName: d.customerName || '-',
                 nomorMeja: Array.isArray(d.tableNum) ? d.tableNum.join(',') : (d.tableNum || '-')
@@ -573,17 +577,41 @@ window.renderRiwayatByFilter = function() {
     }
 
     const shown = filtered.slice(0, 100);
-    container.innerHTML = shown.map(r => `
+    container.innerHTML = shown.map(r => {
+        const delBtn = IS_ADMIN ? `
+            <button onclick="deleteBookingRecord('${r.id}')" title="Hapus data ini (Admin)" style="background:#b71c1c; color:white; border:none; border-radius:5px; width:32px; height:32px; cursor:pointer; margin-left:10px; flex-shrink:0;">
+                <i class="fa-solid fa-trash"></i>
+            </button>` : '';
+        return `
         <div style="background:#1e1e1e; border:1px solid #333; border-radius:8px; padding:12px 15px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <b style="display:block;">${r.customerName} <span style="color:#888; font-weight:normal; font-size:0.8rem;">(Meja ${r.nomorMeja})</span></b>
                 <small style="color:#888;">${r.dateStr} · ${r.jamStr} WIB · <span style="color:${r.sumber === 'Online' ? '#00d2ff' : (r.sumber === 'Manual' ? '#ffeb3b' : '#4caf50')};">${r.sumber}</span></small>
             </div>
-            <b style="color:gold;">Rp ${r.revenue.toLocaleString()}</b>
-        </div>
-    `).join('');
+            <div style="display:flex; align-items:center;">
+                <b style="color:gold;">Rp ${r.revenue.toLocaleString()}</b>
+                ${delBtn}
+            </div>
+        </div>`;
+    }).join('');
     if (filtered.length > 100) {
         container.innerHTML += `<p style="text-align:center; color:#666; font-size:0.8rem;">Menampilkan 100 dari ${filtered.length} transaksi. Persempit tanggal untuk lihat semua.</p>`;
+    }
+};
+
+// Hapus data transaksi (KHUSUS ADMIN) -- buat bersihin data hasil coba-coba/testing.
+// Mitra sendiri tidak dikasih tombol ini sama sekali (dicek IS_ADMIN pas render tombolnya).
+window.deleteBookingRecord = async function(id) {
+    if (!IS_ADMIN) return alert("Akses Ditolak! Hanya Admin yang bisa menghapus data transaksi.");
+    if (!confirm("Hapus data transaksi ini secara permanen? Tindakan ini tidak bisa dibatalkan.")) return;
+
+    try {
+        await deleteDoc(doc(db, "bookings", id));
+        // Buang dari cache lokal juga biar tampilan langsung update tanpa fetch ulang
+        window._riwayatRows = (window._riwayatRows || []).filter(r => r.id !== id);
+        window.renderRiwayatByFilter();
+    } catch (e) {
+        alert("Gagal menghapus: " + e.message);
     }
 };
 
