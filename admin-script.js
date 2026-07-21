@@ -876,6 +876,17 @@ window.previewPerfImg = function(input) {
     }
 };
 
+// Nyala/matiin kolom komentar untuk performer tertentu (rating bintang tetap selalu jalan,
+// ini cuma soal kolom teks ulasannya) -- biasanya admin/performer nyalain pas jam tampil,
+// matiin di luar itu.
+window.togglePerfComments = async function(id, newState) {
+    try {
+        await updateDoc(doc(db, "performers", id), { commentsOpen: newState });
+    } catch (e) {
+        alert("Gagal ubah status komentar: " + e.message);
+    }
+};
+
 async function loadPerformerData() {
     const tbody = document.getElementById('perf-table-body');
     if(!tbody) return;
@@ -883,7 +894,7 @@ async function loadPerformerData() {
     onSnapshot(collection(db, "performers"), (snapshot) => {
         tbody.innerHTML = '';
         if(snapshot.empty) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada performer.<br><button class="btn-action btn-edit" onclick="seedPerformer()">+ Buat Performer Test</button></td></tr>`;
             return;
         }
         
@@ -905,6 +916,14 @@ async function loadPerformerData() {
                 : '';
             const btnDel = `<button class="btn-action btn-delete" onclick="deletePerf('${id}')"><i class="fa-solid fa-trash"></i></button>`;
 
+            // Toggle FORM PENILAIAN (bintang + komentar jadi satu paket) -- ON cuma saat performer
+            // lagi tampil, OFF di luar itu. Rata-rata rating yang SUDAH TERKUMPUL tetap tampil ke
+            // publik terus walau statusnya OFF, cuma pengunjung tidak bisa kirim penilaian baru.
+            const commentsOpen = !!data.commentsOpen;
+            const btnToggleComments = commentsOpen
+                ? `<button class="btn-action" style="background:#00c853;" title="Form penilaian SEDANG DIBUKA -- klik utk tutup" onclick="togglePerfComments('${id}', false)"><i class="fa-solid fa-star"></i> ON</button>`
+                : `<button class="btn-action" style="background:#555;" title="Form penilaian SEDANG DITUTUP -- klik utk buka" onclick="togglePerfComments('${id}', true)"><i class="fa-regular fa-star"></i> OFF</button>`;
+
             // Badge sumber: bedakan performer hasil lulusan Bengkel Siswa vs didaftarkan
             // langsung oleh admin. Nilai mentor TIDAK lagi ditampilkan di sini -- lihat
             // nilai lengkap cukup di tab Bengkel Siswa.
@@ -924,6 +943,7 @@ async function loadPerformerData() {
                 <td>${data.genre}</td>
                 <td>${sourceBadge}</td>
                 <td>${statusIcon}${emailInfo}</td>
+                <td>${btnToggleComments}</td>
                 <td><div style="display:flex; gap:5px;">${btnLogin} ${btnEdit} ${btnResetPass} ${btnDel}</div></td>
             </tr>`;
         });
