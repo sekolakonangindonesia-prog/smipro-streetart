@@ -260,7 +260,9 @@
                 <i class="fa-solid fa-star" onclick="rateStar('perf', 4)"></i>
                 <i class="fa-solid fa-star" onclick="rateStar('perf', 5)"></i>
             </div>
-            <textarea id="perf-comment" class="input-request" placeholder="Komentar Anda..."></textarea>
+            <div id="perf-comment-wrap">
+                <textarea id="perf-comment" class="input-request" placeholder="Komentar Anda..."></textarea>
+            </div>
             <button onclick="submitPerfRating()" class="btn-small" style="background:#E50914; color:white;">Kirim Penilaian</button>
         </div>
     </div>
@@ -277,7 +279,7 @@
 <script type="module">
     import { db } from './firebase-config.js';
     import { 
-        collection, doc, getDoc, getDocs, query, where, orderBy, addDoc, onSnapshot, updateDoc, increment 
+        collection, doc, getDoc, getDocs, query, where, orderBy, addDoc, onSnapshot, updateDoc, increment, runTransaction 
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // --- 1. INISIALISASI & DETEKSI LOKASI ---
@@ -750,18 +752,40 @@
     // --- 6. SISTEM RATING PERFORMER (POPUP BINTANG) ---
     
     let targetPerformerName = ""; // Variabel global untuk simpan nama artis
+    let targetPerformerId = null;
     let currentPerfRating = 0;
 
-    // A. Buka Modal Rating
-    window.openRatePerformer = function(name) {
+    // A. Buka Modal Rating -- bintang & komentar SATU PAKET pengiriman. Kalau admin
+    // sedang MATIKAN kolom komentar performer ini, form penilaian (bintang + komentar)
+    // sama sekali TIDAK BISA dibuka -- cuma angka rata-rata yang sudah terkumpul yang
+    // tetap tampil ke publik (lihat performers.rating, tidak berubah).
+    window.openRatePerformer = async function(name) {
         targetPerformerName = name;
+        targetPerformerId = null;
+        currentPerfRating = 0;
+
+        let commentsOpen = false;
+        try {
+            const pq = query(collection(db, "performers"), where("name", "==", name));
+            const pSnap = await getDocs(pq);
+            if (!pSnap.empty) {
+                targetPerformerId = pSnap.docs[0].id;
+                commentsOpen = !!pSnap.docs[0].data().commentsOpen;
+            }
+        } catch(e) { console.error("Gagal cek status penilaian:", e); }
+
+        if (!commentsOpen) {
+            alert(`Penilaian untuk ${name} sedang ditutup sementara. Coba lagi saat performer ini sedang tampil.`);
+            return;
+        }
+
         // Update Judul Modal
         const titleEl = document.getElementById('rate-target-name');
         if(titleEl) titleEl.innerText = name;
         
-        currentPerfRating = 0;
-        // Reset Bintang
+        // Reset Bintang & Komentar
         document.querySelectorAll('#perf-stars i').forEach(s => s.classList.remove('active'));
+        document.getElementById('perf-comment').value = '';
         
         // Tampilkan Modal
         document.getElementById('rate-perf-modal').style.display = 'flex';
@@ -780,7 +804,33 @@
         if (!name || currentPerfRating === 0) return alert("Mohon isi nama & bintang!");
 
         try {
+            let performerId = targetPerformerId;
+            if (!performerId) {
+                const pq = query(collection(db, "performers"), where("name", "==", targetPerformerName));
+                const pSnap = await getDocs(pq);
+                if (pSnap.empty) {
+                    alert("Performer tidak ditemukan di database, penilaian tidak bisa disimpan.");
+                    return;
+                }
+                performerId = pSnap.docs[0].id;
+            }
+
+            // 1. Update rata-rata rating (PUBLIK -- field rating/ratingCount, lihat firestore.rules)
+            //    pakai transaction biar akurat walau ada beberapa orang kasih rating bersamaan.
+            await runTransaction(db, async (tx) => {
+                const perfRef = doc(db, "performers", performerId);
+                const perfDoc = await tx.get(perfRef);
+                const oldCount = perfDoc.data().ratingCount || 0;
+                const oldAvg = perfDoc.data().rating || 0;
+                const newCount = oldCount + 1;
+                const newAvg = ((oldAvg * oldCount) + currentPerfRating) / newCount;
+                tx.update(perfRef, { rating: newAvg, ratingCount: newCount });
+            });
+
+            // 2. Simpan komentar lengkap TERPISAH (PRIVAT -- cuma performer ybs & admin yang bisa baca,
+            //    lihat firestore.rules).
             await addDoc(collection(db, "performer_reviews"), {
+                performerId: performerId,
                 performerName: targetPerformerName,
                 reviewer: name,
                 rating: currentPerfRating,
