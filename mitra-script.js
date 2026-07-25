@@ -147,12 +147,17 @@ window.setupBookingListener = function() {
 
         snapshot.forEach((docSnap) => {
             const d = docSnap.data();
-            if (d.status === 'finished') return;
+            if (d.status === 'finished' || d.status === 'expired' || d.status === 'cancelled') return;
             
             if (d.status === 'booked' && d.expiredTime) {
                 const expiredDate = new Date(d.expiredTime);
                 if (now > expiredDate) {
-                    deleteDoc(docSnap.ref);
+                    // FIX: sebelumnya deleteDoc() langsung dari sisi mitra -- sekarang rules
+                    // cuma izinkan Admin yang boleh hapus booking (lihat firestore.rules).
+                    // Mitra tetap boleh UPDATE, jadi cukup tandai statusnya "expired" (bukan
+                    // dihapus permanen) -- ini juga menghindari error permission yang bikin
+                    // notifikasi muncul berulang-ulang.
+                    updateDoc(docSnap.ref, { status: 'expired' }).catch(() => {});
                     return; 
                 }
             }
@@ -718,7 +723,10 @@ window.submitTransaction = async function() {
 
 window.cancelBooking = async function(id, qty) {
     if(confirm("Batalkan?")) {
-        await deleteDoc(doc(db, "bookings", id));
+        // FIX: mitra sekarang tidak punya izin hapus booking langsung (lihat firestore.rules,
+        // cuma Admin yang boleh delete). Cukup tandai statusnya "cancelled" -- sudah diizinkan
+        // lewat allow update, dan otomatis hilang dari daftar reservasi aktif.
+        await updateDoc(doc(db, "bookings", id), { status: 'cancelled' });
         await updateDoc(doc(db, "warungs", WARUNG_ID), { bookedCount: increment(-parseInt(qty)) });
     }
 };
