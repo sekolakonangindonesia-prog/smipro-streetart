@@ -828,13 +828,21 @@
                     </select>
                     <div id="form-news-container">
                         <!-- Form Berita -->
+                        <input type="hidden" id="news-edit-id" value="">
                         <input type="text" id="news-title" class="cms-input" placeholder="JUDUL HEADLINE">
                         <input type="text" id="news-tag" class="cms-input" placeholder="Tag">
                         <input type="text" id="news-thumb" class="cms-input" placeholder="Link Foto">
                         <select id="news-type" class="cms-input" onchange="toggleNewsInput()"><option value="internal">Internal</option><option value="external">Eksternal</option></select>
                         <div id="news-input-internal"><textarea id="news-content" class="cms-input" style="height:150px;" placeholder="Isi..."></textarea></div>
                         <div id="news-input-external" style="display:none;"><input type="text" id="news-url" class="cms-input" placeholder="URL"></div>
-                        <button class="btn-action btn-view" onclick="saveNews()" style="width:100%; margin-top:10px;">PUBLISH BERITA</button>
+                        <button class="btn-action btn-view" id="btn-save-news" onclick="saveNews()" style="width:100%; margin-top:10px;">PUBLISH BERITA</button>
+                        <button class="btn-action btn-delete" id="btn-cancel-edit-news" onclick="cancelEditNews()" style="width:100%; margin-top:8px; display:none;">BATAL EDIT</button>
+                    </div>
+
+                    <!-- DAFTAR BERITA TERBIT -->
+                    <h4 style="color:#E50914; margin-top:25px; border-top:1px solid #333; padding-top:15px;">Daftar Berita Terbit</h4>
+                    <div id="news-list-container" style="display:flex; flex-direction:column; gap:10px; max-height:500px; overflow-y:auto;">
+                        <p style="color:#888;">Memuat daftar berita...</p>
                     </div>
                     <div id="form-podcast-container" style="display:none;">
                         <!-- Form Podcast -->
