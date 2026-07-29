@@ -141,6 +141,10 @@ window.switchCmsTab = function(tabId, btn) {
     if(tabId === 'cms-schedule') {
         if(typeof loadActiveSchedules === 'function') loadActiveSchedules();
     }
+
+    if(tabId === 'cms-news') {
+        if(typeof loadNewsList === 'function') loadNewsList();
+    }
     
     if(tabId === 'cms-radio') {
         if(typeof loadRadioSessionData === 'function') loadRadioSessionData(); 
@@ -1689,18 +1693,112 @@ window.toggleNewsInput = function() {
 }
 
 window.saveNews = async function() {
-    if(confirm("Publish Berita?")) {
-        await addDoc(collection(db, "news"), {
-            title: document.getElementById('news-title').value,
-            tag: document.getElementById('news-tag').value,
-            thumb: document.getElementById('news-thumb').value,
-            type: document.getElementById('news-type').value,
-            url: document.getElementById('news-url').value,
-            content: document.getElementById('news-content').value,
-            date: new Date().toLocaleDateString(),
-            timestamp: new Date()
+    const editId = document.getElementById('news-edit-id').value;
+    const payload = {
+        title: document.getElementById('news-title').value,
+        tag: document.getElementById('news-tag').value,
+        thumb: document.getElementById('news-thumb').value,
+        type: document.getElementById('news-type').value,
+        url: document.getElementById('news-url').value,
+        content: document.getElementById('news-content').value,
+    };
+    if(!payload.title) return alert("Judul wajib diisi!");
+
+    try {
+        if (editId) {
+            if(!confirm("Simpan perubahan berita ini?")) return;
+            await updateDoc(doc(db, "news", editId), payload);
+            alert("Berita berhasil diperbarui!");
+        } else {
+            if(!confirm("Publish Berita?")) return;
+            await addDoc(collection(db, "news"), {
+                ...payload,
+                date: new Date().toLocaleDateString(),
+                timestamp: new Date()
+            });
+            alert("Berita Terbit!");
+        }
+        cancelEditNews();
+        loadNewsList();
+    } catch (e) {
+        alert("Gagal menyimpan berita: " + e.message);
+    }
+}
+
+window.editNews = async function(id) {
+    try {
+        const snap = await getDoc(doc(db, "news", id));
+        if (!snap.exists()) return alert("Berita tidak ditemukan (mungkin sudah dihapus).");
+        const d = snap.data();
+        document.getElementById('news-edit-id').value = id;
+        document.getElementById('content-category').value = 'news';
+        toggleContentForm();
+        document.getElementById('news-title').value = d.title || "";
+        document.getElementById('news-tag').value = d.tag || "";
+        document.getElementById('news-thumb').value = d.thumb || "";
+        document.getElementById('news-type').value = d.type || "internal";
+        toggleNewsInput();
+        document.getElementById('news-content').value = d.content || "";
+        document.getElementById('news-url').value = d.url || "";
+
+        document.getElementById('btn-save-news').innerHTML = "SIMPAN PERUBAHAN";
+        document.getElementById('btn-cancel-edit-news').style.display = "block";
+        document.getElementById('form-news-container').scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+        alert("Gagal memuat berita: " + e.message);
+    }
+}
+
+window.cancelEditNews = function() {
+    document.getElementById('news-edit-id').value = "";
+    document.getElementById('news-title').value = "";
+    document.getElementById('news-tag').value = "";
+    document.getElementById('news-thumb').value = "";
+    document.getElementById('news-content').value = "";
+    document.getElementById('news-url').value = "";
+    document.getElementById('btn-save-news').innerHTML = "PUBLISH BERITA";
+    document.getElementById('btn-cancel-edit-news').style.display = "none";
+}
+
+window.deleteNews = async function(id) {
+    if(!confirm("Hapus berita ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    try {
+        await deleteDoc(doc(db, "news", id));
+        loadNewsList();
+    } catch (e) {
+        alert("Gagal menghapus berita: " + e.message);
+    }
+}
+
+window.loadNewsList = async function() {
+    const container = document.getElementById('news-list-container');
+    if (!container) return;
+    container.innerHTML = `<p style="color:#888;">Memuat daftar berita...</p>`;
+    try {
+        const q = query(collection(db, "news"), orderBy("timestamp", "desc"));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            container.innerHTML = `<p style="color:#888;">Belum ada berita yang diterbitkan.</p>`;
+            return;
+        }
+        container.innerHTML = "";
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const row = document.createElement('div');
+            row.style.cssText = "background:#1a1a1a; border:1px solid #333; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;";
+            row.innerHTML = `
+                <div style="min-width:0;">
+                    <div style="color:white; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.title || "(Tanpa judul)"}</div>
+                    <div style="color:#888; font-size:0.8rem;">${d.tag || "-"} &middot; ${d.date || "-"} &middot; ${d.type === 'external' ? 'Eksternal' : 'Internal'}</div>
+                </div>
+                <div style="display:flex; gap:6px; flex-shrink:0;">
+                    <button class="btn-action btn-edit" onclick="editNews('${docSnap.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action btn-delete" onclick="deleteNews('${docSnap.id}')"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+            container.appendChild(row);
         });
-        alert("Berita Terbit!");
+    } catch (e) {
+        container.innerHTML = `<p style="color:#ff4444;">Gagal memuat daftar berita: ${e.message}</p>`;
     }
 }
 
