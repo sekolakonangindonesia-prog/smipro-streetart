@@ -47,7 +47,7 @@
             <img src="https://raw.githubusercontent.com/sekolakonangindonesia-prog/smipro-streetart/main/Logo_Stretart.png" style="height:40px;">
             SMIPRO NEWS
         </a>
-        <button onclick="history.back()" style="background:none; border:1px solid #555; color:#ccc; padding:5px 15px; border-radius:5px; cursor:pointer;">Kembali</button>
+        <button onclick="goBack()" style="background:none; border:1px solid #555; color:#ccc; padding:5px 15px; border-radius:5px; cursor:pointer;">Kembali</button>
     </nav>
 
     <div class="article-container" id="news-content-area">
@@ -101,6 +101,16 @@
                 document.title = data.title + " - SMIPRO News";
             } else {
                 document.getElementById('news-content-area').innerHTML = "<h2>Berita tidak ditemukan atau telah dihapus.</h2>";
+            }
+        }
+
+        window.goBack = function() {
+            // Kalau ada riwayat halaman sebelumnya (dan asalnya dari situs sendiri), kembali ke situ.
+            if (document.referrer && document.referrer.includes(window.location.host) && window.history.length > 1) {
+                history.back();
+            } else {
+                // Kalau dibuka langsung (link luar, tab baru, dsb), arahkan ke daftar berita.
+                window.location.href = 'news-list.html';
             }
         }
 
