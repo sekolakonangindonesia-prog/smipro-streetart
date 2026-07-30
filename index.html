@@ -368,8 +368,11 @@
 
         <!-- 6. BERITA -->
         <div class="section-title"><i class="fa-regular fa-newspaper"></i> Berita Terbaru</div>
-        <div id="home-news-container">
+        <div id="home-news-container" class="news-grid">
             <div class="news-card"><div>Memuat Berita...</div></div>
+        </div>
+        <div class="news-see-all-wrap">
+            <a href="news-list.html" class="btn-see-all-news">Lihat Semua Berita <i class="fa-solid fa-arrow-right"></i></a>
         </div>
 
         <div class="home-footer">
@@ -746,7 +749,7 @@ area.innerHTML = `
         // BERITA
         async function loadNews() {
             const container = document.getElementById('home-news-container');
-            const q = query(collection(db, "news"), orderBy("date", "desc"), limit(1));
+            const q = query(collection(db, "news"), orderBy("timestamp", "desc"), limit(4));
             const querySnapshot = await getDocs(q);
 
             if(querySnapshot.empty) {
@@ -754,16 +757,17 @@ area.innerHTML = `
                 return;
             }
             container.innerHTML = '';
+            const defaultImg = "https://placehold.co/400x300?text=Berita";
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 let clickAction = data.type === 'external' ? `window.open('${data.url}', '_blank')` : `location.href='news-read.html?id=${doc.id}'`;
                 container.innerHTML += `
-                <div class="news-card" onclick="${clickAction}" style="cursor:pointer;">
-                    <img src="${data.thumb}" class="news-thumb">
-                    <div>
-                        <span style="color:var(--primary); font-size:0.7rem; font-weight:bold;">${data.tag}</span>
-                        <h4 style="margin:5px 0;">${data.title}</h4>
-                        <p style="margin:0; font-size:0.7rem; color:#888;">${data.date}</p>
+                <div class="news-card-grid" onclick="${clickAction}">
+                    <img src="${data.thumb || defaultImg}" class="news-grid-thumb" onerror="this.src='${defaultImg}'">
+                    <div class="news-grid-body">
+                        <span class="news-grid-tag">${data.tag || 'BERITA'}</span>
+                        <h4 class="news-grid-title">${data.title}</h4>
+                        <p class="news-grid-date">${data.date}</p>
                     </div>
                 </div>`;
             });
